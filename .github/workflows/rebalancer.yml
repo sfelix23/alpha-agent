@@ -48,4 +48,4 @@ jobs:
           EOF
 
       - name: Run Rebalancer
-        run: python run_rebalancer.py --live --send
+        run: python run_rebalancer.py --live
