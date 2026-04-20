@@ -91,6 +91,16 @@ def _get_sector_boost(tickers: list[str]) -> dict[str, float]:
         return {t: 1.0 for t in tickers}
 
 
+def _get_earnings_soon(tickers: list[str]) -> set[str]:
+    """Tickers con earnings en los próximos 3 días. Falla silenciosamente."""
+    try:
+        from alpha_agent.analytics.earnings_guard import get_earnings_soon
+        return set(get_earnings_soon(tickers, days=3).keys())
+    except Exception as exc:
+        logger.debug("earnings_guard no disponible (%s)", exc)
+        return set()
+
+
 def build_scores(
     capm: pd.DataFrame,
     technical: pd.DataFrame,
@@ -104,6 +114,7 @@ def build_scores(
 
     all_tickers = df.index.tolist()
     sector_boost = _get_sector_boost(all_tickers)
+    earnings_soon = _get_earnings_soon(all_tickers)
 
     # ── LONG TERM ─────────────────────────────────────────────────────────────
     lp = df[
@@ -186,6 +197,20 @@ def build_scores(
     )
 
     st["score_st"] = score_st
+
+    # ── Earnings guard ─────────────────────────────────────────────────────────
+    # Penalizar posiciones con earnings inminentes para evitar riesgo binario.
+    if earnings_soon:
+        logger.warning("Earnings guard activo: %s", sorted(earnings_soon))
+        lp["earnings_soon"] = lp.index.isin(earnings_soon).astype(int)
+        st["earnings_soon"] = st.index.isin(earnings_soon).astype(int)
+        lp.loc[lp.index.isin(earnings_soon), "score_lp"] -= 0.5
+        st.loc[st.index.isin(earnings_soon), "score_st"] -= 0.8
+    else:
+        lp["earnings_soon"] = 0
+        st["earnings_soon"] = 0
+
     st = st.sort_values("score_st", ascending=False)
+    lp = lp.sort_values("score_lp", ascending=False)
 
     return {"long_term": lp, "short_term": st}

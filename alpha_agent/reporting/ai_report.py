@@ -584,11 +584,24 @@ def signals_to_whatsapp_brief(signals: Signals) -> str:
     out.append("")
 
     # ── Protección de capital ──
-    out.append("🛑 *PROTECCIÓN DE CAPITAL*")
-    out.append(f"  Kill switch intradía: -3% del equity")
-    out.append(f"  Stop loss ATR por posición (LP y CP)")
-    out.append(f"  Opciones long-only (pérdida acotada a prima)")
-    out.append(f"  _Optimización: maximizar retorno sujeto a DD ≤ 10%_")
+    out.append("*PROTECCION DE CAPITAL*")
+    out.append(f"  Kill switch intraday: -3% del equity")
+    out.append(f"  Stop loss ATR por posicion (LP y CP)")
+    out.append(f"  Opciones long-only (perdida acotada a prima)")
+
+    # Earnings warning — tickers con resultados inminentes
+    all_tickers = [s.ticker for s in signals.long_term + signals.short_term]
+    if all_tickers:
+        try:
+            from alpha_agent.analytics.earnings_guard import get_earnings_soon
+            upcoming = get_earnings_soon(all_tickers, days=5)
+            if upcoming:
+                pairs = ", ".join(f"{t} ({d.strftime('%d/%b')})" for t, d in upcoming.items())
+                out.append(f"  EARNINGS proximos: {pairs} — no abrir nuevas posiciones")
+        except Exception:
+            pass
+
+    out.append(f"  _Optimizacion: maximizar retorno sujeto a DD <= 10%_")
     out.append("")
 
     out.append(f"_Próxima revisión: lun-vie 10:35 ART_")
