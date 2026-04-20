@@ -111,6 +111,27 @@ def _kill_switch_check(broker: BrokerBase) -> tuple[bool, str]:
 
 
 # ─────────────────────────────────────────────────────────────────────────────
+# VIX-adaptive sizing helpers
+# ─────────────────────────────────────────────────────────────────────────────
+def _get_vix(signals: Signals) -> float:
+    try:
+        return float(signals.macro.get("prices", {}).get("vix", 18.0))
+    except Exception:
+        return 18.0
+
+
+def _vix_multiplier(vix: float) -> float:
+    """Reduce capital en alta volatilidad, permite leve agresividad en calma."""
+    if vix > 30:
+        return 0.60
+    if vix > 25:
+        return 0.75
+    if vix < 15:
+        return 1.10
+    return 1.0
+
+
+# ─────────────────────────────────────────────────────────────────────────────
 # Execute
 # ─────────────────────────────────────────────────────────────────────────────
 def execute(broker: BrokerBase, *, dry_run: bool = True, max_capital: float | None = None) -> list[dict]:
@@ -145,10 +166,22 @@ def execute(broker: BrokerBase, *, dry_run: bool = True, max_capital: float | No
         capital, equity, bp, str(max_capital),
     )
 
-    fills: list[dict] = []
+    # ── VIX-adaptive sizing ─────────────────────────────────────────
+    vix = _get_vix(signals)
+    vix_mult = _vix_multiplier(vix)
+    capital_adj = capital * vix_mult
+    if vix_mult != 1.0:
+        logger.info(
+            "VIX %.1f → multiplicador %.0f%% → capital ajustado $%.2f (desde $%.2f)",
+            vix, vix_mult * 100, capital_adj, capital,
+        )
+    else:
+        logger.info("VIX %.1f → sizing normal (100%%)", vix)
+
+    fills: list[dict] = [{"status": "meta", "vix": vix, "vix_mult": vix_mult}]
 
     # ── Equity (LP + CP) ────────────────────────────────────────────
-    target = build_target_portfolio(signals, capital)
+    target = build_target_portfolio(signals, capital_adj)
     positions = broker.get_positions()
     invested = total_invested_notional(positions)
     equity_intents = diff_against_current(target, positions)
@@ -161,7 +194,7 @@ def execute(broker: BrokerBase, *, dry_run: bool = True, max_capital: float | No
     fills.extend(_submit_equity_intents(broker, equity_intents, dry_run=dry_run))
 
     # ── Opciones (direccionales + hedge) ────────────────────────────
-    option_intents = build_option_intents(signals, capital)
+    option_intents = build_option_intents(signals, capital_adj)
     logger.info("Options plan: %d intents", len(option_intents))
     fills.extend(_submit_option_intents(broker, option_intents, dry_run=dry_run))
 
@@ -265,7 +298,16 @@ def _submit_option_intents(broker: BrokerBase, intents: list[OptionIntent], *, d
 def summarize_fills(fills: list[dict]) -> str:
     if not fills:
         return "Sin órdenes ejecutadas."
-    lines = [f"🤖 *EJECUTOR* — {len(fills)} órdenes/intents"]
+    meta = next((f for f in fills if f.get("status") == "meta"), {})
+    vix = meta.get("vix")
+    vix_mult = meta.get("vix_mult")
+    real_fills = [f for f in fills if f.get("status") != "meta"]
+    header = f"*EJECUTOR* — {len(real_fills)} ordenes/intents"
+    if vix is not None and vix_mult is not None and vix_mult != 1.0:
+        direction = "reducido" if vix_mult < 1 else "ampliado"
+        header += f" | VIX {vix:.0f} -> sizing {direction} al {vix_mult*100:.0f}%"
+    lines = [header]
+    fills = real_fills
     for f in fills:
         if f.get("status") == "kill_switch":
             lines.append(f"🛑 {f.get('reason')}")
