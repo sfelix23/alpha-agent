@@ -1,0 +1,77 @@
+name: "Alpha Dashboard (GitHub Pages)"
+
+on:
+  workflow_run:
+    workflows: ["Alpha Analyst + Trade"]
+    types: [completed]
+  schedule:
+    # También se actualiza cada hora durante horario de mercado
+    - cron: "0 14-20 * * 1-5"
+  workflow_dispatch: {}
+
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
+permissions:
+  contents: write
+  pages: write
+  id-token: write
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Cache pip
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/pip
+          key: pip-${{ hashFiles('requirements.txt') }}
+          restore-keys: pip-
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Create .env from secrets
+        run: |
+          cat > .env <<EOF
+          ALPACA_API_KEY=${{ secrets.ALPACA_API_KEY }}
+          ALPACA_SECRET_KEY=${{ secrets.ALPACA_SECRET_KEY }}
+          TWILIO_SID=${{ secrets.TWILIO_SID }}
+          TWILIO_TOKEN=${{ secrets.TWILIO_TOKEN }}
+          MY_PHONE_NUMBER=${{ secrets.MY_PHONE_NUMBER }}
+          GOOGLE_API_KEY=${{ secrets.GOOGLE_API_KEY }}
+          ANTHROPIC_API_KEY=${{ secrets.ANTHROPIC_API_KEY }}
+          EOF
+
+      - name: Generate dashboard
+        run: python run_dashboard.py --no-open
+
+      - name: Deploy to GitHub Pages
+        uses: actions/checkout@v4
+        with:
+          ref: gh-pages
+          path: gh-pages
+        continue-on-error: true
+
+      - name: Push dashboard to gh-pages
+        run: |
+          mkdir -p gh-pages
+          cp docs/index.html gh-pages/index.html
+          cd gh-pages
+          git init 2>/dev/null || true
+          git config user.name "Alpha Bot"
+          git config user.email "alpha-bot@noreply.github.com"
+          git checkout -b gh-pages 2>/dev/null || git checkout gh-pages
+          git add index.html
+          git diff --staged --quiet || git commit -m "dashboard: update $(date -u +%H:%M) [skip ci]"
+          git push "https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/sfelix23/alpha-agent.git" gh-pages --force

@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta http-equiv="refresh" content="300">
+  <title>Alpha Dashboard</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: 'Segoe UI', system-ui, sans-serif; background: #0d1117;
+       color: #c9d1d9; padding: 16px; max-width: 1400px; margin: 0 auto; }
+h1 { color: #58a6ff; font-size: 1.4rem; margin-bottom: 4px; }
+.ts { color: #484f58; font-size: .78rem; margin-bottom: 16px; }
+.header-grid { display: flex; flex-wrap: wrap; gap: 12px; margin-bottom: 16px; }
+.stat-card { background: #161b22; border: 1px solid #30363d; border-radius: 8px;
+             padding: 14px 18px; flex: 1 1 160px; }
+.stat-label { font-size: .75rem; color: #8b949e; text-transform: uppercase;
+              letter-spacing: .8px; margin-bottom: 4px; }
+.stat-val { font-size: 1.6rem; font-weight: 700; margin-bottom: 2px; }
+.stat-sub { font-size: .75rem; color: #8b949e; }
+.grid { display: flex; flex-wrap: wrap; gap: 14px; }
+.card { background: #161b22; border: 1px solid #30363d; border-radius: 8px;
+        padding: 16px; flex: 1 1 380px; }
+.card-title { font-size: .8rem; color: #8b949e; text-transform: uppercase;
+              letter-spacing: .8px; margin-bottom: 12px; font-weight: 600; }
+table { width: 100%; border-collapse: collapse; font-size: .82rem; }
+th { color: #8b949e; text-align: left; padding: 5px 8px;
+     border-bottom: 1px solid #30363d; font-weight: 500; }
+td { padding: 6px 8px; border-bottom: 1px solid #21262d; vertical-align: middle; }
+tr:hover td { background: #1c2128; }
+.sub { font-size: .78rem; color: #8b949e; }
+.badge { padding: 1px 8px; border-radius: 10px; font-size: .72rem; font-weight: 700; }
+.badge-lp { background: #1f3a6e; color: #58a6ff; }
+.badge-cp { background: #3a2d1f; color: #f39c12; }
+.badge-opt { background: #2d1f3a; color: #9b59b6; }
+@media (max-width: 600px) { .stat-val { font-size: 1.2rem; } }
+</style>
+</head>
+<body>
+  <h1>Alpha Trading Dashboard</h1>
+  <p class="ts">Actualizado: 2026-04-20 18:40 · Auto-refresh 5 min · Paper Trading</p>
+  
+<div class="header-grid">
+  <div class="stat-card">
+    <div class="stat-label">Equity</div>
+    <div class="stat-val" style="color:#e74c3c">$100,493.47</div>
+    <div class="stat-sub">P&L: $-164.42 (-0.16%)</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-label">Régimen</div>
+    <div class="stat-val"><span style="background:#2ecc71;color:#000;padding:2px 10px;border-radius:12px;font-weight:700;font-size:.8rem">BULL</span></div>
+    <div class="stat-sub">Capital base: $100,657.89</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-label">VIX</div>
+    <div class="stat-val" style="color:#f39c12">19.0</div>
+    <div class="stat-sub">Moderado</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-label">WTI / Oro</div>
+    <div class="stat-val">$87.3 / $4838</div>
+    <div class="stat-sub">Commodities clave</div>
+  </div>
+</div>
+  <div class="grid">
+    <div class="card"><p class="sub">Sin historial de equity disponible.</p></div>
+    
+<div class="card">
+  <div class="card-title">Rotacion Sectorial — Momentum 1-3 meses</div>
+  <canvas id="sectorChart" height="100"></canvas>
+</div>
+<script>
+new Chart(document.getElementById('sectorChart'), {
+  type: 'bar',
+  data: {
+    labels: ["Tech", "Materials", "GoldMiners", "Energy", "Industrials", "ETF", "Comm", "Financials"],
+    datasets: [{
+      data: [11.2, 10.0, 7.4, 7.3, 7.1, 5.9, 5.5, 2.8],
+      backgroundColor: ["#2ecc71", "#2ecc71", "#2ecc71", "#2ecc71", "#2ecc71", "#2ecc71", "#2ecc71", "#2ecc71"],
+      borderRadius: 4
+    }]
+  },
+  options: {
+    plugins: { legend: { display: false } },
+    scales: {
+      x: { ticks: { color: '#8b949e' }, grid: { display: false } },
+      y: { ticks: { color: '#8b949e', callback: v => v + '%' }, grid: { color: '#21262d' } }
+    }
+  }
+});
+</script>
+    
+<div class="card">
+  <div class="card-title">Posiciones abiertas (7)</div>
+  <div style="display:flex;gap:20px;flex-wrap:wrap;align-items:flex-start">
+    <div style="flex:1;min-width:200px">
+      <canvas id="allocChart" width="200" height="200"></canvas>
+    </div>
+    <div style="flex:2;min-width:300px;overflow-x:auto">
+      <table>
+        <thead><tr><th>Ticker</th><th>Qty</th><th>Entrada</th><th>Valor</th><th>P&L</th><th>%</th></tr></thead>
+        <tbody>
+  <tr>
+    <td><b>AMD</b></td>
+    <td>45.70</td>
+    <td>$260.40</td>
+    <td>$12,538.08</td>
+    <td style="color:#2ecc71">$637.14<br><div style="width:21%;height:6px;background:#2ecc71;border-radius:3px;margin-top:3px"></div></td>
+    <td style="color:#2ecc71;font-weight:700">+5.35%</td>
+  </tr>
+  <tr>
+    <td><b>GLD</b></td>
+    <td>34.91</td>
+    <td>$438.58</td>
+    <td>$15,458.14</td>
+    <td style="color:#2ecc71">$146.54<br><div style="width:4%;height:6px;background:#2ecc71;border-radius:3px;margin-top:3px"></div></td>
+    <td style="color:#2ecc71;font-weight:700">+0.96%</td>
+  </tr>
+  <tr>
+    <td><b>GOOGL</b></td>
+    <td>41.55</td>
+    <td>$328.86</td>
+    <td>$14,041.38</td>
+    <td style="color:#2ecc71">$377.26<br><div style="width:11%;height:6px;background:#2ecc71;border-radius:3px;margin-top:3px"></div></td>
+    <td style="color:#2ecc71;font-weight:700">+2.76%</td>
+  </tr>
+  <tr>
+    <td><b>JPM</b></td>
+    <td>25.57</td>
+    <td>$316.58</td>
+    <td>$8,107.31</td>
+    <td style="color:#2ecc71">$13.78<br><div style="width:1%;height:6px;background:#2ecc71;border-radius:3px;margin-top:3px"></div></td>
+    <td style="color:#2ecc71;font-weight:700">+0.17%</td>
+  </tr>
+  <tr>
+    <td><b>NEM260424C00128000</b></td>
+    <td>2.00</td>
+    <td>$0.64</td>
+    <td>$18.00</td>
+    <td style="color:#e74c3c">$-110.00<br><div style="width:100%;height:6px;background:#e74c3c;border-radius:3px;margin-top:3px"></div></td>
+    <td style="color:#e74c3c;font-weight:700">-8593.75%</td>
+  </tr>
+  <tr>
+    <td><b>PBR</b></td>
+    <td>606.03</td>
+    <td>$21.65</td>
+    <td>$12,544.73</td>
+    <td style="color:#e74c3c">$-575.95<br><div style="width:18%;height:6px;background:#e74c3c;border-radius:3px;margin-top:3px"></div></td>
+    <td style="color:#e74c3c;font-weight:700">-4.39%</td>
+  </tr>
+  <tr>
+    <td><b>RTX</b></td>
+    <td>90.56</td>
+    <td>$199.67</td>
+    <td>$17,783.29</td>
+    <td style="color:#e74c3c">$-298.47<br><div style="width:7%;height:6px;background:#e74c3c;border-radius:3px;margin-top:3px"></div></td>
+    <td style="color:#e74c3c;font-weight:700">-1.65%</td>
+  </tr></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+<script>
+new Chart(document.getElementById('allocChart'), {
+  type: 'doughnut',
+  data: {
+    labels: ["AMD", "GLD", "GOOGL", "JPM", "NEM260424C00128000", "PBR", "RTX"],
+    datasets: [{ data: [12538.08, 15458.14, 14041.38, 8107.31, 18.0, 12544.73, 17783.29],
+      backgroundColor: ["#58a6ff", "#2ecc71", "#f39c12", "#e74c3c", "#9b59b6", "#1abc9c", "#e67e22"],
+      borderWidth: 0 }]
+  },
+  options: {
+    plugins: { legend: { position: 'bottom', labels: { color: '#c9d1d9', font: { size: 11 } } } },
+    cutout: '65%'
+  }
+});
+</script>
+    
+<div class="card" style="flex:2 1 700px">
+  <div class="card-title">Senales del Analyst — 2026-04-20T19:15</div>
+  <div style="overflow-x:auto">
+  <table>
+    <thead><tr>
+      <th>Ticker</th><th>Sleeve</th><th>Conviccion</th><th>Precio</th>
+      <th>Asignado</th><th>Sharpe</th><th>Alpha</th><th>SL</th><th>TP</th><th>Tesis</th>
+    </tr></thead>
+    <tbody>
+  <tr>
+    <td><b>RTX</b></td>
+    <td><span class="badge badge-lp">LP</span></td>
+    <td><span style="color:#2ecc71;font-weight:700">ALTA</span></td>
+    <td>$195.57</td>
+    <td>$17,710.87</td>
+    <td>1.24</td>
+    <td style="color:#58a6ff">+23.11%</td>
+    <td style="color:#e74c3c">$186.99</td>
+    <td style="color:#2ecc71">$224.91</td>
+    <td class="sub" style="font-size:.75rem;max-width:180px">RTX — horizonte LARGO PLAZO. Convicción ALTA. La tesis CAPM/Markowitz sostiene un Sharpe de 1.24 con</td>
+  </tr>
+  <tr>
+    <td><b>GLD</b></td>
+    <td><span class="badge badge-lp">LP</span></td>
+    <td><span style="color:#2ecc71;font-weight:700">ALTA</span></td>
+    <td>$442.68</td>
+    <td>$15,457.05</td>
+    <td>1.14</td>
+    <td style="color:#58a6ff">+22.90%</td>
+    <td style="color:#e74c3c">$425.88</td>
+    <td style="color:#2ecc71">$509.08</td>
+    <td class="sub" style="font-size:.75rem;max-width:180px">GLD — horizonte LARGO PLAZO. Convicción ALTA. La tesis CAPM/Markowitz sostiene un Sharpe de 1.14 con</td>
+  </tr>
+  <tr>
+    <td><b>GOOGL</b></td>
+    <td><span class="badge badge-lp">LP</span></td>
+    <td><span style="color:#2ecc71;font-weight:700">ALTA</span></td>
+    <td>$338.61</td>
+    <td>$14,071.82</td>
+    <td>1.32</td>
+    <td style="color:#58a6ff">+23.77%</td>
+    <td style="color:#e74c3c">$321.25</td>
+    <td style="color:#2ecc71">$389.40</td>
+    <td class="sub" style="font-size:.75rem;max-width:180px">GOOGL — horizonte LARGO PLAZO. Convicción ALTA. La tesis CAPM/Markowitz sostiene un Sharpe de 1.32 c</td>
+  </tr>
+  <tr>
+    <td><b>JPM</b></td>
+    <td><span class="badge badge-lp">LP</span></td>
+    <td><span style="color:#2ecc71;font-weight:700">ALTA</span></td>
+    <td>$316.64</td>
+    <td>$8,122.10</td>
+    <td>1.03</td>
+    <td style="color:#58a6ff">+12.26%</td>
+    <td style="color:#e74c3c">$303.00</td>
+    <td style="color:#2ecc71">$364.14</td>
+    <td class="sub" style="font-size:.75rem;max-width:180px">JPM — horizonte LARGO PLAZO. Convicción ALTA. La tesis CAPM/Markowitz sostiene un Sharpe de 1.03 con</td>
+  </tr>
+  <tr>
+    <td><b>PBR</b></td>
+    <td><span class="badge badge-cp">CP</span></td>
+    <td><span style="color:#f39c12;font-weight:700">MEDIA</span></td>
+    <td>$20.79</td>
+    <td>$12,597.79</td>
+    <td>0.54</td>
+    <td style="color:#58a6ff">+9.24%</td>
+    <td style="color:#e74c3c">$18.96</td>
+    <td style="color:#2ecc71">$24.45</td>
+    <td class="sub" style="font-size:.75rem;max-width:180px">PBR — horizonte CORTO PLAZO. Convicción MEDIA. Setup técnico: RSI 50, momentum 1m +10.6%, momentum 3</td>
+  </tr>
+  <tr>
+    <td><b>AMD</b></td>
+    <td><span class="badge badge-cp">CP</span></td>
+    <td><span style="color:#f39c12;font-weight:700">MEDIA</span></td>
+    <td>$275.74</td>
+    <td>$12,566.68</td>
+    <td>0.44</td>
+    <td style="color:#58a6ff">-4.97%</td>
+    <td style="color:#e74c3c">$254.65</td>
+    <td style="color:#2ecc71">$317.92</td>
+    <td class="sub" style="font-size:.75rem;max-width:180px">AMD — horizonte CORTO PLAZO. Convicción MEDIA. Setup técnico: RSI 97, momentum 1m +37.0%, momentum 3</td>
+  </tr>
+  <tr>
+    <td><b>NEM</b></td>
+    <td><span class="badge badge-opt">OPT</span></td>
+    <td><span style="color:#f39c12;font-weight:700">MEDIA</span></td>
+    <td>$115.01</td>
+    <td>$5,032.89</td>
+    <td>1.17</td>
+    <td style="color:#58a6ff">+39.02%</td>
+    <td style="color:#e74c3c">—</td>
+    <td style="color:#2ecc71">—</td>
+    <td class="sub" style="font-size:.75rem;max-width:180px">NEM — apuesta alcista vía CALL (riesgo limitado a la prima). Strike $127.66, expiry 2026-05-19 (~29d</td>
+  </tr>
+  <tr>
+    <td><b>RIO</b></td>
+    <td><span class="badge badge-opt">OPT</span></td>
+    <td><span style="color:#2ecc71;font-weight:700">ALTA</span></td>
+    <td>$100.12</td>
+    <td>$5,032.89</td>
+    <td>1.05</td>
+    <td style="color:#58a6ff">+16.75%</td>
+    <td style="color:#e74c3c">—</td>
+    <td style="color:#2ecc71">—</td>
+    <td class="sub" style="font-size:.75rem;max-width:180px">RIO — apuesta alcista vía CALL (riesgo limitado a la prima). Strike $103.12, expiry 2026-05-19 (~29d</td>
+  </tr></tbody>
+  </table>
+  </div>
+</div>
+    
+<div class="card">
+  <div class="card-title">Radar del Universo</div>
+  <table>
+    <thead><tr><th>Ticker</th><th>Movimiento</th><th>Noticia</th></tr></thead>
+    <tbody><tr><td><b>AMD</b></td><td style="color:#2ecc71">▲ 0.0%</td><td class="sub"></td></tr><tr><td><b>PBR</b></td><td style="color:#2ecc71">▲ 0.0%</td><td class="sub"></td></tr><tr><td><b>JPM</b></td><td style="color:#2ecc71">▲ 0.0%</td><td class="sub"></td></tr><tr><td><b>GOOGL</b></td><td style="color:#2ecc71">▲ 0.0%</td><td class="sub"></td></tr><tr><td><b>RIO</b></td><td style="color:#2ecc71">▲ 0.0%</td><td class="sub"></td></tr><tr><td><b>NEM</b></td><td style="color:#2ecc71">▲ 0.0%</td><td class="sub"></td></tr><tr><td><b>RTX</b></td><td style="color:#2ecc71">▲ 0.0%</td><td class="sub"></td></tr><tr><td><b>GLD</b></td><td style="color:#2ecc71">▲ 0.0%</td><td class="sub"></td></tr><tr><td><b>ETHE</b></td><td style="color:#2ecc71">▲ 0.0%</td><td class="sub"></td></tr><tr><td><b>GOLD</b></td><td style="color:#2ecc71">▲ 0.0%</td><td class="sub"></td></tr></tbody>
+  </table>
+</div>
+  </div>
+</body>
+</html>
