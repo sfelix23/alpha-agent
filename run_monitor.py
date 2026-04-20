@@ -1,0 +1,346 @@
+"""
+Agente 3 — Monitor intradía de posiciones abiertas.
+
+Corre cada 30 minutos durante el horario de mercado (vía Task Scheduler).
+Revisa todas las posiciones abiertas en Alpaca y actúa si:
+    - Una posición tocó el stop loss → cierra
+    - Una posición tocó el take profit → cierra
+    - El equity total cayó más del kill switch % → cierra TODO
+    - Una posición subió lo suficiente → trailing stop activado
+
+Sólo manda WhatsApp cuando ACTÚA (cierra algo o detecta alerta crítica).
+Si todo está en orden, loguea y sale silenciosamente.
+
+Uso:
+    python run_monitor.py              # modo default (dry-run seguro)
+    python run_monitor.py --live       # ejecuta cierres reales en Alpaca
+    python run_monitor.py --dry-run    # loguea pero no cierra nada
+"""
+
+from __future__ import annotations
+
+import sys
+
+# Fix para Windows cp1252: forzar stdout/stderr a UTF-8
+if sys.platform == "win32" and hasattr(sys.stdout, "reconfigure"):
+    sys.stdout.reconfigure(encoding="utf-8", errors="replace")
+if sys.platform == "win32" and hasattr(sys.stderr, "reconfigure"):
+    sys.stderr.reconfigure(encoding="utf-8", errors="replace")
+
+import argparse
+import json
+import logging
+import sys
+from datetime import datetime
+from pathlib import Path
+
+from dotenv import load_dotenv
+from alpha_agent.news.claude_analyst import assess_position as claude_assess
+
+# ── Rutas absolutas (funciona sin importar el working directory de Task Scheduler)
+BASE_DIR = Path(__file__).parent.resolve()
+SIGNALS_PATH = BASE_DIR / "signals" / "latest.json"
+LOG_DIR = BASE_DIR / "logs"
+
+logger = logging.getLogger("monitor")
+
+
+def setup_logging():
+    LOG_DIR.mkdir(exist_ok=True)
+    log_file = LOG_DIR / f"monitor_{datetime.now().strftime('%Y-%m-%d')}.log"
+    logging.basicConfig(
+        level=logging.INFO,
+        format="[%(asctime)s] %(levelname)s %(name)s — %(message)s",
+        datefmt="%H:%M:%S",
+        handlers=[
+            logging.StreamHandler(sys.stdout),
+            logging.FileHandler(str(log_file), encoding="utf-8"),
+        ],
+    )
+
+
+def load_signals_latest() -> dict:
+    """Carga el último signals.json para obtener stops/TPs configurados."""
+    if not SIGNALS_PATH.exists():
+        logger.warning("signals/latest.json no encontrado en %s", SIGNALS_PATH)
+        return {}
+    try:
+        return json.loads(SIGNALS_PATH.read_text(encoding="utf-8"))
+    except Exception as e:
+        logger.warning("Error leyendo signals: %s", e)
+        return {}
+
+
+def get_signal_for_ticker(signals_data: dict, ticker: str) -> dict | None:
+    """Busca la señal del ticker en LP, CP, options."""
+    for bucket in ("long_term", "short_term", "options_book", "hedge_book"):
+        for sig in signals_data.get(bucket, []):
+            if sig.get("ticker") == ticker:
+                return sig
+    return None
+
+
+def current_price_from_position(pos) -> float:
+    """
+    Deriva el precio actual desde market_value / qty.
+    Position tiene: ticker, qty, avg_price, market_value, unrealized_pl, asset_class
+    """
+    if pos.qty and abs(pos.qty) > 0:
+        return pos.market_value / pos.qty
+    return pos.avg_price  # fallback
+
+
+def pnl_pct_from_position(pos) -> float:
+    """Retorna el P&L % como número (ej: 5.3 = +5.3%)"""
+    cost_basis = pos.avg_price * pos.qty
+    if cost_basis and abs(cost_basis) > 0:
+        return (pos.unrealized_pl / cost_basis) * 100.0
+    return 0.0
+
+
+def main():
+    parser = argparse.ArgumentParser(description="Monitor intradía de posiciones.")
+    parser.add_argument("--live", action="store_true", help="Ejecutar cierres reales en Alpaca.")
+    parser.add_argument("--dry-run", action="store_true", help="Loguear sin ejecutar.")
+    args = parser.parse_args()
+
+    load_dotenv(BASE_DIR / ".env")
+    setup_logging()
+
+    logger.info("=== MONITOR START === live=%s dry_run=%s", args.live, args.dry_run)
+
+    from trader_agent.brokers.alpaca_broker import AlpacaBroker
+    from alpha_agent.notifications import send_whatsapp
+    from alpha_agent.config import PARAMS
+
+    broker = AlpacaBroker(paper=True)
+
+    # ── 1. Check horario de mercado (salir temprano si el mercado está cerrado)
+    try:
+        market_open = broker.is_market_open()
+    except Exception as e:
+        logger.warning("No se pudo verificar horario de mercado: %s. Continuando igual.", e)
+        market_open = True  # asumir abierto si falla la consulta
+
+    if not market_open:
+        logger.info("Mercado cerrado en este momento. Monitor sale sin acción.")
+        return
+
+    # ── 2. Estado actual
+    try:
+        equity = broker.get_equity()
+        positions = broker.get_positions()
+    except Exception as e:
+        logger.error("Error conectando a Alpaca: %s", e)
+        return
+
+    logger.info("💰 Equity: $%.2f | Posiciones: %d", equity, len(positions))
+
+    if not positions:
+        logger.info("Sin posiciones abiertas. Nada que monitorear.")
+        return
+
+    # ── 3. Cargar stops/TPs del último análisis
+    signals_data = load_signals_latest()
+    capital_base = signals_data.get("capital_usd", PARAMS.paper_capital_usd)
+
+    # ── 4. Kill switch: equity cayó más del threshold desde el capital base
+    kill_switch_pct = 0.03  # -3%
+    drawdown = (capital_base - equity) / capital_base if capital_base > 0 else 0
+
+    alerts: list[str] = []
+    closes: list[str] = []
+
+    # ── 5. KILL SWITCH CHECK
+    if drawdown >= kill_switch_pct:
+        logger.warning("🚨 KILL SWITCH activado! DD=%.2f%% (threshold=%.0f%%)",
+                       drawdown * 100, kill_switch_pct * 100)
+        alerts.append(
+            f"🚨 *KILL SWITCH* activado\n"
+            f"Equity: ${equity:.0f} (DD {drawdown*100:.1f}% desde ${capital_base:.0f})"
+        )
+
+        if args.live and not args.dry_run:
+            logger.warning("Cerrando TODAS las posiciones...")
+            try:
+                broker._trading.close_all_positions(cancel_orders=True)
+                closes.append("ALL (kill switch)")
+                alerts.append("✅ Todas las posiciones cerradas.")
+            except Exception as e:
+                alerts.append(f"❌ Error cerrando posiciones: {e}")
+                logger.error("Error en kill switch: %s", e)
+        else:
+            alerts.append("_(dry-run: no se cerraron posiciones)_")
+
+    else:
+        # ── 6. POR POSICIÓN: check stops, TPs, trailing
+        for pos in positions:
+            ticker = pos.ticker
+            avg_entry = pos.avg_price
+            qty = pos.qty
+            current = current_price_from_position(pos)
+            unrealized_pnl = pos.unrealized_pl
+            pnl_pct = pnl_pct_from_position(pos)
+
+            signal = get_signal_for_ticker(signals_data, ticker)
+            if not signal:
+                logger.debug("Sin señal guardada para %s — skip", ticker)
+                continue
+
+            stop_loss = signal.get("stop_loss")
+            take_profit = signal.get("take_profit")
+            macro_regime = signals_data.get("macro", {}).get("regime", "unknown")
+
+            action = None
+            reason = ""
+            claude_override = False
+
+            # Check stop loss
+            if stop_loss and current <= stop_loss:
+                action = "CLOSE"
+                reason = f"STOP LOSS tocado (${current:.2f} ≤ SL ${stop_loss:.2f})"
+
+            # Check take profit
+            elif take_profit and current >= take_profit:
+                action = "CLOSE"
+                reason = f"TAKE PROFIT alcanzado (${current:.2f} ≥ TP ${take_profit:.2f})"
+
+            # Trailing stop dinámico
+            elif avg_entry > 0:
+                gain_pct = (current - avg_entry) / avg_entry
+
+                if gain_pct >= 0.10:
+                    trail_stop = avg_entry + (current - avg_entry) * 0.5
+                    if current <= trail_stop:
+                        action = "CLOSE"
+                        reason = (
+                            f"TRAILING -50% PROFIT "
+                            f"(+{gain_pct*100:.1f}% → trail ${trail_stop:.2f})"
+                        )
+
+                elif gain_pct >= 0.05:
+                    if current <= avg_entry * 1.005:
+                        action = "CLOSE"
+                        reason = (
+                            f"BREAKEVEN STOP "
+                            f"(ganaba +{gain_pct*100:.1f}%, volvió al entry ${avg_entry:.2f})"
+                        )
+
+            # ── Claude intelligence: consultar cuando estamos cerca del stop ──
+            # Si el precio está dentro del 1.5% del stop loss (pero no lo tocó),
+            # o si el stop fue tocado, pedimos a Claude que evalúe con contexto noticioso.
+            near_stop = (
+                stop_loss is not None
+                and current > stop_loss
+                and (current - stop_loss) / stop_loss < 0.015
+            )
+
+            if (action == "CLOSE" or near_stop) and not claude_override:
+                news_for_ticker: list[str] = []
+                try:
+                    thesis = signal.get("thesis", {})
+                    news_for_ticker = thesis.get("news", {}).get("headlines", [])
+                    if not news_for_ticker:
+                        news_for_ticker = []
+                except Exception:
+                    pass
+
+                claude_result = claude_assess(
+                    ticker=ticker,
+                    current_price=current,
+                    entry_price=avg_entry,
+                    pnl_pct=pnl_pct,
+                    stop_loss=stop_loss,
+                    news_headlines=news_for_ticker,
+                    macro_regime=macro_regime,
+                )
+
+                if claude_result:
+                    claude_action = claude_result["action"]
+                    claude_reason = claude_result["reason"]
+                    claude_conf = claude_result["confidence"]
+                    logger.info(
+                        "🤖 Claude sobre %s: %s (conf=%.0f%%) — %s",
+                        ticker, claude_action, claude_conf * 100, claude_reason,
+                    )
+
+                    if near_stop and action is None:
+                        # Stop no tocado pero cerca: Claude puede recomendar cerrar anticipadamente
+                        if claude_action == "CLOSE" and claude_conf >= 0.75:
+                            action = "CLOSE"
+                            reason = f"CIERRE ANTICIPADO por Claude: {claude_reason}"
+                            claude_override = True
+                        elif claude_action == "REDUCE" and claude_conf >= 0.70:
+                            action = "REDUCE"
+                            reason = f"REDUCCIÓN por Claude: {claude_reason}"
+                            claude_override = True
+                    elif action == "CLOSE":
+                        # Stop tocado pero Claude dice HOLD con alta confianza → no cerrar
+                        if claude_action == "HOLD" and claude_conf >= 0.80:
+                            logger.warning(
+                                "🤖 Claude veta el cierre de %s (conf=%.0f%%) — %s",
+                                ticker, claude_conf * 100, claude_reason,
+                            )
+                            alerts.append(
+                                f"🤖 *{ticker}*: stop técnico alcanzado PERO Claude recomienda HOLD "
+                                f"(conf={claude_conf:.0%}) — {claude_reason}"
+                            )
+                            action = None  # No cerramos — Claude overrides the mechanical stop
+
+            if action in ("CLOSE", "REDUCE"):
+                log_msg = f"⚠️ {ticker}: {reason} | P&L: ${unrealized_pnl:+.2f} ({pnl_pct:+.1f}%)"
+                logger.warning(log_msg)
+                alerts.append(f"⚠️ *{ticker}*: {reason} | P&L ${unrealized_pnl:+.2f}")
+
+                if args.live and not args.dry_run:
+                    try:
+                        from alpaca.trading.requests import MarketOrderRequest
+                        from alpaca.trading.enums import OrderSide, TimeInForce
+                        sell_qty = abs(qty) if action == "CLOSE" else abs(qty) / 2
+                        order = MarketOrderRequest(
+                            symbol=ticker,
+                            qty=sell_qty,
+                            side=OrderSide.SELL,
+                            time_in_force=TimeInForce.DAY,
+                        )
+                        broker._trading.submit_order(order)
+                        label = "SELL" if action == "CLOSE" else "SELL HALF"
+                        closes.append(f"{ticker} ({reason[:30]})")
+                        alerts.append(f"  ✅ {label} enviado: {sell_qty:.4f} {ticker}")
+                    except Exception as e:
+                        alerts.append(f"  ❌ Error cerrando {ticker}: {e}")
+                        logger.error("Error cerrando %s: %s", ticker, e)
+                else:
+                    alerts.append("  _(dry-run: orden no enviada)_")
+
+            else:
+                # Posición OK
+                logger.info(
+                    "✅ %s: $%.2f (entry $%.2f) | P&L $%+.2f (%+.1f%%) — OK",
+                    ticker, current, avg_entry, unrealized_pnl, pnl_pct,
+                )
+
+    # ── 7. REPORTE
+    if alerts:
+        now = datetime.now().strftime("%H:%M")
+        header = f"🔔 *MONITOR* · {now} · ${equity:.0f}"
+        body = "\n".join(alerts)
+        footer_parts = [f"\nPosiciones abiertas: {len(positions)}"]
+        if closes:
+            footer_parts.append(f"Cerradas: {', '.join(closes)}")
+        footer = "\n".join(footer_parts)
+
+        msg = f"{header}\n{body}{footer}"
+        logger.info("Enviando alerta WhatsApp (%d chars)...", len(msg))
+        try:
+            send_whatsapp(msg)
+        except Exception as e:
+            logger.error("Error enviando WhatsApp: %s", e)
+    else:
+        logger.info("📊 Todas las posiciones dentro de rango. Sin alertas.")
+
+    logger.info("=== MONITOR OK ===")
+
+
+if __name__ == "__main__":
+    main()

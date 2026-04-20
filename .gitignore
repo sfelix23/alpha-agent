@@ -1,0 +1,71 @@
+# ── Credenciales (NUNCA subir) ────────────────────────────────────────────
+.env
+*.env.*
+
+# ── Runtime generado ─────────────────────────────────────────────────────
+logs/
+signals/signals_*.json
+dashboard.html
+alpha_agent/data/cache/
+.cache/
+.cache_bak/
+equity_history.json
+
+# ── Python ────────────────────────────────────────────────────────────────
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.so
+
+# ── Paquetes instalados localmente (se reinstalan desde requirements.txt) ─
+*.dist-info/
+*.data/
+aiohttp/
+aiohttp_retry/
+aiosignal/
+aiohappyeyeballs/
+alpaca/
+alpaca_trade_api/
+anthropic/
+attr/
+attrs/
+bin/
+certifi/
+charset_normalizer/
+feedparser/
+frozenlist/
+google/
+idna/
+jwt/
+multidict/
+propcache/
+requests/
+twilio/
+urllib3/
+yarl/
+httpcore/
+httpx/
+anyio/
+sniffio/
+h11/
+distlib/
+
+# ── Binarios ──────────────────────────────────────────────────────────────
+*.exe
+*.pyd
+81d243bd2c585b0f4821__mypyc.cp313-win_amd64.pyd
+
+# ── Dashboard dinámico ────────────────────────────────────────────────────
+dashboard/
+dashboardstatic/
+dashboardtemplates/
+
+# ── Editor / tools ───────────────────────────────────────────────────────
+.vscode/
+.claude/
+
+# ── OS ────────────────────────────────────────────────────────────────────
+.DS_Store
+Thumbs.db
+desktop.ini
