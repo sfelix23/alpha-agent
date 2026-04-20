@@ -1,14 +1,20 @@
 """
-Scoring compuesto LP / CP + guards de diversificación.
+Scoring compuesto LP / CP — versión mejorada.
 
-Pipeline:
-    1. Filtro de calidad LP (beta razonable + Sharpe mínimo).
-    2. Ranking inicial por Sharpe.
-    3. **Guard de correlación**: iterativamente agrega al shortlist el siguiente
-       mejor activo que NO esté altamente correlacionado con los ya elegidos.
-       Evita que la cartera termine con 4 commodities cuando el universo tiene 47.
-    4. **Guard sectorial**: limita el peso por sector (MAX_SECTOR_WEIGHT_LP).
-    5. Short-term scoring con técnicos (RSI, momentum, alpha).
+Pipeline LP:
+  1. Filtro de calidad: beta razonable + Sharpe mínimo + tendencia alcista (EMA50).
+  2. Ranking por Sharpe + alpha.
+  3. Boost por rotación sectorial (sector con mejor momentum +35%).
+  4. Guard de correlación y sector.
+
+Pipeline CP:
+  1. Score de momentum con confirmación de volumen y MACD.
+  2. Bonus por breakout técnico (precio en máximos con volumen).
+  3. Boost por rotación sectorial.
+  4. Penalización si RSI > 75 (no comprar lo que ya subió demasiado).
+
+La incorporación de volume, MACD y EMA permite capturar movimientos
+con convicción institucional, no solo quant puro.
 """
 
 from __future__ import annotations
@@ -42,20 +48,6 @@ def filter_by_correlation_and_sector(
     max_pair_corr: float = MAX_PAIR_CORRELATION,
     max_sector_count: int = 2,
 ) -> list[str]:
-    """
-    Greedy filter: recorre candidatos ordenados por ranking y solo acepta
-    aquellos que (a) no estén fuertemente correlacionados con los ya aceptados,
-    y (b) no excedan el cupo de activos por sector.
-
-    Args:
-        candidates_sorted: tickers ordenados por score descendente.
-        returns: DataFrame de retornos diarios (cols=ticker).
-        max_pair_corr: correlación máxima ρ entre cualquier par aceptado.
-        max_sector_count: máximo de activos aceptados por sector.
-
-    Returns:
-        Lista filtrada (mantiene orden del ranking).
-    """
     accepted: list[str] = []
     sector_count: dict[str, int] = {}
     corr_matrix = returns.corr()
@@ -64,18 +56,13 @@ def filter_by_correlation_and_sector(
         if t not in corr_matrix.columns:
             continue
         sector = SECTOR_MAP.get(t, "Other")
-        # cupo sectorial
         if sector_count.get(sector, 0) >= max_sector_count:
             continue
-        # correlación con los ya aceptados
         skip = False
         for acc in accepted:
             rho = corr_matrix.loc[t, acc]
             if pd.notna(rho) and abs(rho) > max_pair_corr:
-                logger.info(
-                    "  ⊘ %s descartado: ρ=%.2f con %s (sector %s)",
-                    t, rho, acc, sector,
-                )
+                logger.info("  ⊘ %s descartado: ρ=%.2f con %s (sector %s)", t, rho, acc, sector)
                 skip = True
                 break
         if skip:
@@ -87,12 +74,21 @@ def filter_by_correlation_and_sector(
 
 
 def compute_sector_weights(weights: pd.Series) -> dict[str, float]:
-    """Devuelve el peso agregado por sector de una serie de pesos."""
     out: dict[str, float] = {}
     for t, w in weights.items():
         sector = SECTOR_MAP.get(t, "Other")
         out[sector] = out.get(sector, 0.0) + float(w)
     return out
+
+
+def _get_sector_boost(tickers: list[str]) -> dict[str, float]:
+    """Carga el sector boost de rotación. Si falla, devuelve neutro (1.0)."""
+    try:
+        from alpha_agent.macro.sector_rotation import build_sector_boost
+        return build_sector_boost(tickers)
+    except Exception as exc:
+        logger.debug("sector_rotation no disponible (%s)", exc)
+        return {t: 1.0 for t in tickers}
 
 
 def build_scores(
@@ -102,45 +98,93 @@ def build_scores(
     closes: pd.DataFrame | None = None,
 ) -> dict[str, pd.DataFrame]:
     """
-    Devuelve {'long_term': df, 'short_term': df} con rankings.
-
-    Si se pasa `closes`, aplica el guard de correlación y sector sobre los
-    candidatos LP (shortlist más diversa).
+    Devuelve {'long_term': df, 'short_term': df} con rankings mejorados.
     """
     df = capm.join(technical, how="inner")
 
-    # ── LONG TERM ──────────────────────────────────────────────────────
+    all_tickers = df.index.tolist()
+    sector_boost = _get_sector_boost(all_tickers)
+
+    # ── LONG TERM ─────────────────────────────────────────────────────────────
     lp = df[
         (df["beta"].abs() <= PARAMS.max_beta_lp)
         & (df["sharpe"] >= PARAMS.min_sharpe_lp)
     ].copy()
     lp = lp.sort_values("sharpe", ascending=False)
+
+    # Score base: Sharpe + alpha Jensen
     lp["score_lp"] = _zscore(lp["sharpe"]) + 0.5 * _zscore(lp["alpha_jensen"])
 
-    # Guard de correlación y sector (si tenemos los precios)
+    # Bonus EMA50: solo activos en tendencia alcista
+    if "above_ema50" in lp.columns:
+        lp["score_lp"] += 0.3 * lp["above_ema50"].fillna(0)
+
+    # Bonus MACD bullish
+    if "macd_bullish" in lp.columns:
+        lp["score_lp"] += 0.2 * lp["macd_bullish"].fillna(0)
+
+    # Bonus volumen: convicción institucional
+    if "vol_ratio" in lp.columns:
+        vol_signal = (lp["vol_ratio"].fillna(1.0) - 1.0).clip(lower=0)
+        lp["score_lp"] += 0.15 * _zscore(vol_signal)
+
+    # Boost por rotación sectorial
+    lp["score_lp"] *= lp.index.map(lambda t: sector_boost.get(t, 1.0))
+
+    lp = lp.sort_values("score_lp", ascending=False)
+
+    # Guard de correlación y sector
     if closes is not None and len(lp) > 1:
         returns = np.log(closes / closes.shift(1)).dropna(how="all")
         returns = returns[[c for c in lp.index if c in returns.columns]]
         ranking = lp.index.tolist()
-        # tamaño del shortlist: el doble del top_n para dejarle margen a Markowitz
         target = PARAMS.top_n_long_term * 2
         logger.info("Aplicando guard correlación/sector a %d candidatos LP…", len(ranking))
         kept = filter_by_correlation_and_sector(ranking, returns)[:target]
         logger.info("Shortlist LP post-guard: %s", kept)
         lp = lp.loc[kept]
 
-    # ── SHORT TERM ─────────────────────────────────────────────────────
+    # ── SHORT TERM ────────────────────────────────────────────────────────────
     st = df.copy()
-    rsi_signal = (PARAMS.rsi_oversold - st["rsi"]).clip(lower=0)  # solo cuenta si está en sobreventa
-    high_penalty = st["dist_52w_high"].clip(upper=0).abs()        # penaliza si está pegado al techo
+
+    # Score base: momentum ponderado
+    rsi_signal   = (PARAMS.rsi_oversold - st["rsi"]).clip(lower=0)
+    high_penalty = st["dist_52w_high"].clip(upper=0).abs()
 
     score_st = (
-        0.40 * _zscore(st["ret_1m"])
-        + 0.30 * _zscore(st["ret_3m"])
-        + 0.20 * _zscore(rsi_signal)
+        0.30 * _zscore(st["ret_1m"].fillna(0))
+        + 0.20 * _zscore(st["ret_3m"].fillna(0))
+        + 0.15 * _zscore(rsi_signal)
         + 0.10 * _zscore(st["alpha_jensen"].clip(lower=0))
-        - 0.10 * _zscore(-high_penalty)  # más penalización si está pegado al techo
+        - 0.10 * _zscore(-high_penalty)
     )
+
+    # Bonus MACD: tendencia con momentum (alto impacto en CP)
+    if "macd_bullish" in st.columns:
+        score_st += 0.15 * st["macd_bullish"].fillna(0)
+
+    # Bonus volumen: movimiento con convicción
+    if "vol_ratio" in st.columns:
+        vol_signal_st = (st["vol_ratio"].fillna(1.0) - 1.0).clip(lower=0)
+        score_st += 0.15 * _zscore(vol_signal_st)
+
+    # Bonus breakout: precio en máximos con volumen → señal de ruptura
+    if "breakout" in st.columns:
+        score_st += 0.20 * st["breakout"].fillna(0)
+
+    # Bonus golden cross
+    if "golden_cross" in st.columns:
+        score_st += 0.10 * st["golden_cross"].fillna(0)
+
+    # Penalización RSI sobrecomprado (no perseguir rallies tardíos)
+    if "rsi" in st.columns:
+        score_st -= 0.15 * (st["rsi"].fillna(50) > 75).astype(float)
+
+    # Boost sectorial CP (más agresivo que LP)
+    score_st *= pd.Series(
+        [sector_boost.get(t, 1.0) for t in st.index], index=st.index
+    )
+
     st["score_st"] = score_st
     st = st.sort_values("score_st", ascending=False)
 

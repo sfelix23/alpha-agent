@@ -132,15 +132,26 @@ def _download_ohlc(ticker: str) -> pd.DataFrame | None:
     return df
 
 
-def download_universe() -> tuple[pd.DataFrame, dict[str, pd.DataFrame]]:
+def download_universe(
+    extra_tickers: list[str] | None = None,
+) -> tuple[pd.DataFrame, dict[str, pd.DataFrame]]:
     """
-    Descarga todo el universo definido en config.ACTIVOS.
+    Descarga todo el universo definido en config.ACTIVOS, más cualquier
+    ticker adicional descubierto por el Discovery Agent.
+
+    Args:
+        extra_tickers: lista de tickers extra (del screener), puede ser None.
 
     Returns:
         closes: DataFrame de cierres ajustados (index=fecha, cols=ticker).
         ohlc:   dict {ticker: DataFrame OHLCV} para indicadores técnicos.
     """
     tickers = list(ACTIVOS.values())
+    if extra_tickers:
+        new = [t for t in extra_tickers if t not in tickers]
+        if new:
+            logger.info("Discovery: agregando %d tickers al universo: %s", len(new), new)
+            tickers = tickers + new
     if BENCHMARK_TICKER not in tickers:
         tickers = [BENCHMARK_TICKER, *tickers]
 

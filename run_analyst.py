@@ -73,7 +73,8 @@ def main() -> None:
     parser = argparse.ArgumentParser(description="Agente Alpha — análisis cuantitativo del universo.")
     parser.add_argument("--send", action="store_true", help="Enviar a WhatsApp sin preguntar.")
     parser.add_argument("--no-send", action="store_true", help="No enviar a WhatsApp ni preguntar.")
-    parser.add_argument("--no-ai", action="store_true", help="No usar Gemini, brief determinístico.")
+    parser.add_argument("--no-ai", action="store_true", help="No usar Gemini/Claude, brief determinístico.")
+    parser.add_argument("--no-discovery", action="store_true", help="Saltar el Discovery Agent.")
     parser.add_argument("--capital", type=float, default=None, help="Override del capital paper en USD.")
     args = parser.parse_args()
 
@@ -82,11 +83,23 @@ def main() -> None:
     log = logging.getLogger("alpha_agent")
 
     capital = args.capital if args.capital else PARAMS.paper_capital_usd
-    log.info("🏛️  INICIANDO AGENTE ALPHA — %s", datetime.now().isoformat(timespec="seconds"))
-    log.info("💰 Capital paper: $%.2f USD", capital)
+    log.info("INICIANDO AGENTE ALPHA — %s", datetime.now().isoformat(timespec="seconds"))
+    log.info("Capital paper: $%.2f USD", capital)
 
-    # 1. Datos
-    closes, ohlc = download_universe()
+    # 0. Discovery Agent — busca activos con potencial fuera del universo fijo
+    discovered: list[str] = []
+    if not args.no_discovery:
+        try:
+            log.info("Agente Discovery: escaneando oportunidades externas...")
+            from alpha_agent.discovery.screener import run_discovery
+            discovered = run_discovery(max_new=6)
+            if discovered:
+                log.info("Discovery encontro: %s", discovered)
+        except Exception as exc:
+            log.warning("Discovery fallo (no critico): %s", exc)
+
+    # 1. Datos (universo fijo + descubiertos)
+    closes, ohlc = download_universe(extra_tickers=discovered if discovered else None)
     benchmark = load_benchmark(closes)
     log.info("Universo cargado: %d activos con datos válidos", closes.shape[1])
 
