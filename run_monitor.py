@@ -98,6 +98,28 @@ def pnl_pct_from_position(pos) -> float:
     return 0.0
 
 
+def _update_trailing_stop(
+    broker,
+    ticker: str,
+    new_stop: float,
+    qty: float,
+    live: bool,
+    alerts: list,
+    description: str,
+) -> None:
+    """Actualiza el stop loss en Alpaca y registra la alerta."""
+    logger.info("Trailing stop %s: %s", ticker, description)
+    alerts.append(f"📈 *{ticker}* trailing stop actualizado — {description}")
+    if live:
+        oid = broker.update_stop_loss(ticker, new_stop, qty)
+        if oid:
+            alerts.append(f"  ✅ Stop order enviado (id={oid})")
+        else:
+            alerts.append(f"  ⚠️ No se pudo enviar stop order")
+    else:
+        alerts.append("  _(dry-run: stop no enviado a Alpaca)_")
+
+
 def main():
     parser = argparse.ArgumentParser(description="Monitor intradía de posiciones.")
     parser.add_argument("--live", action="store_true", help="Ejecutar cierres reales en Alpaca.")
@@ -198,33 +220,47 @@ def main():
             # Check stop loss
             if stop_loss and current <= stop_loss:
                 action = "CLOSE"
-                reason = f"STOP LOSS tocado (${current:.2f} ≤ SL ${stop_loss:.2f})"
+                reason = f"STOP LOSS tocado (${current:.2f} <= SL ${stop_loss:.2f})"
 
             # Check take profit
             elif take_profit and current >= take_profit:
                 action = "CLOSE"
-                reason = f"TAKE PROFIT alcanzado (${current:.2f} ≥ TP ${take_profit:.2f})"
+                reason = f"TAKE PROFIT alcanzado (${current:.2f} >= TP ${take_profit:.2f})"
 
-            # Trailing stop dinámico
+            # Trailing stop dinámico — actualiza stop en Alpaca proactivamente
             elif avg_entry > 0:
                 gain_pct = (current - avg_entry) / avg_entry
 
                 if gain_pct >= 0.10:
-                    trail_stop = avg_entry + (current - avg_entry) * 0.5
-                    if current <= trail_stop:
-                        action = "CLOSE"
-                        reason = (
-                            f"TRAILING -50% PROFIT "
-                            f"(+{gain_pct*100:.1f}% → trail ${trail_stop:.2f})"
+                    # Bloquear 50% de la ganancia acumulada
+                    new_trail = avg_entry + (current - avg_entry) * 0.50
+                    current_sl = signal.get("stop_loss") or 0.0
+                    if new_trail > current_sl + 0.01:
+                        _update_trailing_stop(
+                            broker, ticker, new_trail, abs(qty), args.live and not args.dry_run,
+                            alerts,
+                            f"+{gain_pct*100:.1f}% -> bloqueando 50% ganancia @ ${new_trail:.2f}",
                         )
+                        # Actualizar en signals para este run
+                        signal["stop_loss"] = new_trail
 
                 elif gain_pct >= 0.05:
-                    if current <= avg_entry * 1.005:
-                        action = "CLOSE"
-                        reason = (
-                            f"BREAKEVEN STOP "
-                            f"(ganaba +{gain_pct*100:.1f}%, volvió al entry ${avg_entry:.2f})"
+                    # Mover stop a breakeven (+0.5% sobre entrada)
+                    new_trail = avg_entry * 1.005
+                    current_sl = signal.get("stop_loss") or 0.0
+                    if new_trail > current_sl + 0.01:
+                        _update_trailing_stop(
+                            broker, ticker, new_trail, abs(qty), args.live and not args.dry_run,
+                            alerts,
+                            f"+{gain_pct*100:.1f}% -> moviendo stop a breakeven @ ${new_trail:.2f}",
                         )
+                        signal["stop_loss"] = new_trail
+
+                # Evaluar si el trailing ya fue tocado con el stop actualizado
+                updated_sl = signal.get("stop_loss")
+                if updated_sl and current <= updated_sl and gain_pct > 0:
+                    action = "CLOSE"
+                    reason = f"TRAILING STOP TOCADO (${current:.2f} <= ${updated_sl:.2f})"
 
             # ── Claude intelligence: consultar cuando estamos cerca del stop ──
             # Si el precio está dentro del 1.5% del stop loss (pero no lo tocó),

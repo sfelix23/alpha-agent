@@ -34,6 +34,8 @@ import pandas as pd
 from alpha_agent.analytics.capm import compute_capm_metrics
 from alpha_agent.analytics.markowitz import optimize_portfolio
 from alpha_agent.analytics.scoring import build_scores
+from alpha_agent.analytics.technical import compute_technical_indicators
+from alpha_agent.analytics.kelly import blend_markowitz_kelly
 from alpha_agent.config import BENCHMARK_TICKER, PARAMS
 
 logger = logging.getLogger(__name__)
@@ -54,21 +56,42 @@ class BacktestResult:
     turnover_annual: float
     equity_curve: pd.Series = field(default_factory=lambda: pd.Series(dtype=float))
     rebalance_log: list[dict] = field(default_factory=list)
+    benchmark_cagr: float = 0.0
+    benchmark_sharpe: float = 0.0
+    benchmark_max_dd: float = 0.0
 
     def summary(self) -> str:
+        alpha = self.cagr - self.benchmark_cagr
         lines = [
-            "═══════════ BACKTEST WALK-FORWARD ═══════════",
-            f"Período:         {self.start_date} → {self.end_date}",
-            f"Capital inicial: ${self.initial_capital:,.2f}",
-            f"Capital final:   ${self.final_equity:,.2f}",
-            f"Retorno total:   {self.total_return*100:+.2f}%",
-            f"CAGR:            {self.cagr*100:+.2f}%",
-            f"Sharpe OOS:      {self.sharpe:.2f}",
-            f"Max drawdown:    {self.max_drawdown*100:.2f}%",
-            f"Rebalanceos:     {self.n_rebalances}",
-            f"Posiciones prom: {self.avg_positions:.1f}",
-            f"Turnover anual:  {self.turnover_annual*100:.0f}%",
-            "═" * 47,
+            "═" * 52,
+            "   BACKTEST WALK-FORWARD — Alpha Agent",
+            "═" * 52,
+            f"  Período          {self.start_date} → {self.end_date}",
+            f"  Capital inicial  ${self.initial_capital:,.2f}",
+            f"  Capital final    ${self.final_equity:,.2f}",
+            "",
+            "  ── Estrategia ──────────────────────────────",
+            f"  Retorno total    {self.total_return*100:+.2f}%",
+            f"  CAGR             {self.cagr*100:+.2f}%",
+            f"  Sharpe OOS       {self.sharpe:.2f}",
+            f"  Max Drawdown     {self.max_drawdown*100:.2f}%",
+            "",
+        ]
+        if self.benchmark_cagr:
+            lines += [
+                "  ── vs SPY Buy & Hold ───────────────────────",
+                f"  CAGR SPY         {self.benchmark_cagr*100:+.2f}%",
+                f"  Sharpe SPY       {self.benchmark_sharpe:.2f}",
+                f"  Max DD SPY       {self.benchmark_max_dd*100:.2f}%",
+                f"  Alpha generado   {alpha*100:+.2f}% anual",
+                "",
+            ]
+        lines += [
+            "  ── Operativa ───────────────────────────────",
+            f"  Rebalanceos      {self.n_rebalances}",
+            f"  Posiciones prom  {self.avg_positions:.1f}",
+            f"  Turnover anual   {self.turnover_annual*100:.0f}%",
+            "═" * 52,
         ]
         return "\n".join(lines)
 
@@ -90,7 +113,10 @@ def _build_target_weights(
     benchmark_window: pd.Series,
     technical_snapshot: pd.DataFrame,
 ) -> pd.Series:
-    """Corre el pipeline del scoring con una ventana y devuelve pesos target."""
+    """
+    Pipeline completo: CAPM + scoring (con MACD/EMA/volumen) + Markowitz + Kelly blend.
+    Devuelve pesos target para LP sleeve.
+    """
     capm = compute_capm_metrics(closes_window, benchmark_window)
     if capm.empty:
         return pd.Series(dtype=float)
@@ -107,36 +133,44 @@ def _build_target_weights(
         return pd.Series(dtype=float)
 
     weights = port["weights"]
+    # Kelly blend: combina Markowitz con half-Kelly para mejorar retorno compuesto
+    try:
+        weights = blend_markowitz_kelly(weights, capm)
+    except Exception:
+        pass
+
     top = weights[weights > 0].head(PARAMS.top_n_long_term)
     if top.sum() == 0:
         return pd.Series(dtype=float)
-    # renormalizar al sleeve LP (dejamos CP y cash fuera del backtest por simplicidad)
     return top / top.sum() * PARAMS.weight_long_term
 
 
 def _technical_snapshot(ohlc: dict[str, pd.DataFrame], as_of: pd.Timestamp) -> pd.DataFrame:
-    """Versión simplificada del technical: solo lo que necesita scoring."""
-    rows = []
-    for t, df in ohlc.items():
-        sub = df.loc[df.index <= as_of]
-        if len(sub) < 60:
-            continue
-        close = sub["Close"]
-        last_price = float(close.iloc[-1])
-        ret_1m = float(close.iloc[-1] / close.iloc[-21] - 1) if len(close) >= 22 else np.nan
-        ret_3m = float(close.iloc[-1] / close.iloc[-63] - 1) if len(close) >= 64 else np.nan
-        high_52w = float(close.tail(252).max())
-        rows.append({
-            "ticker": t,
-            "price": last_price,
-            "rsi": 50.0,              # placeholder — RSI no afecta LP scoring
-            "atr": 0.0,
-            "stop_loss_atr": np.nan,
-            "ret_1m": ret_1m,
-            "ret_3m": ret_3m,
-            "dist_52w_high": last_price / high_52w - 1 if high_52w > 0 else np.nan,
-        })
-    return pd.DataFrame(rows).set_index("ticker")
+    """
+    Calcula indicadores técnicos reales (MACD, EMA, RSI, volumen, breakout)
+    usando solo datos hasta `as_of` para evitar look-ahead bias.
+    """
+    # Recortar cada OHLC a la ventana permitida
+    ohlc_window = {t: df.loc[df.index <= as_of] for t, df in ohlc.items() if len(df.loc[df.index <= as_of]) >= 60}
+    if not ohlc_window:
+        return pd.DataFrame()
+    try:
+        return compute_technical_indicators(ohlc_window)
+    except Exception as e:
+        logger.warning("Technical snapshot falló (%s), usando fallback simplificado.", e)
+        rows = []
+        for t, df in ohlc_window.items():
+            close = df["Close"]
+            last_price = float(close.iloc[-1])
+            ret_1m = float(close.iloc[-1] / close.iloc[-21] - 1) if len(close) >= 22 else np.nan
+            ret_3m = float(close.iloc[-1] / close.iloc[-63] - 1) if len(close) >= 64 else np.nan
+            high_52w = float(close.tail(252).max())
+            rows.append({
+                "ticker": t, "price": last_price, "rsi": 50.0, "atr": 0.0,
+                "stop_loss_atr": np.nan, "ret_1m": ret_1m, "ret_3m": ret_3m,
+                "dist_52w_high": last_price / high_52w - 1 if high_52w > 0 else np.nan,
+            })
+        return pd.DataFrame(rows).set_index("ticker")
 
 
 def run_backtest(
@@ -239,6 +273,19 @@ def run_backtest(
     n_years_eff = max(n_years, 0.01)
     turnover_ann = total_turnover / n_years_eff
 
+    # ── Benchmark SPY buy & hold ──────────────────────────────────────
+    bench_cagr = bench_sharpe = bench_dd = 0.0
+    try:
+        spy = closes[BENCHMARK_TICKER].reindex(eq_series.index).ffill().dropna()
+        spy_eq = initial_capital * spy / spy.iloc[0]
+        spy_rets = spy_eq.pct_change().dropna()
+        spy_total = spy_eq.iloc[-1] / initial_capital - 1
+        bench_cagr  = (1 + spy_total) ** (1 / n_years_eff) - 1
+        bench_sharpe = _annualized_sharpe(spy_rets)
+        bench_dd    = _max_drawdown(spy_eq)
+    except Exception as e:
+        logger.debug("Benchmark calc falló: %s", e)
+
     return BacktestResult(
         start_date=str(eq_series.index[0].date()),
         end_date=str(eq_series.index[-1].date()),
@@ -253,4 +300,7 @@ def run_backtest(
         turnover_annual=float(turnover_ann),
         equity_curve=eq_series,
         rebalance_log=rebalance_log,
+        benchmark_cagr=float(bench_cagr),
+        benchmark_sharpe=float(bench_sharpe),
+        benchmark_max_dd=float(bench_dd),
     )

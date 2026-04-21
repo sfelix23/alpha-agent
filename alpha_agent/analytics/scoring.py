@@ -101,6 +101,16 @@ def _get_earnings_soon(tickers: list[str]) -> set[str]:
         return set()
 
 
+def _get_intraday_signals(tickers: list[str]) -> dict[str, float]:
+    """Señales intraday 15 min para CP. Falla silenciosamente."""
+    try:
+        from alpha_agent.data.intraday import fetch_intraday_signals
+        return fetch_intraday_signals(tickers)
+    except Exception as exc:
+        logger.debug("intraday signals no disponible (%s)", exc)
+        return {t: 0.0 for t in tickers}
+
+
 def build_scores(
     capm: pd.DataFrame,
     technical: pd.DataFrame,
@@ -113,8 +123,9 @@ def build_scores(
     df = capm.join(technical, how="inner")
 
     all_tickers = df.index.tolist()
-    sector_boost = _get_sector_boost(all_tickers)
-    earnings_soon = _get_earnings_soon(all_tickers)
+    sector_boost    = _get_sector_boost(all_tickers)
+    earnings_soon   = _get_earnings_soon(all_tickers)
+    intraday_scores = _get_intraday_signals(all_tickers)
 
     # ── LONG TERM ─────────────────────────────────────────────────────────────
     lp = df[
@@ -196,7 +207,14 @@ def build_scores(
         [sector_boost.get(t, 1.0) for t in st.index], index=st.index
     )
 
-    st["score_st"] = score_st
+    # Bonus intraday 15 min: momentum y VWAP del día actual
+    intraday_series = pd.Series(
+        [intraday_scores.get(t, 0.0) for t in st.index], index=st.index
+    )
+    score_st += 0.20 * intraday_series   # score ya está en [-1, +1]
+
+    st["score_st"]      = score_st
+    st["intraday_score"] = intraday_series
 
     # ── Earnings guard ─────────────────────────────────────────────────────────
     # Penalizar posiciones con earnings inminentes para evitar riesgo binario.

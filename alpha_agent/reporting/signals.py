@@ -213,12 +213,11 @@ def build_signals(
     weights_series = portfolio_lp["weights"]
     top_lp = weights_series[weights_series > 0].head(PARAMS.top_n_long_term)
     if top_lp.sum() > 0:
-        top_lp = top_lp / top_lp.sum()   # renormalizar dentro del sleeve
+        top_lp = top_lp / top_lp.sum()
 
     for ticker, w in top_lp.items():
         if ticker not in lp_df.index:
             continue
-        # Para el bloque técnico: buscarlo en short_term df (tiene todos los activos)
         tech_row = scores["short_term"].loc[ticker] if ticker in scores["short_term"].index else pd.Series(dtype=float)
         sig.long_term.append(_make_signal(
             ticker=ticker, horizon="LP",
@@ -228,6 +227,9 @@ def build_signals(
             macro=macro,
             capital=cap,
         ))
+
+    # Ajuste por convicción LP
+    sig.long_term = _apply_conviction_weights(sig.long_term)
 
     # cartera completa (debug)
     sig.portfolio = {t: round(float(w), 4) for t, w in weights_series.items() if w > 0.01}
@@ -242,15 +244,42 @@ def build_signals(
         weights_st = pd.Series(1.0 / max(len(top_st), 1), index=top_st.index)
 
     for ticker, row in top_st.iterrows():
-        # quant row desde capm (si existe)
-        quant_row = row  # st_df ya incluye capm + technical porque scoring hizo join
         sig.short_term.append(_make_signal(
             ticker=ticker, horizon="CP",
-            quant_row=quant_row,
+            quant_row=row,
             tech_row=row,
             weight=float(weights_st.loc[ticker]),
             macro=macro,
             capital=cap,
         ))
 
+    # Ajuste por convicción CP
+    sig.short_term = _apply_conviction_weights(sig.short_term)
+
     return sig
+
+
+def _apply_conviction_weights(signals: list[Signal]) -> list[Signal]:
+    """
+    Repondera los weight_target según la convicción de cada señal.
+    ALTA → ×1.5 | MEDIA → ×1.0 | BAJA → ×0.6
+    Los pesos se renormalizan para que sumen 1.0.
+    """
+    _MULT = {"ALTA": 1.5, "MEDIA": 1.0, "BAJA": 0.6}
+    if not signals:
+        return signals
+
+    adjusted: list[float] = []
+    for s in signals:
+        conv = s.thesis.get("conviction", "MEDIA")
+        adjusted.append(s.weight_target * _MULT.get(conv, 1.0))
+
+    total = sum(adjusted) or 1.0
+    for s, w in zip(signals, adjusted):
+        s.weight_target = round(w / total, 4)
+
+    logger.info(
+        "Conviction weights: %s",
+        {s.ticker: f"{s.weight_target:.2%} ({s.thesis.get('conviction','?')})" for s in signals},
+    )
+    return signals

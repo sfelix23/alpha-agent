@@ -236,3 +236,51 @@ class AlpacaBroker(BrokerBase):
     def is_market_open(self) -> bool:
         clock = self._trading.get_clock()
         return bool(clock.is_open)
+
+    # ──────────────────────────────────────────────────────────────────
+    # Trailing stop management
+    # ──────────────────────────────────────────────────────────────────
+    def get_open_orders(self, ticker: str) -> list:
+        """Devuelve órdenes abiertas para un ticker."""
+        try:
+            from alpaca.trading.requests import GetOrdersRequest  # type: ignore
+            from alpaca.trading.enums import QueryOrderStatus     # type: ignore
+            req = GetOrdersRequest(status=QueryOrderStatus.OPEN, symbols=[ticker])
+            return self._trading.get_orders(req) or []
+        except Exception as e:
+            logger.debug("get_open_orders(%s): %s", ticker, e)
+            return []
+
+    def update_stop_loss(self, ticker: str, new_stop: float, qty: float) -> str | None:
+        """
+        Cancela órdenes stop abiertas para el ticker y envía una nueva stop-sell.
+        Devuelve el order_id de la nueva orden, o None si hubo error.
+        """
+        from alpaca.trading.enums import OrderSide, TimeInForce  # type: ignore
+        from alpaca.trading.requests import StopOrderRequest      # type: ignore
+
+        # Cancelar stops existentes
+        for o in self.get_open_orders(ticker):
+            o_type = str(getattr(o, "order_type", "")).lower()
+            if "stop" in o_type:
+                try:
+                    self._trading.cancel_order_by_id(str(o.id))
+                    logger.info("Stop cancelado para %s (id=%s)", ticker, o.id)
+                except Exception as e:
+                    logger.warning("No pude cancelar stop %s: %s", o.id, e)
+
+        # Enviar nuevo stop-sell
+        try:
+            req = StopOrderRequest(
+                symbol=ticker,
+                qty=round(abs(qty), 4),
+                side=OrderSide.SELL,
+                time_in_force=TimeInForce.GTC,
+                stop_price=round(new_stop, 2),
+            )
+            result = self._trading.submit_order(req)
+            logger.info("Trailing stop actualizado: SELL %s @ stop $%.2f → id=%s", ticker, new_stop, result.id)
+            return str(result.id)
+        except Exception as e:
+            logger.error("Error enviando stop %s @ %.2f: %s", ticker, new_stop, e)
+            return None
