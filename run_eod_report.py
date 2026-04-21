@@ -50,7 +50,9 @@ def main() -> None:
 
     # Historial para calcular P&L del dia
     try:
-        ph = broker._trading.get_portfolio_history(period="2D", timeframe="1D")
+        from alpaca.trading.requests import GetPortfolioHistoryRequest
+        req = GetPortfolioHistoryRequest(period="2D", timeframe="1D")
+        ph = broker._trading.get_portfolio_history(req)
         equities = [e for e in (ph.equity or []) if e is not None]
         yesterday_equity = float(equities[-2]) if len(equities) >= 2 else equity
     except Exception:

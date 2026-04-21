@@ -156,7 +156,7 @@ def _equity_chart_section(history: list[dict]) -> str:
 <div class="card card-wide">
   <div class="card-header">
     <span class="card-title">Evolución del Patrimonio</span>
-    <span class="card-badge" style="color:{color}">{_fmt_pct((last - first)/first*100)} total</span>
+    <span class="card-badge" style="color:{color}">{_fmt_pct((last - first)/first*100 if first else 0)} total</span>
   </div>
   <canvas id="equityChart" height="90"></canvas>
 </div>
@@ -1175,15 +1175,18 @@ def generate() -> None:
 
     history: list[dict] = []
     try:
-        ph = broker._trading.get_portfolio_history(period="1M", timeframe="1D")
+        from alpaca.trading.requests import GetPortfolioHistoryRequest
+        req = GetPortfolioHistoryRequest(period="1M", timeframe="1D")
+        ph  = broker._trading.get_portfolio_history(req)
         if ph and ph.equity:
             history = [
                 {"ts": t, "equity": float(e)}
                 for t, e in zip(ph.timestamp or [], ph.equity)
                 if e is not None
             ]
+        logger.info("Portfolio history: %d entradas", len(history))
     except Exception as e:
-        logger.debug("Portfolio history no disponible: %s", e)
+        logger.warning("Portfolio history no disponible: %s", e)
 
     signals_data: dict = {}
     if SIGNALS_PATH.exists():
