@@ -509,6 +509,124 @@ def _radar_section(signals_data: dict) -> str:
 </div>"""
 
 
+def _pnl_calendar_section(history: list[dict]) -> str:
+    """
+    Calendario mensual de P&L diario.
+    Cada celda muestra el día, el P&L en dólares y el % de variación.
+    Verde = ganancia, Rojo = pérdida, intensidad proporcional al monto.
+    """
+    if len(history) < 2:
+        return ""
+
+    # Calcular P&L diario desde la curva de equity
+    from datetime import date, timedelta
+    import calendar as cal_mod
+
+    daily: dict[date, dict] = {}
+    for i in range(1, len(history)):
+        prev_eq = history[i - 1]["equity"]
+        curr_eq = history[i]["equity"]
+        d       = datetime.fromtimestamp(history[i]["ts"]).date()
+        pnl     = curr_eq - prev_eq
+        pnl_pct = (pnl / prev_eq * 100) if prev_eq else 0
+        daily[d] = {"pnl": pnl, "pnl_pct": pnl_pct, "equity": curr_eq}
+
+    if not daily:
+        return ""
+
+    # Mes y año del último dato disponible
+    last_date  = max(daily.keys())
+    year, month = last_date.year, last_date.month
+    month_name  = ["Enero","Febrero","Marzo","Abril","Mayo","Junio",
+                   "Julio","Agosto","Septiembre","Octubre","Noviembre","Diciembre"][month - 1]
+
+    # Estadísticas del mes
+    month_days  = {d: v for d, v in daily.items() if d.year == year and d.month == month}
+    total_pnl   = sum(v["pnl"] for v in month_days.values())
+    wins        = sum(1 for v in month_days.values() if v["pnl"] >= 0)
+    losses      = sum(1 for v in month_days.values() if v["pnl"] < 0)
+    best        = max(month_days.values(), key=lambda v: v["pnl"], default=None)
+    worst       = min(month_days.values(), key=lambda v: v["pnl"], default=None)
+    total_c     = "#4ade80" if total_pnl >= 0 else "#f87171"
+
+    def _cell_colors(pnl: float) -> tuple[str, str]:
+        """(background, text color)"""
+        if pnl > 0:
+            intensity = min(pnl / 300, 1.0)   # satura en +$300
+            r = int(10  + (22 - 10)  * intensity)
+            g = int(40  + (163 - 40) * intensity)
+            b = int(30  + (50 - 30)  * intensity)
+            return f"rgb({r},{g},{b})", "#4ade80" if intensity > 0.4 else "#86efac"
+        elif pnl < 0:
+            intensity = min(abs(pnl) / 300, 1.0)
+            r = int(50  + (200 - 50) * intensity)
+            g = int(10  + (30 - 10)  * intensity)
+            b = int(10  + (30 - 10)  * intensity)
+            return f"rgb({r},{g},{b})", "#f87171" if intensity > 0.4 else "#fca5a5"
+        return "var(--surface2)", "#64748b"
+
+    # Construir grilla — semanas como filas, Lun-Dom como columnas
+    first_day  = date(year, month, 1)
+    last_day_n = cal_mod.monthrange(year, month)[1]
+    # Índice lunes=0 del primer día del mes
+    start_dow  = first_day.weekday()
+
+    headers = ["".join(f'<th class="cal-th">{d}</th>'
+               for d in ["Lun", "Mar", "Mié", "Jue", "Vie", "Sáb", "Dom"])]
+
+    rows_html = ""
+    day_num   = 1 - start_dow   # puede ser negativo para celdas vacías iniciales
+
+    while day_num <= last_day_n:
+        rows_html += "<tr>"
+        for dow in range(7):
+            if day_num < 1 or day_num > last_day_n:
+                rows_html += '<td class="cal-empty"></td>'
+            else:
+                d = date(year, month, day_num)
+                is_weekend = dow >= 5
+                data = month_days.get(d)
+
+                if data:
+                    bg, tc = _cell_colors(data["pnl"])
+                    sign   = "+" if data["pnl"] >= 0 else ""
+                    rows_html += f"""
+<td class="cal-cell" style="background:{bg}">
+  <div class="cal-day">{day_num}</div>
+  <div class="cal-pnl" style="color:{tc}">{sign}${data['pnl']:,.0f}</div>
+  <div class="cal-pct" style="color:{tc}">{sign}{data['pnl_pct']:.1f}%</div>
+</td>"""
+                elif is_weekend:
+                    rows_html += f'<td class="cal-cell cal-weekend"><div class="cal-day">{day_num}</div></td>'
+                else:
+                    rows_html += f'<td class="cal-cell cal-no-data"><div class="cal-day">{day_num}</div><div class="cal-pct">—</div></td>'
+            day_num += 1
+        rows_html += "</tr>"
+
+    best_html  = f'<b style="color:#4ade80">+${best["pnl"]:,.0f}</b>' if best else "—"
+    worst_html = f'<b style="color:#f87171">${worst["pnl"]:,.0f}</b>' if worst else "—"
+
+    return f"""
+<div class="card card-wide">
+  <div class="card-header">
+    <span class="card-title">Calendario de Resultados — {month_name} {year}</span>
+    <div style="display:flex;gap:16px;flex-wrap:wrap;align-items:center">
+      <span style="color:{total_c};font-weight:700;font-size:.95rem">
+        {"+" if total_pnl >= 0 else ""}${total_pnl:,.0f} en el mes
+      </span>
+      <span class="muted">{wins} días positivos · {losses} negativos</span>
+      <span class="muted">Mejor: {best_html} · Peor: {worst_html}</span>
+    </div>
+  </div>
+  <div style="overflow-x:auto">
+    <table class="cal-table">
+      <thead><tr>{"".join(f'<th class="cal-th">{d}</th>' for d in ["Lun","Mar","Mié","Jue","Vie","Sáb","Dom"])}</tr></thead>
+      <tbody>{rows_html}</tbody>
+    </table>
+  </div>
+</div>"""
+
+
 def _risk_metrics_section(signals_data: dict, equity: float, initial: float) -> str:
     port    = signals_data.get("portfolio", {})
     sharpe  = port.get("sharpe", 0) or 0
@@ -866,6 +984,63 @@ td {
 tr:last-child td { border-bottom: none; }
 tr:hover td { background: var(--surface2); }
 
+/* ── calendario P&L ── */
+.cal-table {
+  border-collapse: separate;
+  border-spacing: 4px;
+  width: 100%;
+  table-layout: fixed;
+}
+.cal-th {
+  color: var(--muted);
+  font-size: .72rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: .5px;
+  padding: 6px 4px;
+  text-align: center;
+  border-bottom: none;
+}
+.cal-cell {
+  border-radius: 8px;
+  padding: 8px 6px;
+  text-align: center;
+  vertical-align: top;
+  min-width: 70px;
+  height: 72px;
+  background: var(--surface2);
+  transition: transform .1s, box-shadow .1s;
+  border-bottom: none;
+}
+.cal-cell:hover {
+  transform: scale(1.04);
+  box-shadow: 0 4px 16px rgba(0,0,0,.5);
+  z-index: 2;
+  position: relative;
+}
+.cal-empty {
+  border-bottom: none;
+}
+.cal-weekend { opacity: .45; }
+.cal-no-data { opacity: .55; }
+.cal-day {
+  font-size: .7rem;
+  color: var(--muted);
+  font-weight: 600;
+  margin-bottom: 4px;
+}
+.cal-pnl {
+  font-size: .82rem;
+  font-weight: 700;
+  line-height: 1.2;
+}
+.cal-pct {
+  font-size: .7rem;
+  margin-top: 2px;
+  opacity: .85;
+}
+.cal-cell:hover .cal-pnl { font-size: .88rem; }
+
 /* ── misc ── */
 .muted { color: var(--muted); }
 .refresh-bar {
@@ -932,6 +1107,9 @@ def build_html(equity: float, initial: float, history: list[dict],
   {_equity_chart_section(history)}
   {_sector_section()}
 </div>
+
+<p class="section-title">Calendario de Resultados</p>
+{_pnl_calendar_section(history)}
 
 <p class="section-title">Posiciones Abiertas</p>
 <div class="grid">
