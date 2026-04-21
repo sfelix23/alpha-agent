@@ -53,6 +53,15 @@ jobs:
           ANTHROPIC_API_KEY=${{ secrets.ANTHROPIC_API_KEY }}
           EOF
 
+      - name: Check imports
+        run: |
+          python -c "
+          from alpaca.trading.requests import GetPortfolioHistoryRequest
+          from alpha_agent.config import PARAMS
+          from trader_agent.brokers.alpaca_broker import AlpacaBroker
+          print('Imports OK')
+          "
+
       - name: Generate dashboard
         run: python run_dashboard.py --no-open
 
