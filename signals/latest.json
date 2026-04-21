@@ -1,7 +1,7 @@
 {
-  "generated_at": "2026-04-20T19:15:22",
+  "generated_at": "2026-04-21T14:02:04",
   "horizon": "medium_long_70_30_high_conviction",
-  "capital_usd": 100657.89,
+  "capital_usd": 100646.34,
   "params": {
     "weight_long_term": 0.55,
     "weight_short_term": 0.25,
@@ -18,90 +18,90 @@
   },
   "macro": {
     "regime": "bull",
-    "regime_reason": "SPY +6.7% sobre SMA200 con pendiente positiva",
+    "regime_reason": "SPY +7.0% sobre SMA200 con pendiente positiva",
     "prices": {
-      "oil_wti": 87.31,
-      "oil_brent": 95.48,
-      "gold": 4838.1,
-      "dxy": 98.069,
-      "vix": 18.96,
-      "us10y": 4.25
+      "oil_wti": 86.84,
+      "oil_brent": 90.52,
+      "gold": 4808.4,
+      "dxy": 98.182,
+      "vix": 19.2,
+      "us10y": 4.274
     },
     "changes_1d": {
-      "oil_wti": 0.0413,
-      "oil_brent": 0.0564,
-      "gold": -0.004,
-      "dxy": -0.0003,
-      "vix": 0.0847,
-      "us10y": 0.0009
+      "oil_wti": -0.0309,
+      "oil_brent": -0.0519,
+      "gold": 0.0004,
+      "dxy": 0.0013,
+      "vix": 0.0175,
+      "us10y": 0.0056
     },
     "changes_1m": {
-      "oil_wti": -0.0918,
-      "oil_brent": -0.1212,
-      "gold": 0.0516,
-      "dxy": -0.0117,
-      "vix": -0.212,
-      "us10y": -0.0072
+      "oil_wti": -0.1168,
+      "oil_brent": -0.1932,
+      "gold": 0.0521,
+      "dxy": -0.0147,
+      "vix": -0.283,
+      "us10y": -0.0266
     },
-    "spy_vs_sma200": 0.0674
+    "spy_vs_sma200": 0.0705
   },
   "long_term": [
     {
       "ticker": "RTX",
       "side": "BUY",
       "horizon": "LP",
-      "price": 195.57,
-      "stop_loss": 186.99,
-      "take_profit": 224.91,
-      "weight_target": 0.3199,
+      "price": 193.15,
+      "stop_loss": 184.91,
+      "take_profit": 222.12,
+      "weight_target": 0.3116,
       "thesis": {
         "ticker": "RTX",
         "horizon": "LP",
         "conviction": "ALTA",
         "quant": {
-          "mu_anual": 0.34724525011521723,
-          "sigma_anual": 0.24328533520987194,
-          "beta": 0.48518992732346045,
-          "alpha_jensen": 0.23105075591888258,
-          "sharpe": 1.242348824085443,
-          "expected_return_capm": 0.11619449419633465
+          "mu_anual": 0.3407443202414156,
+          "sigma_anual": 0.24322458522054896,
+          "beta": 0.4844864294800065,
+          "alpha_jensen": 0.22402674014813267,
+          "sharpe": 1.2159310292306318,
+          "expected_return_capm": 0.11671758009328291
         },
         "technical": {
-          "price": 195.57,
-          "rsi": 64.44,
-          "atr": 4.29,
-          "stop_loss_atr": 186.99,
-          "ret_1m": -0.0130702275435306,
-          "ret_3m": -0.0007151072567325167,
-          "dist_52w_high": -0.07819568274665101
+          "price": 193.15,
+          "rsi": 50.49,
+          "atr": 4.1246,
+          "stop_loss_atr": 184.91,
+          "ret_1m": -0.008546394016662684,
+          "ret_3m": -0.018751658848889075,
+          "dist_52w_high": -0.0895786413780435
         },
         "fundamental": {
-          "sentiment_score": -0.167,
+          "sentiment_score": 1.0,
           "n_headlines": 6,
-          "positive": 0,
-          "negative": 1,
+          "positive": 6,
+          "negative": 0,
           "sample_titles": [
-            "Equities Drop Intraday, Oil Rebounds Amid US-Iran Re-Escalation Fears",
-            "S&P 500 Companies' Earnings Season Off to Solid Start, Oppenheimer Says",
-            "RTX, Lockheed Martin Lead Defense Earnings. Pentagon To Detail Budget Request."
+            "RTX, Northrop, GE Aerospace Beat Views, But Stocks Diverge. Pentagon To Detail Budget Request.",
+            "RTX Stock Pops as Earnings Beat. Why It Raised Guidance.",
+            "RTX (RTX) Beats Q1 Earnings and Revenue Estimates"
           ]
         },
         "macro": {
           "regime": "bull",
-          "regime_reason": "SPY +6.7% sobre SMA200 con pendiente positiva",
-          "vix": 18.96,
-          "oil_wti": 87.31,
-          "dxy_1m": -0.0117,
-          "gold_1m": 0.0516
+          "regime_reason": "SPY +7.0% sobre SMA200 con pendiente positiva",
+          "vix": 19.2,
+          "oil_wti": 86.84,
+          "dxy_1m": -0.0147,
+          "gold_1m": 0.0521
         },
         "risk": {
-          "dollars_allocated": 17710.87,
-          "weight_of_total_portfolio": 0.176,
-          "max_loss_usd_if_stop_hit": 777.01,
-          "max_loss_pct_of_capital": 0.0077,
-          "stop_loss": 186.99
+          "dollars_allocated": 17251.14,
+          "weight_of_total_portfolio": 0.1714,
+          "max_loss_usd_if_stop_hit": 735.95,
+          "max_loss_pct_of_capital": 0.0073,
+          "stop_loss": 184.91
         },
-        "thesis_text": "RTX — horizonte LARGO PLAZO. Convicción ALTA. La tesis CAPM/Markowitz sostiene un Sharpe de 1.24 con beta 0.49 (retorno esperado CAPM +11.6%, alfa de Jensen +23.1%). Cumple el filtro de calidad (β razonable + Sharpe elevado) y aparece en el óptimo de la frontera eficiente. Flujo de noticias neutral (6 titulares). Régimen de mercado BULL (SPY +6.7% sobre SMA200 con pendiente positiva) — viento de cola para posiciones largas.",
+        "thesis_text": "RTX — horizonte LARGO PLAZO. Convicción ALTA. La tesis CAPM/Markowitz sostiene un Sharpe de 1.22 con beta 0.48 (retorno esperado CAPM +11.7%, alfa de Jensen +22.4%). Cumple el filtro de calidad (β razonable + Sharpe elevado) y aparece en el óptimo de la frontera eficiente. El flujo de noticias es positivo (sentiment +1.00 sobre 6 titulares). Régimen de mercado BULL (SPY +7.0% sobre SMA200 con pendiente positiva) — viento de cola para posiciones largas.",
         "key_risks": [
           "Sin riesgos macro mayores detectados; el riesgo principal es idiosincrático del activo."
         ]
@@ -112,58 +112,58 @@
       "ticker": "GLD",
       "side": "BUY",
       "horizon": "LP",
-      "price": 442.68,
-      "stop_loss": 425.88,
-      "take_profit": 509.08,
-      "weight_target": 0.2792,
+      "price": 438.8,
+      "stop_loss": 423.71,
+      "take_profit": 504.62,
+      "weight_target": 0.2746,
       "thesis": {
         "ticker": "GLD",
         "horizon": "LP",
         "conviction": "ALTA",
         "quant": {
-          "mu_anual": 0.30224266570935876,
-          "sigma_anual": 0.22613918801368618,
-          "beta": 0.19278604907814575,
-          "alpha_jensen": 0.22895414511301482,
-          "sharpe": 1.1375412990949192,
-          "expected_return_capm": 0.07328852059634396
+          "mu_anual": 0.29703256965644165,
+          "sigma_anual": 0.22602113994451087,
+          "beta": 0.19243914131331202,
+          "alpha_jensen": 0.2235461793461232,
+          "sharpe": 1.1150840568201572,
+          "expected_return_capm": 0.07348639031031845
         },
         "technical": {
-          "price": 442.68,
-          "rsi": 70.05,
-          "atr": 8.4,
-          "stop_loss_atr": 425.88,
-          "ret_1m": 0.0708790639287813,
-          "ret_3m": 0.012464793249572947,
-          "dist_52w_high": -0.10732002798090867
+          "price": 438.8,
+          "rsi": 57.31,
+          "atr": 7.5471,
+          "stop_loss_atr": 423.71,
+          "ret_1m": 0.08603103285050584,
+          "ret_3m": -0.010820600190494023,
+          "dist_52w_high": -0.11514419601996373
         },
         "fundamental": {
-          "sentiment_score": 0.167,
+          "sentiment_score": 0.333,
           "n_headlines": 6,
-          "positive": 2,
-          "negative": 1,
+          "positive": 4,
+          "negative": 2,
           "sample_titles": [
-            "Buy This Index Fund to Beat the S&P 500 in the Next Year, According to Wall Street Analysts",
-            "Buy This ETF as Silver’s Next Leg up Can Be Even More Explosive",
-            "Newmont Downgraded as Costs Surge: Is This Gold Giant Losing Its Shine at the Worst Possible Time?"
+            "Exchange-Traded Funds, Equity Futures Higher Pre-Bell Tuesday Amid Second Round of US-Iran Talks",
+            "CBOE VIX Index Spikes 9.7% as Oil-Fueled Fears Grip Markets",
+            "Exchange-Traded Funds, Equity Futures Lower Pre-Bell Monday as Oil Prices Rise on Renewed Middle East Tensions"
           ]
         },
         "macro": {
           "regime": "bull",
-          "regime_reason": "SPY +6.7% sobre SMA200 con pendiente positiva",
-          "vix": 18.96,
-          "oil_wti": 87.31,
-          "dxy_1m": -0.0117,
-          "gold_1m": 0.0516
+          "regime_reason": "SPY +7.0% sobre SMA200 con pendiente positiva",
+          "vix": 19.2,
+          "oil_wti": 86.84,
+          "dxy_1m": -0.0147,
+          "gold_1m": 0.0521
         },
         "risk": {
-          "dollars_allocated": 15457.05,
-          "weight_of_total_portfolio": 0.1536,
-          "max_loss_usd_if_stop_hit": 586.61,
-          "max_loss_pct_of_capital": 0.0058,
-          "stop_loss": 425.88
+          "dollars_allocated": 15200.15,
+          "weight_of_total_portfolio": 0.151,
+          "max_loss_usd_if_stop_hit": 522.72,
+          "max_loss_pct_of_capital": 0.0052,
+          "stop_loss": 423.71
         },
-        "thesis_text": "GLD — horizonte LARGO PLAZO. Convicción ALTA. La tesis CAPM/Markowitz sostiene un Sharpe de 1.14 con beta 0.19 (retorno esperado CAPM +7.3%, alfa de Jensen +22.9%). Cumple el filtro de calidad (β razonable + Sharpe elevado) y aparece en el óptimo de la frontera eficiente. Flujo de noticias neutral (6 titulares). Régimen de mercado BULL (SPY +6.7% sobre SMA200 con pendiente positiva) — viento de cola para posiciones largas.",
+        "thesis_text": "GLD — horizonte LARGO PLAZO. Convicción ALTA. La tesis CAPM/Markowitz sostiene un Sharpe de 1.12 con beta 0.19 (retorno esperado CAPM +7.3%, alfa de Jensen +22.4%). Cumple el filtro de calidad (β razonable + Sharpe elevado) y aparece en el óptimo de la frontera eficiente. El flujo de noticias es positivo (sentiment +0.33 sobre 6 titulares). Régimen de mercado BULL (SPY +7.0% sobre SMA200 con pendiente positiva) — viento de cola para posiciones largas.",
         "key_risks": [
           "Sin riesgos macro mayores detectados; el riesgo principal es idiosincrático del activo."
         ]
@@ -174,58 +174,58 @@
       "ticker": "GOOGL",
       "side": "BUY",
       "horizon": "LP",
-      "price": 338.61,
-      "stop_loss": 321.25,
-      "take_profit": 389.4,
-      "weight_target": 0.2542,
+      "price": 338.93,
+      "stop_loss": 323.13,
+      "take_profit": 389.77,
+      "weight_target": 0.2587,
       "thesis": {
         "ticker": "GOOGL",
         "horizon": "LP",
         "conviction": "ALTA",
         "quant": {
-          "mu_anual": 0.4404476882005397,
-          "sigma_anual": 0.3003194298994515,
-          "beta": 1.0752583761162358,
-          "alpha_jensen": 0.23766931749060427,
-          "sharpe": 1.3167569222308981,
-          "expected_return_capm": 0.20277837070993543
+          "mu_anual": 0.44000048755948984,
+          "sigma_anual": 0.30009345759571265,
+          "beta": 1.0753749507314718,
+          "alpha_jensen": 0.23581483350067545,
+          "sharpe": 1.3162582440955324,
+          "expected_return_capm": 0.2041856540588144
         },
         "technical": {
-          "price": 338.61,
-          "rsi": 91.11,
-          "atr": 8.68,
-          "stop_loss_atr": 321.25,
-          "ret_1m": 0.12495346322804202,
-          "ret_3m": 0.05232716172442875,
-          "dist_52w_high": -0.014084363119897914
+          "price": 338.93,
+          "rsi": 87.87,
+          "atr": 7.9,
+          "stop_loss_atr": 323.13,
+          "ret_1m": 0.1220618268396676,
+          "ret_3m": 0.03285390103979546,
+          "dist_52w_high": -0.013155547056933448
         },
         "fundamental": {
-          "sentiment_score": 0.167,
+          "sentiment_score": 0.833,
           "n_headlines": 6,
-          "positive": 2,
-          "negative": 1,
+          "positive": 5,
+          "negative": 0,
           "sample_titles": [
-            "Tech stocks today: Google and Marvell reportedly developing AI chips, Tesla falls with earnings set for Wednesday",
-            "If I Had to Buy Only One Stock, It’s This",
-            "Google Expands TPU Push As Demand Surges, Targets AI Inference Market"
+            "Why Amazon's partnership with Anthropic could power strong earnings",
+            "Marvell stock jumps on report of possible partnership with Google on AI chips",
+            "Magnificent Seven Back, Lead Market Higher"
           ]
         },
         "macro": {
           "regime": "bull",
-          "regime_reason": "SPY +6.7% sobre SMA200 con pendiente positiva",
-          "vix": 18.96,
-          "oil_wti": 87.31,
-          "dxy_1m": -0.0117,
-          "gold_1m": 0.0516
+          "regime_reason": "SPY +7.0% sobre SMA200 con pendiente positiva",
+          "vix": 19.2,
+          "oil_wti": 86.84,
+          "dxy_1m": -0.0147,
+          "gold_1m": 0.0521
         },
         "risk": {
-          "dollars_allocated": 14071.82,
-          "weight_of_total_portfolio": 0.1398,
-          "max_loss_usd_if_stop_hit": 721.44,
-          "max_loss_pct_of_capital": 0.0072,
-          "stop_loss": 321.25
+          "dollars_allocated": 14320.17,
+          "weight_of_total_portfolio": 0.1423,
+          "max_loss_usd_if_stop_hit": 667.57,
+          "max_loss_pct_of_capital": 0.0066,
+          "stop_loss": 323.13
         },
-        "thesis_text": "GOOGL — horizonte LARGO PLAZO. Convicción ALTA. La tesis CAPM/Markowitz sostiene un Sharpe de 1.32 con beta 1.08 (retorno esperado CAPM +20.3%, alfa de Jensen +23.8%). Cumple el filtro de calidad (β razonable + Sharpe elevado) y aparece en el óptimo de la frontera eficiente. Flujo de noticias neutral (6 titulares). Régimen de mercado BULL (SPY +6.7% sobre SMA200 con pendiente positiva) — viento de cola para posiciones largas.",
+        "thesis_text": "GOOGL — horizonte LARGO PLAZO. Convicción ALTA. La tesis CAPM/Markowitz sostiene un Sharpe de 1.32 con beta 1.08 (retorno esperado CAPM +20.4%, alfa de Jensen +23.6%). Cumple el filtro de calidad (β razonable + Sharpe elevado) y aparece en el óptimo de la frontera eficiente. El flujo de noticias es positivo (sentiment +0.83 sobre 6 titulares). Régimen de mercado BULL (SPY +7.0% sobre SMA200 con pendiente positiva) — viento de cola para posiciones largas.",
         "key_risks": [
           "Sin riesgos macro mayores detectados; el riesgo principal es idiosincrático del activo."
         ]
@@ -236,58 +236,58 @@
       "ticker": "JPM",
       "side": "BUY",
       "horizon": "LP",
-      "price": 316.64,
-      "stop_loss": 303.0,
-      "take_profit": 364.14,
-      "weight_target": 0.1467,
+      "price": 317.52,
+      "stop_loss": 304.91,
+      "take_profit": 365.15,
+      "weight_target": 0.1551,
       "thesis": {
         "ticker": "JPM",
         "horizon": "LP",
         "conviction": "ALTA",
         "quant": {
-          "mu_anual": 0.30455739491971207,
-          "sigma_anual": 0.2511479337255187,
-          "beta": 0.9332604844647513,
-          "alpha_jensen": 0.12261512880255337,
-          "sharpe": 1.0334840946905188,
-          "expected_return_capm": 0.1819422661171587
+          "mu_anual": 0.3055088891980998,
+          "sigma_anual": 0.250944481034173,
+          "beta": 0.9332530908124933,
+          "alpha_jensen": 0.12236125653997831,
+          "sharpe": 1.0381136422068769,
+          "expected_return_capm": 0.1831476326581215
         },
         "technical": {
-          "price": 316.64,
-          "rsi": 82.81,
-          "atr": 6.82,
-          "stop_loss_atr": 303.0,
-          "ret_1m": 0.11062431098842263,
-          "ret_3m": 0.05126673890140654,
-          "dist_52w_high": -0.04886130960762225
+          "price": 317.52,
+          "rsi": 79.02,
+          "atr": 6.3043,
+          "stop_loss_atr": 304.91,
+          "ret_1m": 0.10084155777540271,
+          "ret_3m": 0.05663138703996218,
+          "dist_52w_high": -0.04621799977119123
         },
         "fundamental": {
-          "sentiment_score": 0.333,
+          "sentiment_score": 0.833,
           "n_headlines": 6,
-          "positive": 2,
+          "positive": 5,
           "negative": 0,
           "sample_titles": [
-            "Here's the stealthy reason stocks are at record highs",
-            "Why the Dow Is Beating the S&P 500 Today",
-            "The World’s Hottest Stock Market Can Jump Another 37%, JPMorgan Says. How to Play It."
+            "Update: Market Chatter: Amazon's Jeff Bezos Nearing $10 Billion Fundraising for Project Prometheus",
+            "AI Optimism Lifts US Equity Futures Pre-Bell Amid Uncertainty of US-Iran Peace Talks",
+            "Flurry of US IPOs Race to Tap Market Ahead of SpaceX Debut"
           ]
         },
         "macro": {
           "regime": "bull",
-          "regime_reason": "SPY +6.7% sobre SMA200 con pendiente positiva",
-          "vix": 18.96,
-          "oil_wti": 87.31,
-          "dxy_1m": -0.0117,
-          "gold_1m": 0.0516
+          "regime_reason": "SPY +7.0% sobre SMA200 con pendiente positiva",
+          "vix": 19.2,
+          "oil_wti": 86.84,
+          "dxy_1m": -0.0147,
+          "gold_1m": 0.0521
         },
         "risk": {
-          "dollars_allocated": 8122.1,
-          "weight_of_total_portfolio": 0.0807,
-          "max_loss_usd_if_stop_hit": 349.88,
-          "max_loss_pct_of_capital": 0.0035,
-          "stop_loss": 303.0
+          "dollars_allocated": 8584.03,
+          "weight_of_total_portfolio": 0.0853,
+          "max_loss_usd_if_stop_hit": 340.91,
+          "max_loss_pct_of_capital": 0.0034,
+          "stop_loss": 304.91
         },
-        "thesis_text": "JPM — horizonte LARGO PLAZO. Convicción ALTA. La tesis CAPM/Markowitz sostiene un Sharpe de 1.03 con beta 0.93 (retorno esperado CAPM +18.2%, alfa de Jensen +12.3%). Cumple el filtro de calidad (β razonable + Sharpe elevado) y aparece en el óptimo de la frontera eficiente. El flujo de noticias es positivo (sentiment +0.33 sobre 6 titulares). Régimen de mercado BULL (SPY +6.7% sobre SMA200 con pendiente positiva) — viento de cola para posiciones largas.",
+        "thesis_text": "JPM — horizonte LARGO PLAZO. Convicción ALTA. La tesis CAPM/Markowitz sostiene un Sharpe de 1.04 con beta 0.93 (retorno esperado CAPM +18.3%, alfa de Jensen +12.2%). Cumple el filtro de calidad (β razonable + Sharpe elevado) y aparece en el óptimo de la frontera eficiente. El flujo de noticias es positivo (sentiment +0.83 sobre 6 titulares). Régimen de mercado BULL (SPY +7.0% sobre SMA200 con pendiente positiva) — viento de cola para posiciones largas.",
         "key_risks": [
           "Sin riesgos macro mayores detectados; el riesgo principal es idiosincrático del activo."
         ]
@@ -297,125 +297,125 @@
   ],
   "short_term": [
     {
-      "ticker": "PBR",
-      "side": "BUY",
-      "horizon": "CP",
-      "price": 20.79,
-      "stop_loss": 18.96,
-      "take_profit": 24.45,
-      "weight_target": 0.5006,
-      "thesis": {
-        "ticker": "PBR",
-        "horizon": "CP",
-        "conviction": "MEDIA",
-        "quant": {
-          "mu_anual": 0.21297319044571533,
-          "sigma_anual": 0.3137980679311928,
-          "beta": 0.5151315075045266,
-          "alpha_jensen": 0.09238520921186251,
-          "sharpe": 0.5352907095736077,
-          "expected_return_capm": 0.12058798123385282
-        },
-        "technical": {
-          "price": 20.79,
-          "rsi": 49.88,
-          "atr": 0.92,
-          "stop_loss_atr": 18.96,
-          "ret_1m": 0.1058511574055756,
-          "ret_3m": 0.6204209695366838,
-          "dist_52w_high": -0.05370953275860524
-        },
-        "fundamental": {
-          "sentiment_score": 0.5,
-          "n_headlines": 6,
-          "positive": 3,
-          "negative": 0,
-          "sample_titles": [
-            "Petrobras to buy 75% stake and operatorship in São Tomé Block 3",
-            "Is Petrobras (PBR) a Buy as Wall Street Analysts Look Optimistic?",
-            "Petrobras (PBR) Upgraded at BofA Amid Higher Oil Prices"
-          ]
-        },
-        "macro": {
-          "regime": "bull",
-          "regime_reason": "SPY +6.7% sobre SMA200 con pendiente positiva",
-          "vix": 18.96,
-          "oil_wti": 87.31,
-          "dxy_1m": -0.0117,
-          "gold_1m": 0.0516
-        },
-        "risk": {
-          "dollars_allocated": 12597.79,
-          "weight_of_total_portfolio": 0.1252,
-          "max_loss_usd_if_stop_hit": 1108.9,
-          "max_loss_pct_of_capital": 0.011,
-          "stop_loss": 18.96
-        },
-        "thesis_text": "PBR — horizonte CORTO PLAZO. Convicción MEDIA. Setup técnico: RSI 50, momentum 1m +10.6%, momentum 3m +62.0%. Stop loss ATR en $18.96 (riesgo ≈ 8.8% desde entrada). Sentiment de noticias refuerza el setup.",
-        "key_risks": [
-          "WTI -9.2% 1m: caída fuerte impacta directamente la tesis."
-        ]
-      },
-      "option": null
-    },
-    {
       "ticker": "AMD",
       "side": "BUY",
       "horizon": "CP",
-      "price": 275.74,
-      "stop_loss": 254.65,
-      "take_profit": 317.92,
-      "weight_target": 0.4994,
+      "price": 280.08,
+      "stop_loss": 259.3,
+      "take_profit": 321.64,
+      "weight_target": 0.6113,
       "thesis": {
         "ticker": "AMD",
         "horizon": "CP",
         "conviction": "MEDIA",
         "quant": {
-          "mu_anual": 0.29111397834175967,
-          "sigma_anual": 0.5534052337675119,
-          "beta": 2.015765737712865,
-          "alpha_jensen": -0.049670031244849866,
-          "sharpe": 0.44472651020346743,
-          "expected_return_capm": 0.34078400958660954
+          "mu_anual": 0.29853758728595753,
+          "sigma_anual": 0.5530090947467062,
+          "beta": 2.0163386157242367,
+          "alpha_jensen": -0.044937080670350404,
+          "sharpe": 0.4584691096302583,
+          "expected_return_capm": 0.34347466795630793
         },
         "technical": {
-          "price": 275.74,
-          "rsi": 96.89,
-          "atr": 10.55,
-          "stop_loss_atr": 254.65,
-          "ret_1m": 0.36960412564062395,
-          "ret_3m": 0.18895482623356408,
-          "dist_52w_high": -0.009510447164328584
+          "price": 280.08,
+          "rsi": 95.88,
+          "atr": 10.3893,
+          "stop_loss_atr": 259.3,
+          "ret_1m": 0.38188275455633125,
+          "ret_3m": 0.12121690612723457,
+          "dist_52w_high": 0.0
         },
         "fundamental": {
           "sentiment_score": 0.5,
           "n_headlines": 6,
-          "positive": 3,
-          "negative": 0,
+          "positive": 4,
+          "negative": 1,
           "sample_titles": [
-            "Intel Stock Is Falling Hard. What’s Pausing the Recent Rally.",
-            "Intel, AMD Rally Faces Quiet Challenge",
-            "Stifel Raises AMD Target to $320: Is the AI Chip Rally Just Getting Started?"
+            "Nasdaq Composite Jumps on Earnings Momentum, AI Spending and Mideast Deal Hopes",
+            "Cerebras and Other Nvidia Rivals Just Made Key Moves. Should Nvidia Shareholders Worry?",
+            "Is Super Micro (SMCI) One of the Top Hidden AI Stocks to Invest In?"
           ]
         },
         "macro": {
           "regime": "bull",
-          "regime_reason": "SPY +6.7% sobre SMA200 con pendiente positiva",
-          "vix": 18.96,
-          "oil_wti": 87.31,
-          "dxy_1m": -0.0117,
-          "gold_1m": 0.0516
+          "regime_reason": "SPY +7.0% sobre SMA200 con pendiente positiva",
+          "vix": 19.2,
+          "oil_wti": 86.84,
+          "dxy_1m": -0.0147,
+          "gold_1m": 0.0521
         },
         "risk": {
-          "dollars_allocated": 12566.68,
-          "weight_of_total_portfolio": 0.1248,
-          "max_loss_usd_if_stop_hit": 961.16,
-          "max_loss_pct_of_capital": 0.0095,
-          "stop_loss": 254.65
+          "dollars_allocated": 15381.37,
+          "weight_of_total_portfolio": 0.1528,
+          "max_loss_usd_if_stop_hit": 1141.19,
+          "max_loss_pct_of_capital": 0.0113,
+          "stop_loss": 259.3
         },
-        "thesis_text": "AMD — horizonte CORTO PLAZO. Convicción MEDIA. Setup técnico: RSI 97, momentum 1m +37.0%, momentum 3m +18.9%. ⚠️ RSI en sobrecompra → riesgo de reversión a la media. Stop loss ATR en $254.65 (riesgo ≈ 7.6% desde entrada). Sentiment de noticias refuerza el setup.",
+        "thesis_text": "AMD — horizonte CORTO PLAZO. Convicción MEDIA. Setup técnico: RSI 96, momentum 1m +38.2%, momentum 3m +12.1%. ⚠️ RSI en sobrecompra → riesgo de reversión a la media. Stop loss ATR en $259.3 (riesgo ≈ 7.4% desde entrada). Sentiment de noticias refuerza el setup.",
         "key_risks": [
           "Sin riesgos macro mayores detectados; el riesgo principal es idiosincrático del activo."
+        ]
+      },
+      "option": null
+    },
+    {
+      "ticker": "PBR",
+      "side": "BUY",
+      "horizon": "CP",
+      "price": 20.97,
+      "stop_loss": 19.25,
+      "take_profit": 24.41,
+      "weight_target": 0.3887,
+      "thesis": {
+        "ticker": "PBR",
+        "horizon": "CP",
+        "conviction": "MEDIA",
+        "quant": {
+          "mu_anual": 0.21712968494245652,
+          "sigma_anual": 0.31351524699746103,
+          "beta": 0.5156205434156157,
+          "alpha_jensen": 0.0958033827592547,
+          "sharpe": 0.5490313041899697,
+          "expected_return_capm": 0.12132630218320183
+        },
+        "technical": {
+          "price": 20.97,
+          "rsi": 51.31,
+          "atr": 0.8579,
+          "stop_loss_atr": 19.25,
+          "ret_1m": 0.08803319400219545,
+          "ret_3m": 0.5519170829962061,
+          "dist_52w_high": -0.04568043687921641
+        },
+        "fundamental": {
+          "sentiment_score": 0.833,
+          "n_headlines": 6,
+          "positive": 5,
+          "negative": 0,
+          "sample_titles": [
+            "Petrobras (PBR) Increases Despite Market Slip: Here's What You Need to Know",
+            "Petrobras to buy 75% stake and operatorship in São Tomé Block 3",
+            "Is Petrobras (PBR) a Buy as Wall Street Analysts Look Optimistic?"
+          ]
+        },
+        "macro": {
+          "regime": "bull",
+          "regime_reason": "SPY +7.0% sobre SMA200 con pendiente positiva",
+          "vix": 19.2,
+          "oil_wti": 86.84,
+          "dxy_1m": -0.0147,
+          "gold_1m": 0.0521
+        },
+        "risk": {
+          "dollars_allocated": 9780.22,
+          "weight_of_total_portfolio": 0.0972,
+          "max_loss_usd_if_stop_hit": 802.19,
+          "max_loss_pct_of_capital": 0.008,
+          "stop_loss": 19.25
+        },
+        "thesis_text": "PBR — horizonte CORTO PLAZO. Convicción MEDIA. Setup técnico: RSI 51, momentum 1m +8.8%, momentum 3m +55.2%. Stop loss ATR en $19.25 (riesgo ≈ 8.2% desde entrada). Sentiment de noticias refuerza el setup.",
+        "key_risks": [
+          "WTI -11.7% 1m: caída fuerte impacta directamente la tesis."
         ]
       },
       "option": null
@@ -426,7 +426,7 @@
       "ticker": "NEM",
       "side": "BUY_CALL",
       "horizon": "DERIV",
-      "price": 115.01,
+      "price": 114.0,
       "stop_loss": null,
       "take_profit": null,
       "weight_target": 0.5,
@@ -435,277 +435,277 @@
         "horizon": "DERIV",
         "conviction": "MEDIA",
         "quant": {
-          "mu_anual": 0.5367139935727663,
-          "sigma_anual": 0.42149138093700417,
-          "beta": 0.6920111075240077,
-          "alpha_jensen": 0.39017152946968914,
-          "sharpe": 1.1666050975458915,
-          "expected_return_capm": 0.14654246410307714
+          "mu_anual": 0.5312640057085674,
+          "sigma_anual": 0.4211368091950728,
+          "beta": 0.6915788502585662,
+          "alpha_jensen": 0.3838909389593654,
+          "sharpe": 1.1546461745720435,
+          "expected_return_capm": 0.14737306674920198
         },
         "technical": {
-          "price": 115.01,
-          "rsi": 65.4,
-          "atr": 4.51,
-          "stop_loss_atr": 105.99,
-          "ret_1m": 0.2005740681188637,
-          "ret_3m": -0.031042824508746736,
-          "dist_52w_high": -0.12658003872533174
+          "price": 114.0,
+          "rsi": 58.34,
+          "atr": 4.2443,
+          "stop_loss_atr": 105.52,
+          "ret_1m": 0.16165679603053817,
+          "ret_3m": -0.03930940480547718,
+          "dist_52w_high": -0.13424996031290815
         },
         "fundamental": {
-          "sentiment_score": -0.167,
+          "sentiment_score": -0.5,
           "n_headlines": 6,
           "positive": 0,
-          "negative": 1,
+          "negative": 3,
           "sample_titles": [
-            "National Bank Downgrades Newmont (NEM) to “Sector Perform” Amid Rising Costs Tied to Higher Diesel Prices",
             "U.S. mining stocks dive as gold and other metals under pressure on Iran tensions",
-            "Newmont’s Operational Setbacks Test Cost Discipline And Margin Resilience"
+            "Newmont’s Operational Setbacks Test Cost Discipline And Margin Resilience",
+            "Should you own mining stocks are Iran war rages on? Bernstein weighs in"
           ]
         },
         "macro": {
           "regime": "bull",
-          "regime_reason": "SPY +6.7% sobre SMA200 con pendiente positiva",
-          "vix": 18.96,
-          "oil_wti": 87.31,
-          "dxy_1m": -0.0117,
-          "gold_1m": 0.0516
+          "regime_reason": "SPY +7.0% sobre SMA200 con pendiente positiva",
+          "vix": 19.2,
+          "oil_wti": 86.84,
+          "dxy_1m": -0.0147,
+          "gold_1m": 0.0521
         },
         "risk": {
-          "dollars_allocated": 5032.89,
+          "dollars_allocated": 5032.32,
           "weight_of_total_portfolio": 0.0625,
-          "max_loss_usd_if_stop_hit": 394.72,
-          "max_loss_pct_of_capital": 0.0039,
-          "stop_loss": 105.99
+          "max_loss_usd_if_stop_hit": 374.33,
+          "max_loss_pct_of_capital": 0.0037,
+          "stop_loss": 105.52
         },
-        "thesis_text": "NEM — apuesta alcista vía CALL (riesgo limitado a la prima). Strike $127.66, expiry 2026-05-19 (~29d), prima estimada $1.58/share = $158/contrato. Breakeven $129.24. Delta objetivo 0.35. Backup: NEM — horizonte CORTO PLAZO. Convicción MEDIA. Setup técnico: RSI 65, momentum 1m +20.1%, momentum 3m -3.1%. Stop loss ATR en $105.99 (riesgo ≈ 7.8% desde entrada).",
+        "thesis_text": "NEM — apuesta alcista vía CALL (riesgo limitado a la prima). Strike $126.54, expiry 2026-05-20 (~29d), prima estimada $1.57/share = $157/contrato. Breakeven $128.11. Delta objetivo 0.35. Backup: NEM — horizonte CORTO PLAZO. Convicción MEDIA. Setup técnico: RSI 58, momentum 1m +16.2%, momentum 3m -3.9%. Stop loss ATR en $105.52 (riesgo ≈ 7.4% desde entrada). ⚠️ Sentiment negativo puede invalidar el rebote — reducir tamaño.",
         "key_risks": [
-          "Sin riesgos macro mayores detectados; el riesgo principal es idiosincrático del activo."
+          "Flujo de noticias negativo (sentiment -0.50, n=6)."
         ]
       },
       "option": {
         "type": "call",
-        "strike": 127.66,
-        "expiry": "2026-05-19",
+        "strike": 126.54,
+        "expiry": "2026-05-20",
         "days_to_expiry": 29,
-        "premium_per_share_est": 1.58,
-        "contract_cost_est": 158.36,
-        "breakeven": 129.24,
+        "premium_per_share_est": 1.57,
+        "contract_cost_est": 156.62,
+        "breakeven": 128.11,
         "delta_est": 0.35,
         "sigma_used": 0.421,
-        "max_loss_usd": 158.36
+        "max_loss_usd": 156.62
       }
     },
     {
-      "ticker": "RIO",
+      "ticker": "CCJ",
       "side": "BUY_CALL",
       "horizon": "DERIV",
-      "price": 100.12,
+      "price": 121.6,
       "stop_loss": null,
       "take_profit": null,
       "weight_target": 0.5,
       "thesis": {
-        "ticker": "RIO",
+        "ticker": "CCJ",
         "horizon": "DERIV",
-        "conviction": "ALTA",
+        "conviction": "MEDIA",
         "quant": {
-          "mu_anual": 0.3117042238579175,
-          "sigma_anual": 0.2541603869763295,
-          "beta": 0.6757576649959038,
-          "alpha_jensen": 0.1675467136761243,
-          "sharpe": 1.049354020234303,
-          "expected_return_capm": 0.1441575101817932
+          "mu_anual": 0.5084499747702748,
+          "sigma_anual": 0.5043470110694083,
+          "beta": 1.4089135363904322,
+          "alpha_jensen": 0.2548912551812855,
+          "sharpe": 0.9189109176786512,
+          "expected_return_capm": 0.25355871958898923
         },
         "technical": {
-          "price": 100.12,
-          "rsi": 83.47,
-          "atr": 2.16,
-          "stop_loss_atr": 95.79,
-          "ret_1m": 0.20408900672625396,
-          "ret_3m": 0.20121135997120665,
-          "dist_52w_high": -0.0002995384806770973
+          "price": 121.6,
+          "rsi": 77.38,
+          "atr": 5.1279,
+          "stop_loss_atr": 111.34,
+          "ret_1m": 0.15179503241643522,
+          "ret_3m": -0.006008343001307592,
+          "dist_52w_high": -0.09318364873171914
         },
         "fundamental": {
-          "sentiment_score": 0.333,
+          "sentiment_score": 1.0,
           "n_headlines": 6,
-          "positive": 2,
+          "positive": 6,
           "negative": 0,
           "sample_titles": [
-            "This Newsletter Has a Multidecade Market-Beating Record. How It Finds Winning Stocks—and Dodges Losers.",
-            "Is It Too Late To Reassess Rio Tinto (LSE:RIO) After A 75% One Year Surge?",
-            "Rio Tinto’s Montana Copper Gold Deal And What It Means For Shares"
+            "1 Nuclear Stock That Could Power Your Retirement Income for Decades",
+            "William Blair Initiates Cameco at Outperform With $165 Fair Value: Is Uranium Entering a Supercycle?",
+            "As Trump Pushes for \"Energy Dominance,\" 3 Core Energy Holdings Stand Out for Patient Investors"
           ]
         },
         "macro": {
           "regime": "bull",
-          "regime_reason": "SPY +6.7% sobre SMA200 con pendiente positiva",
-          "vix": 18.96,
-          "oil_wti": 87.31,
-          "dxy_1m": -0.0117,
-          "gold_1m": 0.0516
+          "regime_reason": "SPY +7.0% sobre SMA200 con pendiente positiva",
+          "vix": 19.2,
+          "oil_wti": 86.84,
+          "dxy_1m": -0.0147,
+          "gold_1m": 0.0521
         },
         "risk": {
-          "dollars_allocated": 5032.89,
+          "dollars_allocated": 5032.32,
           "weight_of_total_portfolio": 0.0625,
-          "max_loss_usd_if_stop_hit": 217.66,
-          "max_loss_pct_of_capital": 0.0022,
-          "stop_loss": 95.79
+          "max_loss_usd_if_stop_hit": 424.6,
+          "max_loss_pct_of_capital": 0.0042,
+          "stop_loss": 111.34
         },
-        "thesis_text": "RIO — apuesta alcista vía CALL (riesgo limitado a la prima). Strike $103.12, expiry 2026-05-19 (~29d), prima estimada $1.77/share = $177/contrato. Breakeven $104.89. Delta objetivo 0.35. Backup: RIO — horizonte CORTO PLAZO. Convicción ALTA. Setup técnico: RSI 83, momentum 1m +20.4%, momentum 3m +20.1%. ⚠️ RSI en sobrecompra → riesgo de reversión a la media. Stop loss ATR en $95.79 (riesgo ≈ 4.3% desde entrada). Sentiment de noticias refuerza el setup.",
+        "thesis_text": "CCJ — apuesta alcista vía CALL (riesgo limitado a la prima). Strike $138.62, expiry 2026-05-20 (~29d), prima estimada $1.86/share = $186/contrato. Breakeven $140.48. Delta objetivo 0.35. Backup: CCJ — horizonte CORTO PLAZO. Convicción MEDIA. Setup técnico: RSI 77, momentum 1m +15.2%, momentum 3m -0.6%. ⚠️ RSI en sobrecompra → riesgo de reversión a la media. Stop loss ATR en $111.34 (riesgo ≈ 8.4% desde entrada). Sentiment de noticias refuerza el setup.",
         "key_risks": [
           "Sin riesgos macro mayores detectados; el riesgo principal es idiosincrático del activo."
         ]
       },
       "option": {
         "type": "call",
-        "strike": 103.12,
-        "expiry": "2026-05-19",
+        "strike": 138.62,
+        "expiry": "2026-05-20",
         "days_to_expiry": 29,
-        "premium_per_share_est": 1.77,
-        "contract_cost_est": 177.05,
-        "breakeven": 104.89,
+        "premium_per_share_est": 1.86,
+        "contract_cost_est": 185.99,
+        "breakeven": 140.48,
         "delta_est": 0.35,
-        "sigma_used": 0.254,
-        "max_loss_usd": 177.05
+        "sigma_used": 0.504,
+        "max_loss_usd": 185.99
       }
     }
   ],
   "hedge_book": [],
   "portfolio": {
-    "RTX": 0.2289,
-    "GLD": 0.1998,
-    "GOOGL": 0.1819,
-    "JPM": 0.105,
-    "AAPL": 0.0894,
-    "NEM": 0.0709,
-    "RIO": 0.0563,
-    "SPY": 0.0678
+    "RTX": 0.2293,
+    "GLD": 0.202,
+    "GOOGL": 0.1903,
+    "JPM": 0.1141,
+    "AAPL": 0.0919,
+    "NEM": 0.0762,
+    "SPY": 0.0737,
+    "CCJ": 0.0226
   },
   "radar": {
     "entries": [
       {
+        "ticker": "CCJ",
+        "sector": "Materials",
+        "price": 121.6,
+        "pct_1d": -0.0164,
+        "pct_1w": 0.0477,
+        "pct_1m": 0.1974,
+        "action": "CALL",
+        "headline": "1 Nuclear Stock That Could Power Your Retirement Income for Decades",
+        "sentiment": 1.0,
+        "n_headlines": 6
+      },
+      {
+        "ticker": "RTX",
+        "sector": "Defense",
+        "price": 193.36,
+        "pct_1d": -0.0124,
+        "pct_1w": -0.0466,
+        "pct_1m": -0.0242,
+        "action": "BUY_LP",
+        "headline": "RTX, Northrop, GE Aerospace Beat Views, But Stocks Diverge. Pentagon To ...",
+        "sentiment": 0.833,
+        "n_headlines": 6
+      },
+      {
         "ticker": "AMD",
         "sector": "Tech",
-        "price": 275.77,
-        "pct_1d": -0.0094,
-        "pct_1w": 0.1173,
-        "pct_1m": 0.3435,
+        "price": 280.08,
+        "pct_1d": 0.0186,
+        "pct_1w": 0.098,
+        "pct_1m": 0.3911,
         "action": "BUY_CP",
-        "headline": "Semiconductor stocks haven't been this hot since the dot-com bubble — an...",
+        "headline": "What to watch as Nvidia, AMD, and Broadcom report earnings",
         "sentiment": 0.5,
         "n_headlines": 6
       },
       {
         "ticker": "PBR",
         "sector": "Energy",
-        "price": 20.78,
-        "pct_1d": 0.0164,
-        "pct_1w": -0.0539,
-        "pct_1m": 0.0508,
+        "price": 20.97,
+        "pct_1d": 0.0101,
+        "pct_1w": -0.0019,
+        "pct_1m": 0.1154,
         "action": "BUY_CP",
-        "headline": "Petrobras to buy 75% stake and operatorship in São Tomé Block 3",
-        "sentiment": 0.5,
-        "n_headlines": 6
-      },
-      {
-        "ticker": "JPM",
-        "sector": "Financials",
-        "price": 316.55,
-        "pct_1d": 0.0202,
-        "pct_1w": 0.0092,
-        "pct_1m": 0.1049,
-        "action": "BUY_LP",
-        "headline": "Here's the stealthy reason stocks are at record highs",
-        "sentiment": 0.333,
+        "headline": "Petrobras (PBR) Increases Despite Market Slip: Here's What You Need to Know",
+        "sentiment": 0.833,
         "n_headlines": 6
       },
       {
         "ticker": "GOOGL",
         "sector": "Tech",
-        "price": 338.63,
-        "pct_1d": -0.0089,
-        "pct_1w": 0.0539,
-        "pct_1m": 0.1026,
+        "price": 338.93,
+        "pct_1d": 0.0045,
+        "pct_1w": 0.0181,
+        "pct_1m": 0.126,
         "action": "BUY_LP",
-        "headline": "Tech stocks today: Google and Marvell reportedly developing AI chips, Te...",
-        "sentiment": 0.167,
+        "headline": "Tech stocks today: Wall Street reacts to Apple CEO Tim Cook's decision t...",
+        "sentiment": 0.833,
         "n_headlines": 6
       },
       {
-        "ticker": "RIO",
-        "sector": "Materials",
-        "price": 100.12,
-        "pct_1d": -0.0003,
-        "pct_1w": 0.0093,
-        "pct_1m": 0.1689,
-        "action": "CALL",
-        "headline": "This Newsletter Has a Multidecade Market-Beating Record. How It Finds Wi...",
-        "sentiment": 0.333,
+        "ticker": "JPM",
+        "sector": "Financials",
+        "price": 317.52,
+        "pct_1d": 0.0017,
+        "pct_1w": 0.0206,
+        "pct_1m": 0.1137,
+        "action": "BUY_LP",
+        "headline": "Update: Market Chatter: Amazon's Jeff Bezos Nearing $10 Billion Fundrais...",
+        "sentiment": 0.833,
         "n_headlines": 6
       },
       {
         "ticker": "NEM",
         "sector": "Materials",
-        "price": 115.03,
-        "pct_1d": -0.0126,
-        "pct_1w": -0.0126,
-        "pct_1m": 0.1596,
+        "price": 114.07,
+        "pct_1d": -0.0067,
+        "pct_1w": -0.0438,
+        "pct_1m": 0.1907,
         "action": "CALL",
-        "headline": "U.S. mining stocks dive as gold and other metals under pressure on Iran ...",
-        "sentiment": -0.167,
-        "n_headlines": 6
-      },
-      {
-        "ticker": "RTX",
-        "sector": "Defense",
-        "price": 195.53,
-        "pct_1d": -0.0045,
-        "pct_1w": -0.0292,
-        "pct_1m": -0.0259,
-        "action": "BUY_LP",
-        "headline": "Equities Drop Intraday, Oil Rebounds Amid US-Iran Re-Escalation Fears",
-        "sentiment": -0.167,
+        "headline": "Here's How to Play Newmont Stock Before Q1 Earnings Release",
+        "sentiment": -0.5,
         "n_headlines": 6
       },
       {
         "ticker": "GLD",
         "sector": "ETF",
-        "price": 442.7,
-        "pct_1d": -0.0072,
-        "pct_1w": 0.0169,
-        "pct_1m": 0.0382,
+        "price": 438.8,
+        "pct_1d": -0.0074,
+        "pct_1w": -0.0141,
+        "pct_1m": 0.0615,
         "action": "BUY_LP",
-        "headline": "CBOE VIX Index Spikes 9.7% as Oil-Fueled Fears Grip Markets",
-        "sentiment": 0.167,
+        "headline": "Exchange-Traded Funds, Equity Futures Higher Pre-Bell Tuesday Amid Secon...",
+        "sentiment": 0.333,
         "n_headlines": 6
       },
       {
-        "ticker": "ETHE",
-        "sector": "Crypto",
-        "price": 18.96,
-        "pct_1d": -0.0395,
-        "pct_1w": 0.031,
-        "pct_1m": 0.0892,
+        "ticker": "NOC",
+        "sector": "Defense",
+        "price": 629.16,
+        "pct_1d": -0.0423,
+        "pct_1w": -0.0749,
+        "pct_1m": -0.11,
         "action": "—",
-        "headline": "Beyond Bitcoin: Crypto ETFs to Watch Amid Ethereum's Momentum",
-        "sentiment": 0.5,
+        "headline": "RTX, Northrop, GE Aerospace Beat Views, But Stocks Diverge. Pentagon To ...",
+        "sentiment": 1.0,
         "n_headlines": 6
       },
       {
-        "ticker": "GOLD",
-        "sector": "Materials",
-        "price": 48.58,
-        "pct_1d": 0.0084,
-        "pct_1w": 0.1052,
-        "pct_1m": 0.105,
+        "ticker": "LMT",
+        "sector": "Defense",
+        "price": 575.14,
+        "pct_1d": -0.0106,
+        "pct_1w": -0.0596,
+        "pct_1m": -0.0833,
         "action": "—",
-        "headline": "Gold Heads For Fourth Weekly Gain",
-        "sentiment": 0.5,
+        "headline": "RTX, Northrop, GE Aerospace Beat Views, But Stocks Diverge. Pentagon To ...",
+        "sentiment": 1.0,
         "n_headlines": 6
       }
     ],
-    "n_up": 22,
+    "n_up": 21,
     "n_down": 26,
-    "biggest_winner": "EDN +3.8%",
-    "biggest_loser": "ETHE -4.0%"
+    "biggest_winner": "AVAV +5.8%",
+    "biggest_loser": "NOC -4.2%"
   }
 }
