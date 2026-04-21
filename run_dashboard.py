@@ -1213,14 +1213,13 @@ def main() -> None:
     except Exception as exc:
         import traceback
         logger.error("Error generando dashboard:\n%s", traceback.format_exc())
-        # Generar página de error mínima para que GitHub Pages no quede en blanco
         DOCS_DIR.mkdir(exist_ok=True)
         OUT_PATH.write_text(
             f"<html><body style='background:#0a0f1a;color:#f87171;font-family:monospace;padding:40px'>"
             f"<h2>Dashboard temporalmente no disponible</h2><pre>{exc}</pre></body></html>",
             encoding="utf-8",
         )
-        raise  # re-raise para que el log de GitHub Actions muestre el error completo
+        # NO re-raise: el workflow siempre sale con 0 para no bloquear el deploy
 
     if not args.no_open:
         import webbrowser

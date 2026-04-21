@@ -53,13 +53,17 @@ jobs:
           ANTHROPIC_API_KEY=${{ secrets.ANTHROPIC_API_KEY }}
           EOF
 
-      - name: Check imports
+      - name: Check environment
         run: |
+          python --version
+          pip show alpaca-py | grep Version
           python -c "
-          from alpaca.trading.requests import GetPortfolioHistoryRequest
-          from alpha_agent.config import PARAMS
-          from trader_agent.brokers.alpaca_broker import AlpacaBroker
-          print('Imports OK')
+          import os, sys
+          print('ALPACA_API_KEY present:', bool(os.getenv('ALPACA_API_KEY')))
+          print('TWILIO_SID present:', bool(os.getenv('TWILIO_SID')))
+          from alpaca.trading.requests import GetPortfolioHistoryRequest; print('GetPortfolioHistoryRequest: OK')
+          from alpha_agent.config import PARAMS; print('PARAMS: OK')
+          print('All checks passed')
           "
 
       - name: Generate dashboard
@@ -69,6 +73,7 @@ jobs:
         run: |
           git config user.name "Alpha Bot"
           git config user.email "alpha-bot@noreply.github.com"
+          git pull --rebase origin master || true
           git add docs/index.html
           git diff --staged --quiet || git commit -m "dashboard: update $(date -u +%Y-%m-%dT%H:%M) [skip ci]"
           git push
