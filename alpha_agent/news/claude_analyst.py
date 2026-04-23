@@ -167,7 +167,183 @@ Write in Spanish. MAX 40 words total. No emojis."""
         return None
 
 
-# ── 3. Earnings / Event Impact Quick Score ────────────────────────────────────
+# ── 3. Wall Street Analyst — Full Fundamental + Quant Analysis ───────────────
+
+def wall_street_analysis(
+    ticker: str,
+    fundamentals: dict,
+    quant: dict,
+    news_headlines: list[str],
+    macro_regime: str,
+    *,
+    sector: str = "Other",
+) -> dict | None:
+    """
+    Genera una tesis de inversión completa tipo analista senior de Wall Street.
+
+    Args:
+        ticker: símbolo del activo
+        fundamentals: dict de get_fundamentals() — P/E, FCF yield, ROE, etc.
+        quant: dict con beta, alpha_jensen, sharpe, rsi, ret_1m, ret_3m
+        news_headlines: lista de headlines recientes del ticker
+        macro_regime: 'bull' | 'bear' | 'lateral'
+        sector: sector del activo
+
+    Returns:
+        dict con keys: thesis, catalysts, risks, valuation, recommendation, price_target_pct
+        o None si Claude no está disponible.
+    """
+    client = _client()
+    if client is None:
+        return None
+
+    from alpha_agent.analytics.fundamental import format_for_claude
+
+    fundamental_block = format_for_claude(ticker, fundamentals, quant=quant)
+
+    news_block = (
+        "\n".join(f"- {h}" for h in news_headlines[:5])
+        if news_headlines
+        else "No hay noticias recientes disponibles."
+    )
+
+    prompt = f"""Sos un analista senior de renta variable en una gestora de primer nivel de Wall Street.
+Analizá {ticker} con la siguiente información y generá una tesis de inversión completa.
+
+{fundamental_block}
+
+NOTICIAS RECIENTES:
+{news_block}
+
+CONTEXTO MACRO: Régimen {macro_regime.upper()}
+
+Generá un análisis estructurado. Respondé con JSON válido únicamente:
+{{
+  "thesis": "2-3 líneas: por qué comprar/vender/mantener ahora",
+  "catalysts": "próximos 1-3 catalizadores concretos que podrían mover el precio",
+  "risks": "1-2 riesgos específicos y cuantificados si es posible",
+  "valuation": "CARO|JUSTO|BARATO — 1 línea de justificación vs sector/histórico",
+  "recommendation": "BUY|HOLD|SELL",
+  "price_target_pct": 12.5
+}}
+
+price_target_pct es el upside/downside esperado en % a 12 meses (puede ser negativo).
+Sé concreto y directo. No uses frases vagas."""
+
+    try:
+        msg = client.messages.create(
+            model=_MODEL,
+            max_tokens=350,
+            messages=[{"role": "user", "content": prompt}],
+        )
+        text = msg.content[0].text.strip()
+        match = re.search(r"\{.*\}", text, re.DOTALL)
+        if not match:
+            return None
+        result = json.loads(match.group())
+        # Validar recomendación
+        if result.get("recommendation") not in ("BUY", "HOLD", "SELL"):
+            result["recommendation"] = "HOLD"
+        return result
+    except Exception as exc:
+        logger.debug("Claude wall_street_analysis failed (%s)", exc)
+        return None
+
+
+# ── 4. Risk Arbiter — debate bull/bear antes de ejecutar ─────────────────────
+
+def risk_debate(
+    ticker: str,
+    signal: dict,
+    portfolio_context: dict,
+) -> dict:
+    """
+    Debate estructurado bull/bear para validar una señal antes del trader.
+
+    Inspirado en TradingAgents (github.com/tauricresearch/tradingagents).
+    Usado en el rebalancer semanal para filtrar señales antes de ejecutarlas.
+
+    Args:
+        ticker: símbolo
+        signal: dict con price, stop_loss, take_profit, thesis, conviction, etc.
+        portfolio_context: dict con regime, vix, current_positions, capital_usd
+
+    Returns:
+        dict con: bull_case, bear_case, verdict (PROCEED|REDUCE_SIZE|SKIP),
+                  confidence, size_adjustment (multiplicador 0.5-1.0)
+    """
+    client = _client()
+
+    # Default: si Claude no está disponible, siempre proceder
+    default = {
+        "bull_case": "Claude no disponible — usando señal original",
+        "bear_case": "Sin análisis",
+        "verdict": "PROCEED",
+        "confidence": 0.5,
+        "size_adjustment": 1.0,
+    }
+
+    if client is None:
+        return default
+
+    regime    = portfolio_context.get("regime", "unknown")
+    vix       = portfolio_context.get("vix", 20)
+    positions = portfolio_context.get("current_positions", [])
+    capital   = portfolio_context.get("capital_usd", 1600)
+    conv      = signal.get("thesis", {}).get("conviction", "MEDIA")
+    sharpe    = signal.get("thesis", {}).get("quant", {}).get("sharpe", 0) or 0
+    alpha     = (signal.get("thesis", {}).get("quant", {}).get("alpha_jensen", 0) or 0) * 100
+    stop      = signal.get("stop_loss")
+    tp        = signal.get("take_profit")
+    price     = signal.get("price", 0)
+    r_r       = ((tp - price) / (price - stop)) if (tp and stop and price and price > stop) else None
+
+    prompt = f"""Sos un risk arbitrage committee evaluando si ejecutar esta señal.
+
+SEÑAL: {ticker}
+- Conviction: {conv} | Sharpe: {sharpe:.2f} | Alpha Jensen: {alpha:+.1f}%
+- Precio: ${price:.2f} | Stop: ${f'${stop:.2f}' if stop else 'N/D'} | TP: ${f'${tp:.2f}' if tp else 'N/D'}
+- R/R implícito: {f'{r_r:.1f}x' if r_r else 'N/D'}
+
+CONTEXTO: Régimen {regime.upper()} | VIX {vix:.1f} | Capital ${capital:.0f}
+Posiciones actuales: {', '.join(positions) if positions else 'ninguna'}
+
+Generá el debate y el veredicto en JSON (solo JSON):
+{{
+  "bull_case": "argumento más fuerte A FAVOR en 1-2 líneas",
+  "bear_case": "argumento más fuerte EN CONTRA en 1-2 líneas",
+  "verdict": "PROCEED|REDUCE_SIZE|SKIP",
+  "confidence": 0.0-1.0,
+  "size_adjustment": 1.0
+}}
+
+Guías:
+- PROCEED: señal válida, ejecutar con tamaño normal (size_adjustment=1.0)
+- REDUCE_SIZE: señal válida pero contexto adverso (size_adjustment=0.5-0.75)
+- SKIP: señal inválida o riesgo asimétrico (size_adjustment=0.0)
+- VIX > 25 con régimen BEAR → size_adjustment máximo 0.75"""
+
+    try:
+        msg = client.messages.create(
+            model=_MODEL,
+            max_tokens=200,
+            messages=[{"role": "user", "content": prompt}],
+        )
+        text = msg.content[0].text.strip()
+        match = re.search(r"\{.*\}", text, re.DOTALL)
+        if not match:
+            return default
+        result = json.loads(match.group())
+        if result.get("verdict") not in ("PROCEED", "REDUCE_SIZE", "SKIP"):
+            result["verdict"] = "PROCEED"
+        result["size_adjustment"] = max(0.0, min(1.0, float(result.get("size_adjustment", 1.0))))
+        return result
+    except Exception as exc:
+        logger.debug("Claude risk_debate failed (%s)", exc)
+        return default
+
+
+# ── 5. Earnings / Event Impact Quick Score ────────────────────────────────────
 
 def score_event_impact(ticker: str, headline: str, sector: str) -> int:
     """

@@ -218,7 +218,8 @@ def main():
             claude_override = False
 
             # Check stop loss
-            if stop_loss and current <= stop_loss:
+            stop_loss_hit = bool(stop_loss and current <= stop_loss)
+            if stop_loss_hit:
                 action = "CLOSE"
                 reason = f"STOP LOSS tocado (${current:.2f} <= SL ${stop_loss:.2f})"
 
@@ -311,17 +312,30 @@ def main():
                             reason = f"REDUCCIÓN por Claude: {claude_reason}"
                             claude_override = True
                     elif action == "CLOSE":
-                        # Stop tocado pero Claude dice HOLD con alta confianza → no cerrar
-                        if claude_action == "HOLD" and claude_conf >= 0.80:
-                            logger.warning(
-                                "🤖 Claude veta el cierre de %s (conf=%.0f%%) — %s",
-                                ticker, claude_conf * 100, claude_reason,
-                            )
-                            alerts.append(
-                                f"🤖 *{ticker}*: stop técnico alcanzado PERO Claude recomienda HOLD "
-                                f"(conf={claude_conf:.0%}) — {claude_reason}"
-                            )
-                            action = None  # No cerramos — Claude overrides the mechanical stop
+                        if stop_loss_hit:
+                            # Stop duro tocado: regla de riesgo inviolable — Claude NO puede vetar
+                            if claude_action == "HOLD":
+                                logger.info(
+                                    "🤖 Claude recomendaba HOLD para %s pero el stop duro es inviolable — cerrando",
+                                    ticker,
+                                )
+                                alerts.append(
+                                    f"🤖 *{ticker}*: stop alcanzado — cerrando "
+                                    f"(Claude sugería HOLD: {claude_reason})"
+                                )
+                            # action permanece "CLOSE" — sin veto posible
+                        else:
+                            # TP o trailing stop: Claude puede vetar (son profit-taking, más flexible)
+                            if claude_action == "HOLD" and claude_conf >= 0.80:
+                                logger.warning(
+                                    "🤖 Claude veta TP/trailing de %s (conf=%.0f%%) — %s",
+                                    ticker, claude_conf * 100, claude_reason,
+                                )
+                                alerts.append(
+                                    f"🤖 *{ticker}*: TP/trailing tocado, Claude recomienda HOLD "
+                                    f"(conf={claude_conf:.0%}) — {claude_reason}"
+                                )
+                                action = None  # Solo se veta TP/trailing, nunca el stop duro
 
             if action in ("CLOSE", "REDUCE"):
                 log_msg = f"⚠️ {ticker}: {reason} | P&L: ${unrealized_pnl:+.2f} ({pnl_pct:+.1f}%)"

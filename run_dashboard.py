@@ -14,7 +14,7 @@ import json
 import logging
 import sys
 import time
-from datetime import datetime
+from datetime import datetime, timezone
 from pathlib import Path
 
 from dotenv import load_dotenv
@@ -33,655 +33,666 @@ logging.basicConfig(level=logging.INFO, format="[%(asctime)s] %(message)s", date
 
 # ─── helpers ──────────────────────────────────────────────────────────────────
 
-def _pnl_color(v: float) -> str:
-    return "#4ade80" if v >= 0 else "#f87171"
+def _c(v: float) -> str:
+    return "#3fb950" if v >= 0 else "#f85149"
 
-def _pnl_bg(v: float) -> str:
-    return "rgba(74,222,128,0.10)" if v >= 0 else "rgba(248,113,113,0.10)"
+def _bg(v: float) -> str:
+    return "rgba(63,185,80,.15)" if v >= 0 else "rgba(248,81,73,.15)"
 
-def _fmt_usd(v: float) -> str:
+def _usd(v: float) -> str:
     return f"${v:,.2f}"
 
-def _fmt_pct(v: float, decimals: int = 2) -> str:
-    sign = "+" if v >= 0 else ""
-    return f"{sign}{v:.{decimals}f}%"
+def _pct(v: float, d: int = 2) -> str:
+    return f"{'+'if v>=0 else ''}{v:.{d}f}%"
 
-def _regime_info(regime: str) -> tuple[str, str, str]:
-    """(label_es, color, icon)"""
-    r = regime.lower()
-    if r == "bull":
-        return "Alcista", "#4ade80", "↑"
-    if r == "bear":
-        return "Bajista", "#f87171", "↓"
-    return "Lateral", "#fbbf24", "→"
+def _esc(s: str) -> str:
+    return s.replace("&","&amp;").replace("<","&lt;").replace(">","&gt;").replace('"',"&quot;")
 
-def _conv_info(conv: str) -> tuple[str, str]:
-    """(label_es, color)"""
-    mapping = {
-        "ALTA":  ("Alta",  "#4ade80"),
-        "MEDIA": ("Media", "#fbbf24"),
-        "BAJA":  ("Baja",  "#f87171"),
-    }
-    return mapping.get(conv, (conv, "#94a3b8"))
+def _regime(r: str) -> tuple[str, str]:
+    m = {"bull": ("Alcista","#3fb950"), "bear": ("Bajista","#f85149")}
+    return m.get(r.lower(), ("Lateral","#d29922"))
 
-def _sleeve_info(bucket: str) -> tuple[str, str]:
+def _conv(c: str) -> tuple[str, str]:
+    m = {"ALTA":("Alta","#3fb950"), "MEDIA":("Media","#d29922"), "BAJA":("Baja","#f85149")}
+    return m.get(c, (c,"#7d8590"))
+
+def _sleeve(b: str) -> tuple[str, str]:
     m = {
-        "long_term":    ("Largo Plazo",  "#60a5fa"),
-        "short_term":   ("Corto Plazo",  "#fbbf24"),
-        "options_book": ("Opciones",     "#c084fc"),
-        "hedge_book":   ("Cobertura",    "#34d399"),
+        "long_term":    ("Largo Plazo", "#58a6ff"),
+        "short_term":   ("Corto Plazo", "#d29922"),
+        "options_book": ("Opciones",    "#bc8cff"),
+        "hedge_book":   ("Cobertura",   "#3fb950"),
     }
-    return m.get(bucket, (bucket, "#94a3b8"))
+    return m.get(b, (b, "#7d8590"))
 
-def _vix_label(vix: float) -> tuple[str, str]:
-    if vix > 30:
-        return "Muy alto — mercado en pánico", "#f87171"
-    if vix > 25:
-        return "Elevado — cautela recomendada", "#fb923c"
-    if vix > 18:
-        return "Moderado", "#fbbf24"
-    return "Bajo — mercado tranquilo", "#4ade80"
+def _vix_info(v: float) -> tuple[str, str]:
+    if v > 30: return "Panico — sizing 60%", "#f85149"
+    if v > 25: return "Elevado — sizing 75%", "#ffa657"
+    if v > 18: return "Moderado — sizing 100%", "#d29922"
+    return "Tranquilo — sizing 110%", "#3fb950"
 
-def _escape(s: str) -> str:
-    return s.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;").replace('"', "&quot;")
+def _calc_metrics(history: list[dict], spy_history: list[dict]) -> dict:
+    if len(history) < 3:
+        return {}
+    vals = [h["equity"] for h in history]
+    daily_rets = [(vals[i] - vals[i-1]) / vals[i-1] for i in range(1, len(vals)) if vals[i-1] > 0]
+    if not daily_rets:
+        return {}
+
+    mean_daily = sum(daily_rets) / len(daily_rets)
+    neg_rets = [r for r in daily_rets if r < 0]
+    downside_dev = (sum(r**2 for r in neg_rets) / len(neg_rets)) ** 0.5 if neg_rets else 0.001
+    sortino = (mean_daily * 252) / (downside_dev * (252 ** 0.5))
+
+    peak, max_dd = vals[0], 0.0
+    for v in vals:
+        peak = max(peak, v)
+        dd = (peak - v) / peak if peak > 0 else 0
+        max_dd = max(max_dd, dd)
+
+    port_ret = (vals[-1] - vals[0]) / vals[0] if vals[0] > 0 else 0
+
+    spy_ret = None
+    if spy_history and len(spy_history) >= 2:
+        s_vals = [s["equity"] for s in spy_history]
+        spy_ret = (s_vals[-1] - s_vals[0]) / s_vals[0] if s_vals[0] > 0 else 0
+
+    return {
+        "sortino": round(sortino, 2),
+        "max_dd": round(max_dd * 100, 2),
+        "port_ret_1m": round(port_ret * 100, 2),
+        "spy_ret_1m": round(spy_ret * 100, 2) if spy_ret is not None else None,
+        "alpha_1m": round((port_ret - spy_ret) * 100, 2) if spy_ret is not None else None,
+    }
 
 
-# ─── secciones HTML ───────────────────────────────────────────────────────────
+# ─── TAB: RESUMEN ─────────────────────────────────────────────────────────────
 
-def _header_section(equity: float, initial: float, regime: str,
-                    vix: float, wti: float, gold: float, dxy: float) -> str:
+def _tab_resumen(equity, initial, regime, vix, wti, gold, dxy,
+                 history, spy_history, signals_data, metrics, age_hours):
     pnl     = equity - initial
     pnl_pct = (pnl / initial * 100) if initial else 0
-    pnl_c   = _pnl_color(pnl)
-    pnl_bg  = _pnl_bg(pnl)
-    reg_label, reg_color, reg_icon = _regime_info(regime)
-    vix_label, vix_color = _vix_label(vix)
+    pc      = _c(pnl)
+    pbg     = _bg(pnl)
+    rl, rc  = _regime(regime)
+    vl, vc  = _vix_info(vix)
 
-    return f"""
-<div class="kpi-grid">
-  <div class="kpi-card kpi-main">
-    <div class="kpi-icon">&#x1F4BC;</div>
-    <div class="kpi-label">Patrimonio Total</div>
-    <div class="kpi-value" style="color:{pnl_c}">{_fmt_usd(equity)}</div>
-    <div class="kpi-sub" style="background:{pnl_bg};color:{pnl_c};border-radius:6px;padding:3px 10px;display:inline-block;margin-top:6px">
-      {_fmt_usd(pnl)} &nbsp;({_fmt_pct(pnl_pct)}) desde inicio
-    </div>
+    macro   = signals_data.get("macro", {})
+    port    = signals_data.get("portfolio", {})
+    sharpe  = port.get("sharpe", 0) or 0
+    ret_exp = (port.get("exp_return", 0) or 0) * 100
+    vol     = (port.get("volatility", 0) or 0) * 100
+    gen_at  = signals_data.get("generated_at", "")[:16].replace("T", " ")
+
+    # Freshness banner
+    fresh_html = ""
+    if age_hours >= 24:
+        fresh_html = '<div class="fresh-banner fresh-stale">⚠️ DATOS DESACTUALIZADOS — Senales de hace mas de 24h. El analyst no ha corrido hoy.</div>'
+    elif age_hours >= 8:
+        fresh_html = f'<div class="fresh-banner fresh-warn">⚠️ Senales de hace {age_hours:.0f}h — El dashboard puede no reflejar la sesion de hoy.</div>'
+
+    # Hero KPI row
+    spy_badge = ""
+    if metrics.get("spy_ret_1m") is not None:
+        spy_badge = f'&nbsp;&middot;&nbsp;<span style="color:#7d8590">SPY {_pct(metrics["spy_ret_1m"])}</span>'
+
+    kpis = f"""
+<div class="kpi-row">
+  <div class="kpi kpi-hero" data-countup="{equity:.2f}">
+    <div class="kpi-lbl">Patrimonio Total</div>
+    <div class="kpi-val kpi-hero-val" style="color:{pc}" id="kpi-equity">{_usd(equity)}</div>
+    <div class="kpi-tag" style="background:{pbg};color:{pc}">{_usd(pnl)} &nbsp; {_pct(pnl_pct)} total{spy_badge}</div>
   </div>
-  <div class="kpi-card">
-    <div class="kpi-icon">&#x1F4CA;</div>
-    <div class="kpi-label">Régimen de Mercado</div>
-    <div class="kpi-value" style="color:{reg_color}">{reg_icon} {reg_label}</div>
-    <div class="kpi-sub">Capital base: {_fmt_usd(initial)}</div>
+  <div class="kpi">
+    <div class="kpi-lbl">Regimen de Mercado</div>
+    <div class="kpi-val" style="color:{rc}">{rl}</div>
+    <div class="kpi-sub">Capital base {_usd(initial)}</div>
   </div>
-  <div class="kpi-card">
-    <div class="kpi-icon">&#x26A1;</div>
-    <div class="kpi-label">VIX — Volatilidad</div>
-    <div class="kpi-value" style="color:{vix_color}">{vix:.1f}</div>
-    <div class="kpi-sub">{vix_label}</div>
+  <div class="kpi">
+    <div class="kpi-lbl">VIX — Volatilidad</div>
+    <div class="kpi-val" style="color:{vc}">{vix:.1f}</div>
+    <div class="kpi-sub">{vl}</div>
   </div>
-  <div class="kpi-card">
-    <div class="kpi-icon">&#x1F6E2;</div>
-    <div class="kpi-label">Petróleo WTI</div>
-    <div class="kpi-value">{_fmt_usd(wti)}</div>
+  <div class="kpi">
+    <div class="kpi-lbl">Sharpe del Portfolio</div>
+    <div class="kpi-val" style="color:{'#3fb950'if sharpe>0.5 else'#d29922'if sharpe>0 else'#f85149'}">{sharpe:.2f}</div>
+    <div class="kpi-sub">Retorno esperado {_pct(ret_exp)}</div>
+  </div>
+  <div class="kpi">
+    <div class="kpi-lbl">Petroleo WTI</div>
+    <div class="kpi-val">{_usd(wti)}</div>
     <div class="kpi-sub">por barril</div>
   </div>
-  <div class="kpi-card">
-    <div class="kpi-icon">&#x1F947;</div>
-    <div class="kpi-label">Oro</div>
-    <div class="kpi-value">{_fmt_usd(gold)}</div>
+  <div class="kpi">
+    <div class="kpi-lbl">Oro</div>
+    <div class="kpi-val">{_usd(gold)}</div>
     <div class="kpi-sub">por onza troy</div>
   </div>
-  <div class="kpi-card">
-    <div class="kpi-icon">&#x1F4B5;</div>
-    <div class="kpi-label">Dólar Index (DXY)</div>
-    <div class="kpi-value">{dxy:.1f}</div>
-    <div class="kpi-sub">fuerza del dólar</div>
+  <div class="kpi">
+    <div class="kpi-lbl">Dolar Index (DXY)</div>
+    <div class="kpi-val">{dxy:.1f}</div>
+    <div class="kpi-sub">Volatilidad anual {_pct(vol)}</div>
   </div>
 </div>"""
 
+    # Advanced metrics row
+    adv_kpis = ""
+    if metrics:
+        sortino_v = metrics.get("sortino", 0) or 0
+        max_dd_v  = metrics.get("max_dd", 0) or 0
+        alpha_v   = metrics.get("alpha_1m")
+        spy_r     = metrics.get("spy_ret_1m")
+        port_r    = metrics.get("port_ret_1m", 0) or 0
 
-def _equity_chart_section(history: list[dict]) -> str:
+        alpha_html = (
+            f'<div class="kpi"><div class="kpi-lbl">Alpha vs SPY (1M)</div>'
+            f'<div class="kpi-val" style="color:{_c(alpha_v)}">{_pct(alpha_v)}</div>'
+            f'<div class="kpi-sub">Portfolio {_pct(port_r)} vs SPY {_pct(spy_r)}</div></div>'
+        ) if alpha_v is not None else ""
+
+        adv_kpis = f"""
+<div class="kpi-row kpi-row-adv">
+  <div class="kpi">
+    <div class="kpi-lbl">Sortino Ratio (1M)</div>
+    <div class="kpi-val" style="color:{'#3fb950'if sortino_v>1 else'#d29922'if sortino_v>0 else'#f85149'}">{sortino_v:.2f}</div>
+    <div class="kpi-sub">Riesgo / retorno ajustado baja</div>
+  </div>
+  <div class="kpi">
+    <div class="kpi-lbl">Max Drawdown (1M)</div>
+    <div class="kpi-val" style="color:{'#3fb950'if max_dd_v<3 else'#d29922'if max_dd_v<7 else'#f85149'}">-{max_dd_v:.2f}%</div>
+    <div class="kpi-sub">Caida maxima desde pico</div>
+  </div>
+  {alpha_html}
+</div>"""
+
+    eq_chart = _equity_chart(history, spy_history)
+    cal      = _pnl_calendar(history)
+    ts_info  = f'<p class="ts">Senales actualizadas: {gen_at} &nbsp;|&nbsp; Paper Trading</p>' if gen_at else ""
+
+    return f"""
+<div class="tab-content" id="tab-resumen">
+  {fresh_html}
+  {ts_info}
+  {kpis}
+  {adv_kpis}
+  <div class="section-gap"></div>
+  {eq_chart}
+  <div class="section-gap"></div>
+  {cal}
+</div>"""
+
+
+def _equity_chart(history, spy_history=None):
     if len(history) < 2:
-        return '<div class="card"><p class="muted">Sin historial de patrimonio disponible todavía.</p></div>'
+        return '<div class="card"><p class="muted" style="padding:40px;text-align:center">Sin historial de patrimonio disponible todavia.</p></div>'
 
-    labels = [datetime.fromtimestamp(h["ts"]).strftime("%d %b") for h in history]
-    vals   = [round(h["equity"], 2) for h in history]
-    first  = vals[0]
-    last   = vals[-1]
-    color  = "#4ade80" if last >= first else "#f87171"
-    min_v  = min(vals) * 0.995
-    max_v  = max(vals) * 1.005
+    labels   = [datetime.fromtimestamp(h["ts"]).strftime("%d %b") for h in history]
+    vals     = [round(h["equity"], 2) for h in history]
+    first, last = vals[0], vals[-1]
+    color    = _c(last - first)
+    total_pct = _pct((last - first) / first * 100 if first else 0)
+    min_v    = min(vals) * 0.995
+    max_v    = max(vals) * 1.005
 
-    return f"""
-<div class="card card-wide">
-  <div class="card-header">
-    <span class="card-title">Evolución del Patrimonio</span>
-    <span class="card-badge" style="color:{color}">{_fmt_pct((last - first)/first*100 if first else 0)} total</span>
-  </div>
-  <canvas id="equityChart" height="90"></canvas>
-</div>
-<script>
-(function(){{
-  const ctx = document.getElementById('equityChart');
-  const grad = ctx.getContext('2d').createLinearGradient(0, 0, 0, 280);
-  grad.addColorStop(0, '{color}44');
-  grad.addColorStop(1, '{color}00');
-  new Chart(ctx, {{
-    type: 'line',
-    data: {{
-      labels: {json.dumps(labels)},
-      datasets: [{{
-        data: {json.dumps(vals)},
-        borderColor: '{color}',
-        backgroundColor: grad,
-        fill: true,
-        tension: 0.4,
-        pointRadius: 3,
-        pointHoverRadius: 6,
-        pointBackgroundColor: '{color}',
-        borderWidth: 2.5,
-      }}]
-    }},
-    options: {{
-      animation: {{ duration: 800, easing: 'easeInOutQuart' }},
-      plugins: {{
-        legend: {{ display: false }},
-        tooltip: {{
-          backgroundColor: '#1e2837',
-          titleColor: '#94a3b8',
-          bodyColor: '#f1f5f9',
-          padding: 12,
-          callbacks: {{
-            label: ctx => ' $' + ctx.parsed.y.toLocaleString('es-AR', {{minimumFractionDigits:2}})
-          }}
-        }}
-      }},
-      scales: {{
-        x: {{
-          ticks: {{ color: '#64748b', maxTicksLimit: 10, font: {{ size: 11 }} }},
-          grid: {{ color: '#1e293b' }}
-        }},
-        y: {{
-          min: {min_v:.2f},
-          max: {max_v:.2f},
-          ticks: {{ color: '#64748b', callback: v => '$' + v.toLocaleString(), font: {{ size: 11 }} }},
-          grid: {{ color: '#1e293b' }}
-        }}
-      }}
-    }}
-  }});
-}})();
-</script>"""
-
-
-def _positions_section(positions: list) -> str:
-    if not positions:
-        return '<div class="card"><div class="card-title">Posiciones Abiertas</div><p class="muted">Sin posiciones abiertas en este momento.</p></div>'
-
-    tickers  = []
-    values   = []
-    pnl_rows = []
-    chart_colors = [
-        "#60a5fa","#4ade80","#fbbf24","#f87171","#c084fc",
-        "#34d399","#fb923c","#38bdf8","#a78bfa","#f472b6",
-    ]
-
-    rows_html = ""
-    for i, p in enumerate(positions):
-        cost        = (p.avg_price or 0) * (p.qty or 0)
-        pnl         = p.unrealized_pl
-        pnl_pct     = (pnl / cost * 100) if cost else 0
-        pnl_c       = _pnl_color(pnl)
-        bar_w       = min(abs(pnl_pct) * 5, 100)
-        color       = chart_colors[i % len(chart_colors)]
-        tickers.append(p.ticker)
-        values.append(round(p.market_value, 2))
-
-        rows_html += f"""
-<div class="pos-card" style="border-left:3px solid {color}">
-  <div class="pos-top">
-    <span class="pos-ticker" style="color:{color}">{p.ticker}</span>
-    <span class="pos-pnl" style="color:{pnl_c};background:rgba(0,0,0,.2);padding:2px 10px;border-radius:20px">
-      {_fmt_pct(pnl_pct, 1)} &nbsp; {_fmt_usd(pnl)}
-    </span>
-  </div>
-  <div class="pos-bar-track">
-    <div class="pos-bar-fill" style="width:{bar_w:.1f}%;background:{pnl_c}"></div>
-  </div>
-  <div class="pos-details">
-    <span>Cantidad: <b>{p.qty:.4f}</b></span>
-    <span>Precio entrada: <b>{_fmt_usd(p.avg_price)}</b></span>
-    <span>Valor de mercado: <b>{_fmt_usd(p.market_value)}</b></span>
-  </div>
-</div>"""
+    # SPY benchmark dataset
+    spy_dataset = ""
+    spy_legend  = ""
+    if spy_history and len(spy_history) >= 2:
+        spy_vals_raw = [round(s["equity"], 2) for s in spy_history]
+        # Align SPY to same start as portfolio
+        spy_start = spy_vals_raw[0] if spy_vals_raw else first
+        spy_vals = [round(v / spy_start * first, 2) for v in spy_vals_raw]
+        min_v = min(min_v, min(spy_vals) * 0.995)
+        max_v = max(max_v, max(spy_vals) * 1.005)
+        spy_last = spy_vals[-1]
+        spy_ret = (spy_last - first) / first * 100 if first else 0
+        spy_dataset = f""",
+    {{data:{json.dumps(spy_vals)},label:'SPY',
+      borderColor:'#7d8590',backgroundColor:'transparent',fill:false,
+      tension:.4,pointRadius:0,borderWidth:1.5,borderDash:[5,3]}}"""
+        spy_legend = f'<span style="font-size:.78rem;color:#7d8590">&#9135;&#9135; SPY {_pct(spy_ret)}</span>'
 
     return f"""
 <div class="card">
-  <div class="card-header">
-    <span class="card-title">Posiciones Abiertas</span>
-    <span class="card-badge">{len(positions)} activos</span>
-  </div>
-  <div style="display:flex;gap:24px;flex-wrap:wrap;align-items:flex-start">
-    <div style="flex:0 0 200px;display:flex;flex-direction:column;align-items:center">
-      <canvas id="allocChart" width="180" height="180"></canvas>
-      <div class="chart-legend" id="allocLegend"></div>
+  <div class="card-head">
+    <div>
+      <div class="card-title">Evolucion del Patrimonio</div>
+      <div class="card-sub" style="display:flex;gap:14px;align-items:center">
+        <span><span style="color:{color};font-weight:700;font-size:.9rem">{total_pct}</span> variacion total</span>
+        {spy_legend}
+      </div>
     </div>
-    <div style="flex:1;min-width:300px">
-      {rows_html}
-    </div>
+    <div class="pill" style="color:{color}">{_usd(last)}</div>
   </div>
+  <canvas id="eqChart" height="85"></canvas>
 </div>
 <script>
 (function(){{
-  const labels = {json.dumps(tickers)};
-  const values = {json.dumps(values)};
-  const colors = {json.dumps(chart_colors[:len(tickers)])};
-  new Chart(document.getElementById('allocChart'), {{
-    type: 'doughnut',
-    data: {{ labels, datasets: [{{ data: values, backgroundColor: colors, borderWidth: 2, borderColor: '#0f172a' }}] }},
-    options: {{
-      cutout: '68%',
-      animation: {{ duration: 900, easing: 'easeInOutQuart' }},
-      plugins: {{
-        legend: {{ display: false }},
-        tooltip: {{
-          backgroundColor: '#1e2837',
-          titleColor: '#94a3b8',
-          bodyColor: '#f1f5f9',
-          padding: 10,
-          callbacks: {{
-            label: ctx => ' $' + ctx.parsed.toLocaleString('es-AR', {{minimumFractionDigits:2}})
-          }}
+  const ctx = document.getElementById('eqChart');
+  const g = ctx.getContext('2d').createLinearGradient(0,0,0,300);
+  g.addColorStop(0,'{color}44'); g.addColorStop(1,'{color}00');
+  window._charts = window._charts||{{}};
+  window._charts.eq = new Chart(ctx,{{
+    type:'line',
+    data:{{
+      labels:{json.dumps(labels)},
+      datasets:[
+        {{data:{json.dumps(vals)},label:'Portfolio',
+          borderColor:'{color}',backgroundColor:g,fill:true,tension:.4,
+          pointRadius:2,pointHoverRadius:7,pointBackgroundColor:'{color}',borderWidth:2.5}}
+        {spy_dataset}
+      ]
+    }},
+    options:{{
+      animation:{{duration:900,easing:'easeInOutQuart'}},
+      interaction:{{mode:'index',intersect:false}},
+      plugins:{{
+        legend:{{display:false}},
+        tooltip:{{
+          backgroundColor:'#161b22',borderColor:'#30363d',borderWidth:1,
+          titleColor:'#7d8590',bodyColor:'#e6edf3',padding:12,
+          callbacks:{{label:c=>c.dataset.label+' $'+c.parsed.y.toLocaleString('es-AR',{{minimumFractionDigits:2}})}}
         }}
+      }},
+      scales:{{
+        x:{{ticks:{{color:'#7d8590',maxTicksLimit:10,font:{{size:11}}}},grid:{{color:'#21262d'}}}},
+        y:{{min:{min_v:.2f},max:{max_v:.2f},
+          ticks:{{color:'#7d8590',callback:v=>'$'+v.toLocaleString(),font:{{size:11}}}},
+          grid:{{color:'#21262d'}}}}
       }}
     }}
-  }});
-  const leg = document.getElementById('allocLegend');
-  const total = values.reduce((a,b)=>a+b,0);
-  labels.forEach((l,i)=>{{
-    const pct = (values[i]/total*100).toFixed(1);
-    leg.innerHTML += `<div class="leg-item"><span class="leg-dot" style="background:${{colors[i]}}"></span>${{l}} <span class="muted">${{pct}}%</span></div>`;
   }});
 }})();
 </script>"""
 
 
-def _sector_section() -> str:
-    try:
-        from alpha_agent.macro.sector_rotation import get_top_sectors
-        tops = get_top_sectors(n=10)
-    except Exception:
+def _pnl_calendar(history):
+    if len(history) < 2:
+        return ""
+    import calendar as cm
+    from datetime import date
+
+    daily = {}
+    for i in range(1, len(history)):
+        pe = history[i-1]["equity"]
+        ce = history[i]["equity"]
+        d  = datetime.fromtimestamp(history[i]["ts"]).date()
+        pnl = ce - pe
+        pnl_pct = (pnl / pe * 100) if pe else 0
+        daily[d] = {"pnl": pnl, "pct": pnl_pct}
+
+    if not daily:
         return ""
 
-    if not tops:
-        return ""
+    last = max(daily.keys())
+    yr, mo = last.year, last.month
+    month_name = ["Enero","Febrero","Marzo","Abril","Mayo","Junio",
+                  "Julio","Agosto","Septiembre","Octubre","Noviembre","Diciembre"][mo-1]
 
-    labels  = [s for s, _ in tops]
-    values  = [round(v * 100, 2) for _, v in tops]
-    colors  = ["#4ade80" if v >= 0 else "#f87171" for v in values]
+    month_d = {d:v for d,v in daily.items() if d.year==yr and d.month==mo}
+    total   = sum(v["pnl"] for v in month_d.values())
+    wins    = sum(1 for v in month_d.values() if v["pnl"]>=0)
+    losses  = len(month_d) - wins
+    best    = max(month_d.values(), key=lambda v: v["pnl"], default=None)
+    worst   = min(month_d.values(), key=lambda v: v["pnl"], default=None)
+
+    def cell_style(pnl):
+        if pnl > 0:
+            i = min(pnl/250, 1.0)
+            r = int(10 + 30*i); g = int(55 + 130*i); b = int(25 + 30*i)
+            return f"background:rgb({r},{g},{b})", "#3fb950" if i>.4 else "#86efac"
+        elif pnl < 0:
+            i = min(abs(pnl)/250, 1.0)
+            r = int(55 + 170*i); g = int(15 + 20*i); b = int(15 + 20*i)
+            return f"background:rgb({r},{g},{b})", "#f85149" if i>.4 else "#fca5a5"
+        return "background:var(--s2)", "#7d8590"
+
+    n_days = cm.monthrange(yr, mo)[1]
+    start  = date(yr, mo, 1).weekday()
+    rows   = ""
+    day_n  = 1 - start
+
+    while day_n <= n_days:
+        rows += "<tr>"
+        for dow in range(7):
+            if day_n < 1 or day_n > n_days:
+                rows += '<td class="cal-empty"></td>'
+            else:
+                d    = date(yr, mo, day_n)
+                data = month_d.get(d)
+                if data:
+                    bg, tc2 = cell_style(data["pnl"])
+                    s = "+" if data["pnl"]>=0 else ""
+                    rows += f"""<td class="cal-cell" style="{bg}">
+  <span class="cal-n">{day_n}</span>
+  <span class="cal-p" style="color:{tc2}">{s}${data['pnl']:,.0f}</span>
+  <span class="cal-q" style="color:{tc2}">{s}{data['pct']:.1f}%</span>
+</td>"""
+                elif dow >= 5:
+                    rows += f'<td class="cal-cell cal-wk"><span class="cal-n">{day_n}</span></td>'
+                else:
+                    rows += f'<td class="cal-cell cal-nd"><span class="cal-n">{day_n}</span><span class="cal-q">—</span></td>'
+            day_n += 1
+        rows += "</tr>"
+
+    bh = f'<b style="color:#3fb950">+${best["pnl"]:,.0f}</b>' if best else "—"
+    wh = f'<b style="color:#f85149">${worst["pnl"]:,.0f}</b>' if worst else "—"
 
     return f"""
 <div class="card">
-  <div class="card-header">
-    <span class="card-title">Rotación Sectorial</span>
-    <span class="card-badge muted">Impulso 1-3 meses</span>
+  <div class="card-head">
+    <div>
+      <div class="card-title">Resultados Diarios — {month_name} {yr}</div>
+      <div class="card-sub">{wins} dias positivos &middot; {losses} negativos &middot; Mejor: {bh} &middot; Peor: {wh}</div>
+    </div>
+    <div class="pill" style="color:{_c(total)};font-size:1rem;font-weight:700">{"+" if total>=0 else ""}${total:,.0f}</div>
   </div>
-  <canvas id="sectorChart" height="110"></canvas>
-</div>
-<script>
-(function(){{
-  new Chart(document.getElementById('sectorChart'), {{
-    type: 'bar',
-    data: {{
-      labels: {json.dumps(labels)},
-      datasets: [{{
-        data: {json.dumps(values)},
-        backgroundColor: {json.dumps(colors)},
-        borderRadius: 6,
-        borderSkipped: false,
-      }}]
-    }},
-    options: {{
-      animation: {{ duration: 700 }},
-      plugins: {{
-        legend: {{ display: false }},
-        tooltip: {{
-          backgroundColor: '#1e2837',
-          titleColor: '#94a3b8',
-          bodyColor: '#f1f5f9',
-          padding: 10,
-          callbacks: {{ label: ctx => ' ' + ctx.parsed.y.toFixed(2) + '%' }}
-        }}
-      }},
-      scales: {{
-        x: {{ ticks: {{ color: '#64748b', font: {{ size: 11 }} }}, grid: {{ display: false }} }},
-        y: {{
-          ticks: {{ color: '#64748b', callback: v => v + '%', font: {{ size: 11 }} }},
-          grid: {{ color: '#1e293b' }}
-        }}
-      }}
-    }}
-  }});
-}})();
-</script>"""
-
-
-def _signals_section(signals_data: dict) -> str:
-    gen_at = signals_data.get("generated_at", "")[:16].replace("T", " ")
-    cards  = ""
-
-    for bucket in ("long_term", "short_term", "options_book", "hedge_book"):
-        sleeve_label, sleeve_color = _sleeve_info(bucket)
-        for s in signals_data.get(bucket, []):
-            thesis    = s.get("thesis", {})
-            quant     = thesis.get("quant", {})
-            risk      = thesis.get("risk", {})
-            conv      = thesis.get("conviction", "?")
-            conv_label, conv_color = _conv_info(conv)
-            thesis_text = _escape(thesis.get("thesis_text", "Sin descripción disponible."))
-            sl        = s.get("stop_loss")
-            tp        = s.get("take_profit")
-            price     = s.get("price", 0) or 0
-            sharpe    = quant.get("sharpe", 0) or 0
-            alpha     = (quant.get("alpha_jensen", 0) or 0) * 100
-            beta      = quant.get("beta", 0) or 0
-            alloc     = risk.get("dollars_allocated", 0) or 0
-            ticker    = s.get("ticker", "?")
-
-            # Barra de convicción visual
-            conv_pct = {"ALTA": 90, "MEDIA": 55, "BAJA": 25}.get(conv, 40)
-
-            sl_html = f'<span style="color:#f87171">{_fmt_usd(sl)}</span>' if sl else '<span class="muted">—</span>'
-            tp_html = f'<span style="color:#4ade80">{_fmt_usd(tp)}</span>' if tp else '<span class="muted">—</span>'
-
-            uid = f"sig_{ticker}_{bucket}"
-            cards += f"""
-<div class="sig-card" onclick="toggleThesis('{uid}')">
-  <div class="sig-top">
-    <div style="display:flex;align-items:center;gap:10px">
-      <span class="sig-ticker">{ticker}</span>
-      <span class="sig-sleeve" style="color:{sleeve_color};border-color:{sleeve_color}40">{sleeve_label}</span>
-      <span class="sig-conv" style="color:{conv_color}">&#9679; Convicción {conv_label}</span>
-    </div>
-    <div style="display:flex;align-items:center;gap:14px;flex-wrap:wrap">
-      <span class="sig-price">Precio: <b>{_fmt_usd(price)}</b></span>
-      <span class="sig-price">Asignado: <b>{_fmt_usd(alloc)}</b></span>
-      <span class="sig-expand">Ver análisis &#9660;</span>
-    </div>
-  </div>
-  <div class="sig-metrics">
-    <div class="metric-pill">
-      <div class="metric-label">Sharpe</div>
-      <div class="metric-val" style="color:#60a5fa">{sharpe:.2f}</div>
-    </div>
-    <div class="metric-pill">
-      <div class="metric-label">Alfa de Jensen</div>
-      <div class="metric-val" style="color:{'#4ade80' if alpha >= 0 else '#f87171'}">{_fmt_pct(alpha)}</div>
-    </div>
-    <div class="metric-pill">
-      <div class="metric-label">Beta</div>
-      <div class="metric-val">{beta:.2f}</div>
-    </div>
-    <div class="metric-pill">
-      <div class="metric-label">Stop Loss</div>
-      <div class="metric-val">{sl_html}</div>
-    </div>
-    <div class="metric-pill">
-      <div class="metric-label">Toma de Ganancias</div>
-      <div class="metric-val">{tp_html}</div>
-    </div>
-  </div>
-  <div class="conv-bar-track">
-    <div class="conv-bar-fill" style="width:{conv_pct}%;background:{conv_color}"></div>
-  </div>
-  <div class="sig-thesis" id="{uid}" style="display:none">
-    <p>{thesis_text}</p>
-  </div>
-</div>"""
-
-    if not cards:
-        return '<div class="card"><p class="muted">Sin señales disponibles. Ejecute el Agente Analista primero.</p></div>'
-
-    return f"""
-<div class="card card-wide">
-  <div class="card-header">
-    <span class="card-title">Señales del Agente Analista</span>
-    <span class="card-badge muted">Generadas: {gen_at}</span>
-  </div>
-  <p class="muted" style="margin-bottom:12px;font-size:.8rem">
-    Haga clic en cada señal para ver el análisis completo.
-  </p>
-  {cards}
-</div>"""
-
-
-def _radar_section(signals_data: dict) -> str:
-    radar   = signals_data.get("radar", {})
-    entries = radar.get("entries", [])
-    n_up    = radar.get("n_up", 0)
-    n_down  = radar.get("n_down", 0)
-    winner  = radar.get("biggest_winner", "—")
-    loser   = radar.get("biggest_loser", "—")
-
-    if not entries:
-        return ""
-
-    rows = ""
-    for e in entries[:14]:
-        t      = e.get("ticker", "")
-        move   = e.get("move_pct", 0) or 0
-        news   = _escape(e.get("top_news", "Sin noticias")[:100])
-        action = _escape(e.get("bot_action", ""))
-        c      = _pnl_color(move)
-        arrow  = "▲" if move >= 0 else "▼"
-        rows  += f"""
-<tr>
-  <td><b style="color:#e2e8f0">{t}</b></td>
-  <td style="color:{c};font-weight:700;white-space:nowrap">{arrow} {abs(move):.1f}%</td>
-  <td class="muted" style="font-size:.8rem">{news}</td>
-  <td><span style="font-size:.75rem;color:#94a3b8">{action}</span></td>
-</tr>"""
-
-    return f"""
-<div class="card card-wide">
-  <div class="card-header">
-    <span class="card-title">Radar del Universo — 51 Activos</span>
-    <div style="display:flex;gap:14px;flex-wrap:wrap">
-      <span style="color:#4ade80">&#9650; {n_up} al alza</span>
-      <span style="color:#f87171">&#9660; {n_down} a la baja</span>
-      <span class="muted">Mayor ganador: <b style="color:#4ade80">{winner}</b></span>
-      <span class="muted">Mayor perdedor: <b style="color:#f87171">{loser}</b></span>
-    </div>
-  </div>
-  <div style="overflow-x:auto">
-    <table>
-      <thead>
-        <tr>
-          <th>Activo</th>
-          <th>Movimiento</th>
-          <th>Noticia destacada</th>
-          <th>Acción del sistema</th>
-        </tr>
-      </thead>
+  <div class="cal-wrap">
+    <table class="cal-table">
+      <thead><tr>{"".join(f'<th class="cal-th">{d}</th>' for d in ["Lun","Mar","Mie","Jue","Vie","Sab","Dom"])}</tr></thead>
       <tbody>{rows}</tbody>
     </table>
   </div>
 </div>"""
 
 
-def _pnl_calendar_section(history: list[dict]) -> str:
-    """
-    Calendario mensual de P&L diario.
-    Cada celda muestra el día, el P&L en dólares y el % de variación.
-    Verde = ganancia, Rojo = pérdida, intensidad proporcional al monto.
-    """
-    if len(history) < 2:
-        return ""
+# ─── TAB: POSICIONES ──────────────────────────────────────────────────────────
 
-    # Calcular P&L diario desde la curva de equity
-    from datetime import date, timedelta
-    import calendar as cal_mod
+def _tab_posiciones(positions):
+    if not positions:
+        return """
+<div class="tab-content" id="tab-posiciones">
+  <div class="card"><p class="muted" style="padding:60px;text-align:center;font-size:1rem">
+    Sin posiciones abiertas en este momento.
+  </p></div>
+</div>"""
 
-    daily: dict[date, dict] = {}
-    for i in range(1, len(history)):
-        prev_eq = history[i - 1]["equity"]
-        curr_eq = history[i]["equity"]
-        d       = datetime.fromtimestamp(history[i]["ts"]).date()
-        pnl     = curr_eq - prev_eq
-        pnl_pct = (pnl / prev_eq * 100) if prev_eq else 0
-        daily[d] = {"pnl": pnl, "pnl_pct": pnl_pct, "equity": curr_eq}
+    COLORS = ["#58a6ff","#3fb950","#d29922","#f85149","#bc8cff",
+              "#ffa657","#79c0ff","#56d364","#ff7b72","#d2a8ff"]
 
-    if not daily:
-        return ""
+    tickers  = [p.ticker for p in positions]
+    values   = [round(p.market_value, 2) for p in positions]
+    colors   = [COLORS[i % len(COLORS)] for i in range(len(positions))]
+    total_mv  = sum(values)
+    total_pnl = sum(p.unrealized_pl for p in positions)
+    tp_c      = _c(total_pnl)
 
-    # Mes y año del último dato disponible
-    last_date  = max(daily.keys())
-    year, month = last_date.year, last_date.month
-    month_name  = ["Enero","Febrero","Marzo","Abril","Mayo","Junio",
-                   "Julio","Agosto","Septiembre","Octubre","Noviembre","Diciembre"][month - 1]
-
-    # Estadísticas del mes
-    month_days  = {d: v for d, v in daily.items() if d.year == year and d.month == month}
-    total_pnl   = sum(v["pnl"] for v in month_days.values())
-    wins        = sum(1 for v in month_days.values() if v["pnl"] >= 0)
-    losses      = sum(1 for v in month_days.values() if v["pnl"] < 0)
-    best        = max(month_days.values(), key=lambda v: v["pnl"], default=None)
-    worst       = min(month_days.values(), key=lambda v: v["pnl"], default=None)
-    total_c     = "#4ade80" if total_pnl >= 0 else "#f87171"
-
-    def _cell_colors(pnl: float) -> tuple[str, str]:
-        """(background, text color)"""
-        if pnl > 0:
-            intensity = min(pnl / 300, 1.0)   # satura en +$300
-            r = int(10  + (22 - 10)  * intensity)
-            g = int(40  + (163 - 40) * intensity)
-            b = int(30  + (50 - 30)  * intensity)
-            return f"rgb({r},{g},{b})", "#4ade80" if intensity > 0.4 else "#86efac"
-        elif pnl < 0:
-            intensity = min(abs(pnl) / 300, 1.0)
-            r = int(50  + (200 - 50) * intensity)
-            g = int(10  + (30 - 10)  * intensity)
-            b = int(10  + (30 - 10)  * intensity)
-            return f"rgb({r},{g},{b})", "#f87171" if intensity > 0.4 else "#fca5a5"
-        return "var(--surface2)", "#64748b"
-
-    # Construir grilla — semanas como filas, Lun-Dom como columnas
-    first_day  = date(year, month, 1)
-    last_day_n = cal_mod.monthrange(year, month)[1]
-    # Índice lunes=0 del primer día del mes
-    start_dow  = first_day.weekday()
-
-    headers = ["".join(f'<th class="cal-th">{d}</th>'
-               for d in ["Lun", "Mar", "Mié", "Jue", "Vie", "Sáb", "Dom"])]
-
-    rows_html = ""
-    day_num   = 1 - start_dow   # puede ser negativo para celdas vacías iniciales
-
-    while day_num <= last_day_n:
-        rows_html += "<tr>"
-        for dow in range(7):
-            if day_num < 1 or day_num > last_day_n:
-                rows_html += '<td class="cal-empty"></td>'
-            else:
-                d = date(year, month, day_num)
-                is_weekend = dow >= 5
-                data = month_days.get(d)
-
-                if data:
-                    bg, tc = _cell_colors(data["pnl"])
-                    sign   = "+" if data["pnl"] >= 0 else ""
-                    rows_html += f"""
-<td class="cal-cell" style="background:{bg}">
-  <div class="cal-day">{day_num}</div>
-  <div class="cal-pnl" style="color:{tc}">{sign}${data['pnl']:,.0f}</div>
-  <div class="cal-pct" style="color:{tc}">{sign}{data['pnl_pct']:.1f}%</div>
-</td>"""
-                elif is_weekend:
-                    rows_html += f'<td class="cal-cell cal-weekend"><div class="cal-day">{day_num}</div></td>'
-                else:
-                    rows_html += f'<td class="cal-cell cal-no-data"><div class="cal-day">{day_num}</div><div class="cal-pct">—</div></td>'
-            day_num += 1
-        rows_html += "</tr>"
-
-    best_html  = f'<b style="color:#4ade80">+${best["pnl"]:,.0f}</b>' if best else "—"
-    worst_html = f'<b style="color:#f87171">${worst["pnl"]:,.0f}</b>' if worst else "—"
-
-    return f"""
-<div class="card card-wide">
-  <div class="card-header">
-    <span class="card-title">Calendario de Resultados — {month_name} {year}</span>
-    <div style="display:flex;gap:16px;flex-wrap:wrap;align-items:center">
-      <span style="color:{total_c};font-weight:700;font-size:.95rem">
-        {"+" if total_pnl >= 0 else ""}${total_pnl:,.0f} en el mes
-      </span>
-      <span class="muted">{wins} días positivos · {losses} negativos</span>
-      <span class="muted">Mejor: {best_html} · Peor: {worst_html}</span>
+    cards = ""
+    for i, p in enumerate(positions):
+        cost    = (p.avg_price or 0) * (p.qty or 0)
+        pnl     = p.unrealized_pl
+        pp      = (pnl / cost * 100) if cost else 0
+        pc      = _c(pnl)
+        col     = colors[i]
+        bar_w   = min(abs(pp) * 5, 100)
+        alloc_p = (p.market_value / total_mv * 100) if total_mv else 0
+        pnl_arrow = "▲" if pnl >= 0 else "▼"
+        cards += f"""
+<div class="pos-card" style="border-top:3px solid {col}">
+  <div class="pos-top">
+    <div>
+      <div class="pos-ticker" style="color:{col}">{p.ticker}</div>
+      <div class="pos-sub">{alloc_p:.1f}% del portfolio &middot; {p.qty:.4f} acc.</div>
+    </div>
+    <div style="text-align:right">
+      <div class="pos-pnl" style="color:{pc}">{pnl_arrow} {_usd(abs(pnl))}</div>
+      <div class="pos-pnl-pct" style="color:{pc}">{_pct(pp,1)}</div>
     </div>
   </div>
-  <div style="overflow-x:auto">
-    <table class="cal-table">
-      <thead><tr>{"".join(f'<th class="cal-th">{d}</th>' for d in ["Lun","Mar","Mié","Jue","Vie","Sáb","Dom"])}</tr></thead>
-      <tbody>{rows_html}</tbody>
+  <div class="pos-bar-track"><div style="width:{bar_w:.0f}%;height:100%;background:{pc};border-radius:2px;opacity:.8"></div></div>
+  <div class="pos-meta">
+    <span>Entrada <b>{_usd(p.avg_price)}</b></span>
+    <span>Valor actual <b>{_usd(p.market_value)}</b></span>
+    <span>P&L <b style="color:{pc}">{"+" if pnl>=0 else ""}{_usd(pnl)}</b></span>
+  </div>
+</div>"""
+
+    return f"""
+<div class="tab-content" id="tab-posiciones">
+  <div class="pos-summary">
+    <div class="kpi">
+      <div class="kpi-lbl">Posiciones abiertas</div>
+      <div class="kpi-val">{len(positions)}</div>
+    </div>
+    <div class="kpi">
+      <div class="kpi-lbl">Valor de mercado total</div>
+      <div class="kpi-val">{_usd(total_mv)}</div>
+    </div>
+    <div class="kpi">
+      <div class="kpi-lbl">P&amp;L no realizado</div>
+      <div class="kpi-val" style="color:{tp_c}">{"+" if total_pnl>=0 else ""}{_usd(total_pnl)}</div>
+    </div>
+  </div>
+  <div class="pos-layout">
+    <div class="pos-chart-col">
+      <div class="card-title" style="margin-bottom:12px">Distribucion</div>
+      <canvas id="allocChart" width="220" height="220"></canvas>
+      <div id="allocLegend" class="alloc-legend"></div>
+    </div>
+    <div class="pos-cards-col">
+      {cards}
+    </div>
+  </div>
+</div>
+<script>
+(function(){{
+  const labels={json.dumps(tickers)};
+  const values={json.dumps(values)};
+  const colors={json.dumps(colors)};
+  window._charts = window._charts||{{}};
+  window._charts.alloc = new Chart(document.getElementById('allocChart'),{{
+    type:'doughnut',
+    data:{{labels,datasets:[{{data:values,backgroundColor:colors.map(c=>c+'cc'),
+      borderWidth:2,borderColor:'#0d1117',hoverBorderColor:'#fff'}}]}},
+    options:{{
+      cutout:'72%',
+      animation:{{duration:900,easing:'easeInOutQuart'}},
+      plugins:{{
+        legend:{{display:false}},
+        tooltip:{{backgroundColor:'#161b22',borderColor:'#30363d',borderWidth:1,
+          titleColor:'#7d8590',bodyColor:'#e6edf3',padding:10,
+          callbacks:{{label:c=>' $'+c.parsed.toLocaleString('es-AR',{{minimumFractionDigits:2}})}}}}
+      }}
+    }}
+  }});
+  const leg=document.getElementById('allocLegend');
+  const tot=values.reduce((a,b)=>a+b,0);
+  labels.forEach((l,i)=>{{
+    const pct=(values[i]/tot*100).toFixed(1);
+    leg.innerHTML+=`<div class="leg-row"><span class="leg-dot" style="background:${{colors[i]}}"></span>${{l}}<span class="muted" style="margin-left:auto">${{pct}}%</span></div>`;
+  }});
+}})();
+</script>"""
+
+
+# ─── TAB: SEÑALES ─────────────────────────────────────────────────────────────
+
+def _tab_senales(signals_data):
+    if not signals_data:
+        return '<div class="tab-content" id="tab-senales"><div class="card"><p class="muted" style="padding:40px">Sin senales disponibles.</p></div></div>'
+
+    gen_at = signals_data.get("generated_at","")[:16].replace("T"," ")
+    body   = ""
+
+    for bucket in ("long_term","short_term","options_book","hedge_book"):
+        items = signals_data.get(bucket, [])
+        if not items:
+            continue
+        slv_label, slv_color = _sleeve(bucket)
+        cards = ""
+        for s in items:
+            th     = s.get("thesis", {})
+            q      = th.get("quant", {})
+            risk   = th.get("risk", {})
+            conv   = th.get("conviction","?")
+            cl, cc = _conv(conv)
+            text   = _esc(th.get("thesis_text","Sin descripcion."))
+            price  = s.get("price",0) or 0
+            sl     = s.get("stop_loss")
+            tp     = s.get("take_profit")
+            sharpe = q.get("sharpe",0) or 0
+            alpha  = (q.get("alpha_jensen",0) or 0)*100
+            beta   = q.get("beta",0) or 0
+            alloc  = risk.get("dollars_allocated",0) or 0
+            ticker = s.get("ticker","?")
+            cp     = {"ALTA":88,"MEDIA":52,"BAJA":22}.get(conv,40)
+            uid    = f"t_{ticker}_{bucket}"
+
+            sl_h = f'<span style="color:#f85149;font-weight:700">{_usd(sl)}</span>' if sl else '<span class="muted">—</span>'
+            tp_h = f'<span style="color:#3fb950;font-weight:700">{_usd(tp)}</span>' if tp else '<span class="muted">—</span>'
+
+            cards += f"""
+<div class="sig-card" onclick="toggleSig('{uid}')">
+  <div class="sig-head">
+    <div class="sig-left">
+      <span class="sig-ticker">{ticker}</span>
+      <span class="conv-badge" style="background:{cc}22;color:{cc};border:1px solid {cc}55">{cl}</span>
+    </div>
+    <div class="sig-right">
+      <span class="muted" style="font-size:.78rem">{_usd(price)}</span>
+      <span class="sig-alloc">{_usd(alloc)}</span>
+      <span class="sig-arrow" id="arrow_{uid}">&#9660;</span>
+    </div>
+  </div>
+  <div class="sig-pills">
+    <div class="spill"><div class="spill-l">Sharpe</div><div class="spill-v" style="color:#58a6ff">{sharpe:.2f}</div></div>
+    <div class="spill"><div class="spill-l">Alfa Jensen</div><div class="spill-v" style="color:{'#3fb950'if alpha>=0 else'#f85149'}">{_pct(alpha)}</div></div>
+    <div class="spill"><div class="spill-l">Beta</div><div class="spill-v">{beta:.2f}</div></div>
+    <div class="spill"><div class="spill-l">Stop Loss</div><div class="spill-v">{sl_h}</div></div>
+    <div class="spill"><div class="spill-l">Take Profit</div><div class="spill-v">{tp_h}</div></div>
+  </div>
+  <div class="conv-track"><div class="conv-fill" style="width:{cp}%;background:{cc}88"></div></div>
+  <div class="sig-thesis" id="{uid}">
+    <p>{text}</p>
+  </div>
+</div>"""
+
+        body += f"""
+<div class="sleeve-block">
+  <div class="sleeve-header" style="border-left:3px solid {slv_color}">
+    <span class="sleeve-label" style="color:{slv_color}">{slv_label}</span>
+    <span class="sleeve-count muted">{len(items)} {"senal" if len(items)==1 else "senales"}</span>
+  </div>
+  <div class="sig-grid">
+    {cards}
+  </div>
+</div>"""
+
+    return f"""
+<div class="tab-content" id="tab-senales">
+  <p class="ts" style="margin-bottom:16px">Ultima actualizacion: {gen_at} &nbsp;&middot;&nbsp; Clic en cada senal para ver el analisis completo</p>
+  {body}
+</div>"""
+
+
+# ─── TAB: MERCADO ─────────────────────────────────────────────────────────────
+
+def _tab_mercado(signals_data):
+    radar   = signals_data.get("radar", {})
+    entries = radar.get("entries", [])
+    n_up    = radar.get("n_up", 0)
+    n_down  = radar.get("n_down", 0)
+    winner  = radar.get("biggest_winner","—")
+    loser   = radar.get("biggest_loser","—")
+    n_total = len(entries)
+
+    # Sector rotation chart
+    sector_html = ""
+    try:
+        from alpha_agent.macro.sector_rotation import get_top_sectors
+        tops = get_top_sectors(n=10)
+        if tops:
+            labels  = [s for s,_ in tops]
+            values  = [round(v*100,2) for _,v in tops]
+            bcolors = ["#3fb950" if v>=0 else "#f85149" for v in values]
+            sector_html = f"""
+<div class="card">
+  <div class="card-head">
+    <div>
+      <div class="card-title">Rotacion Sectorial</div>
+      <div class="card-sub">Impulso de precio 1–3 meses por sector</div>
+    </div>
+  </div>
+  <canvas id="sectorChart" height="115"></canvas>
+</div>
+<script>
+(function(){{
+  window._charts=window._charts||{{}};
+  window._charts.sector=new Chart(document.getElementById('sectorChart'),{{
+    type:'bar',
+    data:{{labels:{json.dumps(labels)},datasets:[{{data:{json.dumps(values)},
+      backgroundColor:{json.dumps(bcolors)},borderRadius:6,borderSkipped:false}}]}},
+    options:{{
+      animation:{{duration:700}},
+      plugins:{{legend:{{display:false}},tooltip:{{backgroundColor:'#161b22',borderColor:'#30363d',
+        borderWidth:1,titleColor:'#7d8590',bodyColor:'#e6edf3',padding:10,
+        callbacks:{{label:c=>' '+c.parsed.y.toFixed(2)+'%'}}}}}},
+      scales:{{
+        x:{{ticks:{{color:'#7d8590',font:{{size:11}}}},grid:{{display:false}}}},
+        y:{{ticks:{{color:'#7d8590',callback:v=>v+'%',font:{{size:11}}}},grid:{{color:'#21262d'}}}}
+      }}
+    }}
+  }});
+}})();
+</script>"""
+        else:
+            sector_html = '<div class="card"><p class="muted" style="padding:20px">Sin datos de rotacion sectorial.</p></div>'
+    except Exception as ex:
+        sector_html = f'<div class="card"><p class="muted" style="padding:20px">Rotacion sectorial no disponible: {_esc(str(ex)[:80])}</p></div>'
+
+    # Radar table — ALL entries
+    radar_rows = ""
+    for e in entries:
+        t    = e.get("ticker","")
+        move = e.get("move_pct",0) or 0
+        news = _esc(e.get("top_news","")[:100])
+        act  = _esc(e.get("bot_action",""))
+        mc   = _c(move)
+        arr  = "▲" if move>=0 else "▼"
+        radar_rows += f"""
+<tr>
+  <td><span class="rt-ticker" style="color:#e6edf3">{t}</span></td>
+  <td><span style="color:{mc};font-weight:700">{arr} {abs(move):.1f}%</span></td>
+  <td class="muted" style="font-size:.8rem;max-width:320px">{news}</td>
+  <td><span class="muted" style="font-size:.75rem">{act}</span></td>
+</tr>"""
+
+    if not radar_rows:
+        radar_rows = '<tr><td colspan="4" class="muted" style="padding:20px;text-align:center">Sin datos de radar disponibles</td></tr>'
+
+    radar_html = f"""
+<div class="card">
+  <div class="card-head">
+    <div>
+      <div class="card-title">Radar del Universo — {n_total} Activos</div>
+      <div class="card-sub">
+        <span style="color:#3fb950">&#9650; {n_up} al alza</span> &nbsp;
+        <span style="color:#f85149">&#9660; {n_down} a la baja</span> &nbsp;&middot;&nbsp;
+        Ganador: <b style="color:#3fb950">{winner}</b> &nbsp;
+        Perdedor: <b style="color:#f85149">{loser}</b>
+      </div>
+    </div>
+  </div>
+  <div class="radar-scroll">
+    <table>
+      <thead><tr>
+        <th>Activo</th><th>Movimiento</th><th>Noticia del dia</th><th>Accion del sistema</th>
+      </tr></thead>
+      <tbody>{radar_rows}</tbody>
     </table>
   </div>
 </div>"""
 
-
-def _risk_metrics_section(signals_data: dict, equity: float, initial: float) -> str:
-    port    = signals_data.get("portfolio", {})
-    sharpe  = port.get("sharpe", 0) or 0
-    ret_exp = (port.get("exp_return", 0) or 0) * 100
-    vol     = (port.get("volatility", 0) or 0) * 100
-    macro   = signals_data.get("macro", {})
-    vix     = (macro.get("prices", {}) or {}).get("vix", 0) or 0
-    dd_limit = 10.0
-    pnl_pct = ((equity - initial) / initial * 100) if initial else 0
-
-    # VIX sizing multiplier
-    if vix > 30:
-        sizing = 60
-        sizing_label = "60% — alta volatilidad"
-    elif vix > 25:
-        sizing = 75
-        sizing_label = "75% — volatilidad elevada"
-    elif vix < 15:
-        sizing = 110
-        sizing_label = "110% — volatilidad baja"
-    else:
-        sizing = 100
-        sizing_label = "100% — normal"
+    macro  = signals_data.get("macro",{})
+    reason = macro.get("regime_reason","")
+    regime_note = f'<p class="ts" style="margin-bottom:16px">{_esc(reason)}</p>' if reason else ""
 
     return f"""
-<div class="kpi-grid kpi-grid-sm">
-  <div class="kpi-card">
-    <div class="kpi-label">Ratio Sharpe</div>
-    <div class="kpi-value" style="color:{'#4ade80' if sharpe > 0.5 else '#fbbf24' if sharpe > 0 else '#f87171'}">{sharpe:.2f}</div>
-    <div class="kpi-sub">Retorno ajustado por riesgo</div>
-  </div>
-  <div class="kpi-card">
-    <div class="kpi-label">Retorno Esperado (anual)</div>
-    <div class="kpi-value" style="color:#60a5fa">{_fmt_pct(ret_exp)}</div>
-    <div class="kpi-sub">Volatilidad anualizada: {_fmt_pct(vol)}</div>
-  </div>
-  <div class="kpi-card">
-    <div class="kpi-label">Rentabilidad desde inicio</div>
-    <div class="kpi-value" style="color:{'#4ade80' if pnl_pct >= 0 else '#f87171'}">{_fmt_pct(pnl_pct)}</div>
-    <div class="kpi-sub">Capital inicial: {_fmt_usd(initial)}</div>
-  </div>
-  <div class="kpi-card">
-    <div class="kpi-label">Tamaño de Posición (VIX)</div>
-    <div class="kpi-value" style="color:#fbbf24">{sizing}%</div>
-    <div class="kpi-sub">{sizing_label}</div>
-  </div>
-  <div class="kpi-card">
-    <div class="kpi-label">Drawdown Máximo Permitido</div>
-    <div class="kpi-value" style="color:#f87171">-{dd_limit:.0f}%</div>
-    <div class="kpi-sub">Kill switch intradía: -3%</div>
-  </div>
-  <div class="kpi-card">
-    <div class="kpi-label">Régimen de riesgo (VIX)</div>
-    <div class="kpi-value" style="color:{_vix_label(vix)[1]}">{vix:.1f}</div>
-    <div class="kpi-sub">{_vix_label(vix)[0]}</div>
+<div class="tab-content" id="tab-mercado">
+  {regime_note}
+  <div class="two-col">
+    {sector_html}
+    {radar_html}
   </div>
 </div>"""
 
@@ -691,464 +702,309 @@ def _risk_metrics_section(signals_data: dict, equity: float, initial: float) -> 
 _CSS = """
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
 
-*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 
-:root {
-  --bg:       #0a0f1a;
-  --surface:  #111827;
-  --surface2: #1e2837;
-  --border:   #1e293b;
-  --text:     #e2e8f0;
-  --muted:    #64748b;
-  --accent:   #3b82f6;
+:root{
+  --bg:#0d1117; --s1:#161b22; --s2:#21262d; --bd:#30363d;
+  --tx:#e6edf3; --mt:#7d8590; --ac:#58a6ff;
 }
 
-body {
-  font-family: 'Inter', system-ui, sans-serif;
-  background: var(--bg);
-  color: var(--text);
-  padding: 20px 24px 48px;
-  max-width: 1440px;
-  margin: 0 auto;
-  line-height: 1.5;
-}
+html{scroll-behavior:smooth}
+body{font-family:'Inter',system-ui,sans-serif;background:var(--bg);color:var(--tx);
+  padding:0 0 60px;max-width:1480px;margin:0 auto;line-height:1.5}
 
-/* ── header de página ── */
-.page-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  flex-wrap: wrap;
-  gap: 8px;
-  margin-bottom: 28px;
-  padding-bottom: 18px;
-  border-bottom: 1px solid var(--border);
+/* ── freshness banner ── */
+.fresh-banner{
+  padding:10px 28px;font-size:.82rem;font-weight:600;margin-bottom:12px;
+  border-radius:0;letter-spacing:.2px;
 }
-.page-title {
-  font-size: 1.5rem;
-  font-weight: 800;
-  background: linear-gradient(135deg, #60a5fa, #a78bfa);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
-}
-.page-meta { font-size: .8rem; color: var(--muted); }
-.live-dot {
-  display: inline-block;
-  width: 8px; height: 8px;
-  background: #4ade80;
-  border-radius: 50%;
-  margin-right: 6px;
-  animation: pulse 2s infinite;
-}
-@keyframes pulse {
-  0%,100% { opacity: 1; }
-  50% { opacity: .4; }
-}
+.fresh-warn{background:#854d0e22;color:#d29922;border-left:3px solid #d29922}
+.fresh-stale{background:#7f1d1d33;color:#f85149;border-left:3px solid #f85149}
 
-/* ── KPI grid ── */
-.kpi-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-  gap: 14px;
-  margin-bottom: 22px;
-}
-.kpi-grid-sm {
-  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
-}
-.kpi-card {
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: 12px;
-  padding: 18px 20px;
-  transition: transform .15s, box-shadow .15s;
-}
-.kpi-card:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 8px 24px rgba(0,0,0,.4);
-}
-.kpi-main {
-  background: linear-gradient(135deg, #111827, #1e2837);
-  border-color: #3b82f622;
-}
-.kpi-icon { font-size: 1.3rem; margin-bottom: 6px; }
-.kpi-label {
-  font-size: .72rem;
-  color: var(--muted);
-  text-transform: uppercase;
-  letter-spacing: .7px;
-  margin-bottom: 6px;
-  font-weight: 600;
-}
-.kpi-value {
-  font-size: 1.55rem;
-  font-weight: 700;
-  line-height: 1.1;
-  margin-bottom: 4px;
-}
-.kpi-sub { font-size: .75rem; color: var(--muted); }
+/* ── progress bar ── */
+.rbar{height:2px;background:linear-gradient(90deg,#58a6ff,#bc8cff);
+  position:fixed;top:0;left:0;width:0%;transition:width 300s linear;
+  border-radius:0 2px 2px 0;z-index:100}
 
-/* ── cards generales ── */
-.section-title {
-  font-size: .75rem;
-  font-weight: 700;
-  color: var(--muted);
-  text-transform: uppercase;
-  letter-spacing: .8px;
-  margin: 28px 0 12px;
+/* ── top bar ── */
+.topbar{
+  display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;
+  padding:16px 28px 0;margin-bottom:20px;
 }
-.grid { display: flex; flex-wrap: wrap; gap: 16px; }
+.logo{font-size:1.3rem;font-weight:800;
+  background:linear-gradient(135deg,#58a6ff,#bc8cff);
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.topbar-meta{font-size:.78rem;color:var(--mt);display:flex;align-items:center;gap:10px}
+.live{display:inline-block;width:7px;height:7px;background:#3fb950;
+  border-radius:50%;animation:blink 2s infinite}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.3}}
 
-.card {
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: 12px;
-  padding: 20px 22px;
-  flex: 1 1 380px;
-  transition: box-shadow .15s;
+/* ── nav tabs ── */
+.nav{
+  display:flex;gap:4px;padding:0 28px;
+  border-bottom:1px solid var(--bd);margin-bottom:28px;
+  overflow-x:auto;-webkit-overflow-scrolling:touch;
 }
-.card:hover { box-shadow: 0 6px 20px rgba(0,0,0,.35); }
-.card-wide { flex: 2 1 700px; }
+.tab-btn{
+  padding:10px 22px;font-size:.85rem;font-weight:600;color:var(--mt);
+  background:none;border:none;border-bottom:2px solid transparent;
+  cursor:pointer;white-space:nowrap;transition:color .15s,border-color .15s;
+  margin-bottom:-1px;
+}
+.tab-btn:hover{color:var(--tx)}
+.tab-btn.active{color:var(--ac);border-bottom-color:var(--ac)}
 
-.card-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  flex-wrap: wrap;
-  gap: 8px;
-  margin-bottom: 16px;
-}
-.card-title {
-  font-size: .9rem;
-  font-weight: 700;
-  color: var(--text);
-  letter-spacing: .2px;
-}
-.card-badge {
-  font-size: .75rem;
-  background: var(--surface2);
-  border: 1px solid var(--border);
-  border-radius: 20px;
-  padding: 2px 10px;
-  font-weight: 600;
-}
+/* ── tab content ── */
+.tab-content{display:none;padding:0 28px;animation:fadeIn .2s ease}
+.tab-content.active{display:block}
+@keyframes fadeIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
 
-/* ── posiciones ── */
-.pos-card {
-  background: var(--surface2);
-  border-radius: 8px;
-  padding: 12px 14px;
-  margin-bottom: 10px;
-  cursor: default;
-  transition: background .15s;
+/* ── KPI rows ── */
+.kpi-row{
+  display:grid;
+  grid-template-columns:repeat(auto-fill,minmax(180px,1fr));
+  gap:12px;margin-bottom:4px;
 }
-.pos-card:hover { background: #263347; }
-.pos-top {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: 6px;
-  margin-bottom: 8px;
+.kpi-row-adv{
+  grid-template-columns:repeat(auto-fill,minmax(200px,1fr));
+  margin-top:12px;margin-bottom:0;
 }
-.pos-ticker { font-size: 1rem; font-weight: 800; }
-.pos-pnl { font-size: .85rem; font-weight: 600; }
-.pos-bar-track {
-  height: 4px;
-  background: #1e293b;
-  border-radius: 2px;
-  margin-bottom: 8px;
+.kpi{
+  background:var(--s1);border:1px solid var(--bd);border-radius:10px;
+  padding:16px 18px;transition:transform .15s,box-shadow .15s;
 }
-.pos-bar-fill {
-  height: 4px;
-  border-radius: 2px;
-  transition: width .6s ease;
+.kpi:hover{transform:translateY(-2px);box-shadow:0 6px 20px rgba(0,0,0,.4)}
+.kpi-hero{
+  background:linear-gradient(135deg,#161b22,#1c2331);
+  border-color:#58a6ff33;
 }
-.pos-details {
-  display: flex;
-  gap: 16px;
-  flex-wrap: wrap;
-  font-size: .78rem;
-  color: var(--muted);
-}
-.pos-details b { color: var(--text); }
+.kpi-lbl{font-size:.68rem;color:var(--mt);text-transform:uppercase;
+  letter-spacing:.7px;margin-bottom:6px;font-weight:600}
+.kpi-val{font-size:1.45rem;font-weight:700;line-height:1.1;margin-bottom:4px}
+.kpi-hero-val{font-size:1.75rem}
+.kpi-sub{font-size:.73rem;color:var(--mt)}
+.kpi-tag{font-size:.75rem;font-weight:600;padding:3px 10px;border-radius:20px;
+  display:inline-block;margin-top:6px}
 
-/* ── legend ── */
-.chart-legend { margin-top: 12px; width: 100%; }
-.leg-item {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  font-size: .76rem;
-  color: var(--text);
-  margin-bottom: 4px;
-}
-.leg-dot {
-  width: 8px; height: 8px;
-  border-radius: 2px;
-  flex-shrink: 0;
-}
+/* ── cards ── */
+.card{background:var(--s1);border:1px solid var(--bd);border-radius:12px;
+  padding:20px 22px;margin-bottom:4px;transition:box-shadow .15s}
+.card:hover{box-shadow:0 4px 16px rgba(0,0,0,.3)}
+.card-head{display:flex;align-items:flex-start;justify-content:space-between;
+  flex-wrap:wrap;gap:10px;margin-bottom:18px}
+.card-title{font-size:.95rem;font-weight:700;color:var(--tx);margin-bottom:3px}
+.card-sub{font-size:.78rem;color:var(--mt)}
+.pill{font-size:.82rem;font-weight:700;background:var(--s2);
+  border:1px solid var(--bd);border-radius:20px;padding:4px 12px;white-space:nowrap}
 
-/* ── señales ── */
-.sig-card {
-  background: var(--surface2);
-  border: 1px solid var(--border);
-  border-radius: 10px;
-  padding: 14px 16px;
-  margin-bottom: 10px;
-  cursor: pointer;
-  transition: background .15s, box-shadow .15s;
-  user-select: none;
-}
-.sig-card:hover { background: #1a2535; box-shadow: 0 4px 12px rgba(0,0,0,.3); }
-.sig-top {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: 8px;
-  margin-bottom: 10px;
-}
-.sig-ticker { font-size: 1.05rem; font-weight: 800; }
-.sig-sleeve {
-  font-size: .72rem;
-  font-weight: 700;
-  border: 1px solid;
-  border-radius: 20px;
-  padding: 2px 9px;
-}
-.sig-conv { font-size: .8rem; font-weight: 600; }
-.sig-price { font-size: .8rem; color: var(--muted); }
-.sig-expand { font-size: .75rem; color: var(--muted); letter-spacing: .3px; }
+/* ── two-col layout ── */
+.two-col{display:grid;grid-template-columns:1fr 2fr;gap:16px;align-items:start}
+@media(max-width:900px){.two-col{grid-template-columns:1fr}}
 
-.sig-metrics {
-  display: flex;
-  gap: 10px;
-  flex-wrap: wrap;
-  margin-bottom: 10px;
-}
-.metric-pill {
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: 8px;
-  padding: 6px 12px;
-  text-align: center;
-  min-width: 90px;
-}
-.metric-label { font-size: .68rem; color: var(--muted); margin-bottom: 2px; }
-.metric-val { font-size: .88rem; font-weight: 700; }
+/* ── section gap ── */
+.section-gap{height:16px}
 
-.conv-bar-track {
-  height: 3px;
-  background: var(--border);
-  border-radius: 2px;
-  margin-bottom: 0;
-}
-.conv-bar-fill {
-  height: 3px;
-  border-radius: 2px;
-  transition: width .5s ease;
-  opacity: .7;
-}
+/* ── positions ── */
+.pos-summary{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));
+  gap:12px;margin-bottom:20px}
+.pos-layout{display:flex;gap:24px;flex-wrap:wrap;align-items:flex-start}
+.pos-chart-col{flex:0 0 220px;display:flex;flex-direction:column;align-items:center}
+.pos-cards-col{flex:1;min-width:280px;display:grid;
+  grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:12px}
+.pos-card{background:var(--s2);border:1px solid var(--bd);border-radius:10px;
+  padding:14px 16px;transition:background .15s,box-shadow .15s}
+.pos-card:hover{background:#1c2331;box-shadow:0 4px 12px rgba(0,0,0,.4)}
+.pos-top{display:flex;justify-content:space-between;margin-bottom:10px}
+.pos-ticker{font-size:1.05rem;font-weight:800}
+.pos-sub{font-size:.72rem;color:var(--mt);margin-top:2px}
+.pos-pnl{font-size:.9rem;font-weight:700;text-align:right}
+.pos-pnl-pct{font-size:.78rem;text-align:right;margin-top:2px}
+.pos-bar-track{height:4px;background:var(--bd);border-radius:2px;margin-bottom:10px}
+.pos-meta{display:flex;gap:14px;flex-wrap:wrap;font-size:.75rem;color:var(--mt)}
+.pos-meta b{color:var(--tx)}
 
-.sig-thesis {
-  margin-top: 12px;
-  padding: 12px;
-  background: var(--surface);
-  border-radius: 8px;
-  font-size: .83rem;
-  color: #94a3b8;
-  line-height: 1.6;
-  border-left: 3px solid #3b82f6;
-  animation: fadeIn .2s ease;
-}
-@keyframes fadeIn { from { opacity:0; transform:translateY(-4px); } to { opacity:1; transform:none; } }
+/* ── alloc legend ── */
+.alloc-legend{margin-top:14px;width:100%}
+.leg-row{display:flex;align-items:center;gap:7px;font-size:.77rem;
+  color:var(--tx);margin-bottom:5px}
+.leg-dot{width:8px;height:8px;border-radius:2px;flex-shrink:0}
 
-/* ── tabla ── */
-table { width: 100%; border-collapse: collapse; font-size: .83rem; }
-th {
-  color: var(--muted);
-  text-align: left;
-  padding: 7px 10px;
-  border-bottom: 1px solid var(--border);
-  font-weight: 600;
-  font-size: .75rem;
-  text-transform: uppercase;
-  letter-spacing: .5px;
-}
-td {
-  padding: 9px 10px;
-  border-bottom: 1px solid var(--border);
-  vertical-align: middle;
-}
-tr:last-child td { border-bottom: none; }
-tr:hover td { background: var(--surface2); }
+/* ── signals ── */
+.sleeve-block{margin-bottom:28px}
+.sleeve-header{display:flex;align-items:center;gap:12px;
+  padding:10px 14px;background:var(--s2);border-radius:8px;margin-bottom:14px}
+.sleeve-label{font-size:.88rem;font-weight:700}
+.sleeve-count{font-size:.78rem}
+.sig-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:12px}
+.sig-card{background:var(--s2);border:1px solid var(--bd);border-radius:10px;
+  padding:14px 16px;cursor:pointer;transition:background .15s,box-shadow .15s}
+.sig-card:hover{background:#1c2331;box-shadow:0 4px 12px rgba(0,0,0,.3)}
+.sig-head{display:flex;justify-content:space-between;align-items:center;
+  flex-wrap:wrap;gap:8px;margin-bottom:10px}
+.sig-left{display:flex;align-items:center;gap:8px}
+.sig-right{display:flex;align-items:center;gap:10px}
+.sig-ticker{font-size:1.05rem;font-weight:800}
+.conv-badge{font-size:.7rem;font-weight:700;padding:2px 8px;border-radius:20px}
+.sig-alloc{font-size:.82rem;font-weight:600;color:var(--tx)}
+.sig-arrow{font-size:.72rem;color:var(--mt);transition:transform .2s}
+.sig-arrow.open{transform:rotate(180deg)}
+.sig-pills{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px}
+.spill{background:var(--s1);border:1px solid var(--bd);border-radius:7px;
+  padding:5px 10px;min-width:80px;text-align:center}
+.spill-l{font-size:.65rem;color:var(--mt);margin-bottom:2px}
+.spill-v{font-size:.82rem;font-weight:700}
+.conv-track{height:3px;background:var(--bd);border-radius:2px}
+.conv-fill{height:3px;border-radius:2px;opacity:.75}
+.sig-thesis{display:none;margin-top:12px;padding:12px 14px;
+  background:var(--s1);border-radius:8px;border-left:3px solid var(--ac);
+  font-size:.82rem;color:#94a3b8;line-height:1.65;animation:fadeIn .2s ease}
 
-/* ── calendario P&L ── */
-.cal-table {
-  border-collapse: separate;
-  border-spacing: 4px;
-  width: 100%;
-  table-layout: fixed;
-}
-.cal-th {
-  color: var(--muted);
-  font-size: .72rem;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: .5px;
-  padding: 6px 4px;
-  text-align: center;
-  border-bottom: none;
-}
-.cal-cell {
-  border-radius: 8px;
-  padding: 8px 6px;
-  text-align: center;
-  vertical-align: top;
-  min-width: 70px;
-  height: 72px;
-  background: var(--surface2);
-  transition: transform .1s, box-shadow .1s;
-  border-bottom: none;
-}
-.cal-cell:hover {
-  transform: scale(1.04);
-  box-shadow: 0 4px 16px rgba(0,0,0,.5);
-  z-index: 2;
-  position: relative;
-}
-.cal-empty {
-  border-bottom: none;
-}
-.cal-weekend { opacity: .45; }
-.cal-no-data { opacity: .55; }
-.cal-day {
-  font-size: .7rem;
-  color: var(--muted);
-  font-weight: 600;
-  margin-bottom: 4px;
-}
-.cal-pnl {
-  font-size: .82rem;
-  font-weight: 700;
-  line-height: 1.2;
-}
-.cal-pct {
-  font-size: .7rem;
-  margin-top: 2px;
-  opacity: .85;
-}
-.cal-cell:hover .cal-pnl { font-size: .88rem; }
+/* ── calendar ── */
+.cal-wrap{overflow-x:auto}
+.cal-table{border-collapse:separate;border-spacing:4px;width:100%;table-layout:fixed}
+.cal-th{color:var(--mt);font-size:.7rem;font-weight:600;text-transform:uppercase;
+  letter-spacing:.5px;padding:5px 4px;text-align:center}
+.cal-cell{border-radius:8px;padding:8px 6px 6px;text-align:center;vertical-align:top;
+  min-width:68px;height:74px;background:var(--s2);cursor:default;
+  transition:transform .12s,box-shadow .12s}
+.cal-cell:hover{transform:scale(1.06);box-shadow:0 4px 16px rgba(0,0,0,.5);
+  z-index:2;position:relative}
+.cal-empty{background:none}
+.cal-wk{opacity:.35}
+.cal-nd{opacity:.5}
+.cal-n{display:block;font-size:.65rem;color:var(--mt);font-weight:600;margin-bottom:5px}
+.cal-p{display:block;font-size:.8rem;font-weight:700;line-height:1.2}
+.cal-q{display:block;font-size:.66rem;margin-top:2px;opacity:.85}
+
+/* ── table ── */
+table{width:100%;border-collapse:collapse;font-size:.82rem}
+th{color:var(--mt);text-align:left;padding:8px 10px;border-bottom:1px solid var(--bd);
+  font-weight:600;font-size:.72rem;text-transform:uppercase;letter-spacing:.5px}
+td{padding:9px 10px;border-bottom:1px solid var(--bd);vertical-align:middle}
+tr:last-child td{border-bottom:none}
+tr:hover td{background:var(--s2)}
+.rt-ticker{font-weight:700}
+.radar-scroll{overflow-y:auto;max-height:520px}
 
 /* ── misc ── */
-.muted { color: var(--muted); }
-.refresh-bar {
-  height: 2px;
-  background: linear-gradient(90deg, #3b82f6, #a78bfa);
-  position: fixed;
-  top: 0; left: 0;
-  width: 0%;
-  transition: width 300s linear;
-  border-radius: 0 2px 2px 0;
-}
+.ts{font-size:.78rem;color:var(--mt)}
+.muted{color:var(--mt)}
 
-@media (max-width: 640px) {
-  body { padding: 12px; }
-  .kpi-value { font-size: 1.2rem; }
-  .card { flex: 1 1 100%; }
+@media(max-width:640px){
+  .topbar,.nav,.tab-content{padding-left:14px;padding-right:14px}
+  .kpi-val{font-size:1.15rem}
+  .kpi-hero-val{font-size:1.4rem}
+  .sig-grid{grid-template-columns:1fr}
+  .pos-chart-col{flex:0 0 100%}
 }
 """
 
 
 # ─── HTML completo ─────────────────────────────────────────────────────────────
 
-def build_html(equity: float, initial: float, history: list[dict],
-               positions: list, signals_data: dict) -> str:
+def build_html(equity, initial, history, positions, signals_data,
+               spy_history=None, metrics=None):
+    if spy_history is None:
+        spy_history = []
+    if metrics is None:
+        metrics = {}
+
     macro  = signals_data.get("macro", {})
-    regime = macro.get("regime", "unknown")
-    prices = macro.get("prices", {}) or {}
-    vix    = prices.get("vix", 0) or 0
-    wti    = prices.get("oil_wti", 0) or 0
-    gold   = prices.get("gold", 0) or 0
-    dxy    = prices.get("dxy", 0) or 0
+    regime = macro.get("regime","unknown")
+    pr     = macro.get("prices", {}) or {}
+    vix    = pr.get("vix",0) or 0
+    wti    = pr.get("oil_wti",0) or 0
+    gold   = pr.get("gold",0) or 0
+    dxy    = pr.get("dxy",0) or 0
     now    = datetime.now().strftime("%d de %B de %Y — %H:%M")
+
+    # Freshness
+    age_hours = 99.0
+    gen_at_str = signals_data.get("generated_at","")
+    if gen_at_str:
+        try:
+            gen_dt = datetime.fromisoformat(gen_at_str.replace("Z","+00:00"))
+            if gen_dt.tzinfo is None:
+                gen_dt = gen_dt.replace(tzinfo=timezone.utc)
+            age_hours = (datetime.now(timezone.utc) - gen_dt).total_seconds() / 3600
+        except Exception:
+            pass
+
+    t_resumen    = _tab_resumen(equity, initial, regime, vix, wti, gold, dxy,
+                                history, spy_history, signals_data, metrics, age_hours)
+    t_posiciones = _tab_posiciones(positions)
+    t_senales    = _tab_senales(signals_data)
+    t_mercado    = _tab_mercado(signals_data)
 
     return f"""<!DOCTYPE html>
 <html lang="es">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
   <meta http-equiv="refresh" content="300">
-  <title>Alpha Trading Dashboard</title>
+  <title>Alpha Dashboard</title>
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
   <style>{_CSS}</style>
 </head>
 <body>
 
-<div class="refresh-bar" id="rbar"></div>
+<div class="rbar" id="rbar"></div>
 
-<div class="page-header">
-  <div>
-    <div class="page-title">Alpha Trading Dashboard</div>
-    <div class="page-meta"><span class="live-dot"></span>Actualizado el {now} &middot; Se actualiza automáticamente cada 5 minutos &middot; Paper Trading</div>
+<div class="topbar">
+  <div class="logo">Alpha Dashboard</div>
+  <div class="topbar-meta">
+    <span><span class="live"></span> {now}</span>
+    <span>&middot; Paper Trading</span>
+    <span id="countdown" style="color:var(--mt);font-size:.78rem"></span>
   </div>
-  <div id="countdown" style="font-size:.8rem;color:#64748b"></div>
 </div>
 
-<p class="section-title">Resumen del Portafolio</p>
-{_header_section(equity, initial, regime, vix, wti, gold, dxy)}
+<nav class="nav">
+  <button class="tab-btn active" data-tab="resumen">Resumen</button>
+  <button class="tab-btn" data-tab="posiciones">Posiciones</button>
+  <button class="tab-btn" data-tab="senales">Senales</button>
+  <button class="tab-btn" data-tab="mercado">Mercado</button>
+</nav>
 
-<p class="section-title">Métricas de Riesgo</p>
-{_risk_metrics_section(signals_data, equity, initial)}
-
-<p class="section-title">Curva de Patrimonio</p>
-<div class="grid">
-  {_equity_chart_section(history)}
-  {_sector_section()}
-</div>
-
-<p class="section-title">Calendario de Resultados</p>
-{_pnl_calendar_section(history)}
-
-<p class="section-title">Posiciones Abiertas</p>
-<div class="grid">
-  {_positions_section(positions)}
-</div>
-
-<p class="section-title">Señales y Análisis</p>
-{_signals_section(signals_data)}
-
-<p class="section-title">Radar del Universo</p>
-{_radar_section(signals_data)}
+{t_resumen}
+{t_posiciones}
+{t_senales}
+{t_mercado}
 
 <script>
-function toggleThesis(id) {{
-  const el = document.getElementById(id);
-  const card = el.closest('.sig-card');
-  const exp  = card.querySelector('.sig-expand');
-  if (el.style.display === 'none') {{
-    el.style.display = 'block';
-    exp.textContent = 'Ocultar análisis ▲';
-  }} else {{
-    el.style.display = 'none';
-    exp.textContent = 'Ver análisis ▼';
-  }}
+// ── tabs ──
+const tabs = document.querySelectorAll('.tab-btn');
+tabs.forEach(btn => {{
+  btn.addEventListener('click', () => {{
+    tabs.forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+    btn.classList.add('active');
+    document.getElementById('tab-' + btn.dataset.tab).classList.add('active');
+    setTimeout(() => {{
+      if (window._charts) Object.values(window._charts).forEach(ch => ch && ch.resize && ch.resize());
+    }}, 50);
+  }});
+}});
+
+// ── thesis toggle ──
+function toggleSig(id) {{
+  const el  = document.getElementById(id);
+  const arr = document.getElementById('arrow_' + id);
+  const open = el.style.display === 'block';
+  el.style.display = open ? 'none' : 'block';
+  arr.classList.toggle('open', !open);
 }}
 
-// Barra de progreso hacia el próximo refresh (5 min)
+// ── progress bar + countdown ──
 setTimeout(() => document.getElementById('rbar').style.width = '100%', 100);
-
-// Countdown
 (function() {{
-  let secs = 300;
+  let s = 300;
   const el = document.getElementById('countdown');
-  setInterval(() => {{
-    secs--;
-    if (secs <= 0) return;
-    const m = Math.floor(secs / 60);
-    const s = secs % 60;
-    el.textContent = `Próxima actualización en ${{m}}:${{s.toString().padStart(2,'0')}}`;
+  const iv = setInterval(() => {{
+    s--;
+    if (s <= 0) {{ clearInterval(iv); return; }}
+    const m = Math.floor(s/60), sc = s % 60;
+    el.textContent = '· Actualiza en ' + m + ':' + sc.toString().padStart(2,'0');
   }}, 1000);
 }})();
 </script>
@@ -1157,7 +1013,7 @@ setTimeout(() => document.getElementById('rbar').style.width = '100%', 100);
 </html>"""
 
 
-# ─── main ─────────────────────────────────────────────────────────────────────
+# ─── generate + main ──────────────────────────────────────────────────────────
 
 def generate() -> None:
     from trader_agent.brokers.alpaca_broker import AlpacaBroker
@@ -1173,6 +1029,7 @@ def generate() -> None:
         logger.error("Error Alpaca: %s", e)
         equity, positions = PARAMS.paper_capital_usd, []
 
+    # Portfolio history (1M)
     history: list[dict] = []
     try:
         from alpaca.trading.requests import GetPortfolioHistoryRequest
@@ -1182,12 +1039,44 @@ def generate() -> None:
             history = [
                 {"ts": int(t), "equity": float(e)}
                 for t, e in zip(ph.timestamp or [], ph.equity)
-                if e is not None and float(e) > 0   # ignorar entradas con equity=0
+                if e is not None and float(e) > 0
             ]
-        logger.info("Portfolio history: %d entradas válidas", len(history))
+        logger.info("Portfolio history: %d entradas validas", len(history))
     except Exception as e:
         logger.warning("Portfolio history no disponible: %s", e)
 
+    # SPY benchmark (normalized to portfolio start)
+    spy_history: list[dict] = []
+    if len(history) >= 2:
+        try:
+            import yfinance as yf
+            spy_df = yf.download("SPY", period="1mo", progress=False, auto_adjust=True)
+            if not spy_df.empty:
+                # Manejar multi-index de yfinance (columna Close puede ser Series o DataFrame)
+                close_col = spy_df["Close"]
+                if hasattr(close_col, "squeeze"):
+                    close_col = close_col.squeeze()
+                first_equity = history[0]["equity"]
+                spy_vals = close_col.dropna().values
+                spy_idx  = close_col.dropna().index
+                if len(spy_vals) >= 2:
+                    spy_start = float(spy_vals[0])
+                    spy_history = [
+                        {"ts": int(ts.timestamp()), "equity": float(v) / spy_start * first_equity}
+                        for ts, v in zip(spy_idx, spy_vals)
+                    ]
+                    logger.info("SPY benchmark: %d puntos cargados", len(spy_history))
+        except Exception as e:
+            logger.warning("SPY benchmark no disponible: %s", e)
+
+    # Metrics
+    metrics = _calc_metrics(history, spy_history)
+    if metrics:
+        logger.info("Metricas: Sortino=%.2f MaxDD=%.2f%% Alpha1M=%s",
+                    metrics.get("sortino",0), metrics.get("max_dd",0),
+                    metrics.get("alpha_1m","N/A"))
+
+    # Signals
     signals_data: dict = {}
     if SIGNALS_PATH.exists():
         try:
@@ -1196,7 +1085,8 @@ def generate() -> None:
             pass
 
     initial = signals_data.get("capital_usd", PARAMS.paper_capital_usd)
-    html    = build_html(equity, initial, history, positions, signals_data)
+    html    = build_html(equity, initial, history, positions, signals_data,
+                         spy_history=spy_history, metrics=metrics)
     OUT_PATH.write_text(html, encoding="utf-8")
     logger.info("Dashboard generado -> %s (%d bytes)", OUT_PATH, len(html))
 
@@ -1215,11 +1105,10 @@ def main() -> None:
         logger.error("Error generando dashboard:\n%s", traceback.format_exc())
         DOCS_DIR.mkdir(exist_ok=True)
         OUT_PATH.write_text(
-            f"<html><body style='background:#0a0f1a;color:#f87171;font-family:monospace;padding:40px'>"
-            f"<h2>Dashboard temporalmente no disponible</h2><pre>{exc}</pre></body></html>",
+            f"<html><body style='background:#0d1117;color:#f85149;font-family:monospace;padding:40px'>"
+            f"<h2>Dashboard no disponible</h2><pre>{exc}</pre></body></html>",
             encoding="utf-8",
         )
-        # NO re-raise: el workflow siempre sale con 0 para no bloquear el deploy
 
     if not args.no_open:
         import webbrowser
@@ -1228,7 +1117,10 @@ def main() -> None:
     if args.watch:
         while True:
             time.sleep(300)
-            generate()
+            try:
+                generate()
+            except Exception:
+                pass
 
 
 if __name__ == "__main__":

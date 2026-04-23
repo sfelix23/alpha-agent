@@ -270,17 +270,27 @@ class AlpacaBroker(BrokerBase):
                     logger.warning("No pude cancelar stop %s: %s", o.id, e)
 
         # Enviar nuevo stop-sell
+        # Alpaca requiere TimeInForce.DAY para cantidades fraccionales (error 42210000 con GTC)
         try:
+            is_fractional = (round(abs(qty), 4) % 1 != 0)
+            tif = TimeInForce.DAY if is_fractional else TimeInForce.GTC
+
             req = StopOrderRequest(
                 symbol=ticker,
                 qty=round(abs(qty), 4),
                 side=OrderSide.SELL,
-                time_in_force=TimeInForce.GTC,
+                time_in_force=tif,
                 stop_price=round(new_stop, 2),
             )
             result = self._trading.submit_order(req)
-            logger.info("Trailing stop actualizado: SELL %s @ stop $%.2f → id=%s", ticker, new_stop, result.id)
+            logger.info(
+                "Trailing stop actualizado: SELL %s @ stop $%.2f (tif=%s) → id=%s",
+                ticker, new_stop, tif.value, result.id,
+            )
             return str(result.id)
         except Exception as e:
-            logger.error("Error enviando stop %s @ %.2f: %s", ticker, new_stop, e)
+            logger.error(
+                "Stop order FALLIDA para %s @ $%.2f: %s — revisar en Alpaca paper dashboard",
+                ticker, new_stop, e,
+            )
             return None

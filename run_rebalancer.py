@@ -76,10 +76,59 @@ def load_targets(path: Path) -> dict[str, dict]:
     return targets
 
 
+def _spy_weekly_return() -> float | None:
+    """Retorna el retorno semanal de SPY (5 días)."""
+    try:
+        import yfinance as yf
+        spy = yf.download("SPY", period="5d", progress=False, auto_adjust=True)
+        if spy is not None and len(spy) >= 2:
+            first = float(spy["Close"].iloc[0])
+            last  = float(spy["Close"].iloc[-1])
+            return (last - first) / first * 100 if first > 0 else None
+    except Exception as e:
+        logger.warning("SPY weekly return: %s", e)
+    return None
+
+
+def _portfolio_weekly_return(broker) -> float | None:
+    """Retorna el retorno semanal del portfolio desde el historial de Alpaca."""
+    try:
+        from alpaca.trading.requests import GetPortfolioHistoryRequest
+        req = GetPortfolioHistoryRequest(period="1W", timeframe="1D")
+        ph  = broker._trading.get_portfolio_history(req)
+        if ph and ph.equity:
+            vals = [float(e) for e in ph.equity if e is not None and float(e) > 0]
+            if len(vals) >= 2:
+                return (vals[-1] - vals[0]) / vals[0] * 100 if vals[0] > 0 else None
+    except Exception as e:
+        logger.warning("Portfolio weekly history: %s", e)
+    return None
+
+
+def _save_performance_log(port_ret: float | None, spy_ret: float | None) -> None:
+    """Acumula el tracking semanal vs SPY en signals/performance_log.json."""
+    log_path = BASE_DIR / "signals" / "performance_log.json"
+    try:
+        existing = json.loads(log_path.read_text(encoding="utf-8")) if log_path.exists() else {"weeks": []}
+    except Exception:
+        existing = {"weeks": []}
+    existing["weeks"].append({
+        "date": datetime.now().strftime("%Y-%m-%d"),
+        "portfolio_pct": round(port_ret, 2) if port_ret is not None else None,
+        "spy_pct": round(spy_ret, 2) if spy_ret is not None else None,
+        "alpha_pct": round(port_ret - spy_ret, 2) if (port_ret and spy_ret) else None,
+    })
+    # Keep last 52 weeks
+    existing["weeks"] = existing["weeks"][-52:]
+    log_path.write_text(json.dumps(existing, indent=2, ensure_ascii=False), encoding="utf-8")
+    logger.info("Performance log actualizado: %d semanas", len(existing["weeks"]))
+
+
 def main() -> None:
     parser = argparse.ArgumentParser()
-    parser.add_argument("--live",      action="store_true")
-    parser.add_argument("--threshold", type=float, default=0.08)
+    parser.add_argument("--live",        action="store_true")
+    parser.add_argument("--threshold",   type=float, default=0.08)
+    parser.add_argument("--no-discovery", action="store_true", help="Saltar el discovery scan")
     args = parser.parse_args()
 
     load_dotenv(BASE_DIR / ".env")
@@ -169,18 +218,58 @@ def main() -> None:
                 errors.append(f"{ticker}: {e}")
                 logger.error("Error %s: %s", ticker, e)
 
+    # ── Benchmark semanal vs SPY ──
+    port_ret_w = _portfolio_weekly_return(broker)
+    spy_ret_w  = _spy_weekly_return()
+    _save_performance_log(port_ret_w, spy_ret_w)
+
+    perf_line = ""
+    if port_ret_w is not None and spy_ret_w is not None:
+        alpha_w = port_ret_w - spy_ret_w
+        sign = "+" if alpha_w >= 0 else ""
+        emoji = "🟢" if alpha_w >= 0 else "🔴"
+        perf_line = (
+            f"\n📊 *SEMANA*: Portfolio {port_ret_w:+.1f}% vs SPY {spy_ret_w:+.1f}%"
+            f" → Alpha {sign}{alpha_w:.1f}% {emoji}"
+        )
+        logger.info("Semana: portfolio %+.1f%%, SPY %+.1f%%, alpha %+.1f%%",
+                    port_ret_w, spy_ret_w, alpha_w)
+
+    # ── Discovery scan de nuevas oportunidades ──
+    discovery_lines = ""
+    if not args.no_discovery:
+        try:
+            signals_data = {}
+            if SIGNALS_PATH.exists():
+                signals_data = json.loads(SIGNALS_PATH.read_text(encoding="utf-8"))
+            macro_ctx = signals_data.get("macro", {})
+            macro_for_scan = {
+                "regime": macro_ctx.get("regime", "unknown"),
+                "vix": (macro_ctx.get("prices") or {}).get("vix", 20),
+            }
+            from alpha_agent.discovery.universe_scanner import (
+                scan_for_candidates, format_whatsapp_discovery
+            )
+            disc_result = scan_for_candidates(macro_context=macro_for_scan)
+            discovery_lines = format_whatsapp_discovery(disc_result)
+            logger.info("Discovery: %d picks", len(disc_result.get("candidates", [])))
+        except Exception as e:
+            logger.warning("Discovery scan error: %s", e)
+
     n_adj = len(sells) + len(buys)
-    if n_adj > 0 or errors:
+    if n_adj > 0 or errors or perf_line or discovery_lines:
         now = datetime.now().strftime("%d-%b %H:%M").lower()
-        msg = "\n".join([
+        msg = "\n".join(filter(None, [
             f"⚖️ *REBALANCER* · {now}",
             f"${equity:.0f} · umbral {args.threshold:.0%}",
+            perf_line,
             "",
             *report_lines,
             *(["", f"✅ {', '.join(executed)}"] if executed else []),
             *(["", f"❌ {', '.join(errors)}"]   if errors   else []),
             *(["\n_(dry-run)_"] if not args.live else []),
-        ])
+            discovery_lines,
+        ]))
         try:
             send_whatsapp(msg)
         except Exception as e:

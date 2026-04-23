@@ -70,13 +70,13 @@ def blend_markowitz_kelly(
     markowitz_weights: pd.Series,
     capm: pd.DataFrame,
     *,
-    kelly_alpha: float = 0.40,
+    kelly_alpha: float = 0.55,
 ) -> pd.Series:
     """
     final = (1 - kelly_alpha) * markowitz + kelly_alpha * kelly
 
     Args:
-        kelly_alpha: peso de Kelly en el blend (default 40%).
+        kelly_alpha: peso de Kelly en el blend (default 55% — más convicción en picks top).
 
     Returns:
         Serie renormalizada a suma = 1.

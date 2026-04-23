@@ -101,11 +101,11 @@ class FinancialParams:
     min_obs: int = 60                     # mínimo de observaciones para incluir un activo
 
     # Sleeves de asignación — tres buckets
-    # 55% LP long (equity high conviction)
-    # 25% CP long (equity trading técnico)
+    # 50% LP long (equity high conviction, 3 posiciones concentradas)
+    # 30% CP long (equity trading técnico, más peso para generar alpha)
     # 20% options / hedge (calls, puts direccionales, y puts de cobertura SPY)
-    weight_long_term: float = 0.55
-    weight_short_term: float = 0.25
+    weight_long_term: float = 0.50
+    weight_short_term: float = 0.30
     weight_options: float = 0.20
 
     # Filtros de calidad para LP
@@ -117,8 +117,8 @@ class FinancialParams:
     rsi_overbought: float = 70.0
     atr_stop_multiple: float = 2.0        # stop loss = precio - 2*ATR
 
-    # Concentración — high conviction 4-6 posiciones totales en equity
-    top_n_long_term: int = 4
+    # Concentración — high conviction: 3 LP con más peso cada una, 2 CP
+    top_n_long_term: int = 3
     top_n_short_term: int = 2
 
     # Bucket options
