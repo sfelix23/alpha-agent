@@ -201,6 +201,18 @@ def execute(broker: BrokerBase, *, dry_run: bool = True, max_capital: float | No
     return fills
 
 
+def _limit_price(price: float, side: str) -> float:
+    """
+    Precio límite para reducir slippage vs market orders.
+    BUY: 0.15% sobre el mid → casi siempre se ejecuta en segundos.
+    SELL: 0.15% bajo el mid.
+    Esto captura mejor spread en stocks poco líquidos (VIST, YPF, AVAV).
+    """
+    if side.upper() in ("BUY",):
+        return round(price * 1.0015, 2)
+    return round(price * 0.9985, 2)
+
+
 def _submit_equity_intents(broker: BrokerBase, intents: list[TradeIntent], *, dry_run: bool) -> list[dict]:
     fills = []
     for intent in intents:
@@ -211,27 +223,31 @@ def _submit_equity_intents(broker: BrokerBase, intents: list[TradeIntent], *, dr
                 logger.warning("Skip %s: qty = 0", intent.ticker)
                 continue
 
+            lp = _limit_price(price, intent.side)
             order = Order(
                 ticker=intent.ticker,
                 side=intent.side,
                 qty=qty,
-                order_type="market",
+                order_type="limit",
+                limit_price=lp,
                 stop_loss=intent.stop_loss,
                 take_profit=intent.take_profit,
                 client_order_id=f"alpha_eq_{datetime.now().strftime('%Y%m%d%H%M%S')}_{intent.ticker}",
             )
 
             if dry_run:
-                logger.info("[DRY RUN EQUITY] %s", order)
+                logger.info("[DRY RUN EQUITY] %s @ limit $%.2f (mid $%.2f)", order, lp, price)
                 fills.append({
                     "asset": "equity", "ticker": intent.ticker, "side": intent.side,
                     "qty": qty, "status": "dry_run", "order_id": None,
+                    "limit_price": lp,
                 })
             else:
                 oid = broker.submit_order(order)
                 fills.append({
                     "asset": "equity", "ticker": intent.ticker, "side": intent.side,
                     "qty": qty, "status": "submitted", "order_id": oid,
+                    "limit_price": lp,
                 })
         except Exception as e:
             logger.error("Falló equity %s: %s", intent.ticker, e)

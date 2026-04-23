@@ -147,6 +147,37 @@ def main() -> None:
     log.info("📰 Fetching noticias y construyendo tesis por activo…")
     signals = build_signals(scores, portfolio_lp, macro=macro, capital=capital)
 
+    # 8.1 Wall Street fundamental analysis para señales LP/CP
+    if not args.no_ai:
+        log.info("📊 Análisis fundamental Wall Street para señales LP…")
+        try:
+            from alpha_agent.analytics.fundamental import get_fundamentals
+            from alpha_agent.news.claude_analyst import wall_street_analysis
+            for sig in signals.long_term[:PARAMS.top_n_long_term]:
+                try:
+                    fundamentals = get_fundamentals(sig.ticker)
+                    quant        = sig.thesis.get("quant", {})
+                    news_heads   = sig.thesis.get("news", {}).get("headlines", [])
+                    ws = wall_street_analysis(
+                        ticker=sig.ticker,
+                        fundamentals=fundamentals,
+                        quant=quant,
+                        news_headlines=news_heads,
+                        macro_regime=macro.regime,
+                        sector=fundamentals.get("sector", "Other"),
+                    )
+                    if ws:
+                        sig.thesis["wall_street"] = ws
+                        log.info(
+                            "WS %s → %s | PT %+.1f%% | %s",
+                            sig.ticker, ws.get("recommendation", "?"),
+                            ws.get("price_target_pct", 0), ws.get("valuation", "?"),
+                        )
+                except Exception as exc:
+                    log.warning("Wall Street analysis fallo para %s: %s", sig.ticker, exc)
+        except ImportError as exc:
+            log.warning("Modulos Wall Street no disponibles: %s", exc)
+
     # 8.5 Derivatives: bearish scoring + hedge layer + directional options
     if PARAMS.enable_options:
         log.info("🎯 Bucket opciones: evaluando candidatos bearish y hedge…")
