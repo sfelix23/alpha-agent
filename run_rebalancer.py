@@ -198,7 +198,7 @@ def main() -> None:
     errors:   list[str] = []
 
     if args.live and (sells or buys):
-        from alpaca.trading.requests import MarketOrderRequest
+        from alpaca.trading.requests import LimitOrderRequest
         from alpaca.trading.enums import OrderSide, TimeInForce
 
         for entry in sells + buys:           # SELLs primero → libera cash
@@ -209,11 +209,14 @@ def main() -> None:
                 qty   = round(entry["notional"] / price, 4) if price > 0 else 0
                 if qty <= 0:
                     continue
-                broker._trading.submit_order(MarketOrderRequest(
+                # Limit order para reducir slippage vs market
+                lp = round(price * (1.0015 if side == OrderSide.BUY else 0.9985), 2)
+                broker._trading.submit_order(LimitOrderRequest(
                     symbol=ticker, qty=qty, side=side,
                     time_in_force=TimeInForce.DAY,
+                    limit_price=lp,
                 ))
-                executed.append(f"{side.value} {qty:.4f} {ticker}")
+                executed.append(f"{side.value} {qty:.4f} {ticker} @${lp:.2f}")
             except Exception as e:
                 errors.append(f"{ticker}: {e}")
                 logger.error("Error %s: %s", ticker, e)
