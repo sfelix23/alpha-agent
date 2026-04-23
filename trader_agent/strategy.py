@@ -191,6 +191,11 @@ def execute(broker: BrokerBase, *, dry_run: bool = True, max_capital: float | No
         "Equity plan: %d órdenes (capital=$%.2f, ya invertido=$%.2f, headroom=$%.2f)",
         len(equity_intents), capital, invested, capital - invested,
     )
+
+    # ── Risk Arbiter: debate bull/bear antes de BUY ──────────────────────────
+    equity_intents = _apply_risk_debate(signals, equity_intents, positions, capital_adj)
+    logger.info("Risk Arbiter: %d órdenes post-filtro", len(equity_intents))
+
     fills.extend(_submit_equity_intents(broker, equity_intents, dry_run=dry_run))
 
     # ── Opciones (direccionales + hedge) ────────────────────────────
@@ -199,6 +204,91 @@ def execute(broker: BrokerBase, *, dry_run: bool = True, max_capital: float | No
     fills.extend(_submit_option_intents(broker, option_intents, dry_run=dry_run))
 
     return fills
+
+
+def _apply_risk_debate(
+    signals: Signals,
+    intents: list[TradeIntent],
+    positions: list,
+    capital: float,
+) -> list[TradeIntent]:
+    """
+    Filtra y ajusta intents BUY via debate bull/bear (Claude Haiku).
+    SELL/SELL_SHORT pasan sin modificación.
+    """
+    try:
+        from alpha_agent.news.claude_analyst import risk_debate
+    except ImportError:
+        return intents
+
+    signal_lookup: dict[str, Signal] = {
+        s.ticker: s for s in signals.long_term + signals.short_term
+    }
+
+    macro = signals.macro or {}
+    portfolio_ctx = {
+        "regime": macro.get("regime", "unknown"),
+        "vix": float((macro.get("prices") or {}).get("vix", 18)),
+        "current_positions": [p.ticker for p in positions],
+        "capital_usd": capital,
+    }
+
+    filtered: list[TradeIntent] = []
+    for intent in intents:
+        if intent.side.upper() != "BUY":
+            filtered.append(intent)
+            continue
+
+        sig = signal_lookup.get(intent.ticker)
+        if sig is None:
+            filtered.append(intent)
+            continue
+
+        debate = risk_debate(
+            ticker=intent.ticker,
+            signal={
+                "price": sig.price,
+                "stop_loss": sig.stop_loss,
+                "take_profit": sig.take_profit,
+                "thesis": sig.thesis or {},
+            },
+            portfolio_context=portfolio_ctx,
+        )
+
+        verdict = debate.get("verdict", "PROCEED")
+        size_adj = max(0.0, min(1.0, float(debate.get("size_adjustment", 1.0))))
+
+        if verdict == "SKIP":
+            logger.warning(
+                "Risk Arbiter SKIP %s — %s",
+                intent.ticker, debate.get("bear_case", "?"),
+            )
+            continue
+
+        if verdict == "REDUCE_SIZE" and size_adj < 1.0:
+            new_notional = intent.notional * size_adj
+            logger.info(
+                "Risk Arbiter REDUCE_SIZE %s: $%.0f→$%.0f (%.0f%%) — %s",
+                intent.ticker, intent.notional, new_notional, size_adj * 100,
+                debate.get("bear_case", ""),
+            )
+            intent = TradeIntent(
+                ticker=intent.ticker,
+                side=intent.side,
+                notional=new_notional,
+                horizon=intent.horizon,
+                stop_loss=intent.stop_loss,
+                take_profit=intent.take_profit,
+            )
+        else:
+            logger.info(
+                "Risk Arbiter PROCEED %s — %s",
+                intent.ticker, debate.get("bull_case", ""),
+            )
+
+        filtered.append(intent)
+
+    return filtered
 
 
 def _limit_price(price: float, side: str) -> float:

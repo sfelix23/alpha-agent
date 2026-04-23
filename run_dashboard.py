@@ -505,6 +505,39 @@ def _tab_posiciones(positions):
 </script>"""
 
 
+def _ws_block(ws: dict | None) -> str:
+    if not ws:
+        return ""
+    rec = ws.get("recommendation", "")
+    pt_pct = ws.get("price_target_pct", 0) or 0
+    val = ws.get("valuation", "")
+    thesis_ws = _esc(ws.get("thesis", "") or "")
+    catalysts = ws.get("catalysts", []) or []
+    risks = ws.get("risks", []) or []
+
+    rec_color = {"BUY": "#3fb950", "SELL": "#f85149", "HOLD": "#d29922"}.get(rec.upper(), "#8b949e")
+    pt_sign = "+" if pt_pct >= 0 else ""
+    pt_color = "#3fb950" if pt_pct >= 0 else "#f85149"
+
+    cat_html = "".join(f'<li>{_esc(c)}</li>' for c in catalysts[:3]) if catalysts else ""
+    risk_html = "".join(f'<li>{_esc(r)}</li>' for r in risks[:3]) if risks else ""
+
+    return f"""
+<div class="ws-block">
+  <div class="ws-header">
+    <span class="ws-label">WALL ST ANALYSIS</span>
+    <span class="ws-rec" style="color:{rec_color};border-color:{rec_color}55">{rec}</span>
+    <span class="ws-pt" style="color:{pt_color}">&nbsp;PT {pt_sign}{pt_pct:.1f}%</span>
+    <span class="ws-val muted">&nbsp;&middot;&nbsp;{_esc(val)}</span>
+  </div>
+  {f'<p class="ws-thesis">{thesis_ws}</p>' if thesis_ws else ''}
+  <div class="ws-lists">
+    {f'<div class="ws-col"><div class="ws-col-h">Catalizadores</div><ul>{cat_html}</ul></div>' if cat_html else ''}
+    {f'<div class="ws-col"><div class="ws-col-h">Riesgos</div><ul>{risk_html}</ul></div>' if risk_html else ''}
+  </div>
+</div>"""
+
+
 # ─── TAB: SEÑALES ─────────────────────────────────────────────────────────────
 
 def _tab_senales(signals_data):
@@ -564,6 +597,7 @@ def _tab_senales(signals_data):
   <div class="conv-track"><div class="conv-fill" style="width:{cp}%;background:{cc}88"></div></div>
   <div class="sig-thesis" id="{uid}">
     <p>{text}</p>
+    {_ws_block(th.get("wall_street"))}
   </div>
 </div>"""
 
@@ -858,6 +892,19 @@ body{font-family:'Inter',system-ui,sans-serif;background:var(--bg);color:var(--t
 .sig-thesis{display:none;margin-top:12px;padding:12px 14px;
   background:var(--s1);border-radius:8px;border-left:3px solid var(--ac);
   font-size:.82rem;color:#94a3b8;line-height:1.65;animation:fadeIn .2s ease}
+.ws-block{margin-top:12px;padding:10px 12px;background:#0d1117;border-radius:7px;
+  border:1px solid #21262d;font-size:.8rem}
+.ws-header{display:flex;align-items:center;gap:4px;margin-bottom:6px;flex-wrap:wrap}
+.ws-label{font-size:.65rem;font-weight:700;letter-spacing:.8px;color:#8b949e;
+  background:#161b22;padding:2px 6px;border-radius:4px}
+.ws-rec{font-weight:700;padding:2px 8px;border-radius:4px;border:1px solid;font-size:.8rem}
+.ws-pt{font-weight:700;font-size:.82rem}
+.ws-val{font-size:.75rem}
+.ws-thesis{color:#94a3b8;margin:4px 0 8px;line-height:1.5}
+.ws-lists{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.ws-col-h{font-size:.68rem;font-weight:700;letter-spacing:.5px;color:#58a6ff;
+  text-transform:uppercase;margin-bottom:4px}
+.ws-col ul{margin:0;padding-left:14px;color:#8b949e;line-height:1.6}
 
 /* ── calendar ── */
 .cal-wrap{overflow-x:auto}
