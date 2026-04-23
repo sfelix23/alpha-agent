@@ -385,7 +385,7 @@ tr:hover td { background: var(--surface2); }
 <div class="page-header">
   <div>
     <div class="page-title">Alpha Trading Dashboard</div>
-    <div class="page-meta"><span class="live-dot"></span>Actualizado el 22 de April de 2026 — 20:43 &middot; Se actualiza automáticamente cada 5 minutos &middot; Paper Trading</div>
+    <div class="page-meta"><span class="live-dot"></span>Actualizado el 23 de April de 2026 — 14:02 &middot; Se actualiza automáticamente cada 5 minutos &middot; Paper Trading</div>
   </div>
   <div id="countdown" style="font-size:.8rem;color:#64748b"></div>
 </div>
@@ -396,39 +396,39 @@ tr:hover td { background: var(--surface2); }
   <div class="kpi-card kpi-main">
     <div class="kpi-icon">&#x1F4BC;</div>
     <div class="kpi-label">Patrimonio Total</div>
-    <div class="kpi-value" style="color:#f87171">$99,916.55</div>
+    <div class="kpi-value" style="color:#f87171">$99,725.62</div>
     <div class="kpi-sub" style="background:rgba(248,113,113,0.10);color:#f87171;border-radius:6px;padding:3px 10px;display:inline-block;margin-top:6px">
-      $-155.83 &nbsp;(-0.16%) desde inicio
+      $-36.81 &nbsp;(-0.04%) desde inicio
     </div>
   </div>
   <div class="kpi-card">
     <div class="kpi-icon">&#x1F4CA;</div>
     <div class="kpi-label">Régimen de Mercado</div>
     <div class="kpi-value" style="color:#4ade80">↑ Alcista</div>
-    <div class="kpi-sub">Capital base: $100,072.38</div>
+    <div class="kpi-sub">Capital base: $99,762.43</div>
   </div>
   <div class="kpi-card">
     <div class="kpi-icon">&#x26A1;</div>
     <div class="kpi-label">VIX — Volatilidad</div>
-    <div class="kpi-value" style="color:#fbbf24">19.1</div>
+    <div class="kpi-value" style="color:#fbbf24">19.4</div>
     <div class="kpi-sub">Moderado</div>
   </div>
   <div class="kpi-card">
     <div class="kpi-icon">&#x1F6E2;</div>
     <div class="kpi-label">Petróleo WTI</div>
-    <div class="kpi-value">$92.98</div>
+    <div class="kpi-value">$93.83</div>
     <div class="kpi-sub">por barril</div>
   </div>
   <div class="kpi-card">
     <div class="kpi-icon">&#x1F947;</div>
     <div class="kpi-label">Oro</div>
-    <div class="kpi-value">$4,755.30</div>
+    <div class="kpi-value">$4,753.10</div>
     <div class="kpi-sub">por onza troy</div>
   </div>
   <div class="kpi-card">
     <div class="kpi-icon">&#x1F4B5;</div>
     <div class="kpi-label">Dólar Index (DXY)</div>
-    <div class="kpi-value">98.6</div>
+    <div class="kpi-value">98.7</div>
     <div class="kpi-sub">fuerza del dólar</div>
   </div>
 </div>
@@ -448,8 +448,8 @@ tr:hover td { background: var(--surface2); }
   </div>
   <div class="kpi-card">
     <div class="kpi-label">Rentabilidad desde inicio</div>
-    <div class="kpi-value" style="color:#f87171">-0.16%</div>
-    <div class="kpi-sub">Capital inicial: $100,072.38</div>
+    <div class="kpi-value" style="color:#f87171">-0.04%</div>
+    <div class="kpi-sub">Capital inicial: $99,762.43</div>
   </div>
   <div class="kpi-card">
     <div class="kpi-label">Tamaño de Posición (VIX)</div>
@@ -463,7 +463,7 @@ tr:hover td { background: var(--surface2); }
   </div>
   <div class="kpi-card">
     <div class="kpi-label">Régimen de riesgo (VIX)</div>
-    <div class="kpi-value" style="color:#fbbf24">19.1</div>
+    <div class="kpi-value" style="color:#fbbf24">19.4</div>
     <div class="kpi-sub">Moderado</div>
   </div>
 </div>
@@ -474,7 +474,7 @@ tr:hover td { background: var(--surface2); }
 <div class="card card-wide">
   <div class="card-header">
     <span class="card-title">Evolución del Patrimonio</span>
-    <span class="card-badge" style="color:#f87171">-0.68% total</span>
+    <span class="card-badge" style="color:#4ade80">+0.37% total</span>
   </div>
   <canvas id="equityChart" height="90"></canvas>
 </div>
@@ -482,21 +482,21 @@ tr:hover td { background: var(--surface2); }
 (function(){
   const ctx = document.getElementById('equityChart');
   const grad = ctx.getContext('2d').createLinearGradient(0, 0, 0, 280);
-  grad.addColorStop(0, '#f8717144');
-  grad.addColorStop(1, '#f8717100');
+  grad.addColorStop(0, '#4ade8044');
+  grad.addColorStop(1, '#4ade8000');
   new Chart(ctx, {
     type: 'line',
     data: {
-      labels: ["09 Apr", "10 Apr", "11 Apr", "14 Apr", "15 Apr", "16 Apr", "17 Apr", "18 Apr", "21 Apr", "22 Apr"],
+      labels: ["09 Apr", "10 Apr", "11 Apr", "14 Apr", "15 Apr", "16 Apr", "17 Apr", "18 Apr", "21 Apr", "22 Apr", "23 Apr"],
       datasets: [{
-        data: [100000.0, 100000.0, 100000.0, 100429.64, 100768.9, 100309.71, 100998.27, 100744.63, 100666.22, 99321.76],
-        borderColor: '#f87171',
+        data: [100000.0, 100000.0, 100000.0, 100429.64, 100768.9, 100309.71, 100998.27, 100744.63, 100666.22, 99321.76, 100365.39],
+        borderColor: '#4ade80',
         backgroundColor: grad,
         fill: true,
         tension: 0.4,
         pointRadius: 3,
         pointHoverRadius: 6,
-        pointBackgroundColor: '#f87171',
+        pointBackgroundColor: '#4ade80',
         borderWidth: 2.5,
       }]
     },
@@ -543,9 +543,9 @@ tr:hover td { background: var(--surface2); }
   new Chart(document.getElementById('sectorChart'), {
     type: 'bar',
     data: {
-      labels: ["Tech", "Energy", "Materials", "ETF", "Industrials", "Comm", "Financials", "GoldMiners", "Healthcare", "Defense"],
+      labels: ["Tech", "Energy", "Industrials", "Materials", "Comm", "ETF", "Financials", "Healthcare", "GoldMiners", "Defense"],
       datasets: [{
-        data: [12.0, 6.99, 5.87, 4.58, 3.9, 3.47, 0.89, -0.84, -3.85, -4.83],
+        data: [10.57, 7.33, 5.45, 3.82, 2.92, 2.91, 1.16, -4.17, -4.72, -5.0],
         backgroundColor: ["#4ade80", "#4ade80", "#4ade80", "#4ade80", "#4ade80", "#4ade80", "#4ade80", "#f87171", "#f87171", "#f87171"],
         borderRadius: 6,
         borderSkipped: false,
@@ -582,11 +582,11 @@ tr:hover td { background: var(--surface2); }
   <div class="card-header">
     <span class="card-title">Calendario de Resultados — Abril 2026</span>
     <div style="display:flex;gap:16px;flex-wrap:wrap;align-items:center">
-      <span style="color:#f87171;font-weight:700;font-size:.95rem">
-        $-678 en el mes
+      <span style="color:#4ade80;font-weight:700;font-size:.95rem">
+        +$365 en el mes
       </span>
-      <span class="muted">5 días positivos · 4 negativos</span>
-      <span class="muted">Mejor: <b style="color:#4ade80">+$689</b> · Peor: <b style="color:#f87171">$-1,344</b></span>
+      <span class="muted">6 días positivos · 4 negativos</span>
+      <span class="muted">Mejor: <b style="color:#4ade80">+$1,044</b> · Peor: <b style="color:#f87171">$-1,344</b></span>
     </div>
   </div>
   <div style="overflow-x:auto">
@@ -637,7 +637,12 @@ tr:hover td { background: var(--surface2); }
   <div class="cal-day">22</div>
   <div class="cal-pnl" style="color:#f87171">$-1,344</div>
   <div class="cal-pct" style="color:#f87171">-1.3%</div>
-</td><td class="cal-cell cal-no-data"><div class="cal-day">23</div><div class="cal-pct">—</div></td><td class="cal-cell cal-no-data"><div class="cal-day">24</div><div class="cal-pct">—</div></td><td class="cal-cell cal-weekend"><div class="cal-day">25</div></td><td class="cal-cell cal-weekend"><div class="cal-day">26</div></td></tr><tr><td class="cal-cell cal-no-data"><div class="cal-day">27</div><div class="cal-pct">—</div></td><td class="cal-cell cal-no-data"><div class="cal-day">28</div><div class="cal-pct">—</div></td><td class="cal-cell cal-no-data"><div class="cal-day">29</div><div class="cal-pct">—</div></td><td class="cal-cell cal-no-data"><div class="cal-day">30</div><div class="cal-pct">—</div></td><td class="cal-empty"></td><td class="cal-empty"></td><td class="cal-empty"></td></tr></tbody>
+</td>
+<td class="cal-cell" style="background:rgb(22,163,50)">
+  <div class="cal-day">23</div>
+  <div class="cal-pnl" style="color:#4ade80">+$1,044</div>
+  <div class="cal-pct" style="color:#4ade80">+1.1%</div>
+</td><td class="cal-cell cal-no-data"><div class="cal-day">24</div><div class="cal-pct">—</div></td><td class="cal-cell cal-weekend"><div class="cal-day">25</div></td><td class="cal-cell cal-weekend"><div class="cal-day">26</div></td></tr><tr><td class="cal-cell cal-no-data"><div class="cal-day">27</div><div class="cal-pct">—</div></td><td class="cal-cell cal-no-data"><div class="cal-day">28</div><div class="cal-pct">—</div></td><td class="cal-cell cal-no-data"><div class="cal-day">29</div><div class="cal-pct">—</div></td><td class="cal-cell cal-no-data"><div class="cal-day">30</div><div class="cal-pct">—</div></td><td class="cal-empty"></td><td class="cal-empty"></td><td class="cal-empty"></td></tr></tbody>
     </table>
   </div>
 </div>
@@ -661,16 +666,16 @@ tr:hover td { background: var(--surface2); }
   <div class="pos-top">
     <span class="pos-ticker" style="color:#60a5fa">AMD</span>
     <span class="pos-pnl" style="color:#4ade80;background:rgba(0,0,0,.2);padding:2px 10px;border-radius:20px">
-      +14.1% &nbsp; $1,713.96
+      +12.8% &nbsp; $1,564.56
     </span>
   </div>
   <div class="pos-bar-track">
-    <div class="pos-bar-fill" style="width:70.7%;background:#4ade80"></div>
+    <div class="pos-bar-fill" style="width:64.2%;background:#4ade80"></div>
   </div>
   <div class="pos-details">
     <span>Cantidad: <b>45.5944</b></span>
-    <span>Precio entrada: <b>$265.91</b></span>
-    <span>Valor de mercado: <b>$13,837.90</b></span>
+    <span>Precio entrada: <b>$267.43</b></span>
+    <span>Valor de mercado: <b>$13,757.66</b></span>
   </div>
 </div>
 <div class="pos-card" style="border-left:3px solid #4ade80">
@@ -709,55 +714,55 @@ tr:hover td { background: var(--surface2); }
   <div class="pos-top">
     <span class="pos-ticker" style="color:#f87171">GLD</span>
     <span class="pos-pnl" style="color:#f87171;background:rgba(0,0,0,.2);padding:2px 10px;border-radius:20px">
-      -0.8% &nbsp; $-125.60
+      -1.2% &nbsp; $-187.16
     </span>
   </div>
   <div class="pos-bar-track">
-    <div class="pos-bar-fill" style="width:4.0%;background:#f87171"></div>
+    <div class="pos-bar-fill" style="width:5.9%;background:#f87171"></div>
   </div>
   <div class="pos-details">
     <span>Cantidad: <b>36.0728</b></span>
-    <span>Precio entrada: <b>$438.46</b></span>
-    <span>Valor de mercado: <b>$15,690.95</b></span>
+    <span>Precio entrada: <b>$438.51</b></span>
+    <span>Valor de mercado: <b>$15,631.25</b></span>
   </div>
 </div>
 <div class="pos-card" style="border-left:3px solid #c084fc">
   <div class="pos-top">
     <span class="pos-ticker" style="color:#c084fc">GOOGL</span>
     <span class="pos-pnl" style="color:#4ade80;background:rgba(0,0,0,.2);padding:2px 10px;border-radius:20px">
-      +2.6% &nbsp; $381.94
+      +3.0% &nbsp; $449.52
     </span>
   </div>
   <div class="pos-bar-track">
-    <div class="pos-bar-fill" style="width:12.9%;background:#4ade80"></div>
+    <div class="pos-bar-fill" style="width:15.1%;background:#4ade80"></div>
   </div>
   <div class="pos-details">
     <span>Cantidad: <b>45.0281</b></span>
-    <span>Precio entrada: <b>$329.74</b></span>
-    <span>Valor de mercado: <b>$15,229.40</b></span>
+    <span>Precio entrada: <b>$329.79</b></span>
+    <span>Valor de mercado: <b>$15,299.20</b></span>
   </div>
 </div>
 <div class="pos-card" style="border-left:3px solid #34d399">
   <div class="pos-top">
     <span class="pos-ticker" style="color:#34d399">JPM</span>
     <span class="pos-pnl" style="color:#f87171;background:rgba(0,0,0,.2);padding:2px 10px;border-radius:20px">
-      -1.2% &nbsp; $-115.20
+      -1.1% &nbsp; $-98.16
     </span>
   </div>
   <div class="pos-bar-track">
-    <div class="pos-bar-fill" style="width:6.2%;background:#f87171"></div>
+    <div class="pos-bar-fill" style="width:5.3%;background:#f87171"></div>
   </div>
   <div class="pos-details">
     <span>Cantidad: <b>29.3440</b></span>
-    <span>Precio entrada: <b>$316.51</b></span>
-    <span>Valor de mercado: <b>$9,172.34</b></span>
+    <span>Precio entrada: <b>$316.50</b></span>
+    <span>Valor de mercado: <b>$9,189.37</b></span>
   </div>
 </div>
 <div class="pos-card" style="border-left:3px solid #fb923c">
   <div class="pos-top">
     <span class="pos-ticker" style="color:#fb923c">NEM260424C00123000</span>
     <span class="pos-pnl" style="color:#f87171;background:rgba(0,0,0,.2);padding:2px 10px;border-radius:20px">
-      -6690.6% &nbsp; $-186.00
+      -8705.0% &nbsp; $-242.00
     </span>
   </div>
   <div class="pos-bar-track">
@@ -766,14 +771,14 @@ tr:hover td { background: var(--surface2); }
   <div class="pos-details">
     <span>Cantidad: <b>4.0000</b></span>
     <span>Precio entrada: <b>$0.69</b></span>
-    <span>Valor de mercado: <b>$92.00</b></span>
+    <span>Valor de mercado: <b>$36.00</b></span>
   </div>
 </div>
 <div class="pos-card" style="border-left:3px solid #38bdf8">
   <div class="pos-top">
     <span class="pos-ticker" style="color:#38bdf8">NEM260424C00124000</span>
     <span class="pos-pnl" style="color:#f87171;background:rgba(0,0,0,.2);padding:2px 10px;border-radius:20px">
-      -4523.8% &nbsp; $-38.00
+      -10000.0% &nbsp; $-84.00
     </span>
   </div>
   <div class="pos-bar-track">
@@ -782,14 +787,14 @@ tr:hover td { background: var(--surface2); }
   <div class="pos-details">
     <span>Cantidad: <b>2.0000</b></span>
     <span>Precio entrada: <b>$0.42</b></span>
-    <span>Valor de mercado: <b>$46.00</b></span>
+    <span>Valor de mercado: <b>$0.00</b></span>
   </div>
 </div>
 <div class="pos-card" style="border-left:3px solid #a78bfa">
   <div class="pos-top">
     <span class="pos-ticker" style="color:#a78bfa">NEM260424C00125000</span>
     <span class="pos-pnl" style="color:#f87171;background:rgba(0,0,0,.2);padding:2px 10px;border-radius:20px">
-      -7105.3% &nbsp; $-108.00
+      -8684.2% &nbsp; $-132.00
     </span>
   </div>
   <div class="pos-bar-track">
@@ -798,7 +803,7 @@ tr:hover td { background: var(--surface2); }
   <div class="pos-details">
     <span>Cantidad: <b>4.0000</b></span>
     <span>Precio entrada: <b>$0.38</b></span>
-    <span>Valor de mercado: <b>$44.00</b></span>
+    <span>Valor de mercado: <b>$20.00</b></span>
   </div>
 </div>
 <div class="pos-card" style="border-left:3px solid #f472b6">
@@ -837,32 +842,32 @@ tr:hover td { background: var(--surface2); }
   <div class="pos-top">
     <span class="pos-ticker" style="color:#4ade80">RTX</span>
     <span class="pos-pnl" style="color:#f87171;background:rgba(0,0,0,.2);padding:2px 10px;border-radius:20px">
-      -1.1% &nbsp; $-159.80
+      -0.8% &nbsp; $-116.00
     </span>
   </div>
   <div class="pos-bar-track">
-    <div class="pos-bar-fill" style="width:5.3%;background:#f87171"></div>
+    <div class="pos-bar-fill" style="width:3.8%;background:#f87171"></div>
   </div>
   <div class="pos-details">
     <span>Cantidad: <b>82.5629</b></span>
     <span>Precio entrada: <b>$182.64</b></span>
-    <span>Valor de mercado: <b>$14,919.49</b></span>
+    <span>Valor de mercado: <b>$14,963.29</b></span>
   </div>
 </div>
 <div class="pos-card" style="border-left:3px solid #fbbf24">
   <div class="pos-top">
     <span class="pos-ticker" style="color:#fbbf24">TSM</span>
     <span class="pos-pnl" style="color:#4ade80;background:rgba(0,0,0,.2);padding:2px 10px;border-radius:20px">
-      +4.1% &nbsp; $448.86
+      +3.6% &nbsp; $392.07
     </span>
   </div>
   <div class="pos-bar-track">
-    <div class="pos-bar-fill" style="width:20.6%;background:#4ade80"></div>
+    <div class="pos-bar-fill" style="width:18.0%;background:#4ade80"></div>
   </div>
   <div class="pos-details">
     <span>Cantidad: <b>29.3520</b></span>
     <span>Precio entrada: <b>$371.11</b></span>
-    <span>Valor de mercado: <b>$11,341.61</b></span>
+    <span>Valor de mercado: <b>$11,284.82</b></span>
   </div>
 </div>
     </div>
@@ -871,7 +876,7 @@ tr:hover td { background: var(--surface2); }
 <script>
 (function(){
   const labels = ["AMD", "CCJ260424C00139000", "CCJ260424C00142000", "GLD", "GOOGL", "JPM", "NEM260424C00123000", "NEM260424C00124000", "NEM260424C00125000", "NEM260424C00127000", "NEM260424C00128000", "RTX", "TSM"];
-  const values = [13837.9, 0.0, 0.0, 15690.95, 15229.4, 9172.34, 92.0, 46.0, 44.0, 10.0, 10.0, 14919.49, 11341.61];
+  const values = [13757.66, 0.0, 0.0, 15631.25, 15299.2, 9189.37, 36.0, 0.0, 20.0, 10.0, 10.0, 14963.29, 11284.82];
   const colors = ["#60a5fa", "#4ade80", "#fbbf24", "#f87171", "#c084fc", "#34d399", "#fb923c", "#38bdf8", "#a78bfa", "#f472b6"];
   new Chart(document.getElementById('allocChart'), {
     type: 'doughnut',
@@ -908,7 +913,7 @@ tr:hover td { background: var(--surface2); }
 <div class="card card-wide">
   <div class="card-header">
     <span class="card-title">Señales del Agente Analista</span>
-    <span class="card-badge muted">Generadas: 2026-04-22 18:49</span>
+    <span class="card-badge muted">Generadas: 2026-04-23 13:01</span>
   </div>
   <p class="muted" style="margin-bottom:12px;font-size:.8rem">
     Haga clic en cada señal para ver el análisis completo.
@@ -922,19 +927,19 @@ tr:hover td { background: var(--surface2); }
       <span class="sig-conv" style="color:#4ade80">&#9679; Convicción Alta</span>
     </div>
     <div style="display:flex;align-items:center;gap:14px;flex-wrap:wrap">
-      <span class="sig-price">Precio: <b>$435.98</b></span>
-      <span class="sig-price">Asignado: <b>$15,723.17</b></span>
+      <span class="sig-price">Precio: <b>$435.26</b></span>
+      <span class="sig-price">Asignado: <b>$15,978.58</b></span>
       <span class="sig-expand">Ver análisis &#9660;</span>
     </div>
   </div>
   <div class="sig-metrics">
     <div class="metric-pill">
       <div class="metric-label">Sharpe</div>
-      <div class="metric-val" style="color:#60a5fa">1.09</div>
+      <div class="metric-val" style="color:#60a5fa">1.10</div>
     </div>
     <div class="metric-pill">
       <div class="metric-label">Alfa de Jensen</div>
-      <div class="metric-val" style="color:#4ade80">+21.89%</div>
+      <div class="metric-val" style="color:#4ade80">+22.07%</div>
     </div>
     <div class="metric-pill">
       <div class="metric-label">Beta</div>
@@ -942,60 +947,18 @@ tr:hover td { background: var(--surface2); }
     </div>
     <div class="metric-pill">
       <div class="metric-label">Stop Loss</div>
-      <div class="metric-val"><span style="color:#f87171">$419.88</span></div>
+      <div class="metric-val"><span style="color:#f87171">$419.16</span></div>
     </div>
     <div class="metric-pill">
       <div class="metric-label">Toma de Ganancias</div>
-      <div class="metric-val"><span style="color:#4ade80">$501.38</span></div>
+      <div class="metric-val"><span style="color:#4ade80">$500.55</span></div>
     </div>
   </div>
   <div class="conv-bar-track">
     <div class="conv-bar-fill" style="width:90%;background:#4ade80"></div>
   </div>
   <div class="sig-thesis" id="sig_GLD_long_term" style="display:none">
-    <p>GLD — horizonte LARGO PLAZO. Convicción ALTA. La tesis CAPM/Markowitz sostiene un Sharpe de 1.09 con beta 0.20 (retorno esperado CAPM +7.4%, alfa de Jensen +21.9%). Cumple el filtro de calidad (β razonable + Sharpe elevado) y aparece en el óptimo de la frontera eficiente. El flujo de noticias es positivo (sentiment +0.67 sobre 6 titulares). Régimen de mercado BULL (SPY +6.8% sobre SMA200 con pendiente positiva) — viento de cola para posiciones largas.</p>
-  </div>
-</div>
-<div class="sig-card" onclick="toggleThesis('sig_GOOGL_long_term')">
-  <div class="sig-top">
-    <div style="display:flex;align-items:center;gap:10px">
-      <span class="sig-ticker">GOOGL</span>
-      <span class="sig-sleeve" style="color:#60a5fa;border-color:#60a5fa40">Largo Plazo</span>
-      <span class="sig-conv" style="color:#4ade80">&#9679; Convicción Alta</span>
-    </div>
-    <div style="display:flex;align-items:center;gap:14px;flex-wrap:wrap">
-      <span class="sig-price">Precio: <b>$337.97</b></span>
-      <span class="sig-price">Asignado: <b>$15,217.47</b></span>
-      <span class="sig-expand">Ver análisis &#9660;</span>
-    </div>
-  </div>
-  <div class="sig-metrics">
-    <div class="metric-pill">
-      <div class="metric-label">Sharpe</div>
-      <div class="metric-val" style="color:#60a5fa">1.31</div>
-    </div>
-    <div class="metric-pill">
-      <div class="metric-label">Alfa de Jensen</div>
-      <div class="metric-val" style="color:#4ade80">+23.42%</div>
-    </div>
-    <div class="metric-pill">
-      <div class="metric-label">Beta</div>
-      <div class="metric-val">1.08</div>
-    </div>
-    <div class="metric-pill">
-      <div class="metric-label">Stop Loss</div>
-      <div class="metric-val"><span style="color:#f87171">$322.44</span></div>
-    </div>
-    <div class="metric-pill">
-      <div class="metric-label">Toma de Ganancias</div>
-      <div class="metric-val"><span style="color:#4ade80">$388.67</span></div>
-    </div>
-  </div>
-  <div class="conv-bar-track">
-    <div class="conv-bar-fill" style="width:90%;background:#4ade80"></div>
-  </div>
-  <div class="sig-thesis" id="sig_GOOGL_long_term" style="display:none">
-    <p>GOOGL — horizonte LARGO PLAZO. Convicción ALTA. La tesis CAPM/Markowitz sostiene un Sharpe de 1.31 con beta 1.08 (retorno esperado CAPM +20.3%, alfa de Jensen +23.4%). Cumple el filtro de calidad (β razonable + Sharpe elevado) y aparece en el óptimo de la frontera eficiente. El flujo de noticias es positivo (sentiment +0.33 sobre 6 titulares). Régimen de mercado BULL (SPY +6.8% sobre SMA200 con pendiente positiva) — viento de cola para posiciones largas.</p>
+    <p>GLD — horizonte LARGO PLAZO. Convicción ALTA. La tesis CAPM/Markowitz sostiene un Sharpe de 1.10 con beta 0.20 (retorno esperado CAPM +7.3%, alfa de Jensen +22.1%). Cumple el filtro de calidad (β razonable + Sharpe elevado) y aparece en el óptimo de la frontera eficiente. El flujo de noticias es positivo (sentiment +1.00 sobre 6 titulares). Régimen de mercado BULL (SPY +7.0% sobre SMA200 con pendiente positiva) — viento de cola para posiciones largas.</p>
   </div>
 </div>
 <div class="sig-card" onclick="toggleThesis('sig_RTX_long_term')">
@@ -1006,8 +969,8 @@ tr:hover td { background: var(--surface2); }
       <span class="sig-conv" style="color:#4ade80">&#9679; Convicción Alta</span>
     </div>
     <div style="display:flex;align-items:center;gap:14px;flex-wrap:wrap">
-      <span class="sig-price">Precio: <b>$180.76</b></span>
-      <span class="sig-price">Asignado: <b>$14,926.09</b></span>
+      <span class="sig-price">Precio: <b>$180.91</b></span>
+      <span class="sig-price">Asignado: <b>$15,200.65</b></span>
       <span class="sig-expand">Ver análisis &#9660;</span>
     </div>
   </div>
@@ -1018,7 +981,7 @@ tr:hover td { background: var(--surface2); }
     </div>
     <div class="metric-pill">
       <div class="metric-label">Alfa de Jensen</div>
-      <div class="metric-val" style="color:#4ade80">+18.88%</div>
+      <div class="metric-val" style="color:#4ade80">+19.30%</div>
     </div>
     <div class="metric-pill">
       <div class="metric-label">Beta</div>
@@ -1026,18 +989,60 @@ tr:hover td { background: var(--surface2); }
     </div>
     <div class="metric-pill">
       <div class="metric-label">Stop Loss</div>
-      <div class="metric-val"><span style="color:#f87171">$170.96</span></div>
+      <div class="metric-val"><span style="color:#f87171">$171.01</span></div>
     </div>
     <div class="metric-pill">
       <div class="metric-label">Toma de Ganancias</div>
-      <div class="metric-val"><span style="color:#4ade80">$207.87</span></div>
+      <div class="metric-val"><span style="color:#4ade80">$208.05</span></div>
     </div>
   </div>
   <div class="conv-bar-track">
     <div class="conv-bar-fill" style="width:90%;background:#4ade80"></div>
   </div>
   <div class="sig-thesis" id="sig_RTX_long_term" style="display:none">
-    <p>RTX — horizonte LARGO PLAZO. Convicción ALTA. La tesis CAPM/Markowitz sostiene un Sharpe de 1.06 con beta 0.49 (retorno esperado CAPM +11.6%, alfa de Jensen +18.9%). Cumple el filtro de calidad (β razonable + Sharpe elevado) y aparece en el óptimo de la frontera eficiente. Flujo de noticias neutral (6 titulares). Régimen de mercado BULL (SPY +6.8% sobre SMA200 con pendiente positiva) — viento de cola para posiciones largas.</p>
+    <p>RTX — horizonte LARGO PLAZO. Convicción ALTA. La tesis CAPM/Markowitz sostiene un Sharpe de 1.06 con beta 0.49 (retorno esperado CAPM +11.4%, alfa de Jensen +19.3%). Cumple el filtro de calidad (β razonable + Sharpe elevado) y aparece en el óptimo de la frontera eficiente. Flujo de noticias neutral (6 titulares). Régimen de mercado BULL (SPY +7.0% sobre SMA200 con pendiente positiva) — viento de cola para posiciones largas.</p>
+  </div>
+</div>
+<div class="sig-card" onclick="toggleThesis('sig_GOOGL_long_term')">
+  <div class="sig-top">
+    <div style="display:flex;align-items:center;gap:10px">
+      <span class="sig-ticker">GOOGL</span>
+      <span class="sig-sleeve" style="color:#60a5fa;border-color:#60a5fa40">Largo Plazo</span>
+      <span class="sig-conv" style="color:#4ade80">&#9679; Convicción Alta</span>
+    </div>
+    <div style="display:flex;align-items:center;gap:14px;flex-wrap:wrap">
+      <span class="sig-price">Precio: <b>$339.32</b></span>
+      <span class="sig-price">Asignado: <b>$15,033.25</b></span>
+      <span class="sig-expand">Ver análisis &#9660;</span>
+    </div>
+  </div>
+  <div class="sig-metrics">
+    <div class="metric-pill">
+      <div class="metric-label">Sharpe</div>
+      <div class="metric-val" style="color:#60a5fa">1.29</div>
+    </div>
+    <div class="metric-pill">
+      <div class="metric-label">Alfa de Jensen</div>
+      <div class="metric-val" style="color:#4ade80">+23.56%</div>
+    </div>
+    <div class="metric-pill">
+      <div class="metric-label">Beta</div>
+      <div class="metric-val">1.08</div>
+    </div>
+    <div class="metric-pill">
+      <div class="metric-label">Stop Loss</div>
+      <div class="metric-val"><span style="color:#f87171">$323.67</span></div>
+    </div>
+    <div class="metric-pill">
+      <div class="metric-label">Toma de Ganancias</div>
+      <div class="metric-val"><span style="color:#4ade80">$390.22</span></div>
+    </div>
+  </div>
+  <div class="conv-bar-track">
+    <div class="conv-bar-fill" style="width:90%;background:#4ade80"></div>
+  </div>
+  <div class="sig-thesis" id="sig_GOOGL_long_term" style="display:none">
+    <p>GOOGL — horizonte LARGO PLAZO. Convicción ALTA. La tesis CAPM/Markowitz sostiene un Sharpe de 1.29 con beta 1.08 (retorno esperado CAPM +19.9%, alfa de Jensen +23.6%). Cumple el filtro de calidad (β razonable + Sharpe elevado) y aparece en el óptimo de la frontera eficiente. El flujo de noticias es positivo (sentiment +0.83 sobre 6 titulares). Régimen de mercado BULL (SPY +7.0% sobre SMA200 con pendiente positiva) — viento de cola para posiciones largas.</p>
   </div>
 </div>
 <div class="sig-card" onclick="toggleThesis('sig_JPM_long_term')">
@@ -1048,19 +1053,19 @@ tr:hover td { background: var(--surface2); }
       <span class="sig-conv" style="color:#4ade80">&#9679; Convicción Alta</span>
     </div>
     <div style="display:flex;align-items:center;gap:14px;flex-wrap:wrap">
-      <span class="sig-price">Precio: <b>$312.64</b></span>
-      <span class="sig-price">Asignado: <b>$9,173.08</b></span>
+      <span class="sig-price">Precio: <b>$313.02</b></span>
+      <span class="sig-price">Asignado: <b>$8,656.85</b></span>
       <span class="sig-expand">Ver análisis &#9660;</span>
     </div>
   </div>
   <div class="sig-metrics">
     <div class="metric-pill">
       <div class="metric-label">Sharpe</div>
-      <div class="metric-val" style="color:#60a5fa">1.00</div>
+      <div class="metric-val" style="color:#60a5fa">0.98</div>
     </div>
     <div class="metric-pill">
       <div class="metric-label">Alfa de Jensen</div>
-      <div class="metric-val" style="color:#4ade80">+11.47%</div>
+      <div class="metric-val" style="color:#4ade80">+11.30%</div>
     </div>
     <div class="metric-pill">
       <div class="metric-label">Beta</div>
@@ -1068,18 +1073,18 @@ tr:hover td { background: var(--surface2); }
     </div>
     <div class="metric-pill">
       <div class="metric-label">Stop Loss</div>
-      <div class="metric-val"><span style="color:#f87171">$299.83</span></div>
+      <div class="metric-val"><span style="color:#f87171">$300.21</span></div>
     </div>
     <div class="metric-pill">
       <div class="metric-label">Toma de Ganancias</div>
-      <div class="metric-val"><span style="color:#4ade80">$359.54</span></div>
+      <div class="metric-val"><span style="color:#4ade80">$359.97</span></div>
     </div>
   </div>
   <div class="conv-bar-track">
     <div class="conv-bar-fill" style="width:90%;background:#4ade80"></div>
   </div>
   <div class="sig-thesis" id="sig_JPM_long_term" style="display:none">
-    <p>JPM — horizonte LARGO PLAZO. Convicción ALTA. La tesis CAPM/Markowitz sostiene un Sharpe de 1.00 con beta 0.93 (retorno esperado CAPM +18.2%, alfa de Jensen +11.5%). Cumple el filtro de calidad (β razonable + Sharpe elevado) y aparece en el óptimo de la frontera eficiente. Flujo de noticias neutral (6 titulares). Régimen de mercado BULL (SPY +6.8% sobre SMA200 con pendiente positiva) — viento de cola para posiciones largas.</p>
+    <p>JPM — horizonte LARGO PLAZO. Convicción ALTA. La tesis CAPM/Markowitz sostiene un Sharpe de 0.98 con beta 0.93 (retorno esperado CAPM +17.8%, alfa de Jensen +11.3%). Cumple el filtro de calidad (β razonable + Sharpe elevado) y aparece en el óptimo de la frontera eficiente. El flujo de noticias es positivo (sentiment +0.67 sobre 6 titulares). Régimen de mercado BULL (SPY +7.0% sobre SMA200 con pendiente positiva) — viento de cola para posiciones largas.</p>
   </div>
 </div>
 <div class="sig-card" onclick="toggleThesis('sig_AMD_short_term')">
@@ -1090,19 +1095,19 @@ tr:hover td { background: var(--surface2); }
       <span class="sig-conv" style="color:#fbbf24">&#9679; Convicción Media</span>
     </div>
     <div style="display:flex;align-items:center;gap:14px;flex-wrap:wrap">
-      <span class="sig-price">Precio: <b>$302.07</b></span>
-      <span class="sig-price">Asignado: <b>$16,194.87</b></span>
+      <span class="sig-price">Precio: <b>$303.46</b></span>
+      <span class="sig-price">Asignado: <b>$15,190.08</b></span>
       <span class="sig-expand">Ver análisis &#9660;</span>
     </div>
   </div>
   <div class="sig-metrics">
     <div class="metric-pill">
       <div class="metric-label">Sharpe</div>
-      <div class="metric-val" style="color:#60a5fa">0.53</div>
+      <div class="metric-val" style="color:#60a5fa">0.51</div>
     </div>
     <div class="metric-pill">
       <div class="metric-label">Alfa de Jensen</div>
-      <div class="metric-val" style="color:#f87171">-0.43%</div>
+      <div class="metric-val" style="color:#f87171">-0.45%</div>
     </div>
     <div class="metric-pill">
       <div class="metric-label">Beta</div>
@@ -1110,60 +1115,60 @@ tr:hover td { background: var(--surface2); }
     </div>
     <div class="metric-pill">
       <div class="metric-label">Stop Loss</div>
-      <div class="metric-val"><span style="color:#f87171">$279.42</span></div>
+      <div class="metric-val"><span style="color:#f87171">$280.54</span></div>
     </div>
     <div class="metric-pill">
       <div class="metric-label">Toma de Ganancias</div>
-      <div class="metric-val"><span style="color:#4ade80">$347.37</span></div>
+      <div class="metric-val"><span style="color:#4ade80">$349.30</span></div>
     </div>
   </div>
   <div class="conv-bar-track">
     <div class="conv-bar-fill" style="width:55%;background:#fbbf24"></div>
   </div>
   <div class="sig-thesis" id="sig_AMD_short_term" style="display:none">
-    <p>AMD — horizonte CORTO PLAZO. Convicción MEDIA. Setup técnico: RSI 97, momentum 1m +47.1%, momentum 3m +19.1%. ⚠️ RSI en sobrecompra → riesgo de reversión a la media. Stop loss ATR en $279.42 (riesgo ≈ 7.5% desde entrada). Sentiment de noticias refuerza el setup.</p>
+    <p>AMD — horizonte CORTO PLAZO. Convicción MEDIA. Setup técnico: RSI 97, momentum 1m +47.8%, momentum 3m +19.6%. ⚠️ RSI en sobrecompra → riesgo de reversión a la media. Stop loss ATR en $280.54 (riesgo ≈ 7.6% desde entrada). Sentiment de noticias refuerza el setup.</p>
   </div>
 </div>
-<div class="sig-card" onclick="toggleThesis('sig_TSM_short_term')">
+<div class="sig-card" onclick="toggleThesis('sig_BA_short_term')">
   <div class="sig-top">
     <div style="display:flex;align-items:center;gap:10px">
-      <span class="sig-ticker">TSM</span>
+      <span class="sig-ticker">BA</span>
       <span class="sig-sleeve" style="color:#fbbf24;border-color:#fbbf2440">Corto Plazo</span>
-      <span class="sig-conv" style="color:#4ade80">&#9679; Convicción Alta</span>
+      <span class="sig-conv" style="color:#fbbf24">&#9679; Convicción Media</span>
     </div>
     <div style="display:flex;align-items:center;gap:14px;flex-wrap:wrap">
-      <span class="sig-price">Precio: <b>$383.19</b></span>
-      <span class="sig-price">Asignado: <b>$8,823.23</b></span>
+      <span class="sig-price">Precio: <b>$231.28</b></span>
+      <span class="sig-price">Asignado: <b>$9,750.53</b></span>
       <span class="sig-expand">Ver análisis &#9660;</span>
     </div>
   </div>
   <div class="sig-metrics">
     <div class="metric-pill">
       <div class="metric-label">Sharpe</div>
-      <div class="metric-val" style="color:#60a5fa">1.42</div>
+      <div class="metric-val" style="color:#60a5fa">0.29</div>
     </div>
     <div class="metric-pill">
       <div class="metric-label">Alfa de Jensen</div>
-      <div class="metric-val" style="color:#4ade80">+34.66%</div>
+      <div class="metric-val" style="color:#f87171">-5.72%</div>
     </div>
     <div class="metric-pill">
       <div class="metric-label">Beta</div>
-      <div class="metric-val">1.59</div>
+      <div class="metric-val">1.13</div>
     </div>
     <div class="metric-pill">
       <div class="metric-label">Stop Loss</div>
-      <div class="metric-val"><span style="color:#f87171">$360.12</span></div>
+      <div class="metric-val"><span style="color:#f87171">$217.48</span></div>
     </div>
     <div class="metric-pill">
       <div class="metric-label">Toma de Ganancias</div>
-      <div class="metric-val"><span style="color:#4ade80">$429.33</span></div>
+      <div class="metric-val"><span style="color:#4ade80">$258.88</span></div>
     </div>
   </div>
   <div class="conv-bar-track">
-    <div class="conv-bar-fill" style="width:90%;background:#4ade80"></div>
+    <div class="conv-bar-fill" style="width:55%;background:#fbbf24"></div>
   </div>
-  <div class="sig-thesis" id="sig_TSM_short_term" style="display:none">
-    <p>TSM — horizonte CORTO PLAZO. Convicción ALTA. Setup técnico: RSI 73, momentum 1m +11.6%, momentum 3m +17.4%. ⚠️ RSI en sobrecompra → riesgo de reversión a la media. Stop loss ATR en $360.12 (riesgo ≈ 6.0% desde entrada). Sentiment de noticias refuerza el setup.</p>
+  <div class="sig-thesis" id="sig_BA_short_term" style="display:none">
+    <p>BA — horizonte CORTO PLAZO. Convicción MEDIA. Setup técnico: RSI 72, momentum 1m +17.7%, momentum 3m -8.0%. ⚠️ RSI en sobrecompra → riesgo de reversión a la media. Stop loss ATR en $217.48 (riesgo ≈ 6.0% desde entrada). Sentiment de noticias refuerza el setup.</p>
   </div>
 </div>
 <div class="sig-card" onclick="toggleThesis('sig_NEM_options_book')">
@@ -1171,22 +1176,22 @@ tr:hover td { background: var(--surface2); }
     <div style="display:flex;align-items:center;gap:10px">
       <span class="sig-ticker">NEM</span>
       <span class="sig-sleeve" style="color:#c084fc;border-color:#c084fc40">Opciones</span>
-      <span class="sig-conv" style="color:#4ade80">&#9679; Convicción Alta</span>
+      <span class="sig-conv" style="color:#fbbf24">&#9679; Convicción Media</span>
     </div>
     <div style="display:flex;align-items:center;gap:14px;flex-wrap:wrap">
-      <span class="sig-price">Precio: <b>$112.08</b></span>
-      <span class="sig-price">Asignado: <b>$5,003.62</b></span>
+      <span class="sig-price">Precio: <b>$111.85</b></span>
+      <span class="sig-price">Asignado: <b>$4,988.12</b></span>
       <span class="sig-expand">Ver análisis &#9660;</span>
     </div>
   </div>
   <div class="sig-metrics">
     <div class="metric-pill">
       <div class="metric-label">Sharpe</div>
-      <div class="metric-val" style="color:#60a5fa">1.13</div>
+      <div class="metric-val" style="color:#60a5fa">1.12</div>
     </div>
     <div class="metric-pill">
       <div class="metric-label">Alfa de Jensen</div>
-      <div class="metric-val" style="color:#4ade80">+37.31%</div>
+      <div class="metric-val" style="color:#4ade80">+37.28%</div>
     </div>
     <div class="metric-pill">
       <div class="metric-label">Beta</div>
@@ -1202,10 +1207,10 @@ tr:hover td { background: var(--surface2); }
     </div>
   </div>
   <div class="conv-bar-track">
-    <div class="conv-bar-fill" style="width:90%;background:#4ade80"></div>
+    <div class="conv-bar-fill" style="width:55%;background:#fbbf24"></div>
   </div>
   <div class="sig-thesis" id="sig_NEM_options_book" style="display:none">
-    <p>NEM — apuesta alcista vía CALL (riesgo limitado a la prima). Strike $124.41, expiry 2026-05-21 (~29d), prima estimada $1.55/share = $155/contrato. Breakeven $125.96. Delta objetivo 0.35. Backup: NEM — horizonte CORTO PLAZO. Convicción ALTA. Setup técnico: RSI 48, momentum 1m +13.2%, momentum 3m -7.7%. Stop loss ATR en $103.54 (riesgo ≈ 7.6% desde entrada). Sentiment de noticias refuerza el setup.</p>
+    <p>NEM — apuesta alcista vía CALL (riesgo limitado a la prima). Strike $124.15, expiry 2026-05-22 (~29d), prima estimada $1.55/share = $155/contrato. Breakeven $125.7. Delta objetivo 0.35. Backup: NEM — horizonte CORTO PLAZO. Convicción MEDIA. Setup técnico: RSI 47, momentum 1m +13.0%, momentum 3m -7.9%. Stop loss ATR en $103.3 (riesgo ≈ 7.6% desde entrada).</p>
   </div>
 </div>
 <div class="sig-card" onclick="toggleThesis('sig_CCJ_options_book')">
@@ -1216,23 +1221,23 @@ tr:hover td { background: var(--surface2); }
       <span class="sig-conv" style="color:#fbbf24">&#9679; Convicción Media</span>
     </div>
     <div style="display:flex;align-items:center;gap:14px;flex-wrap:wrap">
-      <span class="sig-price">Precio: <b>$124.81</b></span>
-      <span class="sig-price">Asignado: <b>$5,003.62</b></span>
+      <span class="sig-price">Precio: <b>$126.47</b></span>
+      <span class="sig-price">Asignado: <b>$4,988.12</b></span>
       <span class="sig-expand">Ver análisis &#9660;</span>
     </div>
   </div>
   <div class="sig-metrics">
     <div class="metric-pill">
       <div class="metric-label">Sharpe</div>
-      <div class="metric-val" style="color:#60a5fa">0.94</div>
+      <div class="metric-val" style="color:#60a5fa">0.92</div>
     </div>
     <div class="metric-pill">
       <div class="metric-label">Alfa de Jensen</div>
-      <div class="metric-val" style="color:#4ade80">+26.65%</div>
+      <div class="metric-val" style="color:#4ade80">+26.58%</div>
     </div>
     <div class="metric-pill">
       <div class="metric-label">Beta</div>
-      <div class="metric-val">1.42</div>
+      <div class="metric-val">1.43</div>
     </div>
     <div class="metric-pill">
       <div class="metric-label">Stop Loss</div>
@@ -1247,7 +1252,7 @@ tr:hover td { background: var(--surface2); }
     <div class="conv-bar-fill" style="width:55%;background:#fbbf24"></div>
   </div>
   <div class="sig-thesis" id="sig_CCJ_options_book" style="display:none">
-    <p>CCJ — apuesta alcista vía CALL (riesgo limitado a la prima). Strike $142.28, expiry 2026-05-21 (~29d), prima estimada $1.94/share = $194/contrato. Breakeven $144.22. Delta objetivo 0.35. Backup: CCJ — horizonte CORTO PLAZO. Convicción MEDIA. Setup técnico: RSI 70, momentum 1m +15.5%, momentum 3m +2.4%. Stop loss ATR en $113.61 (riesgo ≈ 9.0% desde entrada). Sentiment de noticias refuerza el setup.</p>
+    <p>CCJ — apuesta alcista vía CALL (riesgo limitado a la prima). Strike $144.18, expiry 2026-05-22 (~29d), prima estimada $1.98/share = $198/contrato. Breakeven $146.16. Delta objetivo 0.35. Backup: CCJ — horizonte CORTO PLAZO. Convicción MEDIA. Setup técnico: RSI 71, momentum 1m +17.1%, momentum 3m +3.8%. ⚠️ RSI en sobrecompra → riesgo de reversión a la media. Stop loss ATR en $115.06 (riesgo ≈ 9.0% desde entrada). Sentiment de noticias refuerza el setup.</p>
   </div>
 </div>
 </div>
@@ -1258,10 +1263,10 @@ tr:hover td { background: var(--surface2); }
   <div class="card-header">
     <span class="card-title">Radar del Universo — 51 Activos</span>
     <div style="display:flex;gap:14px;flex-wrap:wrap">
-      <span style="color:#4ade80">&#9650; 35 al alza</span>
-      <span style="color:#f87171">&#9660; 13 a la baja</span>
-      <span class="muted">Mayor ganador: <b style="color:#4ade80">CCJ +7.0%</b></span>
-      <span class="muted">Mayor perdedor: <b style="color:#f87171">NOC -3.6%</b></span>
+      <span style="color:#4ade80">&#9650; 36 al alza</span>
+      <span style="color:#f87171">&#9660; 12 a la baja</span>
+      <span class="muted">Mayor ganador: <b style="color:#4ade80">CCJ +8.5%</b></span>
+      <span class="muted">Mayor perdedor: <b style="color:#f87171">BMA -4.1%</b></span>
     </div>
   </div>
   <div style="overflow-x:auto">
@@ -1282,12 +1287,6 @@ tr:hover td { background: var(--surface2); }
   <td><span style="font-size:.75rem;color:#94a3b8"></span></td>
 </tr>
 <tr>
-  <td><b style="color:#e2e8f0">TSM</b></td>
-  <td style="color:#4ade80;font-weight:700;white-space:nowrap">▲ 0.0%</td>
-  <td class="muted" style="font-size:.8rem">Sin noticias</td>
-  <td><span style="font-size:.75rem;color:#94a3b8"></span></td>
-</tr>
-<tr>
   <td><b style="color:#e2e8f0">CCJ</b></td>
   <td style="color:#4ade80;font-weight:700;white-space:nowrap">▲ 0.0%</td>
   <td class="muted" style="font-size:.8rem">Sin noticias</td>
@@ -1300,19 +1299,13 @@ tr:hover td { background: var(--surface2); }
   <td><span style="font-size:.75rem;color:#94a3b8"></span></td>
 </tr>
 <tr>
-  <td><b style="color:#e2e8f0">NEM</b></td>
-  <td style="color:#4ade80;font-weight:700;white-space:nowrap">▲ 0.0%</td>
-  <td class="muted" style="font-size:.8rem">Sin noticias</td>
-  <td><span style="font-size:.75rem;color:#94a3b8"></span></td>
-</tr>
-<tr>
-  <td><b style="color:#e2e8f0">RTX</b></td>
-  <td style="color:#4ade80;font-weight:700;white-space:nowrap">▲ 0.0%</td>
-  <td class="muted" style="font-size:.8rem">Sin noticias</td>
-  <td><span style="font-size:.75rem;color:#94a3b8"></span></td>
-</tr>
-<tr>
   <td><b style="color:#e2e8f0">GOOGL</b></td>
+  <td style="color:#4ade80;font-weight:700;white-space:nowrap">▲ 0.0%</td>
+  <td class="muted" style="font-size:.8rem">Sin noticias</td>
+  <td><span style="font-size:.75rem;color:#94a3b8"></span></td>
+</tr>
+<tr>
+  <td><b style="color:#e2e8f0">BA</b></td>
   <td style="color:#4ade80;font-weight:700;white-space:nowrap">▲ 0.0%</td>
   <td class="muted" style="font-size:.8rem">Sin noticias</td>
   <td><span style="font-size:.75rem;color:#94a3b8"></span></td>
@@ -1324,13 +1317,25 @@ tr:hover td { background: var(--surface2); }
   <td><span style="font-size:.75rem;color:#94a3b8"></span></td>
 </tr>
 <tr>
-  <td><b style="color:#e2e8f0">IBIT</b></td>
+  <td><b style="color:#e2e8f0">RTX</b></td>
   <td style="color:#4ade80;font-weight:700;white-space:nowrap">▲ 0.0%</td>
   <td class="muted" style="font-size:.8rem">Sin noticias</td>
   <td><span style="font-size:.75rem;color:#94a3b8"></span></td>
 </tr>
 <tr>
-  <td><b style="color:#e2e8f0">BA</b></td>
+  <td><b style="color:#e2e8f0">NEM</b></td>
+  <td style="color:#4ade80;font-weight:700;white-space:nowrap">▲ 0.0%</td>
+  <td class="muted" style="font-size:.8rem">Sin noticias</td>
+  <td><span style="font-size:.75rem;color:#94a3b8"></span></td>
+</tr>
+<tr>
+  <td><b style="color:#e2e8f0">LAC</b></td>
+  <td style="color:#4ade80;font-weight:700;white-space:nowrap">▲ 0.0%</td>
+  <td class="muted" style="font-size:.8rem">Sin noticias</td>
+  <td><span style="font-size:.75rem;color:#94a3b8"></span></td>
+</tr>
+<tr>
+  <td><b style="color:#e2e8f0">IBIT</b></td>
   <td style="color:#4ade80;font-weight:700;white-space:nowrap">▲ 0.0%</td>
   <td class="muted" style="font-size:.8rem">Sin noticias</td>
   <td><span style="font-size:.75rem;color:#94a3b8"></span></td>
