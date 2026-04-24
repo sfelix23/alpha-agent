@@ -179,6 +179,17 @@ body{font-family:'Inter',system-ui,sans-serif;background:var(--bg);color:var(--t
   text-transform:uppercase;margin-bottom:4px}
 .ws-col ul{margin:0;padding-left:14px;color:#8b949e;line-height:1.6}
 
+/* ── discovery ── */
+.disc-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:12px;margin-top:8px}
+.disc-card{background:var(--s1);border:1px solid var(--bd);border-radius:10px;padding:14px}
+.disc-head{display:flex;align-items:center;gap:8px;margin-bottom:8px;flex-wrap:wrap}
+.disc-ticker{font-weight:800;font-size:1rem;color:#e6edf3}
+.disc-prior{font-size:.68rem;font-weight:700;padding:2px 7px;border-radius:12px;border:1px solid;letter-spacing:.4px}
+.disc-rep{font-size:.65rem;background:#d2922222;color:#d29922;border:1px solid #d2922255;
+  padding:2px 7px;border-radius:12px;font-weight:600}
+.disc-razon{font-size:.8rem;color:#94a3b8;margin:0 0 6px;line-height:1.55}
+.disc-riesgo{font-size:.75rem;color:#7d8590;margin:0}
+
 /* ── calendar ── */
 .cal-wrap{overflow-x:auto}
 .cal-table{border-collapse:separate;border-spacing:4px;width:100%;table-layout:fixed}
@@ -226,7 +237,7 @@ tr:hover td{background:var(--s2)}
 <div class="topbar">
   <div class="logo">Alpha Dashboard</div>
   <div class="topbar-meta">
-    <span><span class="live"></span> 24 de April de 2026 — 20:37</span>
+    <span><span class="live"></span> 24 de April de 2026 — 20:11</span>
     <span>&middot; Paper Trading</span>
     <span id="countdown" style="color:var(--mt);font-size:.78rem"></span>
   </div>
@@ -241,14 +252,14 @@ tr:hover td{background:var(--s2)}
 
 
 <div class="tab-content" id="tab-resumen">
-  
+  <div class="fresh-banner fresh-warn">⚠️ Senales de hace 8h — El dashboard puede no reflejar la sesion de hoy.</div>
   <p class="ts">Senales actualizadas: 2026-04-24 14:55 &nbsp;|&nbsp; Paper Trading</p>
   
 <div class="kpi-row">
-  <div class="kpi kpi-hero" data-countup="101595.01">
+  <div class="kpi kpi-hero" data-countup="101577.94">
     <div class="kpi-lbl">Patrimonio Total</div>
-    <div class="kpi-val kpi-hero-val" style="color:#3fb950" id="kpi-equity">$101,595.01</div>
-    <div class="kpi-tag" style="background:rgba(63,185,80,.15);color:#3fb950">$589.56 &nbsp; +0.58% total&nbsp;&middot;&nbsp;<span style="color:#7d8590">SPY +8.70%</span></div>
+    <div class="kpi-val kpi-hero-val" style="color:#3fb950" id="kpi-equity">$101,577.94</div>
+    <div class="kpi-tag" style="background:rgba(63,185,80,.15);color:#3fb950">$572.49 &nbsp; +0.57% total&nbsp;&middot;&nbsp;<span style="color:#7d8590">SPY +8.70%</span></div>
   </div>
   <div class="kpi">
     <div class="kpi-lbl">Regimen de Mercado</div>
@@ -266,19 +277,19 @@ tr:hover td{background:var(--s2)}
     <div class="kpi-sub">Retorno esperado +0.00%</div>
   </div>
   <div class="kpi">
+    <div class="kpi-lbl">ARR (Anualizado)</div>
+    <div class="kpi-val" style="color:#f85149">-12.22%</div>
+    <div class="kpi-sub">Retorno anualizado estimado</div>
+  </div>
+  <div class="kpi">
+    <div class="kpi-lbl">Win Rate</div>
+    <div class="kpi-val" style="color:#d29922">54.5%</div>
+    <div class="kpi-sub">Dias con P&L positivo</div>
+  </div>
+  <div class="kpi">
     <div class="kpi-lbl">Petroleo WTI</div>
     <div class="kpi-val">$94.72</div>
-    <div class="kpi-sub">por barril</div>
-  </div>
-  <div class="kpi">
-    <div class="kpi-lbl">Oro</div>
-    <div class="kpi-val">$4,747.50</div>
-    <div class="kpi-sub">por onza troy</div>
-  </div>
-  <div class="kpi">
-    <div class="kpi-lbl">Dolar Index (DXY)</div>
-    <div class="kpi-val">98.6</div>
-    <div class="kpi-sub">Volatilidad anual +0.00%</div>
+    <div class="kpi-sub">Oro: $4,747.50 &middot; DXY: 98.6</div>
   </div>
 </div>
   
@@ -293,17 +304,19 @@ tr:hover td{background:var(--s2)}
     <div class="kpi-val" style="color:#3fb950">-1.66%</div>
     <div class="kpi-sub">Caida maxima desde pico</div>
   </div>
-  <div class="kpi"><div class="kpi-lbl">Alpha vs SPY (1M)</div><div class="kpi-val" style="color:#f85149">-9.32%</div><div class="kpi-sub">Portfolio -0.62% vs SPY +8.70%</div></div>
+  <div class="kpi"><div class="kpi-lbl">Alpha vs SPY (1M)</div><div class="kpi-val" style="color:#f85149">-9.32%</div><div class="kpi-sub">Portfolio -0.62% · SPY +8.70%</div></div>
+  <div class="kpi"><div class="kpi-lbl">Alpha vs QQQ (1M)</div><div class="kpi-val" style="color:#f85149">-13.56%</div><div class="kpi-sub">QQQ +12.94%</div></div>
 </div>
   <div class="section-gap"></div>
   
 <div class="card">
   <div class="card-head">
     <div>
-      <div class="card-title">Evolucion del Patrimonio</div>
-      <div class="card-sub" style="display:flex;gap:14px;align-items:center">
-        <span><span style="color:#f85149;font-weight:700;font-size:.9rem">-0.62%</span> variacion total</span>
-        <span style="font-size:.78rem;color:#7d8590">&#9135;&#9135; SPY +8.70%</span>
+      <div class="card-title">Retorno Acumulado — % vs benchmarks</div>
+      <div class="card-sub" style="display:flex;gap:16px;align-items:center;flex-wrap:wrap">
+        <span><span style="color:#f85149;font-weight:700;font-size:.9rem">-0.62%</span> Portfolio</span>
+        <span style="font-size:.78rem;color:#58a6ff">&#9135;&#9135; SPY +8.70%</span>
+        <span style="font-size:.78rem;color:#e3b341">&#9135;&#9135; QQQ +12.94%</span>
       </div>
     </div>
     <div class="pill" style="color:#f85149">$99,381.12</div>
@@ -314,20 +327,24 @@ tr:hover td{background:var(--s2)}
 (function(){
   const ctx = document.getElementById('eqChart');
   const g = ctx.getContext('2d').createLinearGradient(0,0,0,300);
-  g.addColorStop(0,'#f8514944'); g.addColorStop(1,'#f8514900');
+  g.addColorStop(0,'#f8514933'); g.addColorStop(1,'#f8514900');
   window._charts = window._charts||{};
   window._charts.eq = new Chart(ctx,{
     type:'line',
     data:{
-      labels:["09 Apr", "10 Apr", "11 Apr", "14 Apr", "15 Apr", "16 Apr", "17 Apr", "18 Apr", "21 Apr", "22 Apr", "23 Apr", "24 Apr"],
+      labels:["08 Apr", "09 Apr", "10 Apr", "13 Apr", "14 Apr", "15 Apr", "16 Apr", "17 Apr", "20 Apr", "21 Apr", "22 Apr", "23 Apr"],
       datasets:[
-        {data:[100000.0, 100000.0, 100000.0, 100429.64, 100768.9, 100309.71, 100998.27, 100744.63, 100666.22, 99321.76, 100365.39, 99381.12],label:'Portfolio',
+        {data:[0.0, 0.0, 0.0, 0.43, 0.769, 0.31, 0.998, 0.745, 0.666, -0.678, 0.365, -0.619],label:'Portfolio',
           borderColor:'#f85149',backgroundColor:g,fill:true,tension:.4,
           pointRadius:2,pointHoverRadius:7,pointBackgroundColor:'#f85149',borderWidth:2.5}
         ,
-    {data:[100000.0, 98214.13, 96539.39, 96216.61, 99013.43, 99759.44, 99849.28, 100321.24, 100365.39, 102921.65, 103515.42, 103446.91, 104457.84, 105730.64, 106564.96, 106826.83, 108117.9, 107901.7, 107195.28, 108280.81, 107860.6, 108696.45],label:'SPY',
-      borderColor:'#7d8590',backgroundColor:'transparent',fill:false,
+    {data:[0.0, -1.786, -3.461, -3.783, -0.987, -0.241, -0.151, 0.321, 0.365, 2.922, 3.515, 3.447, 4.458, 5.731, 6.565, 6.827, 8.118, 7.902, 7.195, 8.281, 7.861, 8.696],label:'SPY',
+      borderColor:'#58a6ff',backgroundColor:'transparent',fill:false,
       tension:.4,pointRadius:0,borderWidth:1.5,borderDash:[5,3]}
+        ,
+    {data:[0.0, -2.387, -4.294, -5.025, -1.81, -0.597, -0.483, 0.116, 0.131, 3.108, 3.806, 3.955, 5.03, 6.937, 8.435, 8.957, 10.382, 10.032, 9.613, 11.447, 10.82, 12.939],label:'QQQ',
+      borderColor:'#e3b341',backgroundColor:'transparent',fill:false,
+      tension:.4,pointRadius:0,borderWidth:1.5,borderDash:[3,3]}
       ]
     },
     options:{
@@ -338,14 +355,16 @@ tr:hover td{background:var(--s2)}
         tooltip:{
           backgroundColor:'#161b22',borderColor:'#30363d',borderWidth:1,
           titleColor:'#7d8590',bodyColor:'#e6edf3',padding:12,
-          callbacks:{label:c=>c.dataset.label+' $'+c.parsed.y.toLocaleString('es-AR',{minimumFractionDigits:2})}
+          callbacks:{label:c=>` ${c.dataset.label}: ${c.parsed.y>=0?'+':''}${c.parsed.y.toFixed(2)}%`}
         }
       },
       scales:{
         x:{ticks:{color:'#7d8590',maxTicksLimit:10,font:{size:11}},grid:{color:'#21262d'}},
-        y:{min:95735.53,max:109239.93,
-          ticks:{color:'#7d8590',callback:v=>'$'+v.toLocaleString(),font:{size:11}},
-          grid:{color:'#21262d'}}
+        y:{
+          ticks:{color:'#7d8590',callback:v=>(v>=0?'+':'')+v.toFixed(1)+'%',font:{size:11}},
+          grid:{color:'#21262d'},
+          afterDataLimits(scale){scale.min=Math.min(scale.min,-0.5);}
+        }
       }
     }
   });
@@ -364,69 +383,111 @@ tr:hover td{background:var(--s2)}
   <div class="cal-wrap">
     <table class="cal-table">
       <thead><tr><th class="cal-th">Lun</th><th class="cal-th">Mar</th><th class="cal-th">Mie</th><th class="cal-th">Jue</th><th class="cal-th">Vie</th><th class="cal-th">Sab</th><th class="cal-th">Dom</th></tr></thead>
-      <tbody><tr><td class="cal-empty"></td><td class="cal-empty"></td><td class="cal-cell cal-nd"><span class="cal-n">1</span><span class="cal-q">—</span></td><td class="cal-cell cal-nd"><span class="cal-n">2</span><span class="cal-q">—</span></td><td class="cal-cell cal-nd"><span class="cal-n">3</span><span class="cal-q">—</span></td><td class="cal-cell cal-wk"><span class="cal-n">4</span></td><td class="cal-cell cal-wk"><span class="cal-n">5</span></td></tr><tr><td class="cal-cell cal-nd"><span class="cal-n">6</span><span class="cal-q">—</span></td><td class="cal-cell cal-nd"><span class="cal-n">7</span><span class="cal-q">—</span></td><td class="cal-cell cal-nd"><span class="cal-n">8</span><span class="cal-q">—</span></td><td class="cal-cell cal-nd"><span class="cal-n">9</span><span class="cal-q">—</span></td><td class="cal-cell" style="background:var(--s2)">
-  <span class="cal-n">10</span>
+      <tbody><tr><td class="cal-empty"></td><td class="cal-empty"></td><td class="cal-cell cal-nd"><span class="cal-n">1</span><span class="cal-q">—</span></td><td class="cal-cell cal-nd"><span class="cal-n">2</span><span class="cal-q">—</span></td><td class="cal-cell cal-nd"><span class="cal-n">3</span><span class="cal-q">—</span></td><td class="cal-cell cal-wk"><span class="cal-n">4</span></td><td class="cal-cell cal-wk"><span class="cal-n">5</span></td></tr><tr><td class="cal-cell cal-nd"><span class="cal-n">6</span><span class="cal-q">—</span></td><td class="cal-cell cal-nd"><span class="cal-n">7</span><span class="cal-q">—</span></td><td class="cal-cell cal-nd"><span class="cal-n">8</span><span class="cal-q">—</span></td><td class="cal-cell" style="background:var(--s2)">
+  <span class="cal-n">9</span>
   <span class="cal-p" style="color:#7d8590">+$0</span>
   <span class="cal-q" style="color:#7d8590">+0.0%</span>
 </td><td class="cal-cell" style="background:var(--s2)">
-  <span class="cal-n">11</span>
+  <span class="cal-n">10</span>
   <span class="cal-p" style="color:#7d8590">+$0</span>
   <span class="cal-q" style="color:#7d8590">+0.0%</span>
-</td><td class="cal-cell cal-wk"><span class="cal-n">12</span></td></tr><tr><td class="cal-cell cal-nd"><span class="cal-n">13</span><span class="cal-q">—</span></td><td class="cal-cell" style="background:rgb(40,185,55)">
-  <span class="cal-n">14</span>
+</td><td class="cal-cell cal-wk"><span class="cal-n">11</span></td><td class="cal-cell cal-wk"><span class="cal-n">12</span></td></tr><tr><td class="cal-cell" style="background:rgb(40,185,55)">
+  <span class="cal-n">13</span>
   <span class="cal-p" style="color:#3fb950">+$430</span>
   <span class="cal-q" style="color:#3fb950">+0.4%</span>
 </td><td class="cal-cell" style="background:rgb(40,185,55)">
-  <span class="cal-n">15</span>
+  <span class="cal-n">14</span>
   <span class="cal-p" style="color:#3fb950">+$339</span>
   <span class="cal-q" style="color:#3fb950">+0.3%</span>
 </td><td class="cal-cell" style="background:rgb(225,35,35)">
-  <span class="cal-n">16</span>
+  <span class="cal-n">15</span>
   <span class="cal-p" style="color:#f85149">$-459</span>
   <span class="cal-q" style="color:#f85149">-0.5%</span>
 </td><td class="cal-cell" style="background:rgb(40,185,55)">
-  <span class="cal-n">17</span>
+  <span class="cal-n">16</span>
   <span class="cal-p" style="color:#3fb950">+$689</span>
   <span class="cal-q" style="color:#3fb950">+0.7%</span>
 </td><td class="cal-cell" style="background:rgb(225,35,35)">
-  <span class="cal-n">18</span>
+  <span class="cal-n">17</span>
   <span class="cal-p" style="color:#f85149">$-254</span>
   <span class="cal-q" style="color:#f85149">-0.3%</span>
-</td><td class="cal-cell cal-wk"><span class="cal-n">19</span></td></tr><tr><td class="cal-cell cal-nd"><span class="cal-n">20</span><span class="cal-q">—</span></td><td class="cal-cell" style="background:rgb(108,21,21)">
-  <span class="cal-n">21</span>
+</td><td class="cal-cell cal-wk"><span class="cal-n">18</span></td><td class="cal-cell cal-wk"><span class="cal-n">19</span></td></tr><tr><td class="cal-cell" style="background:rgb(108,21,21)">
+  <span class="cal-n">20</span>
   <span class="cal-p" style="color:#fca5a5">$-78</span>
   <span class="cal-q" style="color:#fca5a5">-0.1%</span>
 </td><td class="cal-cell" style="background:rgb(225,35,35)">
-  <span class="cal-n">22</span>
+  <span class="cal-n">21</span>
   <span class="cal-p" style="color:#f85149">$-1,344</span>
   <span class="cal-q" style="color:#f85149">-1.3%</span>
 </td><td class="cal-cell" style="background:rgb(40,185,55)">
-  <span class="cal-n">23</span>
+  <span class="cal-n">22</span>
   <span class="cal-p" style="color:#3fb950">+$1,044</span>
   <span class="cal-q" style="color:#3fb950">+1.1%</span>
 </td><td class="cal-cell" style="background:rgb(225,35,35)">
-  <span class="cal-n">24</span>
+  <span class="cal-n">23</span>
   <span class="cal-p" style="color:#f85149">$-984</span>
   <span class="cal-q" style="color:#f85149">-1.0%</span>
-</td><td class="cal-cell cal-wk"><span class="cal-n">25</span></td><td class="cal-cell cal-wk"><span class="cal-n">26</span></td></tr><tr><td class="cal-cell cal-nd"><span class="cal-n">27</span><span class="cal-q">—</span></td><td class="cal-cell cal-nd"><span class="cal-n">28</span><span class="cal-q">—</span></td><td class="cal-cell cal-nd"><span class="cal-n">29</span><span class="cal-q">—</span></td><td class="cal-cell cal-nd"><span class="cal-n">30</span><span class="cal-q">—</span></td><td class="cal-empty"></td><td class="cal-empty"></td><td class="cal-empty"></td></tr></tbody>
+</td><td class="cal-cell cal-nd"><span class="cal-n">24</span><span class="cal-q">—</span></td><td class="cal-cell cal-wk"><span class="cal-n">25</span></td><td class="cal-cell cal-wk"><span class="cal-n">26</span></td></tr><tr><td class="cal-cell cal-nd"><span class="cal-n">27</span><span class="cal-q">—</span></td><td class="cal-cell cal-nd"><span class="cal-n">28</span><span class="cal-q">—</span></td><td class="cal-cell cal-nd"><span class="cal-n">29</span><span class="cal-q">—</span></td><td class="cal-cell cal-nd"><span class="cal-n">30</span><span class="cal-q">—</span></td><td class="cal-empty"></td><td class="cal-empty"></td><td class="cal-empty"></td></tr></tbody>
     </table>
   </div>
 </div>
+  <div class="section-gap"></div>
+  
+<div class="card">
+  <div class="card-head">
+    <div>
+      <div class="card-title">Performance Semanal vs SPY</div>
+      <div class="card-sub">Retorno semanal del portfolio comparado con el benchmark</div>
+    </div>
+  </div>
+  
+  <canvas id="perfChart" height="100"></canvas>
+</div>
+<script>
+(function(){
+  window._charts=window._charts||{};
+  window._charts.perf=new Chart(document.getElementById('perfChart'),{
+    type:'bar',
+    data:{
+      labels:["04/24"],
+      datasets:[
+        {label:'Portfolio',data:[-1.28],backgroundColor:'#1f6feb88',
+          borderColor:'#1f6feb',borderWidth:1,borderRadius:4,borderSkipped:false},
+        {label:'SPY',data:[null],backgroundColor:'#7d859044',
+          borderColor:'#7d8590',borderWidth:1,borderRadius:4,borderSkipped:false}
+      ]
+    },
+    options:{
+      animation:{duration:600},
+      plugins:{
+        legend:{labels:{color:'#7d8590',font:{size:11}}},
+        tooltip:{backgroundColor:'#161b22',borderColor:'#30363d',borderWidth:1,
+          titleColor:'#7d8590',bodyColor:'#e6edf3',padding:10,
+          callbacks:{label:c=>` ${c.dataset.label}: ${c.parsed.y!=null?c.parsed.y.toFixed(2):'N/A'}%`}}
+      },
+      scales:{
+        x:{ticks:{color:'#7d8590',font:{size:10}},grid:{display:false}},
+        y:{ticks:{color:'#7d8590',callback:v=>v+'%',font:{size:10}},grid:{color:'#21262d'}}
+      }
+    }
+  });
+})();
+</script>
 </div>
 
 <div class="tab-content" id="tab-posiciones">
   <div class="pos-summary">
     <div class="kpi">
-      <div class="kpi-lbl">Posiciones abiertas</div>
-      <div class="kpi-val">16</div>
+      <div class="kpi-lbl">Posiciones activas</div>
+      <div class="kpi-val">6</div>
     </div>
     <div class="kpi">
       <div class="kpi-lbl">Valor de mercado total</div>
-      <div class="kpi-val">$87,476.75</div>
+      <div class="kpi-val">$87,459.68</div>
     </div>
     <div class="kpi">
       <div class="kpi-lbl">P&amp;L no realizado</div>
-      <div class="kpi-val" style="color:#3fb950">+$2,921.71</div>
+      <div class="kpi-val" style="color:#3fb950">+$4,448.64</div>
     </div>
   </div>
   <div class="pos-layout">
@@ -441,252 +502,72 @@ tr:hover td{background:var(--s2)}
   <div class="pos-top">
     <div>
       <div class="pos-ticker" style="color:#58a6ff">AMD</div>
-      <div class="pos-sub">21.6% del portfolio &middot; 54.1072 acc.</div>
+      <div class="pos-sub">21.5% del portfolio &middot; 54.1072 acc.</div>
     </div>
     <div style="text-align:right">
-      <div class="pos-pnl" style="color:#3fb950">▲ $4,075.28</div>
-      <div class="pos-pnl-pct" style="color:#3fb950">+27.5%</div>
+      <div class="pos-pnl" style="color:#3fb950">▲ $4,047.69</div>
+      <div class="pos-pnl-pct" style="color:#3fb950">+27.4%</div>
     </div>
   </div>
   <div class="pos-bar-track"><div style="width:100%;height:100%;background:#3fb950;border-radius:2px;opacity:.8"></div></div>
   <div class="pos-meta">
     <span>Entrada <b>$273.48</b></span>
-    <span>Valor actual <b>$18,872.59</b></span>
-    <span>P&L <b style="color:#3fb950">+$4,075.28</b></span>
+    <span>Valor actual <b>$18,845.00</b></span>
+    <span>P&L <b style="color:#3fb950">+$4,047.69</b></span>
   </div>
 </div>
 <div class="pos-card" style="border-top:3px solid #3fb950">
   <div class="pos-top">
     <div>
-      <div class="pos-ticker" style="color:#3fb950">CCJ260424C00139000</div>
-      <div class="pos-sub">0.0% del portfolio &middot; 2.0000 acc.</div>
+      <div class="pos-ticker" style="color:#3fb950">GLD</div>
+      <div class="pos-sub">21.7% del portfolio &middot; 43.7922 acc.</div>
     </div>
     <div style="text-align:right">
-      <div class="pos-pnl" style="color:#f85149">▼ $150.00</div>
-      <div class="pos-pnl-pct" style="color:#f85149">-10000.0%</div>
-    </div>
-  </div>
-  <div class="pos-bar-track"><div style="width:100%;height:100%;background:#f85149;border-radius:2px;opacity:.8"></div></div>
-  <div class="pos-meta">
-    <span>Entrada <b>$0.75</b></span>
-    <span>Valor actual <b>$0.00</b></span>
-    <span>P&L <b style="color:#f85149">$-150.00</b></span>
-  </div>
-</div>
-<div class="pos-card" style="border-top:3px solid #d29922">
-  <div class="pos-top">
-    <div>
-      <div class="pos-ticker" style="color:#d29922">CCJ260424C00142000</div>
-      <div class="pos-sub">0.0% del portfolio &middot; 2.0000 acc.</div>
-    </div>
-    <div style="text-align:right">
-      <div class="pos-pnl" style="color:#f85149">▼ $150.00</div>
-      <div class="pos-pnl-pct" style="color:#f85149">-10000.0%</div>
-    </div>
-  </div>
-  <div class="pos-bar-track"><div style="width:100%;height:100%;background:#f85149;border-radius:2px;opacity:.8"></div></div>
-  <div class="pos-meta">
-    <span>Entrada <b>$0.75</b></span>
-    <span>Valor actual <b>$0.00</b></span>
-    <span>P&L <b style="color:#f85149">$-150.00</b></span>
-  </div>
-</div>
-<div class="pos-card" style="border-top:3px solid #f85149">
-  <div class="pos-top">
-    <div>
-      <div class="pos-ticker" style="color:#f85149">CCJ260424C00145000</div>
-      <div class="pos-sub">0.0% del portfolio &middot; 4.0000 acc.</div>
-    </div>
-    <div style="text-align:right">
-      <div class="pos-pnl" style="color:#f85149">▼ $300.00</div>
-      <div class="pos-pnl-pct" style="color:#f85149">-10000.0%</div>
-    </div>
-  </div>
-  <div class="pos-bar-track"><div style="width:100%;height:100%;background:#f85149;border-radius:2px;opacity:.8"></div></div>
-  <div class="pos-meta">
-    <span>Entrada <b>$0.75</b></span>
-    <span>Valor actual <b>$0.00</b></span>
-    <span>P&L <b style="color:#f85149">$-300.00</b></span>
-  </div>
-</div>
-<div class="pos-card" style="border-top:3px solid #bc8cff">
-  <div class="pos-top">
-    <div>
-      <div class="pos-ticker" style="color:#bc8cff">GLD</div>
-      <div class="pos-sub">21.6% del portfolio &middot; 43.7922 acc.</div>
-    </div>
-    <div style="text-align:right">
-      <div class="pos-pnl" style="color:#f85149">▼ $238.25</div>
+      <div class="pos-pnl" style="color:#f85149">▼ $226.86</div>
       <div class="pos-pnl-pct" style="color:#f85149">-1.2%</div>
     </div>
   </div>
   <div class="pos-bar-track"><div style="width:6%;height:100%;background:#f85149;border-radius:2px;opacity:.8"></div></div>
   <div class="pos-meta">
     <span>Entrada <b>$437.78</b></span>
-    <span>Valor actual <b>$18,933.12</b></span>
-    <span>P&L <b style="color:#f85149">$-238.25</b></span>
-  </div>
-</div>
-<div class="pos-card" style="border-top:3px solid #ffa657">
-  <div class="pos-top">
-    <div>
-      <div class="pos-ticker" style="color:#ffa657">GOOGL</div>
-      <div class="pos-sub">22.2% del portfolio &middot; 56.4834 acc.</div>
-    </div>
-    <div style="text-align:right">
-      <div class="pos-pnl" style="color:#3fb950">▲ $681.73</div>
-      <div class="pos-pnl-pct" style="color:#3fb950">+3.6%</div>
-    </div>
-  </div>
-  <div class="pos-bar-track"><div style="width:18%;height:100%;background:#3fb950;border-radius:2px;opacity:.8"></div></div>
-  <div class="pos-meta">
-    <span>Entrada <b>$332.15</b></span>
-    <span>Valor actual <b>$19,442.72</b></span>
-    <span>P&L <b style="color:#3fb950">+$681.73</b></span>
-  </div>
-</div>
-<div class="pos-card" style="border-top:3px solid #79c0ff">
-  <div class="pos-top">
-    <div>
-      <div class="pos-ticker" style="color:#79c0ff">JPM</div>
-      <div class="pos-sub">11.0% del portfolio &middot; 31.1273 acc.</div>
-    </div>
-    <div style="text-align:right">
-      <div class="pos-pnl" style="color:#f85149">▼ $237.05</div>
-      <div class="pos-pnl-pct" style="color:#f85149">-2.4%</div>
-    </div>
-  </div>
-  <div class="pos-bar-track"><div style="width:12%;height:100%;background:#f85149;border-radius:2px;opacity:.8"></div></div>
-  <div class="pos-meta">
-    <span>Entrada <b>$316.20</b></span>
-    <span>Valor actual <b>$9,605.26</b></span>
-    <span>P&L <b style="color:#f85149">$-237.05</b></span>
-  </div>
-</div>
-<div class="pos-card" style="border-top:3px solid #56d364">
-  <div class="pos-top">
-    <div>
-      <div class="pos-ticker" style="color:#56d364">NEM260424C00122000</div>
-      <div class="pos-sub">0.0% del portfolio &middot; 4.0000 acc.</div>
-    </div>
-    <div style="text-align:right">
-      <div class="pos-pnl" style="color:#f85149">▼ $188.00</div>
-      <div class="pos-pnl-pct" style="color:#f85149">-10000.0%</div>
-    </div>
-  </div>
-  <div class="pos-bar-track"><div style="width:100%;height:100%;background:#f85149;border-radius:2px;opacity:.8"></div></div>
-  <div class="pos-meta">
-    <span>Entrada <b>$0.47</b></span>
-    <span>Valor actual <b>$0.00</b></span>
-    <span>P&L <b style="color:#f85149">$-188.00</b></span>
-  </div>
-</div>
-<div class="pos-card" style="border-top:3px solid #ff7b72">
-  <div class="pos-top">
-    <div>
-      <div class="pos-ticker" style="color:#ff7b72">NEM260424C00123000</div>
-      <div class="pos-sub">0.0% del portfolio &middot; 4.0000 acc.</div>
-    </div>
-    <div style="text-align:right">
-      <div class="pos-pnl" style="color:#f85149">▼ $278.00</div>
-      <div class="pos-pnl-pct" style="color:#f85149">-10000.0%</div>
-    </div>
-  </div>
-  <div class="pos-bar-track"><div style="width:100%;height:100%;background:#f85149;border-radius:2px;opacity:.8"></div></div>
-  <div class="pos-meta">
-    <span>Entrada <b>$0.69</b></span>
-    <span>Valor actual <b>$0.00</b></span>
-    <span>P&L <b style="color:#f85149">$-278.00</b></span>
-  </div>
-</div>
-<div class="pos-card" style="border-top:3px solid #d2a8ff">
-  <div class="pos-top">
-    <div>
-      <div class="pos-ticker" style="color:#d2a8ff">NEM260424C00124000</div>
-      <div class="pos-sub">0.0% del portfolio &middot; 2.0000 acc.</div>
-    </div>
-    <div style="text-align:right">
-      <div class="pos-pnl" style="color:#f85149">▼ $84.00</div>
-      <div class="pos-pnl-pct" style="color:#f85149">-10000.0%</div>
-    </div>
-  </div>
-  <div class="pos-bar-track"><div style="width:100%;height:100%;background:#f85149;border-radius:2px;opacity:.8"></div></div>
-  <div class="pos-meta">
-    <span>Entrada <b>$0.42</b></span>
-    <span>Valor actual <b>$0.00</b></span>
-    <span>P&L <b style="color:#f85149">$-84.00</b></span>
-  </div>
-</div>
-<div class="pos-card" style="border-top:3px solid #58a6ff">
-  <div class="pos-top">
-    <div>
-      <div class="pos-ticker" style="color:#58a6ff">NEM260424C00125000</div>
-      <div class="pos-sub">0.0% del portfolio &middot; 4.0000 acc.</div>
-    </div>
-    <div style="text-align:right">
-      <div class="pos-pnl" style="color:#f85149">▼ $152.00</div>
-      <div class="pos-pnl-pct" style="color:#f85149">-10000.0%</div>
-    </div>
-  </div>
-  <div class="pos-bar-track"><div style="width:100%;height:100%;background:#f85149;border-radius:2px;opacity:.8"></div></div>
-  <div class="pos-meta">
-    <span>Entrada <b>$0.38</b></span>
-    <span>Valor actual <b>$0.00</b></span>
-    <span>P&L <b style="color:#f85149">$-152.00</b></span>
-  </div>
-</div>
-<div class="pos-card" style="border-top:3px solid #3fb950">
-  <div class="pos-top">
-    <div>
-      <div class="pos-ticker" style="color:#3fb950">NEM260424C00127000</div>
-      <div class="pos-sub">0.0% del portfolio &middot; 2.0000 acc.</div>
-    </div>
-    <div style="text-align:right">
-      <div class="pos-pnl" style="color:#f85149">▼ $98.00</div>
-      <div class="pos-pnl-pct" style="color:#f85149">-10000.0%</div>
-    </div>
-  </div>
-  <div class="pos-bar-track"><div style="width:100%;height:100%;background:#f85149;border-radius:2px;opacity:.8"></div></div>
-  <div class="pos-meta">
-    <span>Entrada <b>$0.49</b></span>
-    <span>Valor actual <b>$0.00</b></span>
-    <span>P&L <b style="color:#f85149">$-98.00</b></span>
+    <span>Valor actual <b>$18,944.51</b></span>
+    <span>P&L <b style="color:#f85149">$-226.86</b></span>
   </div>
 </div>
 <div class="pos-card" style="border-top:3px solid #d29922">
   <div class="pos-top">
     <div>
-      <div class="pos-ticker" style="color:#d29922">NEM260424C00128000</div>
-      <div class="pos-sub">0.0% del portfolio &middot; 2.0000 acc.</div>
+      <div class="pos-ticker" style="color:#d29922">GOOGL</div>
+      <div class="pos-sub">22.2% del portfolio &middot; 56.4834 acc.</div>
     </div>
     <div style="text-align:right">
-      <div class="pos-pnl" style="color:#f85149">▼ $128.00</div>
-      <div class="pos-pnl-pct" style="color:#f85149">-10000.0%</div>
+      <div class="pos-pnl" style="color:#3fb950">▲ $654.62</div>
+      <div class="pos-pnl-pct" style="color:#3fb950">+3.5%</div>
     </div>
   </div>
-  <div class="pos-bar-track"><div style="width:100%;height:100%;background:#f85149;border-radius:2px;opacity:.8"></div></div>
+  <div class="pos-bar-track"><div style="width:17%;height:100%;background:#3fb950;border-radius:2px;opacity:.8"></div></div>
   <div class="pos-meta">
-    <span>Entrada <b>$0.64</b></span>
-    <span>Valor actual <b>$0.00</b></span>
-    <span>P&L <b style="color:#f85149">$-128.00</b></span>
+    <span>Entrada <b>$332.15</b></span>
+    <span>Valor actual <b>$19,415.60</b></span>
+    <span>P&L <b style="color:#3fb950">+$654.62</b></span>
   </div>
 </div>
 <div class="pos-card" style="border-top:3px solid #f85149">
   <div class="pos-top">
     <div>
-      <div class="pos-ticker" style="color:#f85149">NEM260424C00132000</div>
-      <div class="pos-sub">0.0% del portfolio &middot; 4.0000 acc.</div>
+      <div class="pos-ticker" style="color:#f85149">JPM</div>
+      <div class="pos-sub">11.0% del portfolio &middot; 31.1273 acc.</div>
     </div>
     <div style="text-align:right">
-      <div class="pos-pnl" style="color:#f85149">▼ $16.00</div>
-      <div class="pos-pnl-pct" style="color:#f85149">-10000.0%</div>
+      <div class="pos-pnl" style="color:#f85149">▼ $242.66</div>
+      <div class="pos-pnl-pct" style="color:#f85149">-2.5%</div>
     </div>
   </div>
-  <div class="pos-bar-track"><div style="width:100%;height:100%;background:#f85149;border-radius:2px;opacity:.8"></div></div>
+  <div class="pos-bar-track"><div style="width:12%;height:100%;background:#f85149;border-radius:2px;opacity:.8"></div></div>
   <div class="pos-meta">
-    <span>Entrada <b>$0.04</b></span>
-    <span>Valor actual <b>$0.00</b></span>
-    <span>P&L <b style="color:#f85149">$-16.00</b></span>
+    <span>Entrada <b>$316.20</b></span>
+    <span>Valor actual <b>$9,599.66</b></span>
+    <span>P&L <b style="color:#f85149">$-242.66</b></span>
   </div>
 </div>
 <div class="pos-card" style="border-top:3px solid #bc8cff">
@@ -696,15 +577,15 @@ tr:hover td{background:var(--s2)}
       <div class="pos-sub">13.3% del portfolio &middot; 66.7186 acc.</div>
     </div>
     <div style="text-align:right">
-      <div class="pos-pnl" style="color:#f85149">▼ $522.98</div>
-      <div class="pos-pnl-pct" style="color:#f85149">-4.3%</div>
+      <div class="pos-pnl" style="color:#f85149">▼ $494.45</div>
+      <div class="pos-pnl-pct" style="color:#f85149">-4.1%</div>
     </div>
   </div>
-  <div class="pos-bar-track"><div style="width:22%;height:100%;background:#f85149;border-radius:2px;opacity:.8"></div></div>
+  <div class="pos-bar-track"><div style="width:20%;height:100%;background:#f85149;border-radius:2px;opacity:.8"></div></div>
   <div class="pos-meta">
     <span>Entrada <b>$181.90</b></span>
-    <span>Valor actual <b>$11,613.37</b></span>
-    <span>P&L <b style="color:#f85149">$-522.98</b></span>
+    <span>Valor actual <b>$11,641.90</b></span>
+    <span>P&L <b style="color:#f85149">$-494.45</b></span>
   </div>
 </div>
 <div class="pos-card" style="border-top:3px solid #ffa657">
@@ -714,25 +595,108 @@ tr:hover td{background:var(--s2)}
       <div class="pos-sub">10.3% del portfolio &middot; 22.3648 acc.</div>
     </div>
     <div style="text-align:right">
-      <div class="pos-pnl" style="color:#3fb950">▲ $706.98</div>
-      <div class="pos-pnl-pct" style="color:#3fb950">+8.5%</div>
+      <div class="pos-pnl" style="color:#3fb950">▲ $710.30</div>
+      <div class="pos-pnl-pct" style="color:#3fb950">+8.6%</div>
     </div>
   </div>
   <div class="pos-bar-track"><div style="width:43%;height:100%;background:#3fb950;border-radius:2px;opacity:.8"></div></div>
   <div class="pos-meta">
     <span>Entrada <b>$371.24</b></span>
-    <span>Valor actual <b>$9,009.69</b></span>
-    <span>P&L <b style="color:#3fb950">+$706.98</b></span>
+    <span>Valor actual <b>$9,013.01</b></span>
+    <span>P&L <b style="color:#3fb950">+$710.30</b></span>
   </div>
 </div>
     </div>
   </div>
+  
+<div class="section-gap"></div>
+<details style="cursor:pointer">
+  <summary style="font-size:.82rem;color:#7d8590;padding:8px 0;user-select:none">
+    &#9660; 10 posicion(es) expirada(s) / sin valor (P&L cerrado)
+  </summary>
+  <div class="card" style="margin-top:8px">
+    <table>
+      <thead><tr><th>Ticker</th><th>Entrada</th><th>Valor actual</th><th>P&L</th><th>Estado</th></tr></thead>
+      <tbody>
+<tr>
+  <td><span style="color:#8b949e;font-weight:600">CCJ260424C00139000</span></td>
+  <td class="muted">$0.75</td>
+  <td><span style="color:#f85149">$0.00</span></td>
+  <td><span style="color:#f85149;font-weight:600">$-150.00</span></td>
+  <td><span style="font-size:.72rem;background:#21262d;color:#8b949e;padding:2px 8px;border-radius:10px">Expirada</span></td>
+</tr>
+<tr>
+  <td><span style="color:#8b949e;font-weight:600">CCJ260424C00142000</span></td>
+  <td class="muted">$0.75</td>
+  <td><span style="color:#f85149">$0.00</span></td>
+  <td><span style="color:#f85149;font-weight:600">$-150.00</span></td>
+  <td><span style="font-size:.72rem;background:#21262d;color:#8b949e;padding:2px 8px;border-radius:10px">Expirada</span></td>
+</tr>
+<tr>
+  <td><span style="color:#8b949e;font-weight:600">CCJ260424C00145000</span></td>
+  <td class="muted">$0.75</td>
+  <td><span style="color:#f85149">$0.00</span></td>
+  <td><span style="color:#f85149;font-weight:600">$-300.00</span></td>
+  <td><span style="font-size:.72rem;background:#21262d;color:#8b949e;padding:2px 8px;border-radius:10px">Expirada</span></td>
+</tr>
+<tr>
+  <td><span style="color:#8b949e;font-weight:600">NEM260424C00122000</span></td>
+  <td class="muted">$0.47</td>
+  <td><span style="color:#f85149">$0.00</span></td>
+  <td><span style="color:#f85149;font-weight:600">$-188.00</span></td>
+  <td><span style="font-size:.72rem;background:#21262d;color:#8b949e;padding:2px 8px;border-radius:10px">Expirada</span></td>
+</tr>
+<tr>
+  <td><span style="color:#8b949e;font-weight:600">NEM260424C00123000</span></td>
+  <td class="muted">$0.69</td>
+  <td><span style="color:#f85149">$0.00</span></td>
+  <td><span style="color:#f85149;font-weight:600">$-278.00</span></td>
+  <td><span style="font-size:.72rem;background:#21262d;color:#8b949e;padding:2px 8px;border-radius:10px">Expirada</span></td>
+</tr>
+<tr>
+  <td><span style="color:#8b949e;font-weight:600">NEM260424C00124000</span></td>
+  <td class="muted">$0.42</td>
+  <td><span style="color:#f85149">$0.00</span></td>
+  <td><span style="color:#f85149;font-weight:600">$-84.00</span></td>
+  <td><span style="font-size:.72rem;background:#21262d;color:#8b949e;padding:2px 8px;border-radius:10px">Expirada</span></td>
+</tr>
+<tr>
+  <td><span style="color:#8b949e;font-weight:600">NEM260424C00125000</span></td>
+  <td class="muted">$0.38</td>
+  <td><span style="color:#f85149">$0.00</span></td>
+  <td><span style="color:#f85149;font-weight:600">$-152.00</span></td>
+  <td><span style="font-size:.72rem;background:#21262d;color:#8b949e;padding:2px 8px;border-radius:10px">Expirada</span></td>
+</tr>
+<tr>
+  <td><span style="color:#8b949e;font-weight:600">NEM260424C00127000</span></td>
+  <td class="muted">$0.49</td>
+  <td><span style="color:#f85149">$0.00</span></td>
+  <td><span style="color:#f85149;font-weight:600">$-98.00</span></td>
+  <td><span style="font-size:.72rem;background:#21262d;color:#8b949e;padding:2px 8px;border-radius:10px">Expirada</span></td>
+</tr>
+<tr>
+  <td><span style="color:#8b949e;font-weight:600">NEM260424C00128000</span></td>
+  <td class="muted">$0.64</td>
+  <td><span style="color:#f85149">$0.00</span></td>
+  <td><span style="color:#f85149;font-weight:600">$-128.00</span></td>
+  <td><span style="font-size:.72rem;background:#21262d;color:#8b949e;padding:2px 8px;border-radius:10px">Expirada</span></td>
+</tr>
+<tr>
+  <td><span style="color:#8b949e;font-weight:600">NEM260424C00132000</span></td>
+  <td class="muted">$0.04</td>
+  <td><span style="color:#f85149">$0.00</span></td>
+  <td><span style="color:#f85149;font-weight:600">$-16.00</span></td>
+  <td><span style="font-size:.72rem;background:#21262d;color:#8b949e;padding:2px 8px;border-radius:10px">Expirada</span></td>
+</tr></tbody>
+    </table>
+  </div>
+</details>
 </div>
 <script>
 (function(){
-  const labels=["AMD", "CCJ260424C00139000", "CCJ260424C00142000", "CCJ260424C00145000", "GLD", "GOOGL", "JPM", "NEM260424C00122000", "NEM260424C00123000", "NEM260424C00124000", "NEM260424C00125000", "NEM260424C00127000", "NEM260424C00128000", "NEM260424C00132000", "RTX", "TSM"];
-  const values=[18872.59, 0.0, 0.0, 0.0, 18933.12, 19442.72, 9605.26, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 11613.37, 9009.69];
-  const colors=["#58a6ff", "#3fb950", "#d29922", "#f85149", "#bc8cff", "#ffa657", "#79c0ff", "#56d364", "#ff7b72", "#d2a8ff", "#58a6ff", "#3fb950", "#d29922", "#f85149", "#bc8cff", "#ffa657"];
+  const labels=["AMD", "GLD", "GOOGL", "JPM", "RTX", "TSM"];
+  const values=[18845.0, 18944.51, 19415.6, 9599.66, 11641.9, 9013.01];
+  const colors=["#58a6ff", "#3fb950", "#d29922", "#f85149", "#bc8cff", "#ffa657"];
   window._charts = window._charts||{};
   window._charts.alloc = new Chart(document.getElementById('allocChart'),{
     type:'doughnut',
@@ -1019,68 +983,70 @@ tr:hover td{background:var(--s2)}
       <tbody>
 <tr>
   <td><span class="rt-ticker" style="color:#e6edf3">AMD</span></td>
-  <td><span style="color:#3fb950;font-weight:700">▲ 0.0%</span></td>
-  <td class="muted" style="font-size:.8rem;max-width:320px"></td>
-  <td><span class="muted" style="font-size:.75rem"></span></td>
+  <td><span style="color:#3fb950;font-weight:700">▲ 13.9%</span></td>
+  <td class="muted" style="font-size:.8rem;max-width:320px">What's next for Tesla</td>
+  <td><span class="muted" style="font-size:.75rem">BUY_CP</span></td>
 </tr>
 <tr>
   <td><span class="rt-ticker" style="color:#e6edf3">NEM</span></td>
-  <td><span style="color:#3fb950;font-weight:700">▲ 0.0%</span></td>
-  <td class="muted" style="font-size:.8rem;max-width:320px"></td>
-  <td><span class="muted" style="font-size:.75rem"></span></td>
+  <td><span style="color:#3fb950;font-weight:700">▲ 8.7%</span></td>
+  <td class="muted" style="font-size:.8rem;max-width:320px">Gold Faces Headwinds From Calmer Markets, Yet Newmont’s Record Cash Flow...</td>
+  <td><span class="muted" style="font-size:.75rem">CALL</span></td>
 </tr>
 <tr>
   <td><span class="rt-ticker" style="color:#e6edf3">TSM</span></td>
-  <td><span style="color:#3fb950;font-weight:700">▲ 0.0%</span></td>
-  <td class="muted" style="font-size:.8rem;max-width:320px"></td>
-  <td><span class="muted" style="font-size:.75rem"></span></td>
+  <td><span style="color:#3fb950;font-weight:700">▲ 5.2%</span></td>
+  <td class="muted" style="font-size:.8rem;max-width:320px">Chip stocks just added $3 trillion in market value — but are the most ov...</td>
+  <td><span class="muted" style="font-size:.75rem">BUY_CP</span></td>
 </tr>
 <tr>
   <td><span class="rt-ticker" style="color:#e6edf3">SQM</span></td>
-  <td><span style="color:#3fb950;font-weight:700">▲ 0.0%</span></td>
-  <td class="muted" style="font-size:.8rem;max-width:320px"></td>
-  <td><span class="muted" style="font-size:.75rem"></span></td>
+  <td><span style="color:#3fb950;font-weight:700">▲ 3.9%</span></td>
+  <td class="muted" style="font-size:.8rem;max-width:320px">ALB vs. SQM: Which Lithium Stock Should You Bet on Now?</td>
+  <td><span class="muted" style="font-size:.75rem">CALL</span></td>
 </tr>
 <tr>
   <td><span class="rt-ticker" style="color:#e6edf3">RTX</span></td>
-  <td><span style="color:#3fb950;font-weight:700">▲ 0.0%</span></td>
-  <td class="muted" style="font-size:.8rem;max-width:320px"></td>
-  <td><span class="muted" style="font-size:.75rem"></span></td>
+  <td><span style="color:#f85149;font-weight:700">▼ 2.8%</span></td>
+  <td class="muted" style="font-size:.8rem;max-width:320px">Leveraged ETFs Explained: 3 Picks for Active Traders Who Want Speed</td>
+  <td><span class="muted" style="font-size:.75rem">BUY_LP</span></td>
 </tr>
 <tr>
   <td><span class="rt-ticker" style="color:#e6edf3">GOOGL</span></td>
-  <td><span style="color:#3fb950;font-weight:700">▲ 0.0%</span></td>
-  <td class="muted" style="font-size:.8rem;max-width:320px"></td>
-  <td><span class="muted" style="font-size:.75rem"></span></td>
+  <td><span style="color:#3fb950;font-weight:700">▲ 1.6%</span></td>
+  <td class="muted" style="font-size:.8rem;max-width:320px">Are Intel's impressive earnings a precursor to AMD's?</td>
+  <td><span class="muted" style="font-size:.75rem">BUY_LP</span></td>
 </tr>
 <tr>
   <td><span class="rt-ticker" style="color:#e6edf3">GLD</span></td>
-  <td><span style="color:#3fb950;font-weight:700">▲ 0.0%</span></td>
-  <td class="muted" style="font-size:.8rem;max-width:320px"></td>
-  <td><span class="muted" style="font-size:.75rem"></span></td>
+  <td><span style="color:#3fb950;font-weight:700">▲ 0.5%</span></td>
+  <td class="muted" style="font-size:.8rem;max-width:320px">Gold Faces Headwinds From Calmer Markets, Yet Newmont’s Record Cash Flow...</td>
+  <td><span class="muted" style="font-size:.75rem">BUY_LP</span></td>
 </tr>
 <tr>
   <td><span class="rt-ticker" style="color:#e6edf3">NVDA</span></td>
-  <td><span style="color:#3fb950;font-weight:700">▲ 0.0%</span></td>
-  <td class="muted" style="font-size:.8rem;max-width:320px"></td>
-  <td><span class="muted" style="font-size:.75rem"></span></td>
+  <td><span style="color:#3fb950;font-weight:700">▲ 4.3%</span></td>
+  <td class="muted" style="font-size:.8rem;max-width:320px">Are Intel's impressive earnings a precursor to AMD's?</td>
+  <td><span class="muted" style="font-size:.75rem">—</span></td>
 </tr>
 <tr>
   <td><span class="rt-ticker" style="color:#e6edf3">NOC</span></td>
-  <td><span style="color:#3fb950;font-weight:700">▲ 0.0%</span></td>
-  <td class="muted" style="font-size:.8rem;max-width:320px"></td>
-  <td><span class="muted" style="font-size:.75rem"></span></td>
+  <td><span style="color:#f85149;font-weight:700">▼ 2.1%</span></td>
+  <td class="muted" style="font-size:.8rem;max-width:320px">Lockheed Falls on Earnings Miss. Defense Fears Linger.</td>
+  <td><span class="muted" style="font-size:.75rem">—</span></td>
 </tr>
 <tr>
   <td><span class="rt-ticker" style="color:#e6edf3">AVAV</span></td>
-  <td><span style="color:#3fb950;font-weight:700">▲ 0.0%</span></td>
-  <td class="muted" style="font-size:.8rem;max-width:320px"></td>
-  <td><span class="muted" style="font-size:.75rem"></span></td>
+  <td><span style="color:#f85149;font-weight:700">▼ 2.8%</span></td>
+  <td class="muted" style="font-size:.8rem;max-width:320px">These Are the 3 Biggest Winners From the Proposed $1.5 Trillion Defense ...</td>
+  <td><span class="muted" style="font-size:.75rem">—</span></td>
 </tr></tbody>
     </table>
   </div>
 </div>
   </div>
+  <div class="section-gap"></div>
+  <div class="card"><p class="muted" style="padding:20px">Discovery corre los viernes. Sin datos todavia.</p></div>
 </div>
 
 <script>

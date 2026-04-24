@@ -25,9 +25,11 @@ Uso:
 from __future__ import annotations
 
 import argparse
+import json
 import logging
 import sys
 from datetime import datetime
+from pathlib import Path
 
 
 # Fix para Windows cp1252: forzar stdout/stderr a UTF-8
@@ -86,6 +88,22 @@ def main() -> None:
     log.info("INICIANDO AGENTE ALPHA — %s", datetime.now().isoformat(timespec="seconds"))
     log.info("Capital paper: $%.2f USD", capital)
 
+    # Cargar sentiment cache del run anterior para sentiment carry en scoring
+    _SENTIMENT_CACHE = Path("signals/sentiment_cache.json")
+    prev_sentiment: dict[str, float] = {}
+    try:
+        if _SENTIMENT_CACHE.exists():
+            cache = json.loads(_SENTIMENT_CACHE.read_text(encoding="utf-8"))
+            cache_ts = datetime.fromisoformat(cache.get("timestamp", "2000-01-01"))
+            age_hours = (datetime.now() - cache_ts).total_seconds() / 3600
+            if age_hours < 48:
+                prev_sentiment = {k: float(v) for k, v in cache.get("scores", {}).items()}
+                log.info("Sentiment carry: %d tickers (%.0fh)", len(prev_sentiment), age_hours)
+            else:
+                log.info("Sentiment cache descartado (%.0fh > 48h)", age_hours)
+    except Exception as exc:
+        log.debug("Sentiment cache no disponible: %s", exc)
+
     # 0. Discovery Agent — busca activos con potencial fuera del universo fijo
     discovered: list[str] = []
     if not args.no_discovery:
@@ -117,7 +135,7 @@ def main() -> None:
     log.info("Indicadores técnicos calculados para %d activos", len(technical))
 
     # 5. Scoring (con guard de correlación y sector)
-    scores = build_scores(capm, technical, closes=closes)
+    scores = build_scores(capm, technical, closes=closes, regime=macro.regime, prev_sentiment=prev_sentiment)
     log.info("Top LP post-guard: %s", scores["long_term"].head(PARAMS.top_n_long_term).index.tolist())
     log.info("Top CP: %s", scores["short_term"].head(PARAMS.top_n_short_term).index.tolist())
 
@@ -248,6 +266,22 @@ def main() -> None:
     # 9. Guardar
     path = signals.save()
     log.info("Señales guardadas en %s", path)
+
+    # Guardar sentiment scores actuales para el próximo run (sentiment carry)
+    current_sentiment: dict[str, float] = {}
+    for sig in signals.long_term + signals.short_term:
+        sc = (sig.thesis or {}).get("fundamental", {}).get("sentiment_score")
+        if sc is not None:
+            current_sentiment[sig.ticker] = float(sc)
+    if current_sentiment:
+        try:
+            _SENTIMENT_CACHE.write_text(
+                json.dumps({"timestamp": datetime.now().isoformat(), "scores": current_sentiment}, indent=2),
+                encoding="utf-8",
+            )
+            log.info("Sentiment cache guardado: %d tickers → %s", len(current_sentiment), list(current_sentiment))
+        except Exception as exc:
+            log.warning("No se pudo guardar sentiment cache: %s", exc)
 
     # 10. Reporte — terminal muestra la versión detallada, WhatsApp la simple
     reporte_detallado = signals_to_compact_brief(signals)

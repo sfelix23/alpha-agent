@@ -74,9 +74,9 @@ SECTOR_MAP: dict[str, str] = {
 }
 
 # Máximo % del libro LP por sector (guard de diversificación)
-MAX_SECTOR_WEIGHT_LP: float = 0.50      # ningún sector > 50% del sleeve LP
+MAX_SECTOR_WEIGHT_LP: float = 0.40      # ningún sector > 40% del sleeve LP
 # Correlación máxima permitida entre dos activos LP (rolling 1y)
-MAX_PAIR_CORRELATION: float = 0.85
+MAX_PAIR_CORRELATION: float = 0.72
 
 
 # ────────────────────────────────────────────────────────────────────────────
@@ -100,33 +100,32 @@ class FinancialParams:
     history_interval: str = "1d"
     min_obs: int = 60                     # mínimo de observaciones para incluir un activo
 
-    # Sleeves de asignación — tres buckets
-    # 50% LP long (equity high conviction, 3 posiciones concentradas)
-    # 30% CP long (equity trading técnico, más peso para generar alpha)
-    # 20% options / hedge (calls, puts direccionales, y puts de cobertura SPY)
-    weight_long_term: float = 0.50
+    # Sleeves de asignación — dos buckets (opciones eliminadas)
+    # 70% LP long (equity high conviction, 5 posiciones)
+    # 30% CP long (equity trading técnico, momentum — más capital para noticias/AMD-style)
+    weight_long_term: float = 0.70
     weight_short_term: float = 0.30
-    weight_options: float = 0.20
+    weight_options: float = 0.00
 
     # Filtros de calidad para LP
     max_beta_lp: float = 1.5
-    min_sharpe_lp: float = 0.4
+    min_sharpe_lp: float = 0.55
 
     # Parámetros técnicos para CP
     rsi_oversold: float = 35.0
     rsi_overbought: float = 70.0
     atr_stop_multiple: float = 2.0        # stop loss = precio - 2*ATR
 
-    # Concentración — high conviction: 3 LP con más peso cada una, 2 CP
-    top_n_long_term: int = 3
-    top_n_short_term: int = 2
+    # Concentración — 5 LP high conviction, 3 CP momentum
+    top_n_long_term: int = 5
+    top_n_short_term: int = 3
 
     # Bucket options
     top_n_bearish: int = 2                # hasta 2 puts direccionales simultáneos
     max_contracts_per_trade: int = 2      # 1-2 contratos por trade en paper
 
     # Restricciones de la optimización Markowitz
-    max_weight_per_asset: float = 0.35    # hasta 35% por nombre en libro concentrado
+    max_weight_per_asset: float = 0.25    # hasta 25% por nombre (más diversificación)
 
     # Kill switch — el ejecutor no opera si el drawdown intradía supera este %
     max_daily_drawdown: float = 0.03      # 3%
@@ -136,7 +135,7 @@ class FinancialParams:
     max_single_option_premium: float = 250.0  # máx USD por contrato (1 contrato ~ 15% libro)
     max_hedge_allocation: float = 0.22    # hasta 22% del libro en puts SPY cuando bear (1 contrato SPY ~ $350)
     enable_short_equity: bool = False     # OFF por default — preferimos puts (riesgo limitado)
-    enable_options: bool = True           # master switch para opciones
+    enable_options: bool = False          # opciones desactivadas — capital redirigido a equity
     min_days_to_expiry: int = 14          # evita theta decay brutal
     max_days_to_expiry: int = 45          # evita gamma muerta (bajé de 60 a 45)
     target_delta_directional: float = 0.35  # puts/calls direccionales delta 0.35 (más OTM = más barato)

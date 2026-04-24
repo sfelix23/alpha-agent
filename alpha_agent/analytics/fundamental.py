@@ -14,6 +14,8 @@ from __future__ import annotations
 import logging
 from functools import lru_cache
 
+import pandas as pd
+
 logger = logging.getLogger(__name__)
 
 # Medias sectoriales aproximadas (P/E forward) para contexto relativo
@@ -105,6 +107,68 @@ def get_fundamentals(ticker: str) -> dict:
     except Exception as e:
         logger.warning("get_fundamentals(%s): %s", ticker, e)
         return {"sector": "Other", "long_name": ticker}
+
+
+@lru_cache(maxsize=64)
+def get_recent_upgrades(ticker: str, days: int = 7) -> dict:
+    """
+    Detecta upgrades/downgrades de analistas en los últimos N días.
+
+    Returns:
+        dict con claves:
+            'recent_upgrade': bool — al menos un upgrade en el período
+            'recent_downgrade': bool — al menos un downgrade en el período
+            'firms': list[str] — firmas que actuaron recientemente
+    """
+    try:
+        import yfinance as yf
+        from datetime import datetime, timedelta, timezone
+
+        ud = yf.Ticker(ticker).upgrades_downgrades
+        if ud is None or ud.empty:
+            return {"recent_upgrade": False, "recent_downgrade": False, "firms": []}
+
+        idx = ud.index
+        if hasattr(idx, "tz"):
+            if idx.tz is None:
+                idx = idx.tz_localize("UTC")
+        else:
+            idx = pd.to_datetime(ud.index, utc=True)
+
+        cutoff = datetime.now(timezone.utc) - timedelta(days=days)
+        recent = ud[idx >= cutoff]
+        if recent.empty:
+            return {"recent_upgrade": False, "recent_downgrade": False, "firms": []}
+
+        upgrade_grades = {"Strong Buy", "Buy", "Outperform", "Overweight", "Top Pick", "Positive", "Add"}
+        downgrade_grades = {"Strong Sell", "Sell", "Underperform", "Underweight", "Reduce", "Negative"}
+
+        grade_col = next((c for c in ("ToGrade", "To Grade") if c in recent.columns), None)
+        recent_upgrade = recent_downgrade = False
+        if grade_col:
+            grades = set(recent[grade_col].dropna())
+            recent_upgrade = bool(grades & upgrade_grades)
+            recent_downgrade = bool(grades & downgrade_grades)
+        else:
+            action_col = next((c for c in ("Action",) if c in recent.columns), None)
+            if action_col:
+                actions = recent[action_col].str.lower()
+                recent_upgrade = actions.isin(["up", "init"]).any()
+                recent_downgrade = actions.isin(["down"]).any()
+
+        firm_col = next((c for c in ("Firm",) if c in recent.columns), None)
+        firms = recent[firm_col].dropna().tolist()[:3] if firm_col else []
+
+        if recent_upgrade or recent_downgrade:
+            logger.debug(
+                "get_recent_upgrades(%s): upgrade=%s downgrade=%s firms=%s",
+                ticker, recent_upgrade, recent_downgrade, firms,
+            )
+        return {"recent_upgrade": recent_upgrade, "recent_downgrade": recent_downgrade, "firms": firms}
+
+    except Exception as e:
+        logger.debug("get_recent_upgrades(%s): %s", ticker, e)
+        return {"recent_upgrade": False, "recent_downgrade": False, "firms": []}
 
 
 def format_for_claude(ticker: str, f: dict, *, quant: dict | None = None) -> str:

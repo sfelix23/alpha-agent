@@ -111,11 +111,80 @@ def _get_intraday_signals(tickers: list[str]) -> dict[str, float]:
         return {t: 0.0 for t in tickers}
 
 
+def _get_quality_bonus(tickers: list[str]) -> dict[str, float]:
+    """
+    Quality factor bonus para LP y CP.
+
+    Usa get_fundamentals() (cached) para aplicar:
+      - ROE > 15%  → +0.15  (negocio rentable)
+      - Deuda/Equity < 1.0 → +0.10 (balance sólido)
+      - Analyst rating >= 4 (Buy/Strong Buy) → +0.18 (consenso alcista)
+      - Analyst rating <= 2 (Sell/Strong Sell) → -0.25 (consenso bajista)
+      - Revenue growth > 10% YoY → +0.08
+
+    Solo corre sobre los shortlistados (no los 49 del universo).
+    Falla silenciosamente si fundamentals no disponible.
+    """
+    try:
+        from alpha_agent.analytics.fundamental import get_fundamentals
+        bonuses: dict[str, float] = {}
+        for t in tickers:
+            try:
+                f = get_fundamentals(t)
+                bonus = 0.0
+                roe          = f.get("roe") or 0
+                debt_eq      = f.get("debt_equity")
+                rating       = f.get("analyst_rating") or 3.0
+                rev_growth   = f.get("revenue_growth_yoy") or 0
+
+                if roe > 15:
+                    bonus += 0.15
+                elif roe > 8:
+                    bonus += 0.07
+
+                if debt_eq is not None:
+                    if debt_eq < 0.5:
+                        bonus += 0.12
+                    elif debt_eq < 1.0:
+                        bonus += 0.08
+
+                if rating >= 4.0:
+                    bonus += 0.18
+                elif rating <= 2.0:
+                    bonus -= 0.25
+
+                if rev_growth > 10:
+                    bonus += 0.08
+
+                # Upgrade/downgrade reciente de analistas (señal institucional fuerte)
+                try:
+                    from alpha_agent.analytics.fundamental import get_recent_upgrades
+                    upg = get_recent_upgrades(t, days=7)
+                    if upg.get("recent_upgrade"):
+                        bonus += 0.20
+                    if upg.get("recent_downgrade"):
+                        bonus -= 0.20
+                except Exception:
+                    pass
+
+                bonuses[t] = bonus
+            except Exception:
+                bonuses[t] = 0.0
+        if bonuses:
+            logger.info("Quality bonus: %s", {t: f"{v:+.2f}" for t, v in bonuses.items() if v != 0})
+        return bonuses
+    except Exception as exc:
+        logger.debug("quality_bonus no disponible (%s)", exc)
+        return {t: 0.0 for t in tickers}
+
+
 def build_scores(
     capm: pd.DataFrame,
     technical: pd.DataFrame,
     *,
     closes: pd.DataFrame | None = None,
+    regime: str = "unknown",
+    prev_sentiment: dict[str, float] | None = None,
 ) -> dict[str, pd.DataFrame]:
     """
     Devuelve {'long_term': df, 'short_term': df} con rankings mejorados.
@@ -153,6 +222,11 @@ def build_scores(
     # Boost por rotación sectorial
     lp["score_lp"] *= lp.index.map(lambda t: sector_boost.get(t, 1.0))
 
+    # Bull regime: bonus para beta en [1.0, 1.5] — capturar upside del mercado
+    if regime.lower() == "bull" and "beta" in lp.columns:
+        bull_beta_mask = (lp["beta"] >= 1.0) & (lp["beta"] <= 1.5)
+        lp.loc[bull_beta_mask, "score_lp"] += 0.25
+
     lp = lp.sort_values("score_lp", ascending=False)
 
     # Guard de correlación y sector
@@ -166,6 +240,12 @@ def build_scores(
         logger.info("Shortlist LP post-guard: %s", kept)
         lp = lp.loc[kept]
 
+    # Quality factor bonus sobre shortlist (ROE, deuda, analyst rating)
+    quality_lp = _get_quality_bonus(lp.index.tolist())
+    lp["quality_bonus"] = lp.index.map(lambda t: quality_lp.get(t, 0.0))
+    lp["score_lp"] += lp["quality_bonus"]
+    lp = lp.sort_values("score_lp", ascending=False)
+
     # ── SHORT TERM ────────────────────────────────────────────────────────────
     st = df.copy()
 
@@ -174,11 +254,11 @@ def build_scores(
     high_penalty = st["dist_52w_high"].clip(upper=0).abs()
 
     score_st = (
-        0.30 * _zscore(st["ret_1m"].fillna(0))
+        0.40 * _zscore(st["ret_1m"].fillna(0))
         + 0.20 * _zscore(st["ret_3m"].fillna(0))
         + 0.15 * _zscore(rsi_signal)
         + 0.10 * _zscore(st["alpha_jensen"].clip(lower=0))
-        - 0.10 * _zscore(-high_penalty)
+        - 0.05 * _zscore(-high_penalty)
     )
 
     # Bonus MACD: tendencia con momentum (alto impacto en CP)
@@ -202,6 +282,27 @@ def build_scores(
     if "rsi" in st.columns:
         score_st -= 0.15 * (st["rsi"].fillna(50) > 75).astype(float)
 
+    # Momentum confluence: penalizar señales contradictorias entre 1M y 3M
+    # Si 1M y 3M apuntan en direcciones opuestas → baja convicción → -0.20
+    if "ret_1m" in st.columns and "ret_3m" in st.columns:
+        conflicting = (
+            (st["ret_1m"].fillna(0) * st["ret_3m"].fillna(0)) < 0
+        ).astype(float)
+        score_st -= 0.20 * conflicting
+
+    # Sentiment carry: sentimiento positivo del run anterior → continúa momentum
+    if prev_sentiment:
+        carry = pd.Series(
+            [float(prev_sentiment.get(t, 0.0)) for t in st.index], index=st.index
+        ).clip(-1.0, 1.0)
+        score_st += 0.12 * carry
+        nonzero = carry[carry != 0]
+        if not nonzero.empty:
+            logger.info(
+                "Sentiment carry aplicado: %s",
+                {t: f"{v:+.2f}" for t, v in nonzero.items()},
+            )
+
     # Boost sectorial CP (más agresivo que LP)
     score_st *= pd.Series(
         [sector_boost.get(t, 1.0) for t in st.index], index=st.index
@@ -215,6 +316,16 @@ def build_scores(
 
     st["score_st"]      = score_st
     st["intraday_score"] = intraday_series
+
+    # Quality bonus sobre top-15 CP (analyst rating + crecimiento revenue)
+    # Solo top-15 para no hacer 49 llamadas a fundamentals
+    top_cp_tickers = st.nlargest(15, "score_st").index.tolist()
+    quality_cp = _get_quality_bonus(top_cp_tickers)
+    quality_cp_series = pd.Series(
+        [quality_cp.get(t, 0.0) for t in st.index], index=st.index
+    )
+    # En CP el quality bonus es 50% menos impactante (prioridad: momentum)
+    st["score_st"] += 0.5 * quality_cp_series
 
     # ── Earnings guard ─────────────────────────────────────────────────────────
     # Penalizar posiciones con earnings inminentes para evitar riesgo binario.

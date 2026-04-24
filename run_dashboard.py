@@ -71,7 +71,7 @@ def _vix_info(v: float) -> tuple[str, str]:
     if v > 18: return "Moderado — sizing 100%", "#d29922"
     return "Tranquilo — sizing 110%", "#3fb950"
 
-def _calc_metrics(history: list[dict], spy_history: list[dict]) -> dict:
+def _calc_metrics(history: list[dict], spy_history: list[dict], qqq_history: list[dict] | None = None) -> dict:
     if len(history) < 3:
         return {}
     vals = [h["equity"] for h in history]
@@ -92,24 +92,41 @@ def _calc_metrics(history: list[dict], spy_history: list[dict]) -> dict:
 
     port_ret = (vals[-1] - vals[0]) / vals[0] if vals[0] > 0 else 0
 
+    # ARR (Annualized Return Rate)
+    n_days = max(len(vals), 1)
+    arr = ((1 + port_ret) ** (252 / n_days) - 1) if port_ret > -1 else -1.0
+
+    # Win Rate
+    win_rate = len([r for r in daily_rets if r >= 0]) / len(daily_rets) * 100 if daily_rets else 0
+
     spy_ret = None
     if spy_history and len(spy_history) >= 2:
         s_vals = [s["equity"] for s in spy_history]
         spy_ret = (s_vals[-1] - s_vals[0]) / s_vals[0] if s_vals[0] > 0 else 0
 
+    qqq_ret = None
+    if qqq_history and len(qqq_history) >= 2:
+        q_vals = [q["equity"] for q in qqq_history]
+        qqq_ret = (q_vals[-1] - q_vals[0]) / q_vals[0] if q_vals[0] > 0 else 0
+
     return {
         "sortino": round(sortino, 2),
         "max_dd": round(max_dd * 100, 2),
         "port_ret_1m": round(port_ret * 100, 2),
+        "arr": round(arr * 100, 2),
+        "win_rate": round(win_rate, 1),
         "spy_ret_1m": round(spy_ret * 100, 2) if spy_ret is not None else None,
+        "qqq_ret_1m": round(qqq_ret * 100, 2) if qqq_ret is not None else None,
         "alpha_1m": round((port_ret - spy_ret) * 100, 2) if spy_ret is not None else None,
+        "alpha_vs_qqq": round((port_ret - qqq_ret) * 100, 2) if qqq_ret is not None else None,
     }
 
 
 # ─── TAB: RESUMEN ─────────────────────────────────────────────────────────────
 
 def _tab_resumen(equity, initial, regime, vix, wti, gold, dxy,
-                 history, spy_history, signals_data, metrics, age_hours):
+                 history, spy_history, signals_data, metrics, age_hours,
+                 perf_data=None, qqq_history=None):
     pnl     = equity - initial
     pnl_pct = (pnl / initial * 100) if initial else 0
     pc      = _c(pnl)
@@ -136,6 +153,9 @@ def _tab_resumen(equity, initial, regime, vix, wti, gold, dxy,
     if metrics.get("spy_ret_1m") is not None:
         spy_badge = f'&nbsp;&middot;&nbsp;<span style="color:#7d8590">SPY {_pct(metrics["spy_ret_1m"])}</span>'
 
+    arr_v     = metrics.get("arr", 0) or 0
+    win_rate  = metrics.get("win_rate", 0) or 0
+
     kpis = f"""
 <div class="kpi-row">
   <div class="kpi kpi-hero" data-countup="{equity:.2f}">
@@ -159,19 +179,19 @@ def _tab_resumen(equity, initial, regime, vix, wti, gold, dxy,
     <div class="kpi-sub">Retorno esperado {_pct(ret_exp)}</div>
   </div>
   <div class="kpi">
+    <div class="kpi-lbl">ARR (Anualizado)</div>
+    <div class="kpi-val" style="color:{'#3fb950'if arr_v>10 else'#d29922'if arr_v>0 else'#f85149'}">{_pct(arr_v)}</div>
+    <div class="kpi-sub">Retorno anualizado estimado</div>
+  </div>
+  <div class="kpi">
+    <div class="kpi-lbl">Win Rate</div>
+    <div class="kpi-val" style="color:{'#3fb950'if win_rate>55 else'#d29922'if win_rate>45 else'#f85149'}">{win_rate:.1f}%</div>
+    <div class="kpi-sub">Dias con P&L positivo</div>
+  </div>
+  <div class="kpi">
     <div class="kpi-lbl">Petroleo WTI</div>
     <div class="kpi-val">{_usd(wti)}</div>
-    <div class="kpi-sub">por barril</div>
-  </div>
-  <div class="kpi">
-    <div class="kpi-lbl">Oro</div>
-    <div class="kpi-val">{_usd(gold)}</div>
-    <div class="kpi-sub">por onza troy</div>
-  </div>
-  <div class="kpi">
-    <div class="kpi-lbl">Dolar Index (DXY)</div>
-    <div class="kpi-val">{dxy:.1f}</div>
-    <div class="kpi-sub">Volatilidad anual {_pct(vol)}</div>
+    <div class="kpi-sub">Oro: {_usd(gold)} &middot; DXY: {dxy:.1f}</div>
   </div>
 </div>"""
 
@@ -181,14 +201,22 @@ def _tab_resumen(equity, initial, regime, vix, wti, gold, dxy,
         sortino_v = metrics.get("sortino", 0) or 0
         max_dd_v  = metrics.get("max_dd", 0) or 0
         alpha_v   = metrics.get("alpha_1m")
+        alpha_qqq = metrics.get("alpha_vs_qqq")
         spy_r     = metrics.get("spy_ret_1m")
+        qqq_r     = metrics.get("qqq_ret_1m")
         port_r    = metrics.get("port_ret_1m", 0) or 0
 
         alpha_html = (
             f'<div class="kpi"><div class="kpi-lbl">Alpha vs SPY (1M)</div>'
             f'<div class="kpi-val" style="color:{_c(alpha_v)}">{_pct(alpha_v)}</div>'
-            f'<div class="kpi-sub">Portfolio {_pct(port_r)} vs SPY {_pct(spy_r)}</div></div>'
+            f'<div class="kpi-sub">Portfolio {_pct(port_r)} · SPY {_pct(spy_r)}</div></div>'
         ) if alpha_v is not None else ""
+
+        qqq_html = (
+            f'<div class="kpi"><div class="kpi-lbl">Alpha vs QQQ (1M)</div>'
+            f'<div class="kpi-val" style="color:{_c(alpha_qqq)}">{_pct(alpha_qqq)}</div>'
+            f'<div class="kpi-sub">QQQ {_pct(qqq_r)}</div></div>'
+        ) if alpha_qqq is not None else ""
 
         adv_kpis = f"""
 <div class="kpi-row kpi-row-adv">
@@ -203,9 +231,10 @@ def _tab_resumen(equity, initial, regime, vix, wti, gold, dxy,
     <div class="kpi-sub">Caida maxima desde pico</div>
   </div>
   {alpha_html}
+  {qqq_html}
 </div>"""
 
-    eq_chart = _equity_chart(history, spy_history)
+    eq_chart = _equity_chart(history, spy_history, qqq_history=qqq_history)
     cal      = _pnl_calendar(history)
     ts_info  = f'<p class="ts">Senales actualizadas: {gen_at} &nbsp;|&nbsp; Paper Trading</p>' if gen_at else ""
 
@@ -219,50 +248,62 @@ def _tab_resumen(equity, initial, regime, vix, wti, gold, dxy,
   {eq_chart}
   <div class="section-gap"></div>
   {cal}
+  <div class="section-gap"></div>
+  {_perf_chart(perf_data)}
 </div>"""
 
 
-def _equity_chart(history, spy_history=None):
+def _equity_chart(history, spy_history=None, qqq_history=None):
     if len(history) < 2:
         return '<div class="card"><p class="muted" style="padding:40px;text-align:center">Sin historial de patrimonio disponible todavia.</p></div>'
 
-    labels   = [datetime.fromtimestamp(h["ts"]).strftime("%d %b") for h in history]
-    vals     = [round(h["equity"], 2) for h in history]
-    first, last = vals[0], vals[-1]
-    color    = _c(last - first)
-    total_pct = _pct((last - first) / first * 100 if first else 0)
-    min_v    = min(vals) * 0.995
-    max_v    = max(vals) * 1.005
+    labels = [datetime.fromtimestamp(h["ts"]).strftime("%d %b") for h in history]
+    vals   = [h["equity"] for h in history]
+    first  = vals[0] if vals[0] else 1.0
 
-    # SPY benchmark dataset
+    # Normalizar a % de retorno desde el primer punto
+    norm_vals = [round((v - first) / first * 100, 3) for v in vals]
+    total_pct_v = norm_vals[-1]
+    color = _c(total_pct_v)
+
     spy_dataset = ""
     spy_legend  = ""
     if spy_history and len(spy_history) >= 2:
-        spy_vals_raw = [round(s["equity"], 2) for s in spy_history]
-        # Align SPY to same start as portfolio
-        spy_start = spy_vals_raw[0] if spy_vals_raw else first
-        spy_vals = [round(v / spy_start * first, 2) for v in spy_vals_raw]
-        min_v = min(min_v, min(spy_vals) * 0.995)
-        max_v = max(max_v, max(spy_vals) * 1.005)
-        spy_last = spy_vals[-1]
-        spy_ret = (spy_last - first) / first * 100 if first else 0
+        spy_raw  = [s["equity"] for s in spy_history]
+        spy_base = spy_raw[0] if spy_raw[0] else 1.0
+        spy_norm = [round((v - spy_base) / spy_base * 100, 3) for v in spy_raw]
+        spy_last = spy_norm[-1]
         spy_dataset = f""",
-    {{data:{json.dumps(spy_vals)},label:'SPY',
-      borderColor:'#7d8590',backgroundColor:'transparent',fill:false,
+    {{data:{json.dumps(spy_norm)},label:'SPY',
+      borderColor:'#58a6ff',backgroundColor:'transparent',fill:false,
       tension:.4,pointRadius:0,borderWidth:1.5,borderDash:[5,3]}}"""
-        spy_legend = f'<span style="font-size:.78rem;color:#7d8590">&#9135;&#9135; SPY {_pct(spy_ret)}</span>'
+        spy_legend = f'<span style="font-size:.78rem;color:#58a6ff">&#9135;&#9135; SPY {_pct(spy_last)}</span>'
+
+    qqq_dataset = ""
+    qqq_legend  = ""
+    if qqq_history and len(qqq_history) >= 2:
+        qqq_raw  = [q["equity"] for q in qqq_history]
+        qqq_base = qqq_raw[0] if qqq_raw[0] else 1.0
+        qqq_norm = [round((v - qqq_base) / qqq_base * 100, 3) for v in qqq_raw]
+        qqq_last = qqq_norm[-1]
+        qqq_dataset = f""",
+    {{data:{json.dumps(qqq_norm)},label:'QQQ',
+      borderColor:'#e3b341',backgroundColor:'transparent',fill:false,
+      tension:.4,pointRadius:0,borderWidth:1.5,borderDash:[3,3]}}"""
+        qqq_legend = f'<span style="font-size:.78rem;color:#e3b341">&#9135;&#9135; QQQ {_pct(qqq_last)}</span>'
 
     return f"""
 <div class="card">
   <div class="card-head">
     <div>
-      <div class="card-title">Evolucion del Patrimonio</div>
-      <div class="card-sub" style="display:flex;gap:14px;align-items:center">
-        <span><span style="color:{color};font-weight:700;font-size:.9rem">{total_pct}</span> variacion total</span>
+      <div class="card-title">Retorno Acumulado — % vs benchmarks</div>
+      <div class="card-sub" style="display:flex;gap:16px;align-items:center;flex-wrap:wrap">
+        <span><span style="color:{color};font-weight:700;font-size:.9rem">{_pct(total_pct_v)}</span> Portfolio</span>
         {spy_legend}
+        {qqq_legend}
       </div>
     </div>
-    <div class="pill" style="color:{color}">{_usd(last)}</div>
+    <div class="pill" style="color:{color}">{_usd(vals[-1])}</div>
   </div>
   <canvas id="eqChart" height="85"></canvas>
 </div>
@@ -270,17 +311,18 @@ def _equity_chart(history, spy_history=None):
 (function(){{
   const ctx = document.getElementById('eqChart');
   const g = ctx.getContext('2d').createLinearGradient(0,0,0,300);
-  g.addColorStop(0,'{color}44'); g.addColorStop(1,'{color}00');
+  g.addColorStop(0,'{color}33'); g.addColorStop(1,'{color}00');
   window._charts = window._charts||{{}};
   window._charts.eq = new Chart(ctx,{{
     type:'line',
     data:{{
       labels:{json.dumps(labels)},
       datasets:[
-        {{data:{json.dumps(vals)},label:'Portfolio',
+        {{data:{json.dumps(norm_vals)},label:'Portfolio',
           borderColor:'{color}',backgroundColor:g,fill:true,tension:.4,
           pointRadius:2,pointHoverRadius:7,pointBackgroundColor:'{color}',borderWidth:2.5}}
         {spy_dataset}
+        {qqq_dataset}
       ]
     }},
     options:{{
@@ -291,14 +333,16 @@ def _equity_chart(history, spy_history=None):
         tooltip:{{
           backgroundColor:'#161b22',borderColor:'#30363d',borderWidth:1,
           titleColor:'#7d8590',bodyColor:'#e6edf3',padding:12,
-          callbacks:{{label:c=>c.dataset.label+' $'+c.parsed.y.toLocaleString('es-AR',{{minimumFractionDigits:2}})}}
+          callbacks:{{label:c=>` ${{c.dataset.label}}: ${{c.parsed.y>=0?'+':''}}${{c.parsed.y.toFixed(2)}}%`}}
         }}
       }},
       scales:{{
         x:{{ticks:{{color:'#7d8590',maxTicksLimit:10,font:{{size:11}}}},grid:{{color:'#21262d'}}}},
-        y:{{min:{min_v:.2f},max:{max_v:.2f},
-          ticks:{{color:'#7d8590',callback:v=>'$'+v.toLocaleString(),font:{{size:11}}}},
-          grid:{{color:'#21262d'}}}}
+        y:{{
+          ticks:{{color:'#7d8590',callback:v=>(v>=0?'+':'')+v.toFixed(1)+'%',font:{{size:11}}}},
+          grid:{{color:'#21262d'}},
+          afterDataLimits(scale){{scale.min=Math.min(scale.min,-0.5);}}
+        }}
       }}
     }}
   }});
@@ -410,6 +454,13 @@ def _tab_posiciones(positions):
     COLORS = ["#58a6ff","#3fb950","#d29922","#f85149","#bc8cff",
               "#ffa657","#79c0ff","#56d364","#ff7b72","#d2a8ff"]
 
+    # Separar posiciones activas de expiradas/sin valor
+    active_pos  = [p for p in positions if (p.market_value or 0) > 1.0]
+    expired_pos = [p for p in positions if (p.market_value or 0) <= 1.0]
+
+    # Usar solo activas para el cuerpo principal
+    positions = active_pos if active_pos else positions
+
     tickers  = [p.ticker for p in positions]
     values   = [round(p.market_value, 2) for p in positions]
     colors   = [COLORS[i % len(COLORS)] for i in range(len(positions))]
@@ -447,11 +498,40 @@ def _tab_posiciones(positions):
   </div>
 </div>"""
 
+    # Sección de posiciones expiradas/sin valor (colapsable)
+    expired_html = ""
+    if expired_pos:
+        expired_rows = ""
+        for p in expired_pos:
+            pnl = p.unrealized_pl or 0
+            pc  = _c(pnl)
+            expired_rows += f"""
+<tr>
+  <td><span style="color:#8b949e;font-weight:600">{p.ticker}</span></td>
+  <td class="muted">{_usd(p.avg_price or 0)}</td>
+  <td><span style="color:#f85149">$0.00</span></td>
+  <td><span style="color:{pc};font-weight:600">{"+" if pnl>=0 else ""}{_usd(pnl)}</span></td>
+  <td><span style="font-size:.72rem;background:#21262d;color:#8b949e;padding:2px 8px;border-radius:10px">Expirada</span></td>
+</tr>"""
+        expired_html = f"""
+<div class="section-gap"></div>
+<details style="cursor:pointer">
+  <summary style="font-size:.82rem;color:#7d8590;padding:8px 0;user-select:none">
+    &#9660; {len(expired_pos)} posicion(es) expirada(s) / sin valor (P&L cerrado)
+  </summary>
+  <div class="card" style="margin-top:8px">
+    <table>
+      <thead><tr><th>Ticker</th><th>Entrada</th><th>Valor actual</th><th>P&L</th><th>Estado</th></tr></thead>
+      <tbody>{expired_rows}</tbody>
+    </table>
+  </div>
+</details>"""
+
     return f"""
 <div class="tab-content" id="tab-posiciones">
   <div class="pos-summary">
     <div class="kpi">
-      <div class="kpi-lbl">Posiciones abiertas</div>
+      <div class="kpi-lbl">Posiciones activas</div>
       <div class="kpi-val">{len(positions)}</div>
     </div>
     <div class="kpi">
@@ -473,6 +553,7 @@ def _tab_posiciones(positions):
       {cards}
     </div>
   </div>
+  {expired_html}
 </div>
 <script>
 (function(){{
@@ -500,6 +581,85 @@ def _tab_posiciones(positions):
   labels.forEach((l,i)=>{{
     const pct=(values[i]/tot*100).toFixed(1);
     leg.innerHTML+=`<div class="leg-row"><span class="leg-dot" style="background:${{colors[i]}}"></span>${{l}}<span class="muted" style="margin-left:auto">${{pct}}%</span></div>`;
+  }});
+}})();
+</script>"""
+
+
+def _perf_chart(perf_data: dict | None) -> str:
+    """Gráfico de barras agrupadas: portfolio vs SPY semana a semana."""
+    weeks = (perf_data or {}).get("weeks", [])
+    if not weeks:
+        return '<div class="card"><div class="card-head"><div><div class="card-title">Performance Semanal vs SPY</div><div class="card-sub">Disponible tras el primer rebalanceo del viernes</div></div></div><p class="muted" style="padding:8px 0 12px">Sin historial de performance semanal todavia.</p></div>'
+    if not weeks:
+        return '<div class="card"><p class="muted" style="padding:20px">Sin historial de performance semanal todavia. Disponible tras el primer rebalanceo del viernes.</p></div>'
+
+    labels      = [w.get("date", "")[-5:].replace("-", "/") for w in weeks]
+    port_vals   = [w.get("portfolio_pct") for w in weeks]
+    spy_vals    = [w.get("spy_pct") for w in weeks]
+    alpha_vals  = [w.get("alpha_pct") for w in weeks]
+
+    # Stats
+    valid_alpha = [a for a in alpha_vals if a is not None]
+    cum_alpha   = round(sum(valid_alpha), 2) if valid_alpha else None
+    pos_weeks   = sum(1 for a in valid_alpha if a > 0)
+    total_weeks = len(valid_alpha)
+
+    cum_color = "#3fb950" if (cum_alpha or 0) >= 0 else "#f85149"
+    cum_sign  = "+" if (cum_alpha or 0) >= 0 else ""
+    stats_html = ""
+    if cum_alpha is not None:
+        win_rate = pos_weeks / total_weeks * 100 if total_weeks else 0
+        stats_html = f"""
+<div style="display:flex;gap:24px;padding:10px 0 4px;flex-wrap:wrap">
+  <div><span class="muted" style="font-size:.72rem">Alpha acumulado</span>
+    <span style="color:{cum_color};font-weight:700;margin-left:8px">{cum_sign}{cum_alpha:.2f}%</span></div>
+  <div><span class="muted" style="font-size:.72rem">Semanas positivas</span>
+    <span style="color:#e6edf3;font-weight:700;margin-left:8px">{pos_weeks}/{total_weeks}</span></div>
+</div>"""
+
+    # Chart.js data — null-safe
+    port_js = json.dumps([round(v, 2) if v is not None else None for v in port_vals])
+    spy_js  = json.dumps([round(v, 2) if v is not None else None for v in spy_vals])
+
+    return f"""
+<div class="card">
+  <div class="card-head">
+    <div>
+      <div class="card-title">Performance Semanal vs SPY</div>
+      <div class="card-sub">Retorno semanal del portfolio comparado con el benchmark</div>
+    </div>
+  </div>
+  {stats_html}
+  <canvas id="perfChart" height="100"></canvas>
+</div>
+<script>
+(function(){{
+  window._charts=window._charts||{{}};
+  window._charts.perf=new Chart(document.getElementById('perfChart'),{{
+    type:'bar',
+    data:{{
+      labels:{json.dumps(labels)},
+      datasets:[
+        {{label:'Portfolio',data:{port_js},backgroundColor:'#1f6feb88',
+          borderColor:'#1f6feb',borderWidth:1,borderRadius:4,borderSkipped:false}},
+        {{label:'SPY',data:{spy_js},backgroundColor:'#7d859044',
+          borderColor:'#7d8590',borderWidth:1,borderRadius:4,borderSkipped:false}}
+      ]
+    }},
+    options:{{
+      animation:{{duration:600}},
+      plugins:{{
+        legend:{{labels:{{color:'#7d8590',font:{{size:11}}}}}},
+        tooltip:{{backgroundColor:'#161b22',borderColor:'#30363d',borderWidth:1,
+          titleColor:'#7d8590',bodyColor:'#e6edf3',padding:10,
+          callbacks:{{label:c=>` ${{c.dataset.label}}: ${{c.parsed.y!=null?c.parsed.y.toFixed(2):'N/A'}}%`}}}}
+      }},
+      scales:{{
+        x:{{ticks:{{color:'#7d8590',font:{{size:10}}}},grid:{{display:false}}}},
+        y:{{ticks:{{color:'#7d8590',callback:v=>v+'%',font:{{size:10}}}},grid:{{color:'#21262d'}}}}
+      }}
+    }}
   }});
 }})();
 </script>"""
@@ -621,7 +781,74 @@ def _tab_senales(signals_data):
 
 # ─── TAB: MERCADO ─────────────────────────────────────────────────────────────
 
-def _tab_mercado(signals_data):
+def _discovery_section(disc_data: dict | None) -> str:
+    """Candidatos de Discovery fuera del universo actual."""
+    if disc_data is None:
+        return '<div class="card"><p class="muted" style="padding:20px">Discovery corre los viernes. Sin datos todavia.</p></div>'
+
+    # Freshness check
+    gen_at_str = disc_data.get("generated_at", "")
+    stale = False
+    gen_label = ""
+    if gen_at_str:
+        try:
+            from datetime import timezone as _tz
+            gen_dt = datetime.fromisoformat(gen_at_str)
+            if gen_dt.tzinfo is None:
+                gen_dt = gen_dt.replace(tzinfo=timezone.utc)
+            age_d = (datetime.now(timezone.utc) - gen_dt).days
+            stale = age_d > 8
+            gen_label = gen_at_str[:10]
+        except Exception:
+            pass
+
+    candidates    = disc_data.get("candidates", [])
+    repeated      = set(disc_data.get("repeated_alerts", []))
+    n_scanned     = disc_data.get("n_scanned", 0)
+    regime        = disc_data.get("regime", "")
+
+    stale_banner = '<div class="fresh-banner fresh-warn" style="margin-bottom:12px">Datos de discovery desactualizados (>7 dias). Corre el proximo viernes.</div>' if stale else ""
+
+    cards_html = ""
+    for c in candidates:
+        ticker   = c.get("ticker", "?")
+        prior    = c.get("prioridad", "BAJA").upper()
+        razon    = _esc(c.get("razon", ""))
+        riesgo   = _esc(c.get("riesgo", ""))
+        is_rep   = ticker in repeated
+        prior_color = {"ALTA": "#3fb950", "MEDIA": "#d29922"}.get(prior, "#7d8590")
+        rep_badge = '<span class="disc-rep">2da semana</span>' if is_rep else ""
+
+        cards_html += f"""
+<div class="disc-card">
+  <div class="disc-head">
+    <span class="disc-ticker">{ticker}</span>
+    <span class="disc-prior" style="background:{prior_color}22;color:{prior_color};border-color:{prior_color}55">{prior}</span>
+    {rep_badge}
+  </div>
+  <p class="disc-razon">{razon}</p>
+  {f'<p class="disc-riesgo">⚠ {riesgo}</p>' if riesgo else ''}
+</div>"""
+
+    if not cards_html:
+        cards_html = '<p class="muted">Sin candidatos esta semana.</p>'
+
+    meta = f"{n_scanned} activos escaneados" + (f" · régimen {regime}" if regime else "") + (f" · {gen_label}" if gen_label else "")
+
+    return f"""
+<div class="card">
+  <div class="card-head">
+    <div>
+      <div class="card-title">Oportunidades fuera del universo</div>
+      <div class="card-sub">{meta}</div>
+    </div>
+  </div>
+  {stale_banner}
+  <div class="disc-grid">{cards_html}</div>
+</div>"""
+
+
+def _tab_mercado(signals_data, discovery_data=None):
     radar   = signals_data.get("radar", {})
     entries = radar.get("entries", [])
     n_up    = radar.get("n_up", 0)
@@ -678,9 +905,9 @@ def _tab_mercado(signals_data):
     radar_rows = ""
     for e in entries:
         t    = e.get("ticker","")
-        move = e.get("move_pct",0) or 0
-        news = _esc(e.get("top_news","")[:100])
-        act  = _esc(e.get("bot_action",""))
+        move = (e.get("pct_1d") or e.get("move_pct") or 0) * 100
+        news = _esc((e.get("headline") or e.get("top_news", ""))[:100])
+        act  = _esc(e.get("action") or e.get("bot_action", ""))
         mc   = _c(move)
         arr  = "▲" if move>=0 else "▼"
         radar_rows += f"""
@@ -721,6 +948,8 @@ def _tab_mercado(signals_data):
     reason = macro.get("regime_reason","")
     regime_note = f'<p class="ts" style="margin-bottom:16px">{_esc(reason)}</p>' if reason else ""
 
+    disc_html = _discovery_section(discovery_data)
+
     return f"""
 <div class="tab-content" id="tab-mercado">
   {regime_note}
@@ -728,6 +957,8 @@ def _tab_mercado(signals_data):
     {sector_html}
     {radar_html}
   </div>
+  <div class="section-gap"></div>
+  {disc_html}
 </div>"""
 
 
@@ -906,6 +1137,17 @@ body{font-family:'Inter',system-ui,sans-serif;background:var(--bg);color:var(--t
   text-transform:uppercase;margin-bottom:4px}
 .ws-col ul{margin:0;padding-left:14px;color:#8b949e;line-height:1.6}
 
+/* ── discovery ── */
+.disc-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:12px;margin-top:8px}
+.disc-card{background:var(--s1);border:1px solid var(--bd);border-radius:10px;padding:14px}
+.disc-head{display:flex;align-items:center;gap:8px;margin-bottom:8px;flex-wrap:wrap}
+.disc-ticker{font-weight:800;font-size:1rem;color:#e6edf3}
+.disc-prior{font-size:.68rem;font-weight:700;padding:2px 7px;border-radius:12px;border:1px solid;letter-spacing:.4px}
+.disc-rep{font-size:.65rem;background:#d2922222;color:#d29922;border:1px solid #d2922255;
+  padding:2px 7px;border-radius:12px;font-weight:600}
+.disc-razon{font-size:.8rem;color:#94a3b8;margin:0 0 6px;line-height:1.55}
+.disc-riesgo{font-size:.75rem;color:#7d8590;margin:0}
+
 /* ── calendar ── */
 .cal-wrap{overflow-x:auto}
 .cal-table{border-collapse:separate;border-spacing:4px;width:100%;table-layout:fixed}
@@ -950,9 +1192,11 @@ tr:hover td{background:var(--s2)}
 # ─── HTML completo ─────────────────────────────────────────────────────────────
 
 def build_html(equity, initial, history, positions, signals_data,
-               spy_history=None, metrics=None):
+               spy_history=None, qqq_history=None, metrics=None, perf_data=None, discovery_data=None):
     if spy_history is None:
         spy_history = []
+    if qqq_history is None:
+        qqq_history = []
     if metrics is None:
         metrics = {}
 
@@ -978,10 +1222,11 @@ def build_html(equity, initial, history, positions, signals_data,
             pass
 
     t_resumen    = _tab_resumen(equity, initial, regime, vix, wti, gold, dxy,
-                                history, spy_history, signals_data, metrics, age_hours)
+                                history, spy_history, signals_data, metrics, age_hours,
+                                perf_data=perf_data, qqq_history=qqq_history)
     t_posiciones = _tab_posiciones(positions)
     t_senales    = _tab_senales(signals_data)
-    t_mercado    = _tab_mercado(signals_data)
+    t_mercado    = _tab_mercado(signals_data, discovery_data=discovery_data)
 
     return f"""<!DOCTYPE html>
 <html lang="es">
@@ -1092,32 +1337,60 @@ def generate() -> None:
     except Exception as e:
         logger.warning("Portfolio history no disponible: %s", e)
 
-    # SPY benchmark (normalized to portfolio start)
+    # SPY + QQQ benchmarks (con cache de 1h para no re-descargar en cada refresh)
     spy_history: list[dict] = []
-    if len(history) >= 2:
+    qqq_history: list[dict] = []
+    bench_cache_path = BASE_DIR / "signals" / "benchmarks_cache.json"
+
+    def _load_bench_cache() -> dict:
+        if bench_cache_path.exists():
+            try:
+                data = json.loads(bench_cache_path.read_text(encoding="utf-8"))
+                age_s = (datetime.now().timestamp() - data.get("ts", 0))
+                if age_s < 3600:  # cache válido por 1h
+                    return data
+            except Exception:
+                pass
+        return {}
+
+    def _save_bench_cache(spy: list, qqq: list) -> None:
         try:
-            import yfinance as yf
-            spy_df = yf.download("SPY", period="1mo", progress=False, auto_adjust=True)
-            if not spy_df.empty:
-                # Manejar multi-index de yfinance (columna Close puede ser Series o DataFrame)
-                close_col = spy_df["Close"]
-                if hasattr(close_col, "squeeze"):
-                    close_col = close_col.squeeze()
-                first_equity = history[0]["equity"]
-                spy_vals = close_col.dropna().values
-                spy_idx  = close_col.dropna().index
-                if len(spy_vals) >= 2:
-                    spy_start = float(spy_vals[0])
-                    spy_history = [
-                        {"ts": int(ts.timestamp()), "equity": float(v) / spy_start * first_equity}
-                        for ts, v in zip(spy_idx, spy_vals)
-                    ]
-                    logger.info("SPY benchmark: %d puntos cargados", len(spy_history))
-        except Exception as e:
-            logger.warning("SPY benchmark no disponible: %s", e)
+            bench_cache_path.write_text(
+                json.dumps({"ts": datetime.now().timestamp(), "spy": spy, "qqq": qqq}),
+                encoding="utf-8",
+            )
+        except Exception:
+            pass
+
+    if len(history) >= 2:
+        cached = _load_bench_cache()
+        if cached.get("spy") and cached.get("qqq"):
+            spy_history = cached["spy"]
+            qqq_history = cached["qqq"]
+            logger.info("Benchmarks cargados desde cache (%d SPY, %d QQQ)", len(spy_history), len(qqq_history))
+        else:
+            try:
+                import yfinance as yf
+                bench_df = yf.download("SPY QQQ", period="1mo", progress=False, auto_adjust=True)
+                if not bench_df.empty:
+                    close = bench_df["Close"]
+                    if hasattr(close, "squeeze") and close.ndim == 1:
+                        close = close.to_frame()
+                    for ticker, hist_list in [("SPY", spy_history), ("QQQ", qqq_history)]:
+                        if ticker in close.columns:
+                            col = close[ticker].dropna()
+                            if len(col) >= 2:
+                                base = float(col.iloc[0])
+                                for ts, v in zip(col.index, col.values):
+                                    hist_list.append({"ts": int(ts.timestamp()), "equity": float(v) / base})
+                    # Normalizar las listas (equity = ratio, no $ absolutos)
+                    logger.info("Benchmarks descargados: %d SPY, %d QQQ", len(spy_history), len(qqq_history))
+                    _save_bench_cache(spy_history, qqq_history)
+            except Exception as e:
+                logger.warning("Benchmarks no disponibles: %s", e)
 
     # Metrics
-    metrics = _calc_metrics(history, spy_history)
+    metrics = _calc_metrics(history, spy_history, qqq_history)
     if metrics:
         logger.info("Metricas: Sortino=%.2f MaxDD=%.2f%% Alpha1M=%s",
                     metrics.get("sortino",0), metrics.get("max_dd",0),
@@ -1131,9 +1404,53 @@ def generate() -> None:
         except Exception:
             pass
 
+    # Fix radar prices: re-download live 1D move for top radar tickers
+    radar_entries = (signals_data.get("radar") or {}).get("entries", [])
+    if radar_entries:
+        try:
+            import yfinance as yf
+            radar_tickers = [e.get("ticker", "") for e in radar_entries if e.get("ticker")]
+            if radar_tickers:
+                prices_df = yf.download(" ".join(radar_tickers), period="2d", progress=False, auto_adjust=True)
+                close = prices_df.get("Close") if not prices_df.empty else None
+                if close is not None:
+                    if hasattr(close, "squeeze") and close.ndim == 1:
+                        close = close.to_frame(name=radar_tickers[0])
+                    for entry in radar_entries:
+                        t = entry.get("ticker", "")
+                        if t in close.columns:
+                            col = close[t].dropna()
+                            if len(col) >= 2:
+                                prev_close = float(col.iloc[-2])
+                                last_close = float(col.iloc[-1])
+                                entry["pct_1d"] = (last_close - prev_close) / prev_close if prev_close else 0
+                                entry["move_pct"] = entry["pct_1d"]
+                logger.info("Radar: precios live actualizados para %d tickers", len(radar_tickers))
+        except Exception as e:
+            logger.debug("Radar live prices no disponibles: %s", e)
+
+    # Performance log (semanal vs SPY)
+    perf_data: dict | None = None
+    perf_path = BASE_DIR / "signals" / "performance_log.json"
+    if perf_path.exists():
+        try:
+            perf_data = json.loads(perf_path.read_text(encoding="utf-8"))
+        except Exception:
+            pass
+
+    # Discovery (candidatos fuera del universo)
+    discovery_data: dict | None = None
+    disc_path = BASE_DIR / "signals" / "discovery.json"
+    if disc_path.exists():
+        try:
+            discovery_data = json.loads(disc_path.read_text(encoding="utf-8"))
+        except Exception:
+            pass
+
     initial = signals_data.get("capital_usd", PARAMS.paper_capital_usd)
     html    = build_html(equity, initial, history, positions, signals_data,
-                         spy_history=spy_history, metrics=metrics)
+                         spy_history=spy_history, qqq_history=qqq_history,
+                         metrics=metrics, perf_data=perf_data, discovery_data=discovery_data)
     OUT_PATH.write_text(html, encoding="utf-8")
     logger.info("Dashboard generado -> %s (%d bytes)", OUT_PATH, len(html))
 

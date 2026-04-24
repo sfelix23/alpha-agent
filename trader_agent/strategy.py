@@ -131,6 +131,18 @@ def _vix_multiplier(vix: float) -> float:
     return 1.0
 
 
+def _regime_multiplier(regime: str) -> float:
+    """Más capital en bull (capturar upside), menos en bear (proteger capital)."""
+    r = regime.lower()
+    if r == "bull":
+        return 1.10
+    if r in ("sideways", "lateral", "neutral"):
+        return 0.85
+    if r == "bear":
+        return 0.65
+    return 1.0
+
+
 # ─────────────────────────────────────────────────────────────────────────────
 # Execute
 # ─────────────────────────────────────────────────────────────────────────────
@@ -178,7 +190,18 @@ def execute(broker: BrokerBase, *, dry_run: bool = True, max_capital: float | No
     else:
         logger.info("VIX %.1f → sizing normal (100%%)", vix)
 
-    fills: list[dict] = [{"status": "meta", "vix": vix, "vix_mult": vix_mult}]
+    # ── Regime-adaptive sizing ──────────────────────────────────────────────
+    macro = signals.macro or {}
+    regime = macro.get("regime", "unknown")
+    regime_mult = _regime_multiplier(regime)
+    if regime_mult != 1.0:
+        capital_adj *= regime_mult
+        logger.info(
+            "Regime '%s' → multiplicador %.0f%% → capital ajustado $%.2f",
+            regime, regime_mult * 100, capital_adj,
+        )
+
+    fills: list[dict] = [{"status": "meta", "vix": vix, "vix_mult": vix_mult, "regime": regime, "regime_mult": regime_mult}]
 
     # ── Equity (LP + CP) ────────────────────────────────────────────
     target = build_target_portfolio(signals, capital_adj)
@@ -191,6 +214,10 @@ def execute(broker: BrokerBase, *, dry_run: bool = True, max_capital: float | No
         "Equity plan: %d órdenes (capital=$%.2f, ya invertido=$%.2f, headroom=$%.2f)",
         len(equity_intents), capital, invested, capital - invested,
     )
+
+    # ── Scale-in: nuevas posiciones entran al 60% ─────────────────────────────
+    held_tickers = {p.ticker for p in positions}
+    equity_intents = _apply_scale_in(equity_intents, held_tickers)
 
     # ── Risk Arbiter: debate bull/bear antes de BUY ──────────────────────────
     equity_intents = _apply_risk_debate(signals, equity_intents, positions, capital_adj)
@@ -206,6 +233,32 @@ def execute(broker: BrokerBase, *, dry_run: bool = True, max_capital: float | No
     return fills
 
 
+def _apply_scale_in(intents: list[TradeIntent], held_tickers: set[str]) -> list[TradeIntent]:
+    """
+    Nuevas posiciones (no en cartera actual) entran al 60% del notional.
+    Reduce slippage y riesgo de entrada en breakouts falsos.
+    El 40% restante se añade en el siguiente ciclo si la posición confirma.
+    """
+    result = []
+    for intent in intents:
+        if intent.side.upper() == "BUY" and intent.ticker not in held_tickers:
+            scaled = intent.notional * 0.60
+            logger.info(
+                "Scale-in NEW %s: $%.0f → $%.0f (60%% entrada inicial)",
+                intent.ticker, intent.notional, scaled,
+            )
+            intent = TradeIntent(
+                ticker=intent.ticker,
+                side=intent.side,
+                notional=scaled,
+                horizon=intent.horizon,
+                stop_loss=intent.stop_loss,
+                take_profit=intent.take_profit,
+            )
+        result.append(intent)
+    return result
+
+
 def _apply_risk_debate(
     signals: Signals,
     intents: list[TradeIntent],
@@ -215,6 +268,10 @@ def _apply_risk_debate(
     """
     Filtra y ajusta intents BUY via debate bull/bear (Claude Haiku).
     SELL/SELL_SHORT pasan sin modificación.
+
+    Modo BULL: los trades CP siempre pasan (momentum rápido, latencia de API daña).
+    LP BULL: solo llama al arbiter si conviction == BAJA y sentiment negativo.
+    Modo BEAR/SIDEWAYS: arbiter completo sin excepción.
     """
     try:
         from alpha_agent.news.claude_analyst import risk_debate
@@ -226,8 +283,9 @@ def _apply_risk_debate(
     }
 
     macro = signals.macro or {}
+    regime = macro.get("regime", "unknown").lower()
     portfolio_ctx = {
-        "regime": macro.get("regime", "unknown"),
+        "regime": regime,
         "vix": float((macro.get("prices") or {}).get("vix", 18)),
         "current_positions": [p.ticker for p in positions],
         "capital_usd": capital,
@@ -244,6 +302,29 @@ def _apply_risk_debate(
             filtered.append(intent)
             continue
 
+        horizon = getattr(sig, "horizon", intent.horizon or "")
+
+        # ── Modo BULL: arbiter selectivo ─────────────────────────────────────
+        if regime == "bull":
+            # CP trades: pasan directo (momentum rápido, no frenar con API)
+            if horizon == "CP":
+                logger.info("Risk Arbiter BYPASS (bull+CP) %s", intent.ticker)
+                filtered.append(intent)
+                continue
+
+            # LP trades: solo detener si conviction BAJA + sentimiento negativo
+            if horizon == "LP":
+                conviction = (sig.thesis or {}).get("conviction", "MEDIA")
+                sentiment = float(
+                    ((sig.thesis or {}).get("fundamental") or {}).get("sentiment_score", 0) or 0
+                )
+                if not (conviction == "BAJA" and sentiment < -0.3):
+                    logger.info("Risk Arbiter PROCEED (bull+LP) %s — conviction=%s", intent.ticker, conviction)
+                    filtered.append(intent)
+                    continue
+                # BAJA + negativo → sí pasa por el debate completo
+
+        # ── Debate completo (BEAR/SIDEWAYS o LP BAJA en BULL) ────────────────
         debate = risk_debate(
             ticker=intent.ticker,
             signal={
@@ -411,7 +492,12 @@ def summarize_fills(fills: list[dict]) -> str:
     header = f"*EJECUTOR* — {len(real_fills)} ordenes/intents"
     if vix is not None and vix_mult is not None and vix_mult != 1.0:
         direction = "reducido" if vix_mult < 1 else "ampliado"
-        header += f" | VIX {vix:.0f} -> sizing {direction} al {vix_mult*100:.0f}%"
+        header += f" | VIX {vix:.0f} → sizing {direction} al {vix_mult*100:.0f}%"
+    regime = meta.get("regime", "unknown")
+    regime_mult = meta.get("regime_mult", 1.0)
+    if regime_mult != 1.0:
+        direction = "ampliado" if regime_mult > 1 else "reducido"
+        header += f" | {regime.upper()} → capital {direction} al {regime_mult*100:.0f}%"
     lines = [header]
     fills = real_fills
     for f in fills:
