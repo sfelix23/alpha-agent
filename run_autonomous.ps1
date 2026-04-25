@@ -58,7 +58,7 @@ except Exception as e:
 $capitalArg = ""
 if ($equityResult -match '^\d') {
     $equity = [double]$equityResult
-    Log "Equity actual en Alpaca: $$equity USD (reinversion automatica)"
+    Log "Equity actual en Alpaca: `$$equity USD (reinversion automatica)"
     $capitalArg = "--capital $equity"
 } else {
     Log "No se pudo obtener equity ($equityResult). Usando capital default."

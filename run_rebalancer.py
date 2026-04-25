@@ -82,8 +82,9 @@ def _spy_weekly_return() -> float | None:
         import yfinance as yf
         spy = yf.download("SPY", period="5d", progress=False, auto_adjust=True)
         if spy is not None and len(spy) >= 2:
-            first = float(spy["Close"].iloc[0])
-            last  = float(spy["Close"].iloc[-1])
+            close = spy["Close"].squeeze()
+            first = float(close.iloc[0])
+            last  = float(close.iloc[-1])
             return (last - first) / first * 100 if first > 0 else None
     except Exception as e:
         logger.warning("SPY weekly return: %s", e)
