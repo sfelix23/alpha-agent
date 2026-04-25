@@ -152,6 +152,32 @@ def _compute_chandelier_stop(ticker: str) -> float | None:
         return None
 
 
+def _scan_next_cp_opportunity(closed_ticker: str, pnl_pct: float) -> str | None:
+    """
+    Después de un cierre por TP en CP, busca inmediatamente el próximo trade.
+    Corre el Discovery Agent rápido y devuelve el mejor candidato.
+    Capital rotation: el capital no duerme ni una hora.
+    """
+    try:
+        from alpha_agent.discovery.screener import run_discovery
+        next_picks = run_discovery(max_new=3)
+        if not next_picks:
+            return None
+        best = next_picks[0]
+        logger.info("Capital rotation: %s cerró en TP → próxima oportunidad: %s", closed_ticker, best)
+        gain_str = f"+{pnl_pct:.1f}%" if pnl_pct > 0 else f"{pnl_pct:.1f}%"
+        return (
+            f"\n🔄 *CAPITAL ROTATION*\n"
+            f"  {closed_ticker} cerró con {gain_str}\n"
+            f"  Próximo CP candidato: *{best}*"
+            + (f" | también: {', '.join(next_picks[1:])}" if len(next_picks) > 1 else "")
+            + "\n  Capital disponible para reutilizar hoy."
+        )
+    except Exception as e:
+        logger.debug("_scan_next_cp_opportunity: %s", e)
+        return None
+
+
 def main():
     parser = argparse.ArgumentParser(description="Monitor intradía de posiciones.")
     parser.add_argument("--live", action="store_true", help="Ejecutar cierres reales en Alpaca.")
@@ -360,6 +386,9 @@ def main():
                 logger.warning(log_msg)
                 alerts.append(f"⚠️ *{ticker}*: {reason} | P&L ${unrealized_pnl:+.2f}")
 
+                # Flag si el cierre es por TP (capital liberado listo para rotar)
+                is_tp_close = action == "CLOSE" and take_profit and current >= take_profit
+
                 if args.live and not args.dry_run:
                     try:
                         from alpaca.trading.requests import MarketOrderRequest
@@ -375,6 +404,15 @@ def main():
                         label = "SELL" if action == "CLOSE" else "SELL HALF"
                         closes.append(f"{ticker} ({reason[:30]})")
                         alerts.append(f"  ✅ {label} enviado: {sell_qty:.4f} {ticker}")
+
+                        # Capital rotation: cuando cierra por TP buscar inmediatamente el próximo trade
+                        if is_tp_close:
+                            try:
+                                _rotation_alert = _scan_next_cp_opportunity(ticker, pnl_pct)
+                                if _rotation_alert:
+                                    alerts.append(_rotation_alert)
+                            except Exception as _re:
+                                logger.debug("Capital rotation scan: %s", _re)
                     except Exception as e:
                         alerts.append(f"  ❌ Error cerrando {ticker}: {e}")
                         logger.error("Error cerrando %s: %s", ticker, e)

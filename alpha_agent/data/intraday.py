@@ -132,3 +132,51 @@ def fetch_intraday_signals(tickers: list[str]) -> dict[str, float]:
         log.info("Intraday top CP: %s", [(t, f"{s:+.2f}") for t, s in top])
 
     return out
+
+
+_PREMARKET_CACHE: dict[str, tuple[float, datetime]] = {}
+_PREMARKET_TTL_MIN = 30
+
+
+def get_premarket_movers(tickers: list[str]) -> dict[str, float]:
+    """
+    Detecta stocks con gaps pre-market significativos.
+
+    Retorna {ticker: gap_pct} para stocks con gap > ±2%.
+    Un gap positivo > 2% = runner matutino → bonus CP en scoring.
+    Un gap negativo < -3% = posible dump → penalización.
+
+    Falla silenciosamente si no hay datos pre-market.
+    """
+    now = datetime.now(tz=timezone.utc)
+    out: dict[str, float] = {}
+
+    try:
+        import yfinance as yf
+    except ImportError:
+        return out
+
+    for ticker in tickers:
+        if ticker in _PREMARKET_CACHE:
+            gap, ts = _PREMARKET_CACHE[ticker]
+            if (now - ts).total_seconds() < _PREMARKET_TTL_MIN * 60:
+                out[ticker] = gap
+                continue
+
+        try:
+            info = yf.Ticker(ticker).info or {}
+            pre = info.get("preMarketPrice")
+            prev_close = info.get("regularMarketPreviousClose") or info.get("previousClose")
+            if pre and prev_close and prev_close > 0:
+                gap = (pre - prev_close) / prev_close
+                _PREMARKET_CACHE[ticker] = (gap, now)
+                out[ticker] = gap
+        except Exception:
+            pass
+
+    movers = {t: g for t, g in out.items() if abs(g) >= 0.02}
+    if movers:
+        sorted_m = sorted(movers.items(), key=lambda x: x[1], reverse=True)
+        log.info("Pre-market gaps: %s", [(t, f"{g:+.1%}") for t, g in sorted_m[:5]])
+
+    return out

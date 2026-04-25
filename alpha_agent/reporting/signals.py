@@ -153,10 +153,23 @@ def _make_signal(
     stop_val = float(stop) if stop is not None and not (isinstance(stop, float) and np.isnan(stop)) else None
 
     if horizon == "LP":
-        tp = round(price * 1.15, 2) if price else None
+        # LP: TP dinámico por beta — alta convicción merece más upside
+        beta = float(quant_row.get("beta", 1.0) or 1.0)
+        tp_pct = 0.22 if beta >= 1.5 else (0.18 if beta >= 1.0 else 0.14)
+        tp = round(price * (1 + tp_pct), 2) if price else None
     else:
-        risk = (price - stop_val) if (stop_val and price) else 0
-        tp = round(price + 2 * risk, 2) if risk > 0 else None
+        # CP: R/R asimétrico — max -4% de pérdida, min +8% de ganancia
+        # Con $1600 y 1 posición CP, cada % importa → reglas duras
+        min_stop = price * 0.96 if price else None   # -4% máximo riesgo
+        if stop_val and min_stop:
+            stop_val = max(stop_val, min_stop)        # el más alto (tighter)
+        elif min_stop:
+            stop_val = round(min_stop, 2)
+
+        risk = (price - stop_val) if (stop_val and price) else price * 0.04
+        atr_tp = price + 2.5 * risk                  # 2.5:1 R/R mínimo
+        min_tp = price * 1.08                         # +8% mínimo
+        tp = round(max(atr_tp, min_tp), 2) if price else None
 
     return Signal(
         ticker=ticker,

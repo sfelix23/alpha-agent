@@ -111,6 +111,16 @@ def _get_intraday_signals(tickers: list[str]) -> dict[str, float]:
         return {t: 0.0 for t in tickers}
 
 
+def _get_premarket_gaps(tickers: list[str]) -> dict[str, float]:
+    """Gap pre-market para detectar runners matutinos. Falla silenciosamente."""
+    try:
+        from alpha_agent.data.intraday import get_premarket_movers
+        return get_premarket_movers(tickers)
+    except Exception as exc:
+        logger.debug("premarket gaps no disponible (%s)", exc)
+        return {}
+
+
 def _get_quality_bonus(tickers: list[str]) -> dict[str, float]:
     """
     Quality factor bonus para LP y CP.
@@ -224,6 +234,7 @@ def build_scores(
     closes: pd.DataFrame | None = None,
     regime: str = "unknown",
     prev_sentiment: dict[str, float] | None = None,
+    sentiment_deltas: dict[str, float] | None = None,
     insider_signal: dict[str, float] | None = None,
     fear_greed: int | None = None,
 ) -> dict[str, pd.DataFrame]:
@@ -236,6 +247,7 @@ def build_scores(
     sector_boost    = _get_sector_boost(all_tickers)
     earnings_soon   = _get_earnings_soon(all_tickers)
     intraday_scores = _get_intraday_signals(all_tickers)
+    premarket_gaps  = _get_premarket_gaps(all_tickers)
 
     # ── LONG TERM ─────────────────────────────────────────────────────────────
     lp = df[
@@ -395,6 +407,21 @@ def build_scores(
                 {t: f"{v:+.2f}" for t, v in nonzero.items()},
             )
 
+    # Sentiment delta: CAMBIO en sentimiento entre runs — mejor predictor que el nivel
+    # Delta > 0.20 = dinero institucional entrando → fuerte señal de entrada CP
+    # Delta < -0.20 = deterioro = salida anticipada
+    if sentiment_deltas:
+        delta_series = pd.Series(
+            [float(sentiment_deltas.get(t, 0.0)) for t in st.index], index=st.index
+        ).clip(-1.0, 1.0)
+        score_st += 0.18 * delta_series
+        significant = delta_series[delta_series.abs() > 0.15]
+        if not significant.empty:
+            logger.info(
+                "Sentiment delta signal: %s",
+                {t: f"{v:+.2f}" for t, v in significant.items()},
+            )
+
     # Boost sectorial CP (más agresivo que LP)
     score_st *= pd.Series(
         [sector_boost.get(t, 1.0) for t in st.index], index=st.index
@@ -405,6 +432,23 @@ def build_scores(
         [intraday_scores.get(t, 0.0) for t in st.index], index=st.index
     )
     score_st += 0.20 * intraday_series   # score ya está en [-1, +1]
+
+    # Pre-market gap bonus: gap >3% = runner matutino con catalizador overnight
+    # Mejor señal de CP del día — ocurre ANTES que el resto del mercado lo vea
+    if premarket_gaps:
+        for t, gap in premarket_gaps.items():
+            if t in st.index:
+                if gap >= 0.05:          # gap +5%+ → señal muy fuerte
+                    score_st[t] += 0.40
+                    logger.info("Pre-market gap STRONG %s: %+.1f%% → +0.40 score", t, gap * 100)
+                elif gap >= 0.03:        # gap +3-5% → señal moderada
+                    score_st[t] += 0.25
+                    logger.info("Pre-market gap %s: %+.1f%% → +0.25 score", t, gap * 100)
+                elif gap >= 0.02:        # gap +2-3% → señal leve
+                    score_st[t] += 0.12
+                elif gap <= -0.03:       # gap negativo → penalizar
+                    score_st[t] -= 0.20
+                    logger.info("Pre-market gap DOWN %s: %+.1f%% → -0.20 score", t, gap * 100)
 
     # Insider buy bonus CP: más impacto que LP (señal de momentum inminente)
     if insider_signal:

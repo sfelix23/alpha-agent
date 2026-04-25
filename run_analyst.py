@@ -88,9 +88,11 @@ def main() -> None:
     log.info("INICIANDO AGENTE ALPHA — %s", datetime.now().isoformat(timespec="seconds"))
     log.info("Capital paper: $%.2f USD", capital)
 
-    # Cargar sentiment cache del run anterior para sentiment carry en scoring
+    # Cargar sentiment cache del run anterior para carry + delta
+    # Delta = cambio en sentimiento entre runs consecutivos → predice momentum mejor que el nivel
     _SENTIMENT_CACHE = Path("signals/sentiment_cache.json")
     prev_sentiment: dict[str, float] = {}
+    sentiment_deltas: dict[str, float] = {}
     try:
         if _SENTIMENT_CACHE.exists():
             cache = json.loads(_SENTIMENT_CACHE.read_text(encoding="utf-8"))
@@ -98,7 +100,15 @@ def main() -> None:
             age_hours = (datetime.now() - cache_ts).total_seconds() / 3600
             if age_hours < 48:
                 prev_sentiment = {k: float(v) for k, v in cache.get("scores", {}).items()}
-                log.info("Sentiment carry: %d tickers (%.0fh)", len(prev_sentiment), age_hours)
+                # Deltas guardados del run anterior (scores_prev - scores_prevprev)
+                sentiment_deltas = {k: float(v) for k, v in cache.get("deltas", {}).items()}
+                if prev_sentiment:
+                    log.info("Sentiment carry: %d tickers (%.0fh)", len(prev_sentiment), age_hours)
+                if sentiment_deltas:
+                    improving = {t: d for t, d in sentiment_deltas.items() if d > 0.20}
+                    if improving:
+                        log.info("Sentiment delta mejorando (de run anterior): %s",
+                                 {t: f"{d:+.2f}" for t, d in improving.items()})
             else:
                 log.info("Sentiment cache descartado (%.0fh > 48h)", age_hours)
     except Exception as exc:
@@ -193,6 +203,7 @@ def main() -> None:
         closes=closes,
         regime=macro.regime,
         prev_sentiment=prev_sentiment,
+        sentiment_deltas=sentiment_deltas if sentiment_deltas else None,
         insider_signal=insider_signal if insider_signal else None,
         fear_greed=fg_value,
     )
@@ -346,19 +357,37 @@ def main() -> None:
     path = signals.save()
     log.info("Señales guardadas en %s", path)
 
-    # Guardar sentiment scores actuales para el próximo run (sentiment carry)
+    # Guardar sentiment scores actuales para el próximo run (carry + delta)
     current_sentiment: dict[str, float] = {}
     for sig in signals.long_term + signals.short_term:
         sc = (sig.thesis or {}).get("fundamental", {}).get("sentiment_score")
         if sc is not None:
             current_sentiment[sig.ticker] = float(sc)
+
+    # Calcular deltas del run actual para que el PRÓXIMO run los use como señal
+    new_deltas: dict[str, float] = {}
+    if current_sentiment and prev_sentiment:
+        for t, curr in current_sentiment.items():
+            if t in prev_sentiment:
+                new_deltas[t] = curr - prev_sentiment[t]
+        improving = {t: d for t, d in new_deltas.items() if d > 0.20}
+        deteriorating = {t: d for t, d in new_deltas.items() if d < -0.20}
+        if improving:
+            log.info("Sentiment mejoró hoy (se usará mañana): %s", {t: f"{d:+.2f}" for t, d in improving.items()})
+        if deteriorating:
+            log.info("Sentiment empeoró hoy: %s", {t: f"{d:+.2f}" for t, d in deteriorating.items()})
+
     if current_sentiment:
         try:
             _SENTIMENT_CACHE.write_text(
-                json.dumps({"timestamp": datetime.now().isoformat(), "scores": current_sentiment}, indent=2),
+                json.dumps({
+                    "timestamp": datetime.now().isoformat(),
+                    "scores": current_sentiment,
+                    "deltas": new_deltas,   # deltas actuales → disponibles en próximo run
+                }, indent=2),
                 encoding="utf-8",
             )
-            log.info("Sentiment cache guardado: %d tickers → %s", len(current_sentiment), list(current_sentiment))
+            log.info("Sentiment cache guardado: %d tickers, %d deltas", len(current_sentiment), len(new_deltas))
         except Exception as exc:
             log.warning("No se pudo guardar sentiment cache: %s", exc)
 
