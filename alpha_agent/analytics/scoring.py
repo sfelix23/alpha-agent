@@ -167,7 +167,46 @@ def _get_quality_bonus(tickers: list[str]) -> dict[str, float]:
                 except Exception:
                     pass
 
-                bonuses[t] = bonus
+                # EPS Revision Momentum — factor más predictivo a 1-3 meses
+                try:
+                    from alpha_agent.analytics.fundamental import get_eps_revision
+                    eps = get_eps_revision(t)
+                    rev30 = eps.get("revision_30d", 0.0)
+                    if rev30 > 10:        # estimados subieron >10% en 30d — muy fuerte
+                        bonus += 0.30
+                    elif rev30 > 5:       # subieron >5%
+                        bonus += 0.20
+                    elif rev30 > 2:       # mejora moderada
+                        bonus += 0.10
+                    elif rev30 < -10:     # recorte severo → evitar
+                        bonus -= 0.30
+                    elif rev30 < -5:
+                        bonus -= 0.20
+                    elif rev30 < -2:
+                        bonus -= 0.10
+                except Exception:
+                    pass
+
+                # Valuación relativa: penalizar caros, premiar baratos (P/E vs sector)
+                try:
+                    from alpha_agent.analytics.fundamental import get_valuation_signal
+                    val = get_valuation_signal(t)
+                    vsig = val.get("signal", "fair")
+                    if vsig == "cheap":
+                        bonus += 0.12      # calidad barata → QMom premium
+                    elif vsig == "expensive":
+                        bonus -= 0.15      # caro vs sector → precaución
+                    # FCF yield alto: generación de caja real
+                    fcf_y = val.get("fcf_yield")
+                    if fcf_y and fcf_y > 5:
+                        bonus += 0.08
+                    elif fcf_y and fcf_y > 2:
+                        bonus += 0.04
+                except Exception:
+                    pass
+
+                # Cap: max +0.80 / min -0.60 para no dominar el z-score base
+                bonuses[t] = max(-0.60, min(0.80, bonus))
             except Exception:
                 bonuses[t] = 0.0
         if bonuses:
@@ -205,21 +244,27 @@ def build_scores(
     ].copy()
     lp = lp.sort_values("sharpe", ascending=False)
 
-    # Score base: Sharpe + alpha Jensen
-    lp["score_lp"] = _zscore(lp["sharpe"]) + 0.5 * _zscore(lp["alpha_jensen"])
+    # Score base: Sharpe + alpha Jensen + Information Ratio (consistencia del alpha)
+    ir_term = _zscore(lp["information_ratio"].fillna(0)) if "information_ratio" in lp.columns else 0
+    lp["score_lp"] = _zscore(lp["sharpe"]) + 0.5 * _zscore(lp["alpha_jensen"]) + 0.3 * ir_term
+
+    # Momentum 6m ajustado (excluye reversal del último mes) — factor académico #1
+    if "ret_6m" in lp.columns and "ret_1m" in lp.columns:
+        ret_6m_lp = lp["ret_6m"].fillna(0) - lp["ret_1m"].fillna(0)
+        lp["score_lp"] += 0.25 * _zscore(ret_6m_lp)
 
     # Bonus EMA50: solo activos en tendencia alcista
     if "above_ema50" in lp.columns:
-        lp["score_lp"] += 0.3 * lp["above_ema50"].fillna(0)
+        lp["score_lp"] += 0.2 * lp["above_ema50"].fillna(0)
 
     # Bonus MACD bullish
     if "macd_bullish" in lp.columns:
-        lp["score_lp"] += 0.2 * lp["macd_bullish"].fillna(0)
+        lp["score_lp"] += 0.15 * lp["macd_bullish"].fillna(0)
 
     # Bonus volumen: convicción institucional
     if "vol_ratio" in lp.columns:
         vol_signal = (lp["vol_ratio"].fillna(1.0) - 1.0).clip(lower=0)
-        lp["score_lp"] += 0.15 * _zscore(vol_signal)
+        lp["score_lp"] += 0.10 * _zscore(vol_signal)
 
     # Boost por rotación sectorial
     lp["score_lp"] *= lp.index.map(lambda t: sector_boost.get(t, 1.0))
@@ -267,14 +312,20 @@ def build_scores(
     # ── SHORT TERM ────────────────────────────────────────────────────────────
     st = df.copy()
 
-    # Score base: momentum ponderado
+    # Score base: momentum multi-timeframe ponderado
+    # 6-month momentum (ret_6m) es el factor más documentado en la literatura quant
+    # (Jegadeesh & Titman 1993) — excluimos el último mes para evitar reversal de CT
     rsi_signal   = (PARAMS.rsi_oversold - st["rsi"]).clip(lower=0)
     high_penalty = st["dist_52w_high"].clip(upper=0).abs()
 
+    # ret_6m excluye ret_1m para evitar reversal de corto plazo
+    ret_6m_adj = st["ret_6m"].fillna(0) - st["ret_1m"].fillna(0) if "ret_6m" in st.columns else pd.Series(0.0, index=st.index)
+
     score_st = (
-        0.40 * _zscore(st["ret_1m"].fillna(0))
-        + 0.20 * _zscore(st["ret_3m"].fillna(0))
-        + 0.15 * _zscore(rsi_signal)
+        0.30 * _zscore(st["ret_1m"].fillna(0))
+        + 0.25 * _zscore(ret_6m_adj)               # momentum 2-6m (factor probado)
+        + 0.15 * _zscore(st["ret_3m"].fillna(0))
+        + 0.12 * _zscore(rsi_signal)
         + 0.10 * _zscore(st["alpha_jensen"].clip(lower=0))
         - 0.05 * _zscore(-high_penalty)
     )
@@ -295,6 +346,19 @@ def build_scores(
     # Bonus golden cross
     if "golden_cross" in st.columns:
         score_st += 0.10 * st["golden_cross"].fillna(0)
+
+    # Bollinger Squeeze + breakout: compresión seguida de expansión = señal de ruptura fuerte
+    if "bb_squeeze" in st.columns and "breakout" in st.columns:
+        squeeze_break = (st["bb_squeeze"].fillna(0) == 1) & (st["breakout"].fillna(0) == 1)
+        score_st += 0.25 * squeeze_break.astype(float)
+
+    # Bollinger position cerca de banda inferior = potencial rebote (solo si no está cayendo)
+    if "bb_position" in st.columns and "ret_1m" in st.columns:
+        oversold_bounce = (
+            (st["bb_position"].fillna(0.5) < 0.20)
+            & (st["ret_1m"].fillna(0) > -0.10)  # no en free-fall
+        )
+        score_st += 0.12 * oversold_bounce.astype(float)
 
     # Penalización RSI sobrecomprado (no perseguir rallies tardíos)
     if "rsi" in st.columns:

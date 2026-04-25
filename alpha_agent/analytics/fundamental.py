@@ -171,6 +171,123 @@ def get_recent_upgrades(ticker: str, days: int = 7) -> dict:
         return {"recent_upgrade": False, "recent_downgrade": False, "firms": []}
 
 
+@lru_cache(maxsize=64)
+def get_eps_revision(ticker: str) -> dict:
+    """
+    EPS Revision Momentum — el factor más predictivo a 1-3 meses.
+
+    Compara el EPS forward estimate actual vs. hace 30 y 90 días.
+    Un alza de estimados implica que los analistas ven más earnings → precio sube.
+
+    Returns:
+        revision_30d: float — cambio % del estimado EPS en últimos 30 días
+        revision_90d: float — cambio % del estimado EPS en últimos 90 días
+        trend: "up" | "down" | "flat"
+        n_revisions: int — número de revisiones recientes
+    """
+    empty = {"revision_30d": 0.0, "revision_90d": 0.0, "trend": "flat", "n_revisions": 0}
+    try:
+        import yfinance as yf
+        t = yf.Ticker(ticker)
+
+        # earnings_trend tiene filas: 0q, +1q, 0y, +1y
+        # columnas incluyen: Current, 7daysAgo, 30daysAgo, 60daysAgo, 90daysAgo
+        trend_df = t.earnings_trend
+        if trend_df is None or trend_df.empty:
+            return empty
+
+        # Tomar fila del año actual (más estable que trimestral)
+        period_rows = trend_df[trend_df.get("period", pd.Series()).isin(["0y", "+1y"])] if "period" in trend_df.columns else trend_df
+        if period_rows.empty:
+            period_rows = trend_df.iloc[:2]
+
+        eps_cols = [c for c in ("avg", "current") if c in trend_df.columns]
+        ago30_cols = [c for c in ("30daysAgo",) if c in trend_df.columns]
+        ago90_cols = [c for c in ("90daysAgo",) if c in trend_df.columns]
+
+        if not eps_cols:
+            return empty
+
+        eps_now = pd.to_numeric(period_rows[eps_cols[0]], errors="coerce").mean()
+        rev30 = 0.0
+        rev90 = 0.0
+
+        if ago30_cols:
+            eps_30d = pd.to_numeric(period_rows[ago30_cols[0]], errors="coerce").mean()
+            if eps_30d and abs(eps_30d) > 0.01:
+                rev30 = round((eps_now - eps_30d) / abs(eps_30d) * 100, 1)
+
+        if ago90_cols:
+            eps_90d = pd.to_numeric(period_rows[ago90_cols[0]], errors="coerce").mean()
+            if eps_90d and abs(eps_90d) > 0.01:
+                rev90 = round((eps_now - eps_90d) / abs(eps_90d) * 100, 1)
+
+        if rev30 > 2:
+            trend_dir = "up"
+        elif rev30 < -2:
+            trend_dir = "down"
+        else:
+            trend_dir = "flat"
+
+        result = {"revision_30d": rev30, "revision_90d": rev90, "trend": trend_dir, "n_revisions": int(len(period_rows))}
+        if trend_dir != "flat":
+            logger.debug("EPS revision %s: 30d=%+.1f%% 90d=%+.1f%% → %s", ticker, rev30, rev90, trend_dir)
+        return result
+
+    except Exception as exc:
+        logger.debug("get_eps_revision(%s): %s", ticker, exc)
+        return empty
+
+
+@lru_cache(maxsize=64)
+def get_valuation_signal(ticker: str) -> dict:
+    """
+    Señal de valuación relativa vs. la mediana sectorial.
+
+    Usa P/E forward comparado con la mediana sectorial hardcoded.
+    Compara FCF yield vs. promedio histórico.
+
+    Returns:
+        pe_relative: float — ratio (pe_fwd / sector_median). <1 = barato, >1 = caro.
+        fcf_yield: float | None
+        signal: "cheap" | "fair" | "expensive"
+        sector_pe_median: float
+    """
+    try:
+        import yfinance as yf
+        t = yf.Ticker(ticker)
+        info = t.info or {}
+        pe_fwd = info.get("forwardPE")
+        sector = info.get("sector", "Other")
+        sector_median = _SECTOR_PE.get(sector, 18.0)
+
+        if not pe_fwd or sector_median == 0:
+            return {"pe_relative": None, "fcf_yield": None, "signal": "fair", "sector_pe_median": sector_median}
+
+        relative = round(pe_fwd / sector_median, 2)
+        if relative < 0.75:
+            signal = "cheap"
+        elif relative > 1.60:
+            signal = "expensive"
+        else:
+            signal = "fair"
+
+        market_cap = info.get("marketCap") or 0
+        fcf = info.get("freeCashflow") or 0
+        fcf_yield = round(fcf / market_cap * 100, 1) if market_cap > 0 and fcf else None
+
+        return {
+            "pe_relative": relative,
+            "fcf_yield": fcf_yield,
+            "signal": signal,
+            "sector_pe_median": sector_median,
+            "pe_forward": round(pe_fwd, 1),
+        }
+    except Exception as exc:
+        logger.debug("get_valuation_signal(%s): %s", ticker, exc)
+        return {"pe_relative": None, "fcf_yield": None, "signal": "fair", "sector_pe_median": 18.0}
+
+
 def format_for_claude(ticker: str, f: dict, *, quant: dict | None = None) -> str:
     """
     Formatea los datos fundamentales + quant para el prompt de Claude.

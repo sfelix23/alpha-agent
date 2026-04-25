@@ -28,8 +28,22 @@ logger = logging.getLogger(__name__)
 
 
 def _annualized_cov(closes: pd.DataFrame) -> pd.DataFrame:
+    """Covarianza anualizada con Ledoit-Wolf shrinkage cuando sklearn está disponible.
+
+    Ledoit-Wolf reduce el error de estimación en universos pequeños (<50 activos)
+    en ~30-40%. Clave para que Markowitz no sobre-concentre en activos con
+    baja covarianza histórica por azar.
+    """
     rets = np.log(closes / closes.shift(1)).dropna(how="all")
-    return rets.cov() * PARAMS.trading_days
+    try:
+        from sklearn.covariance import LedoitWolf  # type: ignore
+        lw = LedoitWolf().fit(rets.values)
+        cov_matrix = pd.DataFrame(lw.covariance_ * PARAMS.trading_days, index=rets.columns, columns=rets.columns)
+        logger.debug("Ledoit-Wolf shrinkage aplicado (n=%d, p=%d)", len(rets), len(rets.columns))
+        return cov_matrix
+    except ImportError:
+        logger.debug("sklearn no disponible — usando covarianza histórica estándar")
+        return rets.cov() * PARAMS.trading_days
 
 
 def optimize_portfolio(

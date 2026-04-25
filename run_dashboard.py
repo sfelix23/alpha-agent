@@ -149,12 +149,27 @@ def _tab_resumen(equity, initial, regime, vix, wti, gold, dxy,
         fresh_html = f'<div class="fresh-banner fresh-warn">⚠️ Senales de hace {age_hours:.0f}h — El dashboard puede no reflejar la sesion de hoy.</div>'
 
     # Hero KPI row
-    spy_badge = ""
-    if metrics.get("spy_ret_1m") is not None:
-        spy_badge = f'&nbsp;&middot;&nbsp;<span style="color:#7d8590">SPY {_pct(metrics["spy_ret_1m"])}</span>'
-
+    alpha_v   = metrics.get("alpha_1m")
+    spy_r     = metrics.get("spy_ret_1m")
+    port_r    = metrics.get("port_ret_1m", 0) or 0
     arr_v     = metrics.get("arr", 0) or 0
     win_rate  = metrics.get("win_rate", 0) or 0
+
+    spy_badge = ""
+    if spy_r is not None:
+        spy_badge = f'&nbsp;&middot;&nbsp;<span style="color:#7d8590">SPY {_pct(spy_r)}</span>'
+
+    # Alpha KPI: el número más importante — ¿le ganamos al índice?
+    if alpha_v is not None:
+        alpha_color = "#3fb950" if alpha_v > 0 else "#f85149"
+        alpha_kpi = f"""
+  <div class="kpi" style="border-left:3px solid {alpha_color};padding-left:12px">
+    <div class="kpi-lbl">Alpha vs SPY (1M)</div>
+    <div class="kpi-val" style="color:{alpha_color}">{_pct(alpha_v)}</div>
+    <div class="kpi-sub">Port {_pct(port_r)} · SPY {_pct(spy_r)}</div>
+  </div>"""
+    else:
+        alpha_kpi = ""
 
     kpis = f"""
 <div class="kpi-row">
@@ -163,6 +178,7 @@ def _tab_resumen(equity, initial, regime, vix, wti, gold, dxy,
     <div class="kpi-val kpi-hero-val" style="color:{pc}" id="kpi-equity">{_usd(equity)}</div>
     <div class="kpi-tag" style="background:{pbg};color:{pc}">{_usd(pnl)} &nbsp; {_pct(pnl_pct)} total{spy_badge}</div>
   </div>
+  {alpha_kpi}
   <div class="kpi">
     <div class="kpi-lbl">Regimen de Mercado</div>
     <div class="kpi-val" style="color:{rc}">{rl}</div>
@@ -378,19 +394,20 @@ def _pnl_calendar(history):
                   "Julio","Agosto","Septiembre","Octubre","Noviembre","Diciembre"][mo-1]
 
     month_d = {d:v for d,v in daily.items() if d.year==yr and d.month==mo}
-    total   = sum(v["pnl"] for v in month_d.values())
-    wins    = sum(1 for v in month_d.values() if v["pnl"]>=0)
+    total_pct = sum(v["pct"] for v in month_d.values())
+    total_pnl = sum(v["pnl"] for v in month_d.values())
+    wins    = sum(1 for v in month_d.values() if v["pct"]>=0)
     losses  = len(month_d) - wins
-    best    = max(month_d.values(), key=lambda v: v["pnl"], default=None)
-    worst   = min(month_d.values(), key=lambda v: v["pnl"], default=None)
+    best    = max(month_d.values(), key=lambda v: v["pct"], default=None)
+    worst   = min(month_d.values(), key=lambda v: v["pct"], default=None)
 
-    def cell_style(pnl):
-        if pnl > 0:
-            i = min(pnl/250, 1.0)
+    def cell_style(pct):
+        if pct > 0:
+            i = min(pct / 2.0, 1.0)   # satura en +2%
             r = int(10 + 30*i); g = int(55 + 130*i); b = int(25 + 30*i)
             return f"background:rgb({r},{g},{b})", "#ffffff"
-        elif pnl < 0:
-            i = min(abs(pnl)/250, 1.0)
+        elif pct < 0:
+            i = min(abs(pct) / 2.0, 1.0)  # satura en -2%
             r = int(55 + 170*i); g = int(15 + 20*i); b = int(15 + 20*i)
             return f"background:rgb({r},{g},{b})", "#ffffff"
         return "background:var(--s2)", "#7d8590"
@@ -409,12 +426,12 @@ def _pnl_calendar(history):
                 d    = date(yr, mo, day_n)
                 data = month_d.get(d)
                 if data:
-                    bg, tc2 = cell_style(data["pnl"])
-                    s = "+" if data["pnl"]>=0 else ""
+                    bg, tc2 = cell_style(data["pct"])
+                    s = "+" if data["pct"]>=0 else ""
                     rows += f"""<td class="cal-cell" style="{bg}">
   <span class="cal-n">{day_n}</span>
-  <span class="cal-p" style="color:{tc2}">{s}${data['pnl']:,.0f}</span>
-  <span class="cal-q" style="color:{tc2}">{s}{data['pct']:.1f}%</span>
+  <span class="cal-p" style="color:{tc2}">{s}{data['pct']:.2f}%</span>
+  <span class="cal-q" style="color:{tc2}">{s}${data['pnl']:,.0f}</span>
 </td>"""
                 elif dow >= 5:
                     rows += f'<td class="cal-cell cal-wk"><span class="cal-n">{day_n}</span></td>'
@@ -423,8 +440,9 @@ def _pnl_calendar(history):
             day_n += 1
         rows += "</tr>"
 
-    bh = f'<b style="color:#3fb950">+${best["pnl"]:,.0f}</b>' if best else "—"
-    wh = f'<b style="color:#f85149">${worst["pnl"]:,.0f}</b>' if worst else "—"
+    bh = f'<b style="color:#3fb950">+{best["pct"]:.2f}%</b>' if best else "—"
+    wh = f'<b style="color:#f85149">{worst["pct"]:.2f}%</b>' if worst else "—"
+    tc_total = _c(total_pnl)
 
     return f"""
 <div class="card">
@@ -433,7 +451,7 @@ def _pnl_calendar(history):
       <div class="card-title">Resultados Diarios — {month_name} {yr}</div>
       <div class="card-sub">{wins} dias positivos &middot; {losses} negativos &middot; Mejor: {bh} &middot; Peor: {wh}</div>
     </div>
-    <div class="pill" style="color:{_c(total)};font-size:1rem;font-weight:700">{"+" if total>=0 else ""}${total:,.0f}</div>
+    <div class="pill" style="color:{tc_total};font-size:1rem;font-weight:700">{"+" if total_pct>=0 else ""}{total_pct:.2f}%</div>
   </div>
   <div class="cal-wrap">
     <table class="cal-table">

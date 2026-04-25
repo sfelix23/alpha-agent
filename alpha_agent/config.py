@@ -116,9 +116,10 @@ class FinancialParams:
     rsi_overbought: float = 70.0
     atr_stop_multiple: float = 2.0        # stop loss = precio - 2*ATR
 
-    # Concentración — 7 LP high conviction, 5 CP momentum
-    top_n_long_term: int = 7
-    top_n_short_term: int = 5
+    # Concentración — 5 LP alta convicción (~$224/pos con $1600), 3 CP momentum
+    # Menos posiciones = más capital por pick = fills más limpios en paper
+    top_n_long_term: int = 5
+    top_n_short_term: int = 3
 
     # Bucket options
     top_n_bearish: int = 2                # hasta 2 puts direccionales simultáneos
