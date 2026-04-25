@@ -405,6 +405,20 @@ def main():
                         closes.append(f"{ticker} ({reason[:30]})")
                         alerts.append(f"  ✅ {label} enviado: {sell_qty:.4f} {ticker}")
 
+                        # Registrar cierre en SQLite para P&L real
+                        try:
+                            from alpha_agent.analytics.trade_db import log_trade_close
+                            closed_pnl = unrealized_pnl if action == "CLOSE" else unrealized_pnl / 2
+                            closed_pct = pnl_pct if action == "CLOSE" else pnl_pct / 2
+                            log_trade_close(
+                                ticker=ticker,
+                                exit_price=current,
+                                pnl_usd=round(closed_pnl, 2),
+                                pnl_pct=round(closed_pct, 2),
+                            )
+                        except Exception as _db_e:
+                            logger.debug("trade_db close log error: %s", _db_e)
+
                         # Capital rotation: cuando cierra por TP buscar inmediatamente el próximo trade
                         if is_tp_close:
                             try:

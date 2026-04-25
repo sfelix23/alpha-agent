@@ -92,10 +92,10 @@ def _get_sector_boost(tickers: list[str]) -> dict[str, float]:
 
 
 def _get_earnings_soon(tickers: list[str]) -> set[str]:
-    """Tickers con earnings en los próximos 3 días. Falla silenciosamente."""
+    """Tickers con earnings en los próximos 5 días. Falla silenciosamente."""
     try:
         from alpha_agent.analytics.earnings_guard import get_earnings_soon
-        return set(get_earnings_soon(tickers, days=3).keys())
+        return set(get_earnings_soon(tickers, days=5).keys())
     except Exception as exc:
         logger.debug("earnings_guard no disponible (%s)", exc)
         return set()
@@ -492,7 +492,7 @@ def build_scores(
         logger.warning("Earnings guard activo: %s", sorted(earnings_soon))
         lp["earnings_soon"] = lp.index.isin(earnings_soon).astype(int)
         st["earnings_soon"] = st.index.isin(earnings_soon).astype(int)
-        lp.loc[lp.index.isin(earnings_soon), "score_lp"] -= 0.5
+        lp.loc[lp.index.isin(earnings_soon), "score_lp"] -= 2.0  # bloquea efectivamente nuevas aperturas LP
         st.loc[st.index.isin(earnings_soon), "score_st"] -= 0.8
     else:
         lp["earnings_soon"] = 0

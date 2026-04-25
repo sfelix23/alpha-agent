@@ -158,15 +158,19 @@ def _make_signal(
         tp_pct = 0.22 if beta >= 1.5 else (0.18 if beta >= 1.0 else 0.14)
         tp = round(price * (1 + tp_pct), 2) if price else None
     else:
-        # CP: R/R asimétrico — max -4% de pérdida, min +8% de ganancia
-        # Con $1600 y 1 posición CP, cada % importa → reglas duras
-        min_stop = price * 0.96 if price else None   # -4% máximo riesgo
-        if stop_val and min_stop:
-            stop_val = max(stop_val, min_stop)        # el más alto (tighter)
-        elif min_stop:
-            stop_val = round(min_stop, 2)
+        # CP: stop ATR-adaptivo con rango [-3%, -8%]
+        # Piso -3%: no más apretado (evita whipsaw en stocks volátiles)
+        # Techo -8%: no más ancho (limita pérdida por trade)
+        # TP = 2.5×riesgo asumido, mínimo +8%
+        if price:
+            floor_stop = price * 0.92  # stop nunca más ancho que -8%
+            ceil_stop  = price * 0.97  # stop nunca más apretado que -3%
+            if stop_val:
+                stop_val = round(max(floor_stop, min(stop_val, ceil_stop)), 2)
+            else:
+                stop_val = round(price * 0.94, 2)  # default -6% si no hay ATR
 
-        risk = (price - stop_val) if (stop_val and price) else price * 0.04
+        risk = (price - stop_val) if (stop_val and price) else price * 0.06
         atr_tp = price + 2.5 * risk                  # 2.5:1 R/R mínimo
         min_tp = price * 1.08                         # +8% mínimo
         tp = round(max(atr_tp, min_tp), 2) if price else None
@@ -223,14 +227,26 @@ def build_signals(
         },
     )
 
-    # ── LP: top N por peso Markowitz entre los candidatos elegibles ────
+    # ── LP: top N por peso Markowitz, excluyendo earnings inminentes ────
     lp_df = scores["long_term"]
     weights_series = portfolio_lp["weights"]
-    top_lp = weights_series[weights_series > 0].head(PARAMS.top_n_long_term)
-    if top_lp.sum() > 0:
-        top_lp = top_lp / top_lp.sum()
 
-    for ticker, w in top_lp.items():
+    # Pre-filtrar tickers bloqueados por earnings antes de tomar top N
+    # así el 2do slot usa el siguiente candidato elegible en vez de quedar vacío
+    earnings_blocked = set()
+    if "earnings_soon" in lp_df.columns:
+        earnings_blocked = set(lp_df[lp_df["earnings_soon"] == 1].index)
+    if earnings_blocked:
+        import logging as _lg
+        _lg.getLogger(__name__).warning("LP earnings filter: %s bloqueados", sorted(earnings_blocked))
+
+    eligible_lp = weights_series[
+        (weights_series > 0) & (~weights_series.index.isin(earnings_blocked))
+    ].head(PARAMS.top_n_long_term)
+    if eligible_lp.sum() > 0:
+        eligible_lp = eligible_lp / eligible_lp.sum()
+
+    for ticker, w in eligible_lp.items():
         if ticker not in lp_df.index:
             continue
         tech_row = scores["short_term"].loc[ticker] if ticker in scores["short_term"].index else pd.Series(dtype=float)
