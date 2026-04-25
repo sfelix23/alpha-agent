@@ -30,42 +30,68 @@ logger = logging.getLogger(__name__)
 # Organizados por tema para facilitar el mantenimiento.
 
 DISCOVERY_CANDIDATES: dict[str, list[str]] = {
+    # IA / Semiconductores — el sector con mayor momentum estructural
     "AI_Infrastructure": [
         "SMCI", "CRDO", "ARM", "MRVL", "ANET", "DELL", "HPE",
-        "SNOW", "DDOG", "NET", "MDB",
+        "SNOW", "DDOG", "NET", "MDB", "ZS", "PANW", "OKTA",
+        "APP", "RBRK", "BBAI", "SOUN", "ARCT",
     ],
-    "Defense_Extended": [
+    # Defensa / Geopolítica — beneficiarios de tensiones globales
+    "Defense_Asymmetric": [
         "HII", "TXT", "LDOS", "KTOS", "RCAT", "BWXT", "CW",
+        "AXON", "VVX", "DRS", "ACHR",
     ],
-    "Nuclear_Uranium": [
+    # Nuclear / Uranio — megatendencia energía limpia + AI data centers
+    "Nuclear_Power": [
         "LEU", "UEC", "UUUU", "NXE", "DNN", "CEG", "VST", "ETR",
+        "OKLO", "SMR", "NNE",
     ],
+    # Materiales críticos — litio, cobre, plata, oro royalties
     "Critical_Minerals": [
         "SCCO", "CDE", "PAAS", "AG", "WPM", "AEM", "TFPM",
+        "MP", "NOVN", "ALTM",
     ],
-    "Energy_Extended": [
-        "OXY", "DVN", "MRO", "FANG", "PSX", "VLO", "MPC",
+    # Petróleo y gas — pequeñas productoras con alto beta a WTI
+    "Energy_High_Beta": [
+        "OXY", "DVN", "MRO", "FANG", "SM", "PR", "CIVI",
+        "MTDR", "CHRD", "ERX",  # ERX = ETF leveraged energy 2x
     ],
+    # FinTech / Cripto / Digital — alto beta a apetito de riesgo
     "FinTech_Digital": [
-        "SQ", "PYPL", "NU", "AFRM", "SOFI", "HOOD", "COIN",
+        "SQ", "PYPL", "NU", "AFRM", "SOFI", "HOOD",
+        "MSTR", "RIOT", "MARA", "HUT", "CLSK",
     ],
-    "Biotech_Pharma": [
-        "MRNA", "REGN", "VRTX", "ABBV", "GILD", "BIIB", "BMRN",
+    # Biotech — movimientos binarios grandes (FDA, ensayos)
+    "Biotech_Catalyst": [
+        "MRNA", "REGN", "VRTX", "ABBV", "GILD", "BIIB",
+        "RXRX", "BEAM", "EDIT", "NTLA", "CRSP",
     ],
-    "Emerging_Growth": [
-        "MELI",   # ya en universo pero como proxy
-        "SE", "GRAB", "BEKE", "PDD",
+    # Latinoamérica / Emergentes — donde el usuario tiene edge local
+    "LatAm_Emerging": [
+        "SE", "NU", "PDD", "GRAB", "BEKE",
+        "CEPU", "SUPV", "BBAR", "AGRO",  # más ADRs argentinos
+        "BTGPACTUAL", "ITUB", "BBD",     # Brasil
     ],
-    "Infrastructure_Grid": [
-        "AES", "NEE", "ENPH", "FSLR", "RUN",
-    ],
-    "Semiconductor_Extended": [
+    # Semiconductores extendidos — toda la cadena de suministro de AI chips
+    "Semis_Extended": [
         "ON", "MCHP", "SWKS", "QCOM", "MPWR", "LRCX", "KLAC",
+        "ONTO", "WOLF", "AMBA", "SLAB",
+    ],
+    # Small/Mid cap momentum — alta convicción institucional reciente
+    "Momentum_Plays": [
+        "CELH", "DUOL", "GLBE", "TMDX", "TBLA", "INSP",
+        "ASTS", "RKLB", "LUNR", "JOBY",  # space/new tech
+    ],
+    # Commodities / Inflación — protección y upside en ciclo inflacionario
+    "Commodities_Cycle": [
+        "CF", "MOS", "NTR", "IPI",   # fertilizantes
+        "X", "CLF", "STLD",           # acero
+        "AA", "CENX",                 # aluminio
     ],
 }
 
 FIXED_UNIVERSE = set(ACTIVOS.values())
-MAX_CANDIDATES_TO_RETURN = 8   # máximo de nuevos tickers por run
+MAX_CANDIDATES_TO_RETURN = 6   # concentrado: 6 candidatos bien filtrados > 15 mediocres
 
 
 def _flat_candidates() -> list[str]:

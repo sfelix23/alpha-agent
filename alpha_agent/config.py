@@ -108,12 +108,11 @@ class FinancialParams:
 
     # ── CONCENTRATED MODE para $1,600 ──────────────────────────────────────────
     # Con capital chico, la diversificación destruye retornos.
-    # Estrategia: 2 ideas LP de alta convicción + 1 CP momentum + cash reserva.
-    # Lógica: si una idea 3x, impacta 37-50% del portfolio (no el 14% de antes).
-    # Sleeves: 60% LP (2 pos) + 20% CP (1 pos) + 10% opciones call + 10% cash
-    weight_long_term: float = 0.60
+    # 2 LP de alta convicción + 1 CP momentum. Sin opciones (theta decay con $160 = regalo al mercado).
+    # Sleeves: 70% LP (2 pos × $560) + 20% CP (1 pos × $320) + 10% cash reserva
+    weight_long_term: float = 0.70
     weight_short_term: float = 0.20
-    weight_options: float = 0.10          # calls sobre la idea #1
+    weight_options: float = 0.00          # OFF — opciones con $160 pierden más de lo que ganan
 
     # Filtros LP — más selectivos en concentrated mode
     max_beta_lp: float = 1.8             # aceptar beta más alto = más upside en bull
@@ -145,7 +144,7 @@ class FinancialParams:
     max_single_option_premium: float = 250.0  # máx USD por contrato (1 contrato ~ 15% libro)
     max_hedge_allocation: float = 0.22    # hasta 22% del libro en puts SPY cuando bear (1 contrato SPY ~ $350)
     enable_short_equity: bool = False     # OFF por default — preferimos puts (riesgo limitado)
-    enable_options: bool = True           # calls activados — apalancamiento definido sobre idea #1
+    enable_options: bool = False          # OFF — opciones con $160 notional destruyen capital por theta
     min_days_to_expiry: int = 14          # evita theta decay brutal
     max_days_to_expiry: int = 45          # evita gamma muerta (bajé de 60 a 45)
     target_delta_directional: float = 0.35  # puts/calls direccionales delta 0.35 (más OTM = más barato)

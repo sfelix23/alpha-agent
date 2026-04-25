@@ -1,6 +1,6 @@
 {
-  "alpaca_baseline_equity": 101586.2,
+  "alpaca_baseline_equity": 1600.0,
   "our_starting_capital": 1600.0,
-  "created_at": "2026-04-25T16:15:22",
-  "note": "No tocar manualmente. Reset via reset_capital_baseline()."
+  "created_at": "2026-04-25T16:45:15",
+  "note": "Reset manual el 2026-04-25"
 }
