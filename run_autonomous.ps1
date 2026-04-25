@@ -64,21 +64,26 @@ try {
     Log "Health check write error: $_"
 }
 
-# -- 0. Capital dinamico: obtener equity actual de Alpaca (reinversion) --------
-Log "Paso 0: obteniendo equity actual de Alpaca..."
+# -- 0. Capital dinamico: equity VIRTUAL basado en $1600 inicial ---------------
+# Alpaca paper da $100k por defecto. Usamos un tracker que convierte el equity
+# de Alpaca a nuestro equivalente real de $1600 + ganancias/pérdidas acumuladas.
+Log "Paso 0: obteniendo equity virtual (base USD 1600)..."
 $equityResult = python -c "
 from dotenv import load_dotenv; load_dotenv()
 from trader_agent.brokers.alpaca_broker import AlpacaBroker
+from alpha_agent.analytics.capital_tracker import get_virtual_equity
 try:
     b = AlpacaBroker(paper=True)
-    print(f'{b.get_equity():.2f}')
+    alpaca_eq = b.get_equity()
+    virtual = get_virtual_equity(alpaca_eq)
+    print(f'{virtual:.2f}')
 except Exception as e:
     print(f'ERROR:{e}')
 " 2>&1
 $capitalArg = ""
 if ($equityResult -match '^\d') {
     $equity = [double]$equityResult
-    Log "Equity actual en Alpaca: `$$equity USD (reinversion automatica)"
+    Log "Equity virtual: `$$equity USD (base USD 1600 + P&L acumulado)"
     $capitalArg = "--capital $equity"
 } else {
     Log "No se pudo obtener equity ($equityResult). Usando capital default."

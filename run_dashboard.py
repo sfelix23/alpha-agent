@@ -1504,25 +1504,41 @@ def generate() -> None:
 
     broker = AlpacaBroker(paper=True)
     try:
-        equity    = broker.get_equity()
-        positions = broker.get_positions()
+        alpaca_equity = broker.get_equity()
+        positions     = broker.get_positions()
+        # Convertir equity de Alpaca ($100k paper) al equivalente virtual ($1600 + P&L)
+        try:
+            from alpha_agent.analytics.capital_tracker import get_virtual_equity, get_initial_capital
+            equity  = get_virtual_equity(alpaca_equity)
+            initial = get_initial_capital()
+        except Exception:
+            equity  = alpaca_equity
+            initial = PARAMS.paper_capital_usd
     except Exception as e:
         logger.error("Error Alpaca: %s", e)
         equity, positions = PARAMS.paper_capital_usd, []
+        initial = PARAMS.paper_capital_usd
 
-    # Portfolio history (1M)
+    # Portfolio history (1M) — escalado al equity virtual ($1600 base)
     history: list[dict] = []
     try:
         from alpaca.trading.requests import GetPortfolioHistoryRequest
         req = GetPortfolioHistoryRequest(period="1M", timeframe="1D")
         ph  = broker._trading.get_portfolio_history(req)
         if ph and ph.equity:
-            history = [
+            raw_hist = [
                 {"ts": int(t), "equity": float(e)}
                 for t, e in zip(ph.timestamp or [], ph.equity)
                 if e is not None and float(e) > 0
             ]
-        logger.info("Portfolio history: %d entradas validas", len(history))
+            # Escalar el historial al espacio virtual ($1600 base)
+            # Los retornos % son idénticos; solo escalamos los valores absolutos
+            if raw_hist and alpaca_equity > 0:
+                scale = equity / alpaca_equity  # ≈ 1600/101586 ≈ 0.01575
+                history = [{"ts": r["ts"], "equity": round(r["equity"] * scale, 2)} for r in raw_hist]
+            else:
+                history = raw_hist
+        logger.info("Portfolio history: %d entradas (escalado virtual)", len(history))
     except Exception as e:
         logger.warning("Portfolio history no disponible: %s", e)
 
