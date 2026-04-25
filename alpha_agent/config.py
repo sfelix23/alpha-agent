@@ -215,6 +215,11 @@ NEGATIVE_KEYWORDS: set[str] = {
 # ────────────────────────────────────────────────────────────────────────────
 # IA / NOTIFICACIONES
 # ────────────────────────────────────────────────────────────────────────────
+# AI Ensemble — cada modelo para lo que hace mejor:
+#   Haiku:  decisiones en tiempo real, clasificaciones rápidas ($0.25/M)
+#   Sonnet: análisis profundo, SEC filings, tesis de inversión ($3/M)
+#   Gemini: sentiment masivo, scan de 51 tickers, macro context (gratis/barato)
 GEMINI_MODEL: str = "models/gemini-2.0-flash"
-CLAUDE_MODEL: str = "claude-haiku-4-5-20251001"   # fast + cheap, $0.25/M tokens input
+CLAUDE_MODEL: str = "claude-haiku-4-5-20251001"        # fast + cheap — risk debate, monitor
+CLAUDE_MODEL_DEEP: str = "claude-sonnet-4-6"           # deep analysis — Wall St thesis, SEC
 WHATSAPP_FROM: str = "whatsapp:+14155238886"  # Twilio sandbox

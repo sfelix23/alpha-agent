@@ -33,6 +33,17 @@ function Log($msg) {
     Add-Content -Path $logFile -Value $line -Encoding UTF8
 }
 
+# ── Log rotation: borrar logs de mas de 30 dias ──────────────────────────────
+try {
+    $cutoff = (Get-Date).AddDays(-30)
+    Get-ChildItem -Path $logDir -Filter "*.log" | Where-Object { $_.LastWriteTime -lt $cutoff } | ForEach-Object {
+        Remove-Item $_.FullName -Force
+        Log "Log rotation: borrado $($_.Name)"
+    }
+} catch {
+    Log "Log rotation error: $_"
+}
+
 Log "==============================================="
 Log "  AUTONOMOUS RUN START"
 Log "==============================================="
@@ -44,7 +55,16 @@ if ($dow -eq "Saturday" -or $dow -eq "Sunday") {
     exit 0
 }
 
-# -- 0. Capital dinámico: obtener equity actual de Alpaca (reinversión) --
+# ── Health check: registrar timestamp de este run ─────────────────────────────
+$healthFile = "D:\Agente\signals\last_run.json"
+try {
+    $healthData = @{ last_run = (Get-Date -Format "yyyy-MM-ddTHH:mm:ss"); status = "started" } | ConvertTo-Json
+    $healthData | Out-File -FilePath $healthFile -Encoding utf8 -Force
+} catch {
+    Log "Health check write error: $_"
+}
+
+# -- 0. Capital dinamico: obtener equity actual de Alpaca (reinversion) --------
 Log "Paso 0: obteniendo equity actual de Alpaca..."
 $equityResult = python -c "
 from dotenv import load_dotenv; load_dotenv()
@@ -64,21 +84,31 @@ if ($equityResult -match '^\d') {
     Log "No se pudo obtener equity ($equityResult). Usando capital default."
 }
 
-# -- 1. Analyst con envio de WhatsApp -----------------------------------
+# -- 1. Analyst con envio de WhatsApp (retry una vez si falla) ----------------
 Log "Paso 1/2: analyst + WhatsApp"
 $analystCmd = "python run_analyst.py --send --no-ai $capitalArg"
 Invoke-Expression "$analystCmd 2>&1" | Tee-Object -FilePath $logFile -Append -Encoding UTF8
-if ($LASTEXITCODE -ne 0) {
-    Log "ERROR: analyst fallo con exit code $LASTEXITCODE"
-    # Intentar avisar por WhatsApp aunque sea el error
-    python -c "from alpha_agent.notifications import send_whatsapp; send_whatsapp('ALPHA ERROR: analyst fallo en run autonomo. Revisa logs.')" 2>&1 | Out-Null
-    exit 1
+$analystExit = $LASTEXITCODE
+
+if ($analystExit -ne 0) {
+    Log "WARNING: analyst fallo (exit $analystExit). Reintentando con --no-ai..."
+    Start-Sleep -Seconds 15
+    $analystRetryCmd = "python run_analyst.py --send --no-ai $capitalArg"
+    Invoke-Expression "$analystRetryCmd 2>&1" | Tee-Object -FilePath $logFile -Append -Encoding UTF8
+    if ($LASTEXITCODE -ne 0) {
+        Log "ERROR: analyst fallo en ambos intentos."
+        python -c "from alpha_agent.notifications import send_whatsapp; send_whatsapp('ALPHA ERROR: analyst fallo 2 veces en run autonomo. Revisa logs urgente.')" 2>&1 | Out-Null
+        # Actualizar health file como fallido
+        try {
+            @{ last_run = (Get-Date -Format "yyyy-MM-ddTHH:mm:ss"); status = "analyst_failed" } | ConvertTo-Json | Out-File -FilePath $healthFile -Encoding utf8 -Force
+        } catch {}
+        exit 1
+    }
+    Log "Analyst OK en segundo intento."
 }
 
-# -- 2. Trader en modo LIVE ---------------------------------------------
+# -- 2. Trader en modo LIVE ---------------------------------------------------
 Log "Paso 2/2: trader live (Alpaca paper)"
-# Pasamos --capital para que el trader use el mismo equity cap que el analyst.
-# Esto evita que use el buying_power 2x de Alpaca margin y sobre-invierta.
 $traderCmd = "python run_trader.py --live $capitalArg"
 Invoke-Expression "$traderCmd 2>&1" | Tee-Object -FilePath $logFile -Append -Encoding UTF8
 if ($LASTEXITCODE -ne 0) {
@@ -87,10 +117,15 @@ if ($LASTEXITCODE -ne 0) {
     exit 1
 }
 
+# ── Actualizar health file como OK ────────────────────────────────────────────
+try {
+    @{ last_run = (Get-Date -Format "yyyy-MM-ddTHH:mm:ss"); status = "ok"; equity = $equityResult } | ConvertTo-Json | Out-File -FilePath $healthFile -Encoding utf8 -Force
+} catch {}
+
 Log "==============================================="
 Log "  AUTONOMOUS RUN OK"
 Log "==============================================="
 
 # Nota: el sleep de la PC lo maneja market_wake.ps1 a las 17:15.
-# Este script ya no necesita poner la PC a dormir.
+# Para dormir manualmente: .\sleep_pc.ps1
 exit 0

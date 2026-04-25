@@ -21,7 +21,9 @@ from typing import Literal
 
 logger = logging.getLogger(__name__)
 
-_MODEL = "claude-haiku-4-5-20251001"
+_MODEL_FAST = "claude-haiku-4-5-20251001"   # real-time decisions, classification
+_MODEL_DEEP = "claude-sonnet-4-6"           # investment thesis, SEC analysis
+_MODEL = _MODEL_FAST  # default for backwards compat
 
 
 def _client():
@@ -231,9 +233,11 @@ price_target_pct es el upside/downside esperado en % a 12 meses (puede ser negat
 Sé concreto y directo. No uses frases vagas."""
 
     try:
+        # Sonnet para análisis profundo — calidad notablemente superior a Haiku
+        # para tesis de inversión. Costo ~$0.006/ticker, ~7 tickers/día ≈ $0.04/día.
         msg = client.messages.create(
-            model=_MODEL,
-            max_tokens=350,
+            model=_MODEL_DEEP,
+            max_tokens=500,
             messages=[{"role": "user", "content": prompt}],
         )
         text = msg.content[0].text.strip()
@@ -241,7 +245,6 @@ Sé concreto y directo. No uses frases vagas."""
         if not match:
             return None
         result = json.loads(match.group())
-        # Validar recomendación
         if result.get("recommendation") not in ("BUY", "HOLD", "SELL"):
             result["recommendation"] = "HOLD"
         return result

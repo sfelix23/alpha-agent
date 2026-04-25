@@ -126,7 +126,7 @@ def _calc_metrics(history: list[dict], spy_history: list[dict], qqq_history: lis
 
 def _tab_resumen(equity, initial, regime, vix, wti, gold, dxy,
                  history, spy_history, signals_data, metrics, age_hours,
-                 perf_data=None, qqq_history=None):
+                 perf_data=None, qqq_history=None, mc_result=None):
     pnl     = equity - initial
     pnl_pct = (pnl / initial * 100) if initial else 0
     pc      = _c(pnl)
@@ -250,6 +250,8 @@ def _tab_resumen(equity, initial, regime, vix, wti, gold, dxy,
   {cal}
   <div class="section-gap"></div>
   {_perf_chart(perf_data)}
+  <div class="section-gap"></div>
+  {_monte_carlo_panel(mc_result)}
 </div>"""
 
 
@@ -584,6 +586,42 @@ def _tab_posiciones(positions):
   }});
 }})();
 </script>"""
+
+
+def _monte_carlo_panel(mc) -> str:
+    if mc is None:
+        return ""
+    def _mc_cell(label, value, color="#e6edf3"):
+        return (
+            f'<div class="mc-cell">'
+            f'<div class="mc-label">{label}</div>'
+            f'<div class="mc-val" style="color:{color}">{value}</div>'
+            f'</div>'
+        )
+    cells = "".join([
+        _mc_cell("Retorno Mediano", f"{mc.median_return_pct:+.1f}%",
+                 "#22c55e" if mc.median_return_pct >= 0 else "#ef4444"),
+        _mc_cell("P10 (pesimista)", f"{mc.p10_return_pct:+.1f}%", "#ef4444"),
+        _mc_cell("P90 (optimista)", f"{mc.p90_return_pct:+.1f}%", "#22c55e"),
+        _mc_cell("DD Máx Esperado", f"{mc.expected_max_dd_pct:.1f}%", "#f59e0b"),
+        _mc_cell("DD Máx Worst 95%", f"{mc.worst_case_max_dd_pct:.1f}%", "#ef4444"),
+        _mc_cell("VaR 95% Diario", f"{mc.var_95_daily_pct:.2f}%", "#ef4444"),
+        _mc_cell("Prob. Positivo", f"{mc.prob_positive_pct:.0f}%",
+                 "#22c55e" if mc.prob_positive_pct >= 50 else "#ef4444"),
+        _mc_cell("Prob. Vencer SPY", f"{mc.prob_beat_spy_pct:.0f}%",
+                 "#22c55e" if mc.prob_beat_spy_pct >= 50 else "#f59e0b"),
+        _mc_cell("Capital Mediano", f"${mc.median_final_capital:,.0f}", "#e6edf3"),
+        _mc_cell("Peor caso (5%)", f"${mc.worst_case_capital:,.0f}", "#ef4444"),
+    ])
+    return f"""<div class="card">
+  <div class="card-head">
+    <div>
+      <div class="card-title">Monte Carlo — Simulación de Riesgo</div>
+      <div class="card-sub">{mc.n_simulations:,} simulaciones · horizonte {mc.horizon_days} días · basado en historial real</div>
+    </div>
+  </div>
+  <div class="mc-grid">{cells}</div>
+</div>"""
 
 
 def _perf_chart(perf_data: dict | None) -> str:
@@ -965,164 +1003,171 @@ def _tab_mercado(signals_data, discovery_data=None):
 # ─── CSS ──────────────────────────────────────────────────────────────────────
 
 _CSS = """
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap');
 
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 
 :root{
-  --bg:#0d1117; --s1:#161b22; --s2:#21262d; --bd:#30363d;
-  --tx:#e6edf3; --mt:#7d8590; --ac:#58a6ff;
+  --bg:#08090d; --s1:#0f1117; --s2:#161a22; --bd:#252a35;
+  --tx:#d1d5db; --mt:#6b7280; --ac:#f59e0b;
+  --green:#22c55e; --red:#ef4444; --blue:#3b82f6; --purple:#8b5cf6;
+  --mono:'IBM Plex Mono',monospace;
 }
 
 html{scroll-behavior:smooth}
-body{font-family:'Inter',system-ui,sans-serif;background:var(--bg);color:var(--tx);
-  padding:0 0 60px;max-width:1480px;margin:0 auto;line-height:1.5}
+body{font-family:'IBM Plex Sans',system-ui,sans-serif;background:var(--bg);color:var(--tx);
+  padding:0 0 60px;max-width:1600px;margin:0 auto;line-height:1.5}
 
 /* ── freshness banner ── */
-.fresh-banner{
-  padding:10px 28px;font-size:.82rem;font-weight:600;margin-bottom:12px;
-  border-radius:0;letter-spacing:.2px;
+.fresh-banner{padding:8px 28px;font-size:.78rem;font-weight:600;margin-bottom:0;letter-spacing:.2px}
+.fresh-warn{background:#78350f18;color:#f59e0b;border-left:3px solid #f59e0b}
+.fresh-stale{background:#7f1d1d22;color:#ef4444;border-left:3px solid #ef4444}
+
+/* ── ticker tape (Bloomberg-style) ── */
+.ticker-tape{
+  background:#0f1117;border-bottom:1px solid var(--bd);
+  padding:6px 28px;overflow:hidden;white-space:nowrap;
+  font-family:var(--mono);font-size:.72rem;letter-spacing:.3px;
 }
-.fresh-warn{background:#854d0e22;color:#d29922;border-left:3px solid #d29922}
-.fresh-stale{background:#7f1d1d33;color:#f85149;border-left:3px solid #f85149}
+.tape-inner{display:inline-block;animation:tape 40s linear infinite}
+.tape-inner:hover{animation-play-state:paused}
+@keyframes tape{from{transform:translateX(100vw)}to{transform:translateX(-100%)}}
+.tape-item{display:inline-block;margin-right:40px;color:var(--mt)}
+.tape-item b{color:var(--tx)}
+.tape-up{color:var(--green)}
+.tape-dn{color:var(--red)}
 
 /* ── progress bar ── */
-.rbar{height:2px;background:linear-gradient(90deg,#58a6ff,#bc8cff);
-  position:fixed;top:0;left:0;width:0%;transition:width 300s linear;
-  border-radius:0 2px 2px 0;z-index:100}
+.rbar{height:2px;background:linear-gradient(90deg,var(--ac),var(--blue));
+  position:fixed;top:0;left:0;width:0%;transition:width 300s linear;z-index:100}
 
 /* ── top bar ── */
 .topbar{
   display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;
-  padding:16px 28px 0;margin-bottom:20px;
+  padding:14px 28px 0;margin-bottom:16px;
+  border-bottom:1px solid var(--bd);padding-bottom:14px;
 }
-.logo{font-size:1.3rem;font-weight:800;
-  background:linear-gradient(135deg,#58a6ff,#bc8cff);
-  -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
-.topbar-meta{font-size:.78rem;color:var(--mt);display:flex;align-items:center;gap:10px}
-.live{display:inline-block;width:7px;height:7px;background:#3fb950;
+.logo{font-family:var(--mono);font-size:1.1rem;font-weight:600;
+  color:var(--ac);letter-spacing:1px}
+.logo span{color:var(--mt);font-weight:400}
+.topbar-meta{font-size:.72rem;color:var(--mt);display:flex;align-items:center;gap:12px;font-family:var(--mono)}
+.live{display:inline-block;width:6px;height:6px;background:var(--green);
   border-radius:50%;animation:blink 2s infinite}
 @keyframes blink{0%,100%{opacity:1}50%{opacity:.3}}
 
 /* ── nav tabs ── */
 .nav{
-  display:flex;gap:4px;padding:0 28px;
-  border-bottom:1px solid var(--bd);margin-bottom:28px;
-  overflow-x:auto;-webkit-overflow-scrolling:touch;
+  display:flex;gap:0;padding:0 28px;
+  border-bottom:1px solid var(--bd);margin-bottom:24px;
+  overflow-x:auto;-webkit-overflow-scrolling:touch;background:var(--s1);
 }
 .tab-btn{
-  padding:10px 22px;font-size:.85rem;font-weight:600;color:var(--mt);
+  padding:10px 20px;font-size:.78rem;font-weight:600;color:var(--mt);
   background:none;border:none;border-bottom:2px solid transparent;
-  cursor:pointer;white-space:nowrap;transition:color .15s,border-color .15s;
-  margin-bottom:-1px;
+  cursor:pointer;white-space:nowrap;transition:color .15s,border-color .15s,background .15s;
+  margin-bottom:-1px;letter-spacing:.3px;text-transform:uppercase;font-family:var(--mono);
 }
-.tab-btn:hover{color:var(--tx)}
-.tab-btn.active{color:var(--ac);border-bottom-color:var(--ac)}
+.tab-btn:hover{color:var(--tx);background:#ffffff08}
+.tab-btn.active{color:var(--ac);border-bottom-color:var(--ac);background:#f59e0b08}
 
 /* ── tab content ── */
-.tab-content{display:none;padding:0 28px;animation:fadeIn .2s ease}
+.tab-content{display:none;padding:0 28px;animation:fadeIn .15s ease}
 .tab-content.active{display:block}
-@keyframes fadeIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+@keyframes fadeIn{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:none}}
 
 /* ── KPI rows ── */
 .kpi-row{
   display:grid;
-  grid-template-columns:repeat(auto-fill,minmax(180px,1fr));
-  gap:12px;margin-bottom:4px;
+  grid-template-columns:repeat(auto-fill,minmax(170px,1fr));
+  gap:10px;margin-bottom:4px;
 }
-.kpi-row-adv{
-  grid-template-columns:repeat(auto-fill,minmax(200px,1fr));
-  margin-top:12px;margin-bottom:0;
-}
+.kpi-row-adv{grid-template-columns:repeat(auto-fill,minmax(190px,1fr));margin-top:10px;margin-bottom:0}
 .kpi{
-  background:var(--s1);border:1px solid var(--bd);border-radius:10px;
-  padding:16px 18px;transition:transform .15s,box-shadow .15s;
+  background:var(--s1);border:1px solid var(--bd);border-radius:4px;
+  padding:14px 16px;transition:border-color .15s;
 }
-.kpi:hover{transform:translateY(-2px);box-shadow:0 6px 20px rgba(0,0,0,.4)}
-.kpi-hero{
-  background:linear-gradient(135deg,#161b22,#1c2331);
-  border-color:#58a6ff33;
-}
-.kpi-lbl{font-size:.68rem;color:var(--mt);text-transform:uppercase;
-  letter-spacing:.7px;margin-bottom:6px;font-weight:600}
-.kpi-val{font-size:1.45rem;font-weight:700;line-height:1.1;margin-bottom:4px}
-.kpi-hero-val{font-size:1.75rem}
-.kpi-sub{font-size:.73rem;color:var(--mt)}
-.kpi-tag{font-size:.75rem;font-weight:600;padding:3px 10px;border-radius:20px;
-  display:inline-block;margin-top:6px}
+.kpi:hover{border-color:#f59e0b44}
+.kpi-hero{background:var(--s1);border-color:#f59e0b33;border-left:3px solid var(--ac)}
+.kpi-lbl{font-size:.62rem;color:var(--mt);text-transform:uppercase;
+  letter-spacing:.9px;margin-bottom:8px;font-weight:600;font-family:var(--mono)}
+.kpi-val{font-size:1.5rem;font-weight:600;line-height:1;margin-bottom:4px;font-family:var(--mono)}
+.kpi-hero-val{font-size:1.8rem}
+.kpi-sub{font-size:.7rem;color:var(--mt);font-family:var(--mono)}
+.kpi-tag{font-size:.7rem;font-weight:600;padding:2px 8px;border-radius:2px;
+  display:inline-block;margin-top:6px;font-family:var(--mono)}
 
 /* ── cards ── */
-.card{background:var(--s1);border:1px solid var(--bd);border-radius:12px;
-  padding:20px 22px;margin-bottom:4px;transition:box-shadow .15s}
-.card:hover{box-shadow:0 4px 16px rgba(0,0,0,.3)}
+.card{background:var(--s1);border:1px solid var(--bd);border-radius:4px;
+  padding:18px 20px;margin-bottom:4px}
 .card-head{display:flex;align-items:flex-start;justify-content:space-between;
-  flex-wrap:wrap;gap:10px;margin-bottom:18px}
-.card-title{font-size:.95rem;font-weight:700;color:var(--tx);margin-bottom:3px}
-.card-sub{font-size:.78rem;color:var(--mt)}
-.pill{font-size:.82rem;font-weight:700;background:var(--s2);
-  border:1px solid var(--bd);border-radius:20px;padding:4px 12px;white-space:nowrap}
+  flex-wrap:wrap;gap:10px;margin-bottom:16px}
+.card-title{font-size:.85rem;font-weight:700;color:var(--tx);margin-bottom:3px;
+  text-transform:uppercase;letter-spacing:.5px;font-family:var(--mono)}
+.card-sub{font-size:.74rem;color:var(--mt)}
+.pill{font-size:.78rem;font-weight:600;background:var(--s2);
+  border:1px solid var(--bd);border-radius:2px;padding:3px 10px;white-space:nowrap;font-family:var(--mono)}
 
 /* ── two-col layout ── */
-.two-col{display:grid;grid-template-columns:1fr 1fr;gap:16px;align-items:start}
+.two-col{display:grid;grid-template-columns:1fr 1fr;gap:14px;align-items:start}
 @media(max-width:900px){.two-col{grid-template-columns:1fr}}
 
 /* ── section gap ── */
-.section-gap{height:16px}
+.section-gap{height:14px}
 
 /* ── positions ── */
-.pos-summary{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));
-  gap:12px;margin-bottom:20px}
-.pos-layout{display:flex;gap:24px;flex-wrap:wrap;align-items:flex-start}
-.pos-chart-col{flex:0 0 220px;display:flex;flex-direction:column;align-items:center}
+.pos-summary{display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));
+  gap:10px;margin-bottom:18px}
+.pos-layout{display:flex;gap:20px;flex-wrap:wrap;align-items:flex-start}
+.pos-chart-col{flex:0 0 210px;display:flex;flex-direction:column;align-items:center}
 .pos-cards-col{flex:1;min-width:280px;display:grid;
-  grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:12px}
-.pos-card{background:var(--s2);border:1px solid var(--bd);border-radius:10px;
-  padding:14px 16px;transition:background .15s,box-shadow .15s}
-.pos-card:hover{background:#1c2331;box-shadow:0 4px 12px rgba(0,0,0,.4)}
+  grid-template-columns:repeat(auto-fill,minmax(270px,1fr));gap:10px}
+.pos-card{background:var(--s2);border:1px solid var(--bd);border-radius:4px;
+  padding:12px 14px;transition:border-color .15s}
+.pos-card:hover{border-color:#f59e0b44}
 .pos-top{display:flex;justify-content:space-between;margin-bottom:10px}
-.pos-ticker{font-size:1.05rem;font-weight:800}
-.pos-sub{font-size:.72rem;color:var(--mt);margin-top:2px}
-.pos-pnl{font-size:.9rem;font-weight:700;text-align:right}
-.pos-pnl-pct{font-size:.78rem;text-align:right;margin-top:2px}
-.pos-bar-track{height:4px;background:var(--bd);border-radius:2px;margin-bottom:10px}
-.pos-meta{display:flex;gap:14px;flex-wrap:wrap;font-size:.75rem;color:var(--mt)}
+.pos-ticker{font-size:1rem;font-weight:700;font-family:var(--mono)}
+.pos-sub{font-size:.68rem;color:var(--mt);margin-top:2px}
+.pos-pnl{font-size:.88rem;font-weight:600;text-align:right;font-family:var(--mono)}
+.pos-pnl-pct{font-size:.74rem;text-align:right;margin-top:2px;font-family:var(--mono)}
+.pos-bar-track{height:3px;background:var(--bd);border-radius:1px;margin-bottom:10px}
+.pos-meta{display:flex;gap:14px;flex-wrap:wrap;font-size:.72rem;color:var(--mt);font-family:var(--mono)}
 .pos-meta b{color:var(--tx)}
 
 /* ── alloc legend ── */
-.alloc-legend{margin-top:14px;width:100%}
-.leg-row{display:flex;align-items:center;gap:7px;font-size:.77rem;
-  color:var(--tx);margin-bottom:5px}
-.leg-dot{width:8px;height:8px;border-radius:2px;flex-shrink:0}
+.alloc-legend{margin-top:12px;width:100%}
+.leg-row{display:flex;align-items:center;gap:7px;font-size:.74rem;
+  color:var(--tx);margin-bottom:5px;font-family:var(--mono)}
+.leg-dot{width:6px;height:6px;border-radius:1px;flex-shrink:0}
 
 /* ── signals ── */
-.sleeve-block{margin-bottom:28px}
+.sleeve-block{margin-bottom:24px}
 .sleeve-header{display:flex;align-items:center;gap:12px;
-  padding:10px 14px;background:var(--s2);border-radius:8px;margin-bottom:14px}
-.sleeve-label{font-size:.88rem;font-weight:700}
-.sleeve-count{font-size:.78rem}
-.sig-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:12px}
-.sig-card{background:var(--s2);border:1px solid var(--bd);border-radius:10px;
-  padding:14px 16px;cursor:pointer;transition:background .15s,box-shadow .15s}
-.sig-card:hover{background:#1c2331;box-shadow:0 4px 12px rgba(0,0,0,.3)}
+  padding:8px 12px;background:var(--s2);border-left:3px solid var(--ac);margin-bottom:12px}
+.sleeve-label{font-size:.82rem;font-weight:700;font-family:var(--mono);text-transform:uppercase;letter-spacing:.5px}
+.sleeve-count{font-size:.74rem;font-family:var(--mono)}
+.sig-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:10px}
+.sig-card{background:var(--s2);border:1px solid var(--bd);border-radius:4px;
+  padding:12px 14px;cursor:pointer;transition:border-color .15s}
+.sig-card:hover{border-color:#f59e0b55}
 .sig-head{display:flex;justify-content:space-between;align-items:center;
   flex-wrap:wrap;gap:8px;margin-bottom:10px}
 .sig-left{display:flex;align-items:center;gap:8px}
 .sig-right{display:flex;align-items:center;gap:10px}
-.sig-ticker{font-size:1.05rem;font-weight:800}
-.conv-badge{font-size:.7rem;font-weight:700;padding:2px 8px;border-radius:20px}
-.sig-alloc{font-size:.82rem;font-weight:600;color:var(--tx)}
-.sig-arrow{font-size:.72rem;color:var(--mt);transition:transform .2s}
+.sig-ticker{font-size:1rem;font-weight:700;font-family:var(--mono)}
+.conv-badge{font-size:.66rem;font-weight:700;padding:2px 7px;border-radius:2px;font-family:var(--mono)}
+.sig-alloc{font-size:.78rem;font-weight:600;color:var(--tx);font-family:var(--mono)}
+.sig-arrow{font-size:.7rem;color:var(--mt);transition:transform .2s}
 .sig-arrow.open{transform:rotate(180deg)}
 .sig-pills{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px}
-.spill{background:var(--s1);border:1px solid var(--bd);border-radius:7px;
+.spill{background:var(--s1);border:1px solid var(--bd);border-radius:3px;
   padding:5px 10px;min-width:80px;text-align:center}
-.spill-l{font-size:.65rem;color:var(--mt);margin-bottom:2px}
-.spill-v{font-size:.82rem;font-weight:700}
-.conv-track{height:3px;background:var(--bd);border-radius:2px}
-.conv-fill{height:3px;border-radius:2px;opacity:.75}
-.sig-thesis{display:none;margin-top:12px;padding:12px 14px;
-  background:var(--s1);border-radius:8px;border-left:3px solid var(--ac);
-  font-size:.82rem;color:#94a3b8;line-height:1.65;animation:fadeIn .2s ease}
+.spill-l{font-size:.62rem;color:var(--mt);margin-bottom:2px;text-transform:uppercase;letter-spacing:.5px;font-family:var(--mono)}
+.spill-v{font-size:.8rem;font-weight:600;font-family:var(--mono)}
+.conv-track{height:2px;background:var(--bd);border-radius:1px}
+.conv-fill{height:2px;border-radius:1px;opacity:.8}
+.sig-thesis{display:none;margin-top:10px;padding:10px 12px;
+  background:var(--bg);border-radius:3px;border-left:3px solid var(--ac);
+  font-size:.8rem;color:#9ca3af;line-height:1.65;animation:fadeIn .2s ease}
 .ws-block{margin-top:12px;padding:10px 12px;background:#0d1117;border-radius:7px;
   border:1px solid #21262d;font-size:.8rem}
 .ws-header{display:flex;align-items:center;gap:4px;margin-bottom:6px;flex-wrap:wrap}
@@ -1176,13 +1221,27 @@ tr:hover td{background:var(--s2)}
 .radar-scroll{overflow-y:auto;max-height:520px}
 
 /* ── misc ── */
-.ts{font-size:.78rem;color:var(--mt)}
+.ts{font-size:.74rem;color:var(--mt);font-family:var(--mono)}
 .muted{color:var(--mt)}
+
+/* ── Monte Carlo panel ── */
+.mc-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:8px;margin-top:12px}
+.mc-cell{background:var(--bg);border:1px solid var(--bd);border-radius:3px;
+  padding:10px 12px;text-align:center}
+.mc-label{font-size:.6rem;color:var(--mt);text-transform:uppercase;letter-spacing:.7px;font-family:var(--mono);margin-bottom:5px}
+.mc-val{font-size:1rem;font-weight:600;font-family:var(--mono)}
+
+/* ── edgar alerts ── */
+.edgar-alert{padding:8px 12px;border-left:3px solid;margin-bottom:6px;border-radius:0 3px 3px 0;font-size:.78rem}
+.edgar-bull{border-color:var(--green);background:#22c55e0c}
+.edgar-bear{border-color:var(--red);background:#ef44440c}
+.edgar-neutral{border-color:var(--mt);background:#6b72800c}
 
 @media(max-width:640px){
   .topbar,.nav,.tab-content{padding-left:14px;padding-right:14px}
-  .kpi-val{font-size:1.15rem}
-  .kpi-hero-val{font-size:1.4rem}
+  .ticker-tape{padding:6px 14px}
+  .kpi-val{font-size:1.2rem}
+  .kpi-hero-val{font-size:1.5rem}
   .sig-grid{grid-template-columns:1fr}
   .pos-chart-col{flex:0 0 100%}
 }
@@ -1251,7 +1310,7 @@ def _tab_historial(trades: list[dict]) -> str:
 
 def build_html(equity, initial, history, positions, signals_data,
                spy_history=None, qqq_history=None, metrics=None, perf_data=None, discovery_data=None,
-               trades=None):
+               trades=None, mc_result=None):
     if spy_history is None:
         spy_history = []
     if qqq_history is None:
@@ -1282,7 +1341,7 @@ def build_html(equity, initial, history, positions, signals_data,
 
     t_resumen    = _tab_resumen(equity, initial, regime, vix, wti, gold, dxy,
                                 history, spy_history, signals_data, metrics, age_hours,
-                                perf_data=perf_data, qqq_history=qqq_history)
+                                perf_data=perf_data, qqq_history=qqq_history, mc_result=mc_result)
     t_posiciones = _tab_posiciones(positions)
     t_senales    = _tab_senales(signals_data)
     t_mercado    = _tab_mercado(signals_data, discovery_data=discovery_data)
@@ -1303,11 +1362,29 @@ def build_html(equity, initial, history, positions, signals_data,
 <div class="rbar" id="rbar"></div>
 
 <div class="topbar">
-  <div class="logo">Alpha Dashboard</div>
+  <div class="logo">ALPHA<span>&nbsp;/&nbsp;TERMINAL</span></div>
   <div class="topbar-meta">
-    <span><span class="live"></span> {now}</span>
-    <span>&middot; Paper Trading</span>
-    <span id="countdown" style="color:var(--mt);font-size:.78rem"></span>
+    <span><span class="live"></span>&nbsp;{now}</span>
+    <span style="color:var(--bd)">|</span>
+    <span>Paper</span>
+    <span style="color:var(--bd)">|</span>
+    <span id="countdown"></span>
+  </div>
+</div>
+
+<div class="ticker-tape">
+  <div class="tape-inner" id="tape-inner">
+    <span class="tape-item">VIX <b id="t-vix">{vix:.1f}</b></span>
+    <span class="tape-item">WTI <b id="t-wti">${wti:.1f}</b></span>
+    <span class="tape-item">GOLD <b id="t-gold">${gold:.0f}</b></span>
+    <span class="tape-item">DXY <b id="t-dxy">{dxy:.1f}</b></span>
+    <span class="tape-item">RÉGIMEN <b style="color:{'#22c55e' if regime=='bull' else '#ef4444' if regime=='bear' else '#f59e0b'}">{regime.upper()}</b></span>
+    <span class="tape-item">·&nbsp;&nbsp;&nbsp;·&nbsp;&nbsp;&nbsp;·</span>
+    <span class="tape-item">VIX <b id="t-vix2">{vix:.1f}</b></span>
+    <span class="tape-item">WTI <b id="t-wti2">${wti:.1f}</b></span>
+    <span class="tape-item">GOLD <b id="t-gold2">${gold:.0f}</b></span>
+    <span class="tape-item">DXY <b id="t-dxy2">{dxy:.1f}</b></span>
+    <span class="tape-item">RÉGIMEN <b style="color:{'#22c55e' if regime=='bull' else '#ef4444' if regime=='bear' else '#f59e0b'}">{regime.upper()}</b></span>
   </div>
 </div>
 
@@ -1517,11 +1594,24 @@ def generate() -> None:
     except Exception as e:
         logger.debug("trade_db no disponible: %s", e)
 
+    # Monte Carlo simulation
+    mc_result = None
+    try:
+        from alpha_agent.analytics.montecarlo import run_from_portfolio_history
+        mc_result = run_from_portfolio_history(history, initial_capital=equity)
+        if mc_result:
+            logger.info(
+                "Monte Carlo: retorno mediano %.1f%% | DD esperado %.1f%% | prob+ %.0f%%",
+                mc_result.median_return_pct, mc_result.expected_max_dd_pct, mc_result.prob_positive_pct,
+            )
+    except Exception as e:
+        logger.debug("Monte Carlo no disponible: %s", e)
+
     initial = signals_data.get("capital_usd", PARAMS.paper_capital_usd)
     html    = build_html(equity, initial, history, positions, signals_data,
                          spy_history=spy_history, qqq_history=qqq_history,
                          metrics=metrics, perf_data=perf_data, discovery_data=discovery_data,
-                         trades=trades)
+                         trades=trades, mc_result=mc_result)
     OUT_PATH.write_text(html, encoding="utf-8")
     logger.info("Dashboard generado -> %s (%d bytes)", OUT_PATH, len(html))
 

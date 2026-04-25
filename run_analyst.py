@@ -126,6 +126,27 @@ def main() -> None:
     macro = fetch_macro_snapshot()
     log.info("Régimen de mercado: %s — %s", macro.regime, macro.regime_reason)
 
+    # 2.5 Datos alternativos: Fear & Greed + Yield Curve + OpenInsider
+    alt_data: dict = {}
+    try:
+        from alpha_agent.data.alternative_data import get_all_alternative_data
+        from alpha_agent.config import ACTIVOS
+        all_tickers = list(ACTIVOS.values())
+        alt_data = get_all_alternative_data(all_tickers)
+        fg = alt_data.get("fear_greed", {})
+        yc = alt_data.get("yield_curve", {})
+        insiders = alt_data.get("insider_buys", [])
+        log.info(
+            "Alt data — Fear&Greed: %s (%s) | Yield curve: %.2f%% (%s) | Insider buys: %d",
+            fg.get("value", "?"), fg.get("label", "?"),
+            yc.get("spread_10y2y", 0), "INVERTIDA" if yc.get("inverted") else "normal",
+            len(insiders),
+        )
+        if insiders:
+            log.info("Insider buys: %s", [(b["ticker"], f"${b['value_usd']:,.0f}") for b in insiders[:5]])
+    except Exception as exc:
+        log.warning("Datos alternativos no disponibles: %s", exc)
+
     # 3. CAPM
     capm = compute_capm_metrics(closes, benchmark)
     log.info("Métricas CAPM calculadas para %d activos", len(capm))
@@ -247,6 +268,25 @@ def main() -> None:
             )
             signals.hedge_book = hedge_signals
             log.info("Hedge book: %d señales", len(hedge_signals))
+
+    # 8.8 SEC EDGAR 8-K scan para LP/CP picks (Claude Sonnet — usa solo en tickers activos)
+    edgar_alerts: list[dict] = []
+    if not args.no_ai:
+        try:
+            from alpha_agent.news.edgar_monitor import scan_edgar_filings, format_edgar_alerts
+            active_tickers = (
+                [s.ticker for s in signals.long_term[:PARAMS.top_n_long_term]]
+                + [s.ticker for s in signals.short_term[:PARAMS.top_n_short_term]]
+            )
+            edgar_alerts = scan_edgar_filings(active_tickers, days=2)
+            if edgar_alerts:
+                log.info("EDGAR: %d eventos materiales detectados", len(edgar_alerts))
+                for a in edgar_alerts:
+                    log.info("  8-K %s: %s %+.1f%% — %s",
+                             a["ticker"], a["sentiment"], a.get("impact_pct", 0), a["summary"])
+                signals.edgar_alerts = edgar_alerts
+        except Exception as exc:
+            log.warning("EDGAR scan no disponible: %s", exc)
 
     # 8.9 Radar de mercado: escaneo noticioso + movers del universo completo
     log.info("📡 Construyendo radar del universo (%d activos)…", closes.shape[1])
