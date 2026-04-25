@@ -384,11 +384,11 @@ def _pnl_calendar(history):
         if pnl > 0:
             i = min(pnl/250, 1.0)
             r = int(10 + 30*i); g = int(55 + 130*i); b = int(25 + 30*i)
-            return f"background:rgb({r},{g},{b})", "#3fb950" if i>.4 else "#86efac"
+            return f"background:rgb({r},{g},{b})", "#ffffff"
         elif pnl < 0:
             i = min(abs(pnl)/250, 1.0)
             r = int(55 + 170*i); g = int(15 + 20*i); b = int(15 + 20*i)
-            return f"background:rgb({r},{g},{b})", "#f85149" if i>.4 else "#fca5a5"
+            return f"background:rgb({r},{g},{b})", "#ffffff"
         return "background:var(--s2)", "#7d8590"
 
     n_days = cm.monthrange(yr, mo)[1]
@@ -657,7 +657,7 @@ def _perf_chart(perf_data: dict | None) -> str:
       }},
       scales:{{
         x:{{ticks:{{color:'#7d8590',font:{{size:10}}}},grid:{{display:false}}}},
-        y:{{ticks:{{color:'#7d8590',callback:v=>v+'%',font:{{size:10}}}},grid:{{color:'#21262d'}}}}
+        y:{{ticks:{{color:'#7d8590',callback:v=>parseFloat(v.toFixed(1))+'%',font:{{size:10}}}},grid:{{color:'#21262d'}}}}
       }}
     }}
   }});
@@ -890,7 +890,7 @@ def _tab_mercado(signals_data, discovery_data=None):
         callbacks:{{label:c=>' '+c.parsed.y.toFixed(2)+'%'}}}}}},
       scales:{{
         x:{{ticks:{{color:'#7d8590',font:{{size:11}}}},grid:{{display:false}}}},
-        y:{{ticks:{{color:'#7d8590',callback:v=>v+'%',font:{{size:11}}}},grid:{{color:'#21262d'}}}}
+        y:{{ticks:{{color:'#7d8590',callback:v=>parseFloat(v.toFixed(1))+'%',font:{{size:11}}}},grid:{{color:'#21262d'}}}}
       }}
     }}
   }});
