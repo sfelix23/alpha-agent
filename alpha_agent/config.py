@@ -21,9 +21,12 @@ ACTIVOS: dict[str, str] = {
     # Defensa y geopolítica
     "Lockheed": "LMT", "Raytheon": "RTX", "Northrop": "NOC", "General_Dynamics": "GD",
     "Boeing": "BA", "Palantir": "PLTR", "Anduril_Proxy": "AVAV",
-    # Argentina (NYSE ADRs y locales)
+    # Argentina (NYSE ADRs) — alto beta, asimétrico con recuperación macro AR
     "Galicia": "GGAL", "Macro": "BMA", "TGS": "TGS", "Edenor": "EDN",
-    "MercadoLibre": "MELI", "Despegar": "DESP", "IRSA": "IRS", "Aluar": "ALUA.BA",
+    "MercadoLibre": "MELI", "Despegar": "DESP", "IRSA": "IRS",
+    "Loma_Negra": "LOMA", "Transportadora_Gas_Norte": "TGNO4.BA",
+    # Growth / momentum — alto potencial de retorno asimétrico
+    "Broadcom": "AVGO", "Netflix": "NFLX", "CrowdStrike": "CRWD", "Coinbase": "COIN",
     # Minería / Litio / Cobre / Oro / Uranio
     "Arcadium_Lithium": "ALTM", "Lithium_Americas": "LAC", "SQM": "SQM",
     "Rio_Tinto": "RIO", "Vale": "VALE", "Barrick_Gold": "GOLD", "Newmont": "NEM",
@@ -69,6 +72,9 @@ SECTOR_MAP: dict[str, str] = {
     # Financials Argentina + consumer
     "GGAL": "Financials", "BMA": "Financials",
     "MELI": "Consumer", "DESP": "Consumer", "IRS": "RealEstate",
+    "LOMA": "Materials", "TGNO4.BA": "Energy",
+    # Growth US
+    "AVGO": "Tech", "NFLX": "Consumer", "CRWD": "Tech", "COIN": "Crypto",
     # ETFs / refugio
     "SPY": "ETF", "QQQ": "ETF", "GLD": "ETF", "IBIT": "Crypto", "ETHE": "Crypto",
 }
@@ -100,43 +106,46 @@ class FinancialParams:
     history_interval: str = "1d"
     min_obs: int = 60                     # mínimo de observaciones para incluir un activo
 
-    # Sleeves de asignación — dos buckets (opciones eliminadas)
-    # 70% LP long (equity high conviction, 5 posiciones)
-    # 30% CP long (equity trading técnico, momentum — más capital para noticias/AMD-style)
-    weight_long_term: float = 0.70
-    weight_short_term: float = 0.30
-    weight_options: float = 0.00
+    # ── CONCENTRATED MODE para $1,600 ──────────────────────────────────────────
+    # Con capital chico, la diversificación destruye retornos.
+    # Estrategia: 2 ideas LP de alta convicción + 1 CP momentum + cash reserva.
+    # Lógica: si una idea 3x, impacta 37-50% del portfolio (no el 14% de antes).
+    # Sleeves: 60% LP (2 pos) + 20% CP (1 pos) + 10% opciones call + 10% cash
+    weight_long_term: float = 0.60
+    weight_short_term: float = 0.20
+    weight_options: float = 0.10          # calls sobre la idea #1
 
-    # Filtros de calidad para LP
-    max_beta_lp: float = 1.5
-    min_sharpe_lp: float = 0.45
+    # Filtros LP — más selectivos en concentrated mode
+    max_beta_lp: float = 1.8             # aceptar beta más alto = más upside en bull
+    min_sharpe_lp: float = 0.40
 
     # Parámetros técnicos para CP
     rsi_oversold: float = 35.0
     rsi_overbought: float = 70.0
     atr_stop_multiple: float = 2.0        # stop loss = precio - 2*ATR
 
-    # Concentración — 5 LP alta convicción (~$224/pos con $1600), 3 CP momentum
-    # Menos posiciones = más capital por pick = fills más limpios en paper
-    top_n_long_term: int = 5
-    top_n_short_term: int = 3
+    # Concentrated: 2 LP (alta convicción, ~$480/pos) + 1 CP (momentum, ~$320)
+    # Con $1600: LP = $960 ÷ 2 = $480 cada una, CP = $320, OPT = $160
+    top_n_long_term: int = 2
+    top_n_short_term: int = 1
 
-    # Bucket options
-    top_n_bearish: int = 2                # hasta 2 puts direccionales simultáneos
-    max_contracts_per_trade: int = 2      # 1-2 contratos por trade en paper
+    # Bucket options — call sobre el pick #1 del LP
+    top_n_bearish: int = 1                # máx 1 put direccional
+    max_contracts_per_trade: int = 1      # 1 contrato por trade (capital limitado)
 
-    # Restricciones de la optimización Markowitz
-    max_weight_per_asset: float = 0.25    # hasta 25% por nombre (más diversificación)
+    # Concentración máxima — hasta 50% en la mejor idea
+    max_weight_per_asset: float = 0.50    # 50% max en un solo nombre
 
-    # Kill switch — el ejecutor no opera si el drawdown intradía supera este %
-    max_daily_drawdown: float = 0.03      # 3%
+    # Kill switch — concentrated mode acepta más volatilidad intradía
+    # Con 2 posiciones concentradas, un -3% puede ser ruido normal en días volátiles
+    max_daily_drawdown: float = 0.05      # 5% ($80 en $1600) — más realista para posiciones concentradas
 
     # Límites derivados — calibrados para capital ~$1600 USD
     max_options_allocation: float = 0.20  # techo duro sobre el bucket options (= weight_options)
     max_single_option_premium: float = 250.0  # máx USD por contrato (1 contrato ~ 15% libro)
     max_hedge_allocation: float = 0.22    # hasta 22% del libro en puts SPY cuando bear (1 contrato SPY ~ $350)
     enable_short_equity: bool = False     # OFF por default — preferimos puts (riesgo limitado)
-    enable_options: bool = False          # opciones desactivadas — capital redirigido a equity
+    enable_options: bool = True           # calls activados — apalancamiento definido sobre idea #1
     min_days_to_expiry: int = 14          # evita theta decay brutal
     max_days_to_expiry: int = 45          # evita gamma muerta (bajé de 60 a 45)
     target_delta_directional: float = 0.35  # puts/calls direccionales delta 0.35 (más OTM = más barato)

@@ -292,8 +292,9 @@ def build_scores(
 
     lp = lp.sort_values("score_lp", ascending=False)
 
-    # Guard de correlación y sector
-    if closes is not None and len(lp) > 1:
+    # Guard de correlación y sector — solo cuando hay suficientes posiciones (>= 4)
+    # En concentrated mode (2 posiciones) la diversificación destruye retornos.
+    if closes is not None and len(lp) > 1 and PARAMS.top_n_long_term >= 4:
         returns = np.log(closes / closes.shift(1)).dropna(how="all")
         returns = returns[[c for c in lp.index if c in returns.columns]]
         ranking = lp.index.tolist()
@@ -302,6 +303,8 @@ def build_scores(
         kept = filter_by_correlation_and_sector(ranking, returns)[:target]
         logger.info("Shortlist LP post-guard: %s", kept)
         lp = lp.loc[kept]
+    elif PARAMS.top_n_long_term < 4:
+        logger.info("Concentrated mode: saltando guard correlación/sector (top_n=%d)", PARAMS.top_n_long_term)
 
     # Quality factor bonus sobre shortlist (ROE, deuda, analyst rating)
     quality_lp = _get_quality_bonus(lp.index.tolist())
