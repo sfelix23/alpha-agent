@@ -282,8 +282,15 @@ def build_scores(
     if "rsi" in st.columns:
         score_st -= 0.15 * (st["rsi"].fillna(50) > 75).astype(float)
 
-    # Momentum confluence: penalizar señales contradictorias entre 1M y 3M
-    # Si 1M y 3M apuntan en direcciones opuestas → baja convicción → -0.20
+    # Momentum confluence: penalizar señales contradictorias entre timeframes
+    # 5d vs 1m: si el ultra-corto y el mensual se contradicen → -0.15
+    if "ret_5d" in st.columns and "ret_1m" in st.columns:
+        conflicting_5d_1m = (
+            (st["ret_5d"].fillna(0) * st["ret_1m"].fillna(0)) < 0
+        ).astype(float)
+        score_st -= 0.15 * conflicting_5d_1m
+
+    # 1m vs 3m: contradicción de plazo → -0.20
     if "ret_1m" in st.columns and "ret_3m" in st.columns:
         conflicting = (
             (st["ret_1m"].fillna(0) * st["ret_3m"].fillna(0)) < 0

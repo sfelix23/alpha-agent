@@ -152,11 +152,21 @@ def compute_technical_indicators(ohlc: dict[str, pd.DataFrame]) -> pd.DataFrame:
         last_atr   = float(atr.iloc[-1]) if atr is not None and not np.isnan(atr.iloc[-1]) else np.nan
 
         ret_1m  = float(close.iloc[-1] / close.iloc[-21] - 1)  if len(close) >= 22 else np.nan
+        ret_5d  = float(close.iloc[-1] / close.iloc[-5] - 1)   if len(close) >= 6 else np.nan
         ret_3m  = float(close.iloc[-1] / close.iloc[-63] - 1)  if len(close) >= 64 else np.nan
         ret_6m  = float(close.iloc[-1] / close.iloc[-126] - 1) if len(close) >= 127 else np.nan
 
         high_52w     = float(close.tail(252).max())
         dist_52w_high = float(last_price / high_52w - 1)
+
+        # Chandelier Exit: trailing stop dinámico (Chuck LeBeau)
+        # = highest_close(22) - 3 × ATR(22)
+        atr22 = _atr_native(high, low, close, length=22)
+        if len(close) >= 23 and not np.isnan(atr22.iloc[-1]):
+            highest_close_22 = float(close.tail(22).max())
+            chandelier_stop  = round(highest_close_22 - 3.0 * float(atr22.iloc[-1]), 2)
+        else:
+            chandelier_stop = np.nan
 
         # Breakout: precio en máximo de 20 días con volumen alto
         high_20d  = float(close.tail(20).max())
@@ -169,10 +179,12 @@ def compute_technical_indicators(ohlc: dict[str, pd.DataFrame]) -> pd.DataFrame:
             "rsi":           round(last_rsi, 2) if not np.isnan(last_rsi) else np.nan,
             "atr":           round(last_atr, 4) if not np.isnan(last_atr) else np.nan,
             "stop_loss_atr": round(last_price - 2 * last_atr, 2) if not np.isnan(last_atr) else np.nan,
+            "ret_5d":        ret_5d,
             "ret_1m":        ret_1m,
             "ret_3m":        ret_3m,
             "ret_6m":        ret_6m,
             "dist_52w_high": dist_52w_high,
+            "chandelier_stop": chandelier_stop,
             # Nuevos — MACD
             "macd":          round(last_macd, 4),
             "macd_signal":   round(last_macd_sig, 4),

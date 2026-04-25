@@ -1191,8 +1191,67 @@ tr:hover td{background:var(--s2)}
 
 # ─── HTML completo ─────────────────────────────────────────────────────────────
 
+def _tab_historial(trades: list[dict]) -> str:
+    if not trades:
+        return (
+            '<div class="tab-content" id="tab-historial">'
+            '<div class="card"><p class="muted" style="padding:40px;text-align:center">'
+            'Sin historial de operaciones todavia. Las ordenes ejecutadas apareceran aqui.'
+            '</p></div></div>'
+        )
+
+    rows_html = ""
+    for t in trades:
+        side = t.get("side", "").upper()
+        side_color = "#3fb950" if side == "BUY" else "#f85149"
+        sleeve = t.get("sleeve") or "—"
+        notional = t.get("notional")
+        price = t.get("price")
+        rows_html += (
+            f'<tr>'
+            f'<td>{_esc(t.get("date",""))}</td>'
+            f'<td><b>{_esc(t.get("ticker",""))}</b></td>'
+            f'<td style="color:{side_color}">{side}</td>'
+            f'<td>{_esc(sleeve)}</td>'
+            f'<td>{f"${notional:,.0f}" if notional else "—"}</td>'
+            f'<td>{f"${price:,.2f}" if price else "—"}</td>'
+            f'<td>{_esc(t.get("regime","") or "—")}</td>'
+            f'<td>{_esc(t.get("status",""))}</td>'
+            f'</tr>'
+        )
+
+    return f"""<div class="tab-content" id="tab-historial">
+<div class="card">
+  <div class="card-head"><div>
+    <div class="card-title">Historial de Operaciones</div>
+    <div class="card-sub">{len(trades)} ordenes ejecutadas (ultimas 200)</div>
+  </div></div>
+  <div style="overflow-x:auto;margin-top:12px">
+    <table style="width:100%;border-collapse:collapse;font-size:.82rem">
+      <thead>
+        <tr style="border-bottom:1px solid var(--border);color:var(--mt)">
+          <th style="text-align:left;padding:6px 10px">Fecha</th>
+          <th style="text-align:left;padding:6px 10px">Ticker</th>
+          <th style="text-align:left;padding:6px 10px">Lado</th>
+          <th style="text-align:left;padding:6px 10px">Sleeve</th>
+          <th style="text-align:right;padding:6px 10px">Notional</th>
+          <th style="text-align:right;padding:6px 10px">Precio</th>
+          <th style="text-align:left;padding:6px 10px">Regimen</th>
+          <th style="text-align:left;padding:6px 10px">Estado</th>
+        </tr>
+      </thead>
+      <tbody>
+        {rows_html}
+      </tbody>
+    </table>
+  </div>
+</div>
+</div>"""
+
+
 def build_html(equity, initial, history, positions, signals_data,
-               spy_history=None, qqq_history=None, metrics=None, perf_data=None, discovery_data=None):
+               spy_history=None, qqq_history=None, metrics=None, perf_data=None, discovery_data=None,
+               trades=None):
     if spy_history is None:
         spy_history = []
     if qqq_history is None:
@@ -1227,6 +1286,7 @@ def build_html(equity, initial, history, positions, signals_data,
     t_posiciones = _tab_posiciones(positions)
     t_senales    = _tab_senales(signals_data)
     t_mercado    = _tab_mercado(signals_data, discovery_data=discovery_data)
+    t_historial  = _tab_historial(trades or [])
 
     return f"""<!DOCTYPE html>
 <html lang="es">
@@ -1256,12 +1316,14 @@ def build_html(equity, initial, history, positions, signals_data,
   <button class="tab-btn" data-tab="posiciones">Posiciones</button>
   <button class="tab-btn" data-tab="senales">Senales</button>
   <button class="tab-btn" data-tab="mercado">Mercado</button>
+  <button class="tab-btn" data-tab="historial">Historial</button>
 </nav>
 
 {t_resumen}
 {t_posiciones}
 {t_senales}
 {t_mercado}
+{t_historial}
 
 <script>
 // ── tabs ──
@@ -1447,10 +1509,19 @@ def generate() -> None:
         except Exception:
             pass
 
+    # Trade history from SQLite
+    trades: list[dict] = []
+    try:
+        from alpha_agent.analytics.trade_db import get_trades
+        trades = get_trades(limit=200)
+    except Exception as e:
+        logger.debug("trade_db no disponible: %s", e)
+
     initial = signals_data.get("capital_usd", PARAMS.paper_capital_usd)
     html    = build_html(equity, initial, history, positions, signals_data,
                          spy_history=spy_history, qqq_history=qqq_history,
-                         metrics=metrics, perf_data=perf_data, discovery_data=discovery_data)
+                         metrics=metrics, perf_data=perf_data, discovery_data=discovery_data,
+                         trades=trades)
     OUT_PATH.write_text(html, encoding="utf-8")
     logger.info("Dashboard generado -> %s (%d bytes)", OUT_PATH, len(html))
 

@@ -237,7 +237,7 @@ tr:hover td{background:var(--s2)}
 <div class="topbar">
   <div class="logo">Alpha Dashboard</div>
   <div class="topbar-meta">
-    <span><span class="live"></span> 25 de April de 2026 — 04:34</span>
+    <span><span class="live"></span> 25 de April de 2026 — 01:51</span>
     <span>&middot; Paper Trading</span>
     <span id="countdown" style="color:var(--mt);font-size:.78rem"></span>
   </div>
@@ -248,6 +248,7 @@ tr:hover td{background:var(--s2)}
   <button class="tab-btn" data-tab="posiciones">Posiciones</button>
   <button class="tab-btn" data-tab="senales">Senales</button>
   <button class="tab-btn" data-tab="mercado">Mercado</button>
+  <button class="tab-btn" data-tab="historial">Historial</button>
 </nav>
 
 
@@ -332,7 +333,7 @@ tr:hover td{background:var(--s2)}
   window._charts.eq = new Chart(ctx,{
     type:'line',
     data:{
-      labels:["09 Apr", "10 Apr", "11 Apr", "14 Apr", "15 Apr", "16 Apr", "17 Apr", "18 Apr", "21 Apr", "22 Apr", "23 Apr", "24 Apr"],
+      labels:["08 Apr", "09 Apr", "10 Apr", "13 Apr", "14 Apr", "15 Apr", "16 Apr", "17 Apr", "20 Apr", "21 Apr", "22 Apr", "23 Apr"],
       datasets:[
         {data:[0.0, 0.0, 0.0, 0.43, 0.769, 0.31, 0.998, 0.745, 0.666, -0.678, 0.365, -0.619],label:'Portfolio',
           borderColor:'#f85149',backgroundColor:g,fill:true,tension:.4,
@@ -383,56 +384,96 @@ tr:hover td{background:var(--s2)}
   <div class="cal-wrap">
     <table class="cal-table">
       <thead><tr><th class="cal-th">Lun</th><th class="cal-th">Mar</th><th class="cal-th">Mie</th><th class="cal-th">Jue</th><th class="cal-th">Vie</th><th class="cal-th">Sab</th><th class="cal-th">Dom</th></tr></thead>
-      <tbody><tr><td class="cal-empty"></td><td class="cal-empty"></td><td class="cal-cell cal-nd"><span class="cal-n">1</span><span class="cal-q">—</span></td><td class="cal-cell cal-nd"><span class="cal-n">2</span><span class="cal-q">—</span></td><td class="cal-cell cal-nd"><span class="cal-n">3</span><span class="cal-q">—</span></td><td class="cal-cell cal-wk"><span class="cal-n">4</span></td><td class="cal-cell cal-wk"><span class="cal-n">5</span></td></tr><tr><td class="cal-cell cal-nd"><span class="cal-n">6</span><span class="cal-q">—</span></td><td class="cal-cell cal-nd"><span class="cal-n">7</span><span class="cal-q">—</span></td><td class="cal-cell cal-nd"><span class="cal-n">8</span><span class="cal-q">—</span></td><td class="cal-cell cal-nd"><span class="cal-n">9</span><span class="cal-q">—</span></td><td class="cal-cell" style="background:var(--s2)">
-  <span class="cal-n">10</span>
+      <tbody><tr><td class="cal-empty"></td><td class="cal-empty"></td><td class="cal-cell cal-nd"><span class="cal-n">1</span><span class="cal-q">—</span></td><td class="cal-cell cal-nd"><span class="cal-n">2</span><span class="cal-q">—</span></td><td class="cal-cell cal-nd"><span class="cal-n">3</span><span class="cal-q">—</span></td><td class="cal-cell cal-wk"><span class="cal-n">4</span></td><td class="cal-cell cal-wk"><span class="cal-n">5</span></td></tr><tr><td class="cal-cell cal-nd"><span class="cal-n">6</span><span class="cal-q">—</span></td><td class="cal-cell cal-nd"><span class="cal-n">7</span><span class="cal-q">—</span></td><td class="cal-cell cal-nd"><span class="cal-n">8</span><span class="cal-q">—</span></td><td class="cal-cell" style="background:var(--s2)">
+  <span class="cal-n">9</span>
   <span class="cal-p" style="color:#7d8590">+$0</span>
   <span class="cal-q" style="color:#7d8590">+0.0%</span>
 </td><td class="cal-cell" style="background:var(--s2)">
-  <span class="cal-n">11</span>
+  <span class="cal-n">10</span>
   <span class="cal-p" style="color:#7d8590">+$0</span>
   <span class="cal-q" style="color:#7d8590">+0.0%</span>
-</td><td class="cal-cell cal-wk"><span class="cal-n">12</span></td></tr><tr><td class="cal-cell cal-nd"><span class="cal-n">13</span><span class="cal-q">—</span></td><td class="cal-cell" style="background:rgb(40,185,55)">
-  <span class="cal-n">14</span>
+</td><td class="cal-cell cal-wk"><span class="cal-n">11</span></td><td class="cal-cell cal-wk"><span class="cal-n">12</span></td></tr><tr><td class="cal-cell" style="background:rgb(40,185,55)">
+  <span class="cal-n">13</span>
   <span class="cal-p" style="color:#3fb950">+$430</span>
   <span class="cal-q" style="color:#3fb950">+0.4%</span>
 </td><td class="cal-cell" style="background:rgb(40,185,55)">
-  <span class="cal-n">15</span>
+  <span class="cal-n">14</span>
   <span class="cal-p" style="color:#3fb950">+$339</span>
   <span class="cal-q" style="color:#3fb950">+0.3%</span>
 </td><td class="cal-cell" style="background:rgb(225,35,35)">
-  <span class="cal-n">16</span>
+  <span class="cal-n">15</span>
   <span class="cal-p" style="color:#f85149">$-459</span>
   <span class="cal-q" style="color:#f85149">-0.5%</span>
 </td><td class="cal-cell" style="background:rgb(40,185,55)">
-  <span class="cal-n">17</span>
+  <span class="cal-n">16</span>
   <span class="cal-p" style="color:#3fb950">+$689</span>
   <span class="cal-q" style="color:#3fb950">+0.7%</span>
 </td><td class="cal-cell" style="background:rgb(225,35,35)">
-  <span class="cal-n">18</span>
+  <span class="cal-n">17</span>
   <span class="cal-p" style="color:#f85149">$-254</span>
   <span class="cal-q" style="color:#f85149">-0.3%</span>
-</td><td class="cal-cell cal-wk"><span class="cal-n">19</span></td></tr><tr><td class="cal-cell cal-nd"><span class="cal-n">20</span><span class="cal-q">—</span></td><td class="cal-cell" style="background:rgb(108,21,21)">
-  <span class="cal-n">21</span>
+</td><td class="cal-cell cal-wk"><span class="cal-n">18</span></td><td class="cal-cell cal-wk"><span class="cal-n">19</span></td></tr><tr><td class="cal-cell" style="background:rgb(108,21,21)">
+  <span class="cal-n">20</span>
   <span class="cal-p" style="color:#fca5a5">$-78</span>
   <span class="cal-q" style="color:#fca5a5">-0.1%</span>
 </td><td class="cal-cell" style="background:rgb(225,35,35)">
-  <span class="cal-n">22</span>
+  <span class="cal-n">21</span>
   <span class="cal-p" style="color:#f85149">$-1,344</span>
   <span class="cal-q" style="color:#f85149">-1.3%</span>
 </td><td class="cal-cell" style="background:rgb(40,185,55)">
-  <span class="cal-n">23</span>
+  <span class="cal-n">22</span>
   <span class="cal-p" style="color:#3fb950">+$1,044</span>
   <span class="cal-q" style="color:#3fb950">+1.1%</span>
 </td><td class="cal-cell" style="background:rgb(225,35,35)">
-  <span class="cal-n">24</span>
+  <span class="cal-n">23</span>
   <span class="cal-p" style="color:#f85149">$-984</span>
   <span class="cal-q" style="color:#f85149">-1.0%</span>
-</td><td class="cal-cell cal-wk"><span class="cal-n">25</span></td><td class="cal-cell cal-wk"><span class="cal-n">26</span></td></tr><tr><td class="cal-cell cal-nd"><span class="cal-n">27</span><span class="cal-q">—</span></td><td class="cal-cell cal-nd"><span class="cal-n">28</span><span class="cal-q">—</span></td><td class="cal-cell cal-nd"><span class="cal-n">29</span><span class="cal-q">—</span></td><td class="cal-cell cal-nd"><span class="cal-n">30</span><span class="cal-q">—</span></td><td class="cal-empty"></td><td class="cal-empty"></td><td class="cal-empty"></td></tr></tbody>
+</td><td class="cal-cell cal-nd"><span class="cal-n">24</span><span class="cal-q">—</span></td><td class="cal-cell cal-wk"><span class="cal-n">25</span></td><td class="cal-cell cal-wk"><span class="cal-n">26</span></td></tr><tr><td class="cal-cell cal-nd"><span class="cal-n">27</span><span class="cal-q">—</span></td><td class="cal-cell cal-nd"><span class="cal-n">28</span><span class="cal-q">—</span></td><td class="cal-cell cal-nd"><span class="cal-n">29</span><span class="cal-q">—</span></td><td class="cal-cell cal-nd"><span class="cal-n">30</span><span class="cal-q">—</span></td><td class="cal-empty"></td><td class="cal-empty"></td><td class="cal-empty"></td></tr></tbody>
     </table>
   </div>
 </div>
   <div class="section-gap"></div>
-  <div class="card"><div class="card-head"><div><div class="card-title">Performance Semanal vs SPY</div><div class="card-sub">Disponible tras el primer rebalanceo del viernes</div></div></div><p class="muted" style="padding:8px 0 12px">Sin historial de performance semanal todavia.</p></div>
+  
+<div class="card">
+  <div class="card-head">
+    <div>
+      <div class="card-title">Performance Semanal vs SPY</div>
+      <div class="card-sub">Retorno semanal del portfolio comparado con el benchmark</div>
+    </div>
+  </div>
+  
+  <canvas id="perfChart" height="100"></canvas>
+</div>
+<script>
+(function(){
+  window._charts=window._charts||{};
+  window._charts.perf=new Chart(document.getElementById('perfChart'),{
+    type:'bar',
+    data:{
+      labels:["04/24"],
+      datasets:[
+        {label:'Portfolio',data:[-1.28],backgroundColor:'#1f6feb88',
+          borderColor:'#1f6feb',borderWidth:1,borderRadius:4,borderSkipped:false},
+        {label:'SPY',data:[null],backgroundColor:'#7d859044',
+          borderColor:'#7d8590',borderWidth:1,borderRadius:4,borderSkipped:false}
+      ]
+    },
+    options:{
+      animation:{duration:600},
+      plugins:{
+        legend:{labels:{color:'#7d8590',font:{size:11}}},
+        tooltip:{backgroundColor:'#161b22',borderColor:'#30363d',borderWidth:1,
+          titleColor:'#7d8590',bodyColor:'#e6edf3',padding:10,
+          callbacks:{label:c=>` ${c.dataset.label}: ${c.parsed.y!=null?c.parsed.y.toFixed(2):'N/A'}%`}}
+      },
+      scales:{
+        x:{ticks:{color:'#7d8590',font:{size:10}},grid:{display:false}},
+        y:{ticks:{color:'#7d8590',callback:v=>v+'%',font:{size:10}},grid:{color:'#21262d'}}
+      }
+    }
+  });
+})();
+</script>
 </div>
 
 <div class="tab-content" id="tab-posiciones">
@@ -926,6 +967,7 @@ tr:hover td{background:var(--s2)}
   <div class="section-gap"></div>
   <div class="card"><p class="muted" style="padding:20px">Discovery corre los viernes. Sin datos todavia.</p></div>
 </div>
+<div class="tab-content" id="tab-historial"><div class="card"><p class="muted" style="padding:40px;text-align:center">Sin historial de operaciones todavia. Las ordenes ejecutadas apareceran aqui.</p></div></div>
 
 <script>
 // ── tabs ──

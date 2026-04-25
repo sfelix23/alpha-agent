@@ -76,7 +76,7 @@ SECTOR_MAP: dict[str, str] = {
 # Máximo % del libro LP por sector (guard de diversificación)
 MAX_SECTOR_WEIGHT_LP: float = 0.40      # ningún sector > 40% del sleeve LP
 # Correlación máxima permitida entre dos activos LP (rolling 1y)
-MAX_PAIR_CORRELATION: float = 0.72
+MAX_PAIR_CORRELATION: float = 0.80
 
 
 # ────────────────────────────────────────────────────────────────────────────
@@ -109,16 +109,16 @@ class FinancialParams:
 
     # Filtros de calidad para LP
     max_beta_lp: float = 1.5
-    min_sharpe_lp: float = 0.55
+    min_sharpe_lp: float = 0.45
 
     # Parámetros técnicos para CP
     rsi_oversold: float = 35.0
     rsi_overbought: float = 70.0
     atr_stop_multiple: float = 2.0        # stop loss = precio - 2*ATR
 
-    # Concentración — 5 LP high conviction, 3 CP momentum
-    top_n_long_term: int = 5
-    top_n_short_term: int = 3
+    # Concentración — 7 LP high conviction, 5 CP momentum
+    top_n_long_term: int = 7
+    top_n_short_term: int = 5
 
     # Bucket options
     top_n_bearish: int = 2                # hasta 2 puts direccionales simultáneos

@@ -120,6 +120,38 @@ def _update_trailing_stop(
         alerts.append("  _(dry-run: stop no enviado a Alpaca)_")
 
 
+def _compute_chandelier_stop(ticker: str) -> float | None:
+    """
+    Chandelier Exit = highest_close(22) - 3 × ATR(22).
+    Descarga últimos 30 días de OHLC via yfinance (rápido, sin cache).
+    Retorna None si no hay suficientes datos.
+    """
+    try:
+        import numpy as np
+        import yfinance as yf
+        df = yf.download(ticker, period="35d", progress=False, auto_adjust=True)
+        if df is None or len(df) < 23:
+            return None
+        close = df["Close"].squeeze()
+        high  = df["High"].squeeze()
+        low   = df["Low"].squeeze()
+        # ATR(22)
+        prev_close = close.shift(1)
+        tr = (
+            (high - low).abs()
+            .combine((high - prev_close).abs(), max)
+            .combine((low - prev_close).abs(), max)
+        )
+        atr22 = float(tr.rolling(22).mean().iloc[-1])
+        highest_close_22 = float(close.tail(22).max())
+        if np.isnan(atr22) or np.isnan(highest_close_22):
+            return None
+        return round(highest_close_22 - 3.0 * atr22, 2)
+    except Exception as e:
+        logger.debug("chandelier_stop %s: %s", ticker, e)
+        return None
+
+
 def main():
     parser = argparse.ArgumentParser(description="Monitor intradía de posiciones.")
     parser.add_argument("--live", action="store_true", help="Ejecutar cierres reales en Alpaca.")
@@ -228,40 +260,26 @@ def main():
                 action = "CLOSE"
                 reason = f"TAKE PROFIT alcanzado (${current:.2f} >= TP ${take_profit:.2f})"
 
-            # Trailing stop dinámico — actualiza stop en Alpaca proactivamente
+            # Chandelier Exit trailing stop (Chuck LeBeau)
+            # Sube dinámicamente con el precio; solo cierra si el precio cae
             elif avg_entry > 0:
-                gain_pct = (current - avg_entry) / avg_entry
+                chandelier_level = _compute_chandelier_stop(ticker)
+                current_sl = signal.get("stop_loss") or 0.0
 
-                if gain_pct >= 0.10:
-                    # Bloquear 50% de la ganancia acumulada
-                    new_trail = avg_entry + (current - avg_entry) * 0.50
-                    current_sl = signal.get("stop_loss") or 0.0
-                    if new_trail > current_sl + 0.01:
-                        _update_trailing_stop(
-                            broker, ticker, new_trail, abs(qty), args.live and not args.dry_run,
-                            alerts,
-                            f"+{gain_pct*100:.1f}% -> bloqueando 50% ganancia @ ${new_trail:.2f}",
-                        )
-                        # Actualizar en signals para este run
-                        signal["stop_loss"] = new_trail
+                if chandelier_level is not None and chandelier_level > current_sl + 0.01:
+                    _update_trailing_stop(
+                        broker, ticker, chandelier_level, abs(qty), args.live and not args.dry_run,
+                        alerts,
+                        f"Chandelier Exit @ ${chandelier_level:.2f} (era SL ${current_sl:.2f})",
+                    )
+                    signal["stop_loss"] = chandelier_level
 
-                elif gain_pct >= 0.05:
-                    # Mover stop a breakeven (+0.5% sobre entrada)
-                    new_trail = avg_entry * 1.005
-                    current_sl = signal.get("stop_loss") or 0.0
-                    if new_trail > current_sl + 0.01:
-                        _update_trailing_stop(
-                            broker, ticker, new_trail, abs(qty), args.live and not args.dry_run,
-                            alerts,
-                            f"+{gain_pct*100:.1f}% -> moviendo stop a breakeven @ ${new_trail:.2f}",
-                        )
-                        signal["stop_loss"] = new_trail
-
-                # Evaluar si el trailing ya fue tocado con el stop actualizado
-                updated_sl = signal.get("stop_loss")
-                if updated_sl and current <= updated_sl and gain_pct > 0:
+                # Si el precio actual cae por debajo del chandelier → cerrar
+                effective_sl = signal.get("stop_loss")
+                if effective_sl and current <= effective_sl:
+                    gain_pct = (current - avg_entry) / avg_entry
                     action = "CLOSE"
-                    reason = f"TRAILING STOP TOCADO (${current:.2f} <= ${updated_sl:.2f})"
+                    reason = f"CHANDELIER EXIT TOCADO (${current:.2f} <= ${effective_sl:.2f}, P&L {gain_pct*100:+.1f}%)"
 
             # ── Claude intelligence: consultar cuando estamos cerca del stop ──
             # Si el precio está dentro del 1.5% del stop loss (pero no lo tocó),

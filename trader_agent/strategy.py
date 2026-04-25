@@ -223,7 +223,33 @@ def execute(broker: BrokerBase, *, dry_run: bool = True, max_capital: float | No
     equity_intents = _apply_risk_debate(signals, equity_intents, positions, capital_adj)
     logger.info("Risk Arbiter: %d órdenes post-filtro", len(equity_intents))
 
-    fills.extend(_submit_equity_intents(broker, equity_intents, dry_run=dry_run))
+    # ── Macro calendar guard: evento mayor mañana → CP al 50% ───────────────────
+    try:
+        from alpha_agent.macro.event_calendar import get_upcoming_events
+        upcoming = get_upcoming_events(days_ahead=1)
+        if upcoming:
+            logger.warning("Macro guard activo — eventos: %s → CP notional x50%%", upcoming)
+            guarded = []
+            for intent in equity_intents:
+                if getattr(intent, "horizon", "") in ("CP", "short_term"):
+                    intent = TradeIntent(
+                        ticker=intent.ticker,
+                        side=intent.side,
+                        notional=intent.notional * 0.50,
+                        horizon=intent.horizon,
+                        stop_loss=intent.stop_loss,
+                        take_profit=intent.take_profit,
+                    )
+                guarded.append(intent)
+            equity_intents = guarded
+    except Exception as _mcg_exc:
+        logger.debug("event_calendar no disponible (%s)", _mcg_exc)
+        upcoming = []
+
+    fills.extend(_submit_equity_intents(
+        broker, equity_intents, dry_run=dry_run,
+        regime=regime, vix=vix,
+    ))
 
     # ── Opciones (direccionales + hedge) ────────────────────────────
     option_intents = build_option_intents(signals, capital_adj)
@@ -384,7 +410,14 @@ def _limit_price(price: float, side: str) -> float:
     return round(price * 0.9985, 2)
 
 
-def _submit_equity_intents(broker: BrokerBase, intents: list[TradeIntent], *, dry_run: bool) -> list[dict]:
+def _submit_equity_intents(
+    broker: BrokerBase,
+    intents: list[TradeIntent],
+    *,
+    dry_run: bool,
+    regime: str = "unknown",
+    vix: float = 18.0,
+) -> list[dict]:
     fills = []
     for intent in intents:
         try:
@@ -420,6 +453,25 @@ def _submit_equity_intents(broker: BrokerBase, intents: list[TradeIntent], *, dr
                     "qty": qty, "status": "submitted", "order_id": oid,
                     "limit_price": lp,
                 })
+                try:
+                    from alpha_agent.analytics.trade_db import log_trade
+                    log_trade(
+                        ticker=intent.ticker,
+                        side=intent.side,
+                        qty=qty,
+                        price=price,
+                        notional=intent.notional,
+                        sleeve=intent.horizon,
+                        status="submitted",
+                        order_id=str(oid) if oid else None,
+                        stop_loss=intent.stop_loss,
+                        take_profit=intent.take_profit,
+                        regime=regime,
+                        vix=vix,
+                        limit_price=lp,
+                    )
+                except Exception as _db_exc:
+                    logger.debug("trade_db log error: %s", _db_exc)
         except Exception as e:
             logger.error("Falló equity %s: %s", intent.ticker, e)
             fills.append({
