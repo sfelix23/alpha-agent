@@ -11,7 +11,7 @@ env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
   monitor:
@@ -21,6 +21,8 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Setup Python 3.11
         uses: actions/setup-python@v5
@@ -50,3 +52,12 @@ jobs:
 
       - name: Run Monitor
         run: python run_monitor.py --live
+
+      - name: Commit trades DB (persiste PnL entre runs)
+        run: |
+          git config user.name "Alpha Bot"
+          git config user.email "alpha-bot@noreply.github.com"
+          git add signals/trades.db
+          git diff --staged --quiet || git commit -m "chore: trades db update $(date -u +%Y-%m-%dT%H:%M) [skip ci]"
+          git push
+        continue-on-error: true
