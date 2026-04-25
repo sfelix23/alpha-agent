@@ -7,7 +7,7 @@
 param([switch]$Uninstall)
 
 $baseDir = "D:\Agente"
-$taskNames = @("Alpha Wake", "Alpha Dashboard", "Alpha Analyst", "Alpha Monitor", "Alpha Rebalancer")
+$taskNames = @("Alpha Wake", "Alpha Dashboard", "Alpha Analyst", "Alpha Monitor", "Alpha Rebalancer", "Alpha Health", "Alpha Portfolio Review", "Alpha Email Digest")
 
 # 1. Verificar admin
 $me = New-Object Security.Principal.WindowsPrincipal([Security.Principal.WindowsIdentity]::GetCurrent())
@@ -204,6 +204,87 @@ if (Get-ScheduledTask -TaskName "Alpha Rebalancer" -ErrorAction SilentlyContinue
     Write-Host "  [FAIL] Alpha Rebalancer" -ForegroundColor Red
 }
 
+# =========================================================
+# TAREA 5: Alpha Health - lun-vie 12:30
+# =========================================================
+$a5 = New-ScheduledTaskAction `
+    -Execute "powershell.exe" `
+    -Argument ("-NoProfile -ExecutionPolicy Bypass -Command `"cd '$baseDir'; python '$baseDir\run_health_check.py' 2>&1`"") `
+    -WorkingDirectory $baseDir
+
+$t5 = New-ScheduledTaskTrigger -Weekly `
+    -DaysOfWeek Monday,Tuesday,Wednesday,Thursday,Friday `
+    -At "12:30"
+
+Register-ScheduledTask `
+    -TaskName "Alpha Health" `
+    -Action $a5 `
+    -Trigger $t5 `
+    -Settings (New-BaseSettings 5) `
+    -Principal $principal `
+    -Description "Health check: alerta si el bot no corrió" `
+    -Force | Out-Null
+
+if (Get-ScheduledTask -TaskName "Alpha Health" -ErrorAction SilentlyContinue) {
+    Write-Host "  [OK] Alpha Health     - 12:30 ART lun-vie" -ForegroundColor Green
+} else {
+    Write-Host "  [FAIL] Alpha Health" -ForegroundColor Red
+}
+
+# =========================================================
+# TAREA 6: Alpha Portfolio Review - domingos 20:00
+# =========================================================
+$a6 = New-ScheduledTaskAction `
+    -Execute "powershell.exe" `
+    -Argument ("-NoProfile -ExecutionPolicy Bypass -Command `"cd '$baseDir'; python '$baseDir\run_portfolio_review.py' 2>&1`"") `
+    -WorkingDirectory $baseDir
+
+$t6 = New-ScheduledTaskTrigger -Weekly `
+    -DaysOfWeek Sunday `
+    -At "20:00"
+
+Register-ScheduledTask `
+    -TaskName "Alpha Portfolio Review" `
+    -Action $a6 `
+    -Trigger $t6 `
+    -Settings (New-BaseSettings 10) `
+    -Principal $principal `
+    -Description "Revisión semanal de portfolio con Claude Sonnet" `
+    -Force | Out-Null
+
+if (Get-ScheduledTask -TaskName "Alpha Portfolio Review" -ErrorAction SilentlyContinue) {
+    Write-Host "  [OK] Alpha Portfolio Review - domingos 20:00" -ForegroundColor Green
+} else {
+    Write-Host "  [FAIL] Alpha Portfolio Review" -ForegroundColor Red
+}
+
+# =========================================================
+# TAREA 7: Alpha Email Digest - viernes 17:00
+# =========================================================
+$a7 = New-ScheduledTaskAction `
+    -Execute "powershell.exe" `
+    -Argument ("-NoProfile -ExecutionPolicy Bypass -Command `"cd '$baseDir'; python '$baseDir\run_email_digest.py' 2>&1`"") `
+    -WorkingDirectory $baseDir
+
+$t7 = New-ScheduledTaskTrigger -Weekly `
+    -DaysOfWeek Friday `
+    -At "17:00"
+
+Register-ScheduledTask `
+    -TaskName "Alpha Email Digest" `
+    -Action $a7 `
+    -Trigger $t7 `
+    -Settings (New-BaseSettings 10) `
+    -Principal $principal `
+    -Description "Email digest semanal HTML" `
+    -Force | Out-Null
+
+if (Get-ScheduledTask -TaskName "Alpha Email Digest" -ErrorAction SilentlyContinue) {
+    Write-Host "  [OK] Alpha Email Digest - viernes 17:00" -ForegroundColor Green
+} else {
+    Write-Host "  [FAIL] Alpha Email Digest" -ForegroundColor Red
+}
+
 # Habilitar wake timers
 Write-Host ""
 Write-Host "Habilitando wake timers..." -ForegroundColor Cyan
@@ -225,8 +306,11 @@ Write-Host "HORARIO (lunes a viernes):" -ForegroundColor Cyan
 Write-Host "  10:00  PC despierta de Sleep"
 Write-Host "  10:35  Analyst + Trader + WhatsApp"
 Write-Host "  11:05  Monitor cada 30 min hasta 16:35"
+Write-Host "  12:30  Health check (alerta si bot no corrió)"
 Write-Host "  15:00  Rebalancer semanal (viernes)"
+Write-Host "  17:00  Email digest semanal (viernes)"
 Write-Host "  17:15  PC a dormir"
+Write-Host "  20:00  Portfolio review con Claude (domingos)"
 Write-Host ""
 Write-Host "ANTES DE IR A LA FACULTAD:" -ForegroundColor Yellow
 Write-Host "  Win+X > Suspender (NO apagar)"

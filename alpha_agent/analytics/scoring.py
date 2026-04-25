@@ -185,6 +185,8 @@ def build_scores(
     closes: pd.DataFrame | None = None,
     regime: str = "unknown",
     prev_sentiment: dict[str, float] | None = None,
+    insider_signal: dict[str, float] | None = None,
+    fear_greed: int | None = None,
 ) -> dict[str, pd.DataFrame]:
     """
     Devuelve {'long_term': df, 'short_term': df} con rankings mejorados.
@@ -226,6 +228,22 @@ def build_scores(
     if regime.lower() == "bull" and "beta" in lp.columns:
         bull_beta_mask = (lp["beta"] >= 1.0) & (lp["beta"] <= 1.5)
         lp.loc[bull_beta_mask, "score_lp"] += 0.25
+
+    # Insider buy bonus LP: señal institucional de conviction real
+    if insider_signal:
+        for t, strength in insider_signal.items():
+            if t in lp.index and strength > 0:
+                lp.loc[t, "score_lp"] += 0.20 * min(strength, 1.0)
+                logger.info("Insider buy bonus LP %s: +%.2f", t, 0.20 * min(strength, 1.0))
+
+    # Fear & Greed LP: extremo miedo = oportunidad, extremo codicia = precaución
+    if fear_greed is not None:
+        if fear_greed <= 25:       # extreme fear → contrarian long
+            lp["score_lp"] *= 1.10
+            logger.info("F&G %d (extreme fear) → LP scores ×1.10", fear_greed)
+        elif fear_greed >= 80:     # extreme greed → reduce conviction
+            lp["score_lp"] *= 0.90
+            logger.info("F&G %d (extreme greed) → LP scores ×0.90", fear_greed)
 
     lp = lp.sort_values("score_lp", ascending=False)
 
@@ -320,6 +338,29 @@ def build_scores(
         [intraday_scores.get(t, 0.0) for t in st.index], index=st.index
     )
     score_st += 0.20 * intraday_series   # score ya está en [-1, +1]
+
+    # Insider buy bonus CP: más impacto que LP (señal de momentum inminente)
+    if insider_signal:
+        insider_cp = pd.Series(
+            [insider_signal.get(t, 0.0) for t in st.index], index=st.index
+        ).clip(lower=0)
+        score_st += 0.25 * insider_cp
+        nonzero_ins = insider_cp[insider_cp > 0]
+        if not nonzero_ins.empty:
+            logger.info("Insider buy bonus CP: %s", {t: f"+{v:.2f}" for t, v in nonzero_ins.items()})
+
+    # Fear & Greed CP: el F&G extremo afecta la urgencia de las señales
+    if fear_greed is not None:
+        if fear_greed <= 20:       # pánico extremo → señal contrarian muy fuerte
+            score_st *= 1.15
+            logger.info("F&G %d (extreme fear) → CP scores ×1.15", fear_greed)
+        elif fear_greed <= 30:
+            score_st *= 1.08
+        elif fear_greed >= 85:     # euforia extrema → señal muy débil
+            score_st *= 0.85
+            logger.info("F&G %d (extreme greed) → CP scores ×0.85", fear_greed)
+        elif fear_greed >= 75:
+            score_st *= 0.92
 
     st["score_st"]      = score_st
     st["intraday_score"] = intraday_series

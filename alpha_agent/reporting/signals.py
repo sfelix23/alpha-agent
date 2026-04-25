@@ -76,7 +76,8 @@ class Signals:
     options_book: list[Signal] = field(default_factory=list)   # calls/puts direccionales
     hedge_book: list[Signal] = field(default_factory=list)     # puts SPY de cobertura
     portfolio: dict[str, float] = field(default_factory=dict)
-    radar: dict = field(default_factory=dict)                  # radar del universo (noticias + movers)
+    radar: dict = field(default_factory=dict)
+    edgar_alerts: list[dict] = field(default_factory=list)     # 8-K materiales detectados hoy
 
     def to_json(self) -> str:
         payload = {
@@ -91,6 +92,7 @@ class Signals:
             "hedge_book": [asdict(s) for s in self.hedge_book],
             "portfolio": self.portfolio,
             "radar": self.radar,
+            "edgar_alerts": self.edgar_alerts,
         }
         return json.dumps(payload, indent=2, ensure_ascii=False, default=_json_default)
 

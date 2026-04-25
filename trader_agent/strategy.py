@@ -201,7 +201,24 @@ def execute(broker: BrokerBase, *, dry_run: bool = True, max_capital: float | No
             regime, regime_mult * 100, capital_adj,
         )
 
-    fills: list[dict] = [{"status": "meta", "vix": vix, "vix_mult": vix_mult, "regime": regime, "regime_mult": regime_mult}]
+    # ── Fear & Greed capital multiplier ─────────────────────────────────────
+    fg_mult = 1.0
+    try:
+        from alpha_agent.data.alternative_data import get_all_alternative_data
+        fg_val = get_all_alternative_data([]).get("fear_greed", {}).get("value")
+        if fg_val is not None:
+            fg_val = int(fg_val)
+            if fg_val <= 25:
+                fg_mult = 1.15   # extreme fear → buy more
+            elif fg_val >= 80:
+                fg_mult = 0.85   # extreme greed → reduce size
+            if fg_mult != 1.0:
+                capital_adj *= fg_mult
+                logger.info("Fear&Greed %d → multiplicador %.0f%% → capital $%.2f", fg_val, fg_mult * 100, capital_adj)
+    except Exception:
+        pass
+
+    fills: list[dict] = [{"status": "meta", "vix": vix, "vix_mult": vix_mult, "regime": regime, "regime_mult": regime_mult, "fg_mult": fg_mult}]
 
     # ── Equity (LP + CP) ────────────────────────────────────────────
     target = build_target_portfolio(signals, capital_adj)

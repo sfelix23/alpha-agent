@@ -156,7 +156,46 @@ def main() -> None:
     log.info("Indicadores técnicos calculados para %d activos", len(technical))
 
     # 5. Scoring (con guard de correlación y sector)
-    scores = build_scores(capm, technical, closes=closes, regime=macro.regime, prev_sentiment=prev_sentiment)
+    # Convertir insider_buys a dict {ticker: strength} para scoring
+    insider_signal: dict[str, float] = {}
+    for buy in alt_data.get("insider_buys", []):
+        t = buy.get("ticker", "")
+        if t:
+            # strength proporcional al volumen comprado (normalizado a [0,1])
+            val = float(buy.get("value_usd", 0))
+            insider_signal[t] = min(val / 500_000, 1.0)
+
+    fg_value: int | None = None
+    if alt_data.get("fear_greed", {}).get("value") is not None:
+        try:
+            fg_value = int(alt_data["fear_greed"]["value"])
+        except (TypeError, ValueError):
+            pass
+
+    # Reddit sentiment — fusionar con prev_sentiment (promedio si hay overlap)
+    try:
+        from alpha_agent.news.reddit_sentiment import get_reddit_sentiment
+        all_tickers_list = closes.columns.tolist()
+        reddit_scores = get_reddit_sentiment(all_tickers_list)
+        nonzero_reddit = {t: v for t, v in reddit_scores.items() if v != 0.0}
+        if nonzero_reddit:
+            log.info("Reddit sentiment: %s", {t: f"{v:+.3f}" for t, v in nonzero_reddit.items()})
+            for t, v in reddit_scores.items():
+                if t in prev_sentiment:
+                    prev_sentiment[t] = (prev_sentiment[t] + v) / 2
+                elif v != 0.0:
+                    prev_sentiment[t] = v
+    except Exception as exc:
+        log.debug("Reddit sentiment no disponible: %s", exc)
+
+    scores = build_scores(
+        capm, technical,
+        closes=closes,
+        regime=macro.regime,
+        prev_sentiment=prev_sentiment,
+        insider_signal=insider_signal if insider_signal else None,
+        fear_greed=fg_value,
+    )
     log.info("Top LP post-guard: %s", scores["long_term"].head(PARAMS.top_n_long_term).index.tolist())
     log.info("Top CP: %s", scores["short_term"].head(PARAMS.top_n_short_term).index.tolist())
 

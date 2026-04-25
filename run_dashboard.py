@@ -251,6 +251,8 @@ def _tab_resumen(equity, initial, regime, vix, wti, gold, dxy,
   <div class="section-gap"></div>
   {_perf_chart(perf_data)}
   <div class="section-gap"></div>
+  {_edgar_alerts_panel(signals_data)}
+  <div class="section-gap"></div>
   {_monte_carlo_panel(mc_result)}
 </div>"""
 
@@ -621,6 +623,36 @@ def _monte_carlo_panel(mc) -> str:
     </div>
   </div>
   <div class="mc-grid">{cells}</div>
+</div>"""
+
+
+def _edgar_alerts_panel(signals_data: dict) -> str:
+    alerts = signals_data.get("edgar_alerts", [])
+    if not alerts:
+        return ""
+    rows = []
+    for a in alerts[:6]:
+        ticker    = a.get("ticker", "")
+        sentiment = a.get("sentiment", "neutral").lower()
+        summary   = a.get("summary", "")
+        impact    = a.get("impact_pct", 0)
+        date_str  = a.get("filing_date", "")[:10]
+        css_cls   = "edgar-bull" if sentiment == "bullish" else "edgar-bear" if sentiment == "bearish" else "edgar-neutral"
+        impact_str = f" · impacto estimado {impact:+.1f}%" if impact else ""
+        rows.append(
+            f'<div class="edgar-alert {css_cls}">'
+            f'<strong>{ticker}</strong> &nbsp;<span style="opacity:.6;font-size:.72rem">{date_str}</span>'
+            f'<div style="margin-top:3px">{summary}{impact_str}</div>'
+            f'</div>'
+        )
+    return f"""<div class="card">
+  <div class="card-head">
+    <div>
+      <div class="card-title">EDGAR 8-K — Eventos Materiales</div>
+      <div class="card-sub">Filings SEC de las últimas 48h analizados por Claude</div>
+    </div>
+  </div>
+  {''.join(rows)}
 </div>"""
 
 
