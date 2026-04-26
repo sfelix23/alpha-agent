@@ -498,6 +498,19 @@ def build_scores(
         lp["earnings_soon"] = 0
         st["earnings_soon"] = 0
 
+    # ── Stop-out cooldown ──────────────────────────────────────────────────────
+    # Ticker que fue detenido por stop-loss en las últimas 36h no vuelve a entrar.
+    # Evita el "revenge trade" — volver a entrar en un activo que ya falló.
+    try:
+        from alpha_agent.analytics.trade_db import get_recent_stopouts
+        stopout_tickers = get_recent_stopouts(hours=36)
+        if stopout_tickers:
+            logger.warning("Stop-out cooldown (36h) activo: %s", sorted(stopout_tickers))
+            st.loc[st.index.isin(stopout_tickers), "score_st"] -= 2.0
+            lp.loc[lp.index.isin(stopout_tickers), "score_lp"] -= 1.5
+    except Exception as exc:
+        logger.debug("Stop-out cooldown no disponible: %s", exc)
+
     st = st.sort_values("score_st", ascending=False)
     lp = lp.sort_values("score_lp", ascending=False)
 

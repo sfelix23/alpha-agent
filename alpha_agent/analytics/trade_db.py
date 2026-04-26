@@ -13,7 +13,7 @@ from __future__ import annotations
 import sqlite3
 import logging
 from contextlib import contextmanager
-from datetime import datetime
+from datetime import datetime, timedelta
 from pathlib import Path
 
 logger = logging.getLogger(__name__)
@@ -167,6 +167,17 @@ def log_trade_close(
         )
     logger.info("trade_db: closed %s exit=%.2f pnl=%+.2f (%.1fd)", ticker, exit_price, pnl_usd, hold_days)
     return True
+
+
+def get_recent_stopouts(hours: int = 36) -> set[str]:
+    """Tickers cerrados con pérdida en las últimas N horas (cooldown para evitar re-entrada)."""
+    since = (datetime.now() - timedelta(hours=hours)).isoformat(timespec="seconds")
+    with _conn() as con:
+        rows = con.execute(
+            "SELECT ticker FROM trades WHERE side='BUY' AND closed_at >= ? AND pnl_usd < 0",
+            (since,),
+        ).fetchall()
+    return {r["ticker"] for r in rows}
 
 
 def get_summary() -> dict:
