@@ -1309,23 +1309,92 @@ def _tab_historial(trades: list[dict]) -> str:
             '</p></div></div>'
         )
 
+    # ── Calcular stats de trades cerrados ────────────────────────────────
+    buys = [t for t in trades if t.get("side", "").upper() == "BUY"]
+    closed = [t for t in buys if t.get("closed_at")]
+    n_closed = len(closed)
+    wins = [t for t in closed if (t.get("pnl_usd") or 0) > 0]
+    win_rate = len(wins) / n_closed * 100 if n_closed else None
+    total_pnl = sum(t.get("pnl_usd") or 0 for t in closed)
+    avg_hold = sum(t.get("hold_days") or 0 for t in closed) / n_closed if n_closed else None
+
+    # ── KPI bar ───────────────────────────────────────────────────────────
+    def _wr_color(wr):
+        return "#3fb950" if wr > 55 else "#d29922" if wr > 45 else "#f85149"
+
+    kpi_html = ""
+    if n_closed > 0:
+        wr_c  = _wr_color(win_rate)
+        pnl_c = _c(total_pnl)
+        pnl_bg = _bg(total_pnl)
+        kpi_html = f"""
+  <div style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:16px">
+    <div class="kpi-card" style="flex:1;min-width:110px">
+      <div class="kpi-label">Trades cerrados</div>
+      <div class="kpi-val">{n_closed}</div>
+    </div>
+    <div class="kpi-card" style="flex:1;min-width:110px">
+      <div class="kpi-label">Win rate real</div>
+      <div class="kpi-val" style="color:{wr_c}">{win_rate:.1f}%</div>
+    </div>
+    <div class="kpi-card" style="flex:1;min-width:130px;background:{pnl_bg}22">
+      <div class="kpi-label">P&L realizado</div>
+      <div class="kpi-val" style="color:{pnl_c}">{"+" if total_pnl>=0 else ""}{_usd(total_pnl)}</div>
+    </div>
+    <div class="kpi-card" style="flex:1;min-width:110px">
+      <div class="kpi-label">Hold promedio</div>
+      <div class="kpi-val">{avg_hold:.1f}d</div>
+    </div>
+  </div>"""
+
+    # ── Filas de la tabla ─────────────────────────────────────────────────
     rows_html = ""
     for t in trades:
         side = t.get("side", "").upper()
-        side_color = "#3fb950" if side == "BUY" else "#f85149"
-        sleeve = t.get("sleeve") or "—"
+        if side != "BUY":
+            continue  # solo mostramos BUYs (con su PnL de cierre integrado)
+        sleeve  = t.get("sleeve") or "—"
         notional = t.get("notional")
-        price = t.get("price")
+        entry   = t.get("price")
+        exit_p  = t.get("exit_price")
+        pnl_usd = t.get("pnl_usd")
+        pnl_pct = t.get("pnl_pct")
+        hold_d  = t.get("hold_days")
+        is_closed = bool(t.get("closed_at"))
+
+        # Estado visual
+        if is_closed:
+            status_label = "CERRADO"
+            status_color = "#8b949e"
+            row_style = ""
+        else:
+            status_label = "ABIERTO"
+            status_color = "#3fb950"
+            row_style = ""
+
+        # PnL columns
+        if is_closed and pnl_usd is not None:
+            pc = _c(pnl_usd)
+            pnl_cell = f'<td style="text-align:right;color:{pc};font-weight:600">{"+" if pnl_usd>=0 else ""}{_usd(pnl_usd)}</td>'
+            pct_cell  = f'<td style="text-align:right;color:{pc}">{"+" if (pnl_pct or 0)>=0 else ""}{pnl_pct:.1f}%</td>'
+        else:
+            pnl_cell = '<td style="text-align:right;color:var(--mt)">—</td>'
+            pct_cell = '<td style="text-align:right;color:var(--mt)">—</td>'
+
+        exit_cell = f'<td style="text-align:right">${exit_p:,.2f}</td>' if exit_p else '<td style="text-align:right;color:var(--mt)">—</td>'
+        hold_cell = f'<td style="text-align:right">{hold_d:.1f}d</td>' if hold_d else '<td style="text-align:right;color:var(--mt)">—</td>'
+
         rows_html += (
-            f'<tr>'
-            f'<td>{_esc(t.get("date",""))}</td>'
-            f'<td><b>{_esc(t.get("ticker",""))}</b></td>'
-            f'<td style="color:{side_color}">{side}</td>'
-            f'<td>{_esc(sleeve)}</td>'
-            f'<td>{f"${notional:,.0f}" if notional else "—"}</td>'
-            f'<td>{f"${price:,.2f}" if price else "—"}</td>'
-            f'<td>{_esc(t.get("regime","") or "—")}</td>'
-            f'<td>{_esc(t.get("status",""))}</td>'
+            f'<tr style="border-bottom:1px solid var(--border);{row_style}">'
+            f'<td style="padding:7px 10px;color:var(--mt);font-size:.78rem">{_esc(t.get("date",""))}</td>'
+            f'<td style="padding:7px 10px"><b>{_esc(t.get("ticker",""))}</b></td>'
+            f'<td style="padding:7px 10px">{_esc(sleeve)}</td>'
+            f'<td style="padding:7px 10px;text-align:right">{f"${entry:,.2f}" if entry else "—"}</td>'
+            f'{exit_cell}'
+            f'{pnl_cell}'
+            f'{pct_cell}'
+            f'{hold_cell}'
+            f'<td style="padding:7px 10px;color:{status_color};font-size:.78rem">{status_label}</td>'
             f'</tr>'
         )
 
@@ -1333,19 +1402,21 @@ def _tab_historial(trades: list[dict]) -> str:
 <div class="card">
   <div class="card-head"><div>
     <div class="card-title">Historial de Operaciones</div>
-    <div class="card-sub">{len(trades)} ordenes ejecutadas (ultimas 200)</div>
+    <div class="card-sub">{len(buys)} posiciones · {n_closed} cerradas</div>
   </div></div>
-  <div style="overflow-x:auto;margin-top:12px">
+  {kpi_html}
+  <div style="overflow-x:auto">
     <table style="width:100%;border-collapse:collapse;font-size:.82rem">
       <thead>
-        <tr style="border-bottom:1px solid var(--border);color:var(--mt)">
+        <tr style="color:var(--mt);font-size:.78rem">
           <th style="text-align:left;padding:6px 10px">Fecha</th>
           <th style="text-align:left;padding:6px 10px">Ticker</th>
-          <th style="text-align:left;padding:6px 10px">Lado</th>
           <th style="text-align:left;padding:6px 10px">Sleeve</th>
-          <th style="text-align:right;padding:6px 10px">Notional</th>
-          <th style="text-align:right;padding:6px 10px">Precio</th>
-          <th style="text-align:left;padding:6px 10px">Regimen</th>
+          <th style="text-align:right;padding:6px 10px">Entrada</th>
+          <th style="text-align:right;padding:6px 10px">Salida</th>
+          <th style="text-align:right;padding:6px 10px">P&L $</th>
+          <th style="text-align:right;padding:6px 10px">P&L %</th>
+          <th style="text-align:right;padding:6px 10px">Hold</th>
           <th style="text-align:left;padding:6px 10px">Estado</th>
         </tr>
       </thead>
