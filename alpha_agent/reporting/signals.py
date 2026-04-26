@@ -172,7 +172,10 @@ def _make_signal(
 
         risk = (price - stop_val) if (stop_val and price) else price * 0.06
         atr_tp = price + 2.5 * risk                  # 2.5:1 R/R mínimo
-        min_tp = price * 1.08                         # +8% mínimo
+        # RSI extremo → TP acelerado: capturar ganancia antes de mean-reversion
+        # RSI > 80 en bull fuerte puede seguir, pero estadísticamente revierte más rápido
+        rsi_val = float(tech_row.get("rsi", 50) or 50)
+        min_tp = price * (1.05 if rsi_val > 80 else 1.08)
         tp = round(max(atr_tp, min_tp), 2) if price else None
 
     return Signal(

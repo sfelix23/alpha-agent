@@ -1,0 +1,90 @@
+// Alpha Agent — CP Signal Proxy v1.0
+// Proxy visual de la lógica de Corto Plazo del sistema de trading.
+// NO es el sistema completo (que usa CAPM + Markowitz + Kelly en Python).
+// Úsalo para visualizar el TIMING de entradas CP en TradingView.
+//
+// Cómo usar:
+//   1. pine.tradingview.com → New indicator → pegar este código
+//   2. Aplicar al gráfico del ticker que quieras analizar (ej: AMD, NVDA, TSM)
+//   3. Timeframe recomendado: 1H o 4H para CP de 1-5 días
+//
+// Lógica implementada:
+//   Entrada: RSI 55-85 + precio sobre VWAP + volumen spike + EMA5 > EMA20
+//   Stop:    2×ATR por debajo del precio de entrada
+//   TP:      +5% si RSI > 80 (TP acelerado), +8% si RSI normal
+//   R/R mínimo: 2.5:1
+
+//@version=5
+indicator("Alpha CP Signal", overlay=true, max_labels_count=500)
+
+// ── Parámetros ────────────────────────────────────────────────────────────────
+rsi_period    = input.int(14,  "RSI Period",        group="Señal")
+rsi_min       = input.int(55,  "RSI Mínimo (entrada)", group="Señal")
+rsi_max       = input.int(85,  "RSI Máximo (entrada)", group="Señal")
+rsi_hot       = input.int(80,  "RSI Extremo (TP acelerado)", group="Señal")
+vol_mult      = input.float(1.5, "Spike volumen vs SMA20", step=0.1, group="Señal")
+atr_period    = input.int(14,  "ATR Period",        group="Risk")
+atr_stop_mult = input.float(2.0, "ATR Stop Mult",   step=0.25, group="Risk")
+rr_ratio      = input.float(2.5, "R/R mínimo",      step=0.5,  group="Risk")
+show_sl_tp    = input.bool(true, "Mostrar SL/TP lines", group="Display")
+
+// ── Indicadores ───────────────────────────────────────────────────────────────
+rsi      = ta.rsi(close, rsi_period)
+vwap_val = ta.vwap(close)
+ema5     = ta.ema(close, 5)
+ema20    = ta.ema(close, 20)
+atr      = ta.atr(atr_period)
+vol_sma  = ta.sma(volume, 20)
+
+// ── Condiciones de entrada ────────────────────────────────────────────────────
+rsi_ok        = rsi >= rsi_min and rsi <= rsi_max
+vwap_ok       = close > vwap_val
+vol_spike     = volume > vol_sma * vol_mult
+trend_ok      = ema5 > ema20
+price_ok      = close > ta.ema(close, 50)  // sobre EMA50 para confirmar tendencia
+
+cp_entry = rsi_ok and vwap_ok and vol_spike and trend_ok and price_ok
+
+// ── Stop Loss y Take Profit ───────────────────────────────────────────────────
+stop_dist = math.max(atr_stop_mult * atr, close * 0.03)  // mínimo -3%
+stop_dist := math.min(stop_dist, close * 0.08)            // máximo -8%
+
+sl = close - stop_dist
+tp_pct = rsi > rsi_hot ? 0.05 : 0.08  // TP acelerado si RSI extremo
+tp = math.max(close + rr_ratio * stop_dist, close * (1 + tp_pct))
+
+// ── Plots ─────────────────────────────────────────────────────────────────────
+plot(ema5,     "EMA 5",    color=color.new(color.blue, 50),  linewidth=1)
+plot(ema20,    "EMA 20",   color=color.new(color.orange, 50), linewidth=1)
+plot(vwap_val, "VWAP",     color=color.new(color.purple, 40), linewidth=1)
+
+// Señal de entrada
+plotshape(cp_entry, title="CP Entry", style=shape.triangleup,
+          location=location.belowbar, color=color.new(color.green, 0),
+          size=size.small, text="CP")
+
+// RSI extremo (TP rápido)
+plotshape(cp_entry and rsi > rsi_hot, title="CP Hot Entry", style=shape.triangleup,
+          location=location.belowbar, color=color.new(color.yellow, 0),
+          size=size.small, text="CP🔥")
+
+// Líneas SL/TP en la última señal
+var line sl_line = na
+var line tp_line = na
+
+if cp_entry and show_sl_tp
+    if not na(sl_line)
+        line.delete(sl_line)
+    if not na(tp_line)
+        line.delete(tp_line)
+    sl_line := line.new(bar_index, sl, bar_index + 10, sl,
+                        color=color.new(color.red, 20), width=1, style=line.style_dashed)
+    tp_line := line.new(bar_index, tp, bar_index + 10, tp,
+                        color=color.new(color.green, 20), width=1, style=line.style_dashed)
+
+// ── RSI Panel (opcional) ──────────────────────────────────────────────────────
+// Para ver el RSI: agregar como indicador separado el RSI standard de TradingView
+
+// ── Alertas ───────────────────────────────────────────────────────────────────
+alertcondition(cp_entry,                "CP Signal Normal",   "Alpha CP: entrada momentum (RSI normal)")
+alertcondition(cp_entry and rsi > rsi_hot, "CP Signal Hot",  "Alpha CP: entrada momentum EXTREMO (TP acelerado)")

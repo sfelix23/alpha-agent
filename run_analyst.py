@@ -154,6 +154,16 @@ def main() -> None:
     macro = fetch_macro_snapshot()
     log.info("Régimen de mercado: %s — %s", macro.regime, macro.regime_reason)
 
+    # Sleeve CP dinámica: en BULL + VIX < 20 aumentar exposición CP para capturar momentum
+    vix_now = (macro.prices or {}).get("vix", 99) or 99
+    if macro.regime.upper() == "BULL" and vix_now < 20:
+        PARAMS.weight_short_term = 0.25
+        PARAMS.weight_long_term  = 0.65
+        log.info("📈 Régimen BULL + VIX %.1f < 20 → sleeve CP 25%% / LP 65%% (modo momentum)", vix_now)
+    else:
+        PARAMS.weight_short_term = 0.20
+        PARAMS.weight_long_term  = 0.70
+
     # 2.5 Datos alternativos: Fear & Greed + Yield Curve + OpenInsider
     alt_data: dict = {}
     try:
