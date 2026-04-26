@@ -2,8 +2,10 @@ name: "Alpha Analyst + Trade"
 
 on:
   schedule:
-    # 13:35 UTC = 10:35 ART (UTC-3). Lunes a viernes.
-    - cron: "35 13 * * 1-5"
+    # 13:40 UTC = 10:40 ART (UTC-3). Lunes a viernes.
+    # Oracle Cloud corre a las 13:30 UTC como primario; este workflow es el fallback.
+    # run_analyst.py tiene idempotency guard: si Oracle ya corrió, este step hace exit 0.
+    - cron: "40 13 * * 1-5"
   workflow_dispatch:
     inputs:
       send_whatsapp:

@@ -78,11 +78,29 @@ def main() -> None:
     parser.add_argument("--no-ai", action="store_true", help="No usar Gemini/Claude, brief determinístico.")
     parser.add_argument("--no-discovery", action="store_true", help="Saltar el Discovery Agent.")
     parser.add_argument("--capital", type=float, default=None, help="Override del capital paper en USD.")
+    parser.add_argument("--force", action="store_true", help="Forzar ejecución aunque ya corrió hoy.")
     args = parser.parse_args()
 
     load_dotenv()
     setup_logging()
     log = logging.getLogger("alpha_agent")
+
+    # Idempotency guard: evita doble ejecución cuando Oracle y GitHub Actions corren el mismo día.
+    # Oracle corre a las 10:30 ART, GitHub Actions a las 10:40 como fallback.
+    # Si latest.json ya es de hoy, el segundo runner lo detecta y sale sin operar.
+    if not args.force:
+        _sig = Path("signals/latest.json")
+        if _sig.exists():
+            try:
+                _gen = json.loads(_sig.read_text(encoding="utf-8")).get("generated_at", "")
+                if _gen[:10] == datetime.now().strftime("%Y-%m-%d"):
+                    logging.basicConfig(level=logging.INFO, format="[%(asctime)s] %(levelname)s — %(message)s")
+                    logging.getLogger("alpha_agent").info(
+                        "Ya corrió hoy (%s). Usar --force para forzar.", _gen[:10]
+                    )
+                    return
+            except Exception:
+                pass
 
     capital = args.capital if args.capital else PARAMS.paper_capital_usd
     log.info("INICIANDO AGENTE ALPHA — %s", datetime.now().isoformat(timespec="seconds"))

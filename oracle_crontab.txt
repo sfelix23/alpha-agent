@@ -1,0 +1,22 @@
+# Alpha Agent — Oracle Cloud Ampere A1
+# Todos los tiempos en UTC (la VM Oracle corre en UTC por defecto).
+# ART = UTC-3  |  EST = UTC-5  |  EDT = UTC-4
+#
+# Primario: Oracle a las 13:30 UTC (10:30 ART)
+# Fallback:  GitHub Actions a las 13:40 UTC (10:40 ART)
+# Dedup:     run_analyst.py lee signals/latest.json — si generated_at es hoy, sale sin operar.
+
+SHELL=/bin/bash
+HOME=/home/ubuntu
+
+# ── Analyst + Trader: 13:30 UTC = 10:30 ART, lunes a viernes ────────────────
+30 13 * * 1-5 cd ~/alpha-agent && git pull -q && source venv/bin/activate && python run_analyst.py --send >> logs/analyst_oracle.log 2>&1; git add signals/latest.json signals/trades.db signals/capital_baseline.json signals/performance_log.json 2>/dev/null; git diff --staged --quiet || (git commit -m "chore: signals oracle $(date -u +%%Y-%%m-%%dT%%H:%%M) [skip ci]" && git push) || true
+
+# ── Monitor intradía: :05 y :35 de 14:00–19:00 UTC = 11:05–16:05 ART ────────
+5,35 14-19 * * 1-5 cd ~/alpha-agent && git pull -q && source venv/bin/activate && python run_monitor.py --live >> logs/monitor_oracle.log 2>&1; git add signals/trades.db 2>/dev/null; git diff --staged --quiet || (git commit -m "chore: trades oracle $(date -u +%%Y-%%m-%%dT%%H:%%M) [skip ci]" && git push) || true
+
+# ── Rebalancer semanal: 18:00 UTC = 15:00 ART, viernes ──────────────────────
+0 18 * * 5 cd ~/alpha-agent && git pull -q && source venv/bin/activate && python run_rebalancer.py --live >> logs/rebalancer_oracle.log 2>&1 || true
+
+# ── EOD Report: 20:05 UTC = 17:05 ART, lunes a viernes ──────────────────────
+5 20 * * 1-5 cd ~/alpha-agent && git pull -q && source venv/bin/activate && python run_eod_report.py >> logs/eod_oracle.log 2>&1 || true
