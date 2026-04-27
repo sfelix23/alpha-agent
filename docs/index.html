@@ -258,7 +258,7 @@ tr:hover td{background:var(--s2)}
 <div class="topbar">
   <div class="logo">ALPHA<span>&nbsp;/&nbsp;TERMINAL</span></div>
   <div class="topbar-meta">
-    <span><span class="live"></span>&nbsp;27 de April de 2026 — 20:53</span>
+    <span><span class="live"></span>&nbsp;27 de April de 2026 — 19:56</span>
     <span style="color:var(--bd)">|</span>
     <span>Paper</span>
     <span style="color:var(--bd)">|</span>
@@ -268,15 +268,15 @@ tr:hover td{background:var(--s2)}
 
 <div class="ticker-tape">
   <div class="tape-inner" id="tape-inner">
-    <span class="tape-item">VIX <b id="t-vix">18.5</b></span>
-    <span class="tape-item">WTI <b id="t-wti">$97.0</b></span>
-    <span class="tape-item">GOLD <b id="t-gold">$4691</b></span>
+    <span class="tape-item">VIX <b id="t-vix">18.4</b></span>
+    <span class="tape-item">WTI <b id="t-wti">$96.2</b></span>
+    <span class="tape-item">GOLD <b id="t-gold">$4697</b></span>
     <span class="tape-item">DXY <b id="t-dxy">98.5</b></span>
     <span class="tape-item">RÉGIMEN <b style="color:#22c55e">BULL</b></span>
     <span class="tape-item">·&nbsp;&nbsp;&nbsp;·&nbsp;&nbsp;&nbsp;·</span>
-    <span class="tape-item">VIX <b id="t-vix2">18.5</b></span>
-    <span class="tape-item">WTI <b id="t-wti2">$97.0</b></span>
-    <span class="tape-item">GOLD <b id="t-gold2">$4691</b></span>
+    <span class="tape-item">VIX <b id="t-vix2">18.4</b></span>
+    <span class="tape-item">WTI <b id="t-wti2">$96.2</b></span>
+    <span class="tape-item">GOLD <b id="t-gold2">$4697</b></span>
     <span class="tape-item">DXY <b id="t-dxy2">98.5</b></span>
     <span class="tape-item">RÉGIMEN <b style="color:#22c55e">BULL</b></span>
   </div>
@@ -293,13 +293,13 @@ tr:hover td{background:var(--s2)}
 
 <div class="tab-content" id="tab-resumen">
   
-  <p class="ts">Senales actualizadas: 2026-04-27 14:40 &nbsp;|&nbsp; Paper Trading</p>
+  <p class="ts">Senales actualizadas: 2026-04-27 16:34 &nbsp;|&nbsp; Paper Trading</p>
   
 <div class="kpi-row">
-  <div class="kpi kpi-hero" data-countup="1603.49">
+  <div class="kpi kpi-hero" data-countup="1600.74">
     <div class="kpi-lbl">Patrimonio Total</div>
-    <div class="kpi-val kpi-hero-val" style="color:#3fb950" id="kpi-equity">$1,603.49</div>
-    <div class="kpi-tag" style="background:rgba(63,185,80,.15);color:#3fb950">$3.49 &nbsp; +0.22% total</div>
+    <div class="kpi-val kpi-hero-val" style="color:#3fb950" id="kpi-equity">$1,600.74</div>
+    <div class="kpi-tag" style="background:rgba(63,185,80,.15);color:#3fb950">$0.74 &nbsp; +0.05% total</div>
   </div>
   
   <div class="kpi">
@@ -309,7 +309,7 @@ tr:hover td{background:var(--s2)}
   </div>
   <div class="kpi">
     <div class="kpi-lbl">VIX — Volatilidad</div>
-    <div class="kpi-val" style="color:#d29922">18.5</div>
+    <div class="kpi-val" style="color:#d29922">18.4</div>
     <div class="kpi-sub">Moderado — sizing 100%</div>
   </div>
   <div class="kpi">
@@ -329,8 +329,8 @@ tr:hover td{background:var(--s2)}
   </div>
   <div class="kpi">
     <div class="kpi-lbl">Petroleo WTI</div>
-    <div class="kpi-val">$96.98</div>
-    <div class="kpi-sub">Oro: $4,691.30 &middot; DXY: 98.5</div>
+    <div class="kpi-val">$96.17</div>
+    <div class="kpi-sub">Oro: $4,697.00 &middot; DXY: 98.5</div>
   </div>
 </div>
   
@@ -342,7 +342,7 @@ tr:hover td{background:var(--s2)}
       <div class="card-title">Retorno Acumulado — % vs benchmarks</div>
       <div class="card-sub" style="display:flex;gap:16px;align-items:center;flex-wrap:wrap">
         <span><span style="color:#3fb950;font-weight:700;font-size:.9rem">+0.00%</span> Portfolio</span>
-        
+        <span style="font-size:.78rem;color:#58a6ff">&#9135;&#9135; SPY +13.16%</span>
         <span style="font-size:.78rem;color:#e3b341">&#9135;&#9135; QQQ +18.98%</span>
       </div>
     </div>
@@ -359,12 +359,15 @@ tr:hover td{background:var(--s2)}
   window._charts.eq = new Chart(ctx,{
     type:'line',
     data:{
-      labels:["24 Apr", "25 Apr"],
+      labels:["23 Apr", "24 Apr"],
       datasets:[
         {data:[0.0, 0.0],label:'Portfolio',
           borderColor:'#3fb950',backgroundColor:g,fill:true,tension:.4,
           pointRadius:2,pointHoverRadius:7,pointBackgroundColor:'#3fb950',borderWidth:2.5}
-        
+        ,
+    {data:[0.0, 2.907, 3.682, 3.776, 4.266, 4.312, 6.969, 7.586, 7.515, 8.565, 9.888, 10.755, 11.027, 12.369, 12.145, 11.41, 12.539, 12.102, 12.971, 13.165],label:'SPY',
+      borderColor:'#58a6ff',backgroundColor:'transparent',fill:false,
+      tension:.4,pointRadius:0,borderWidth:1.5,borderDash:[5,3]}
         ,
     {data:[0.0, 3.385, 4.663, 4.783, 5.413, 5.429, 8.564, 9.298, 9.456, 10.588, 12.596, 14.172, 14.722, 16.223, 15.854, 15.413, 17.344, 16.683, 18.915, 18.978],label:'QQQ',
       borderColor:'#e3b341',backgroundColor:'transparent',fill:false,
@@ -407,11 +410,11 @@ tr:hover td{background:var(--s2)}
   <div class="cal-wrap">
     <table class="cal-table">
       <thead><tr><th class="cal-th">Lun</th><th class="cal-th">Mar</th><th class="cal-th">Mie</th><th class="cal-th">Jue</th><th class="cal-th">Vie</th><th class="cal-th">Sab</th><th class="cal-th">Dom</th></tr></thead>
-      <tbody><tr><td class="cal-empty"></td><td class="cal-empty"></td><td class="cal-cell cal-nd"><span class="cal-n">1</span><span class="cal-q">—</span></td><td class="cal-cell cal-nd"><span class="cal-n">2</span><span class="cal-q">—</span></td><td class="cal-cell cal-nd"><span class="cal-n">3</span><span class="cal-q">—</span></td><td class="cal-cell cal-wk"><span class="cal-n">4</span></td><td class="cal-cell cal-wk"><span class="cal-n">5</span></td></tr><tr><td class="cal-cell cal-nd"><span class="cal-n">6</span><span class="cal-q">—</span></td><td class="cal-cell cal-nd"><span class="cal-n">7</span><span class="cal-q">—</span></td><td class="cal-cell cal-nd"><span class="cal-n">8</span><span class="cal-q">—</span></td><td class="cal-cell cal-nd"><span class="cal-n">9</span><span class="cal-q">—</span></td><td class="cal-cell cal-nd"><span class="cal-n">10</span><span class="cal-q">—</span></td><td class="cal-cell cal-wk"><span class="cal-n">11</span></td><td class="cal-cell cal-wk"><span class="cal-n">12</span></td></tr><tr><td class="cal-cell cal-nd"><span class="cal-n">13</span><span class="cal-q">—</span></td><td class="cal-cell cal-nd"><span class="cal-n">14</span><span class="cal-q">—</span></td><td class="cal-cell cal-nd"><span class="cal-n">15</span><span class="cal-q">—</span></td><td class="cal-cell cal-nd"><span class="cal-n">16</span><span class="cal-q">—</span></td><td class="cal-cell cal-nd"><span class="cal-n">17</span><span class="cal-q">—</span></td><td class="cal-cell cal-wk"><span class="cal-n">18</span></td><td class="cal-cell cal-wk"><span class="cal-n">19</span></td></tr><tr><td class="cal-cell cal-nd"><span class="cal-n">20</span><span class="cal-q">—</span></td><td class="cal-cell cal-nd"><span class="cal-n">21</span><span class="cal-q">—</span></td><td class="cal-cell cal-nd"><span class="cal-n">22</span><span class="cal-q">—</span></td><td class="cal-cell cal-nd"><span class="cal-n">23</span><span class="cal-q">—</span></td><td class="cal-cell cal-nd"><span class="cal-n">24</span><span class="cal-q">—</span></td><td class="cal-cell" style="background:var(--s2)">
-  <span class="cal-n">25</span>
+      <tbody><tr><td class="cal-empty"></td><td class="cal-empty"></td><td class="cal-cell cal-nd"><span class="cal-n">1</span><span class="cal-q">—</span></td><td class="cal-cell cal-nd"><span class="cal-n">2</span><span class="cal-q">—</span></td><td class="cal-cell cal-nd"><span class="cal-n">3</span><span class="cal-q">—</span></td><td class="cal-cell cal-wk"><span class="cal-n">4</span></td><td class="cal-cell cal-wk"><span class="cal-n">5</span></td></tr><tr><td class="cal-cell cal-nd"><span class="cal-n">6</span><span class="cal-q">—</span></td><td class="cal-cell cal-nd"><span class="cal-n">7</span><span class="cal-q">—</span></td><td class="cal-cell cal-nd"><span class="cal-n">8</span><span class="cal-q">—</span></td><td class="cal-cell cal-nd"><span class="cal-n">9</span><span class="cal-q">—</span></td><td class="cal-cell cal-nd"><span class="cal-n">10</span><span class="cal-q">—</span></td><td class="cal-cell cal-wk"><span class="cal-n">11</span></td><td class="cal-cell cal-wk"><span class="cal-n">12</span></td></tr><tr><td class="cal-cell cal-nd"><span class="cal-n">13</span><span class="cal-q">—</span></td><td class="cal-cell cal-nd"><span class="cal-n">14</span><span class="cal-q">—</span></td><td class="cal-cell cal-nd"><span class="cal-n">15</span><span class="cal-q">—</span></td><td class="cal-cell cal-nd"><span class="cal-n">16</span><span class="cal-q">—</span></td><td class="cal-cell cal-nd"><span class="cal-n">17</span><span class="cal-q">—</span></td><td class="cal-cell cal-wk"><span class="cal-n">18</span></td><td class="cal-cell cal-wk"><span class="cal-n">19</span></td></tr><tr><td class="cal-cell cal-nd"><span class="cal-n">20</span><span class="cal-q">—</span></td><td class="cal-cell cal-nd"><span class="cal-n">21</span><span class="cal-q">—</span></td><td class="cal-cell cal-nd"><span class="cal-n">22</span><span class="cal-q">—</span></td><td class="cal-cell cal-nd"><span class="cal-n">23</span><span class="cal-q">—</span></td><td class="cal-cell" style="background:var(--s2)">
+  <span class="cal-n">24</span>
   <span class="cal-p" style="color:#7d8590">+0.00%</span>
   <span class="cal-q" style="color:#7d8590">+$0</span>
-</td><td class="cal-cell cal-wk"><span class="cal-n">26</span></td></tr><tr><td class="cal-cell cal-nd"><span class="cal-n">27</span><span class="cal-q">—</span></td><td class="cal-cell cal-nd"><span class="cal-n">28</span><span class="cal-q">—</span></td><td class="cal-cell cal-nd"><span class="cal-n">29</span><span class="cal-q">—</span></td><td class="cal-cell cal-nd"><span class="cal-n">30</span><span class="cal-q">—</span></td><td class="cal-empty"></td><td class="cal-empty"></td><td class="cal-empty"></td></tr></tbody>
+</td><td class="cal-cell cal-wk"><span class="cal-n">25</span></td><td class="cal-cell cal-wk"><span class="cal-n">26</span></td></tr><tr><td class="cal-cell cal-nd"><span class="cal-n">27</span><span class="cal-q">—</span></td><td class="cal-cell cal-nd"><span class="cal-n">28</span><span class="cal-q">—</span></td><td class="cal-cell cal-nd"><span class="cal-n">29</span><span class="cal-q">—</span></td><td class="cal-cell cal-nd"><span class="cal-n">30</span><span class="cal-q">—</span></td><td class="cal-empty"></td><td class="cal-empty"></td><td class="cal-empty"></td></tr></tbody>
     </table>
   </div>
 </div>
@@ -471,11 +474,11 @@ tr:hover td{background:var(--s2)}
     </div>
     <div class="kpi">
       <div class="kpi-lbl">Valor de mercado total</div>
-      <div class="kpi-val">$724.02</div>
+      <div class="kpi-val">$721.26</div>
     </div>
     <div class="kpi">
       <div class="kpi-lbl">P&amp;L no realizado</div>
-      <div class="kpi-val" style="color:#3fb950">+$2.71</div>
+      <div class="kpi-val" style="color:#f85149">$-0.04</div>
     </div>
   </div>
   <div class="pos-layout">
@@ -490,25 +493,25 @@ tr:hover td{background:var(--s2)}
   <div class="pos-top">
     <div>
       <div class="pos-ticker" style="color:#58a6ff">PBR</div>
-      <div class="pos-sub">53.0% del portfolio &middot; 18.1389 acc.</div>
+      <div class="pos-sub">52.8% del portfolio &middot; 18.1389 acc.</div>
     </div>
     <div style="text-align:right">
-      <div class="pos-pnl" style="color:#3fb950">▲ $2.36</div>
-      <div class="pos-pnl-pct" style="color:#3fb950">+0.6%</div>
+      <div class="pos-pnl" style="color:#f85149">▼ $0.73</div>
+      <div class="pos-pnl-pct" style="color:#f85149">-0.2%</div>
     </div>
   </div>
-  <div class="pos-bar-track"><div style="width:3%;height:100%;background:#3fb950;border-radius:2px;opacity:.8"></div></div>
+  <div class="pos-bar-track"><div style="width:1%;height:100%;background:#f85149;border-radius:2px;opacity:.8"></div></div>
   <div class="pos-meta">
     <span>Entrada <b>$21.02</b></span>
-    <span>Valor actual <b>$383.64</b></span>
-    <span>P&L <b style="color:#3fb950">+$2.36</b></span>
+    <span>Valor actual <b>$380.55</b></span>
+    <span>P&L <b style="color:#f85149">$-0.73</b></span>
   </div>
 </div>
 <div class="pos-card" style="border-top:3px solid #3fb950">
   <div class="pos-top">
     <div>
       <div class="pos-ticker" style="color:#3fb950">RIO</div>
-      <div class="pos-sub">32.9% del portfolio &middot; 2.3824 acc.</div>
+      <div class="pos-sub">33.0% del portfolio &middot; 2.3824 acc.</div>
     </div>
     <div style="text-align:right">
       <div class="pos-pnl" style="color:#3fb950">▲ $0.05</div>
@@ -526,18 +529,18 @@ tr:hover td{background:var(--s2)}
   <div class="pos-top">
     <div>
       <div class="pos-ticker" style="color:#d29922">TSM</div>
-      <div class="pos-sub">14.1% del portfolio &middot; 0.2525 acc.</div>
+      <div class="pos-sub">14.2% del portfolio &middot; 0.2525 acc.</div>
     </div>
     <div style="text-align:right">
-      <div class="pos-pnl" style="color:#3fb950">▲ $0.30</div>
-      <div class="pos-pnl-pct" style="color:#3fb950">+0.3%</div>
+      <div class="pos-pnl" style="color:#3fb950">▲ $0.63</div>
+      <div class="pos-pnl-pct" style="color:#3fb950">+0.6%</div>
     </div>
   </div>
-  <div class="pos-bar-track"><div style="width:1%;height:100%;background:#3fb950;border-radius:2px;opacity:.8"></div></div>
+  <div class="pos-bar-track"><div style="width:3%;height:100%;background:#3fb950;border-radius:2px;opacity:.8"></div></div>
   <div class="pos-meta">
     <span>Entrada <b>$403.79</b></span>
-    <span>Valor actual <b>$102.26</b></span>
-    <span>P&L <b style="color:#3fb950">+$0.30</b></span>
+    <span>Valor actual <b>$102.59</b></span>
+    <span>P&L <b style="color:#3fb950">+$0.63</b></span>
   </div>
 </div>
     </div>
@@ -547,7 +550,7 @@ tr:hover td{background:var(--s2)}
 <script>
 (function(){
   const labels=["PBR", "RIO", "TSM"];
-  const values=[383.64, 238.12, 102.26];
+  const values=[380.55, 238.12, 102.59];
   const colors=["#58a6ff", "#3fb950", "#d29922"];
   window._charts = window._charts||{};
   window._charts.alloc = new Chart(document.getElementById('allocChart'),{
@@ -575,7 +578,7 @@ tr:hover td{background:var(--s2)}
 </script>
 
 <div class="tab-content" id="tab-senales">
-  <p class="ts" style="margin-bottom:16px">Ultima actualizacion: 2026-04-27 14:40 &nbsp;&middot;&nbsp; Clic en cada senal para ver el analisis completo</p>
+  <p class="ts" style="margin-bottom:16px">Ultima actualizacion: 2026-04-27 16:34 &nbsp;&middot;&nbsp; Clic en cada senal para ver el analisis completo</p>
   
 <div class="sleeve-block">
   <div class="sleeve-header" style="border-left:3px solid #58a6ff">
@@ -592,7 +595,7 @@ tr:hover td{background:var(--s2)}
     </div>
     <div class="sig-right">
       <span class="muted" style="font-size:.78rem">$21.05</span>
-      <span class="sig-alloc">$648.03</span>
+      <span class="sig-alloc">$646.49</span>
       <span class="sig-arrow" id="arrow_t_PBR_long_term">&#9660;</span>
     </div>
   </div>
@@ -605,7 +608,7 @@ tr:hover td{background:var(--s2)}
   </div>
   <div class="conv-track"><div class="conv-fill" style="width:88%;background:#3fb95088"></div></div>
   <div class="sig-thesis" id="t_PBR_long_term">
-    <p>PBR — horizonte LARGO PLAZO. Convicción ALTA. La tesis CAPM/Markowitz sostiene un Sharpe de 2.86 con beta 0.51 (retorno esperado CAPM +13.0%, alfa de Jensen +80.9%). Cumple el filtro de calidad (β razonable + Sharpe elevado) y aparece en el óptimo de la frontera eficiente. El flujo de noticias es positivo (sentiment +0.67 sobre 6 titulares). Régimen de mercado BULL (SPY +7.4% sobre SMA200 con pendiente positiva) — viento de cola para posiciones largas. Contexto sectorial: WTI +2.6% en el último mes.</p>
+    <p>PBR — horizonte LARGO PLAZO. Convicción ALTA. La tesis CAPM/Markowitz sostiene un Sharpe de 2.86 con beta 0.51 (retorno esperado CAPM +13.0%, alfa de Jensen +80.9%). Cumple el filtro de calidad (β razonable + Sharpe elevado) y aparece en el óptimo de la frontera eficiente. El flujo de noticias es positivo (sentiment +0.67 sobre 6 titulares). Régimen de mercado BULL (SPY +7.4% sobre SMA200 con pendiente positiva) — viento de cola para posiciones largas. Contexto sectorial: WTI +1.8% en el último mes.</p>
     
   </div>
 </div>
@@ -617,7 +620,7 @@ tr:hover td{background:var(--s2)}
     </div>
     <div class="sig-right">
       <span class="muted" style="font-size:.78rem">$99.51</span>
-      <span class="sig-alloc">$391.97</span>
+      <span class="sig-alloc">$393.51</span>
       <span class="sig-arrow" id="arrow_t_RIO_long_term">&#9660;</span>
     </div>
   </div>
@@ -630,7 +633,7 @@ tr:hover td{background:var(--s2)}
   </div>
   <div class="conv-track"><div class="conv-fill" style="width:88%;background:#3fb95088"></div></div>
   <div class="sig-thesis" id="t_RIO_long_term">
-    <p>RIO — horizonte LARGO PLAZO. Convicción ALTA. La tesis CAPM/Markowitz sostiene un Sharpe de 2.40 con beta 0.69 (retorno esperado CAPM +16.0%, alfa de Jensen +49.7%). Cumple el filtro de calidad (β razonable + Sharpe elevado) y aparece en el óptimo de la frontera eficiente. El flujo de noticias es positivo (sentiment +0.50 sobre 6 titulares). Régimen de mercado BULL (SPY +7.4% sobre SMA200 con pendiente positiva) — viento de cola para posiciones largas. Contexto sectorial: oro +7.2% en el último mes.</p>
+    <p>RIO — horizonte LARGO PLAZO. Convicción ALTA. La tesis CAPM/Markowitz sostiene un Sharpe de 2.40 con beta 0.69 (retorno esperado CAPM +16.0%, alfa de Jensen +49.7%). Cumple el filtro de calidad (β razonable + Sharpe elevado) y aparece en el óptimo de la frontera eficiente. El flujo de noticias es positivo (sentiment +0.67 sobre 6 titulares). Régimen de mercado BULL (SPY +7.4% sobre SMA200 con pendiente positiva) — viento de cola para posiciones largas. Contexto sectorial: oro +7.3% en el último mes.</p>
     
   </div>
 </div>
@@ -643,31 +646,6 @@ tr:hover td{background:var(--s2)}
   </div>
   <div class="sig-grid">
     
-<div class="sig-card" onclick="toggleSig('t_AMD_short_term')">
-  <div class="sig-head">
-    <div class="sig-left">
-      <span class="sig-ticker">AMD</span>
-      <span class="conv-badge" style="background:#3fb95022;color:#3fb950;border:1px solid #3fb95055">Alta</span>
-    </div>
-    <div class="sig-right">
-      <span class="muted" style="font-size:.78rem">$334.07</span>
-      <span class="sig-alloc">$242.24</span>
-      <span class="sig-arrow" id="arrow_t_AMD_short_term">&#9660;</span>
-    </div>
-  </div>
-  <div class="sig-pills">
-    <div class="spill"><div class="spill-l">Sharpe</div><div class="spill-v" style="color:#58a6ff">2.36</div></div>
-    <div class="spill"><div class="spill-l">Alfa Jensen</div><div class="spill-v" style="color:#3fb950">+99.16%</div></div>
-    <div class="spill"><div class="spill-l">Beta</div><div class="spill-v">2.03</div></div>
-    <div class="spill"><div class="spill-l">Stop Loss</div><div class="spill-v"><span style="color:#f85149;font-weight:700">$307.34</span></div></div>
-    <div class="spill"><div class="spill-l">Take Profit</div><div class="spill-v"><span style="color:#3fb950;font-weight:700">$400.90</span></div></div>
-  </div>
-  <div class="conv-track"><div class="conv-fill" style="width:88%;background:#3fb95088"></div></div>
-  <div class="sig-thesis" id="t_AMD_short_term">
-    <p>AMD — horizonte CORTO PLAZO. Convicción ALTA. Setup técnico: RSI 80, momentum 1m +65.4%, momentum 3m +32.6%. ⚠️ RSI en sobrecompra → riesgo de reversión a la media. Stop loss ATR en $305.51 (riesgo ≈ 8.5% desde entrada). Sentiment de noticias refuerza el setup.</p>
-    
-  </div>
-</div>
 <div class="sig-card" onclick="toggleSig('t_TSM_short_term')">
   <div class="sig-head">
     <div class="sig-left">
@@ -676,7 +654,7 @@ tr:hover td{background:var(--s2)}
     </div>
     <div class="sig-right">
       <span class="muted" style="font-size:.78rem">$401.40</span>
-      <span class="sig-alloc">$157.76</span>
+      <span class="sig-alloc">$226.40</span>
       <span class="sig-arrow" id="arrow_t_TSM_short_term">&#9660;</span>
     </div>
   </div>
@@ -690,6 +668,31 @@ tr:hover td{background:var(--s2)}
   <div class="conv-track"><div class="conv-fill" style="width:52%;background:#d2992288"></div></div>
   <div class="sig-thesis" id="t_TSM_short_term">
     <p>TSM — horizonte CORTO PLAZO. Convicción MEDIA. Setup técnico: RSI 68, momentum 1m +22.9%, momentum 3m +19.0%. Stop loss ATR en $374.65 (riesgo ≈ 6.7% desde entrada).</p>
+    
+  </div>
+</div>
+<div class="sig-card" onclick="toggleSig('t_SQM_short_term')">
+  <div class="sig-head">
+    <div class="sig-left">
+      <span class="sig-ticker">SQM</span>
+      <span class="conv-badge" style="background:#d2992222;color:#d29922;border:1px solid #d2992255">Media</span>
+    </div>
+    <div class="sig-right">
+      <span class="muted" style="font-size:.78rem">$88.96</span>
+      <span class="sig-alloc">$173.60</span>
+      <span class="sig-arrow" id="arrow_t_SQM_short_term">&#9660;</span>
+    </div>
+  </div>
+  <div class="sig-pills">
+    <div class="spill"><div class="spill-l">Sharpe</div><div class="spill-v" style="color:#58a6ff">1.92</div></div>
+    <div class="spill"><div class="spill-l">Alfa Jensen</div><div class="spill-v" style="color:#3fb950">+72.51%</div></div>
+    <div class="spill"><div class="spill-l">Beta</div><div class="spill-v">1.02</div></div>
+    <div class="spill"><div class="spill-l">Stop Loss</div><div class="spill-v"><span style="color:#f85149;font-weight:700">$81.84</span></div></div>
+    <div class="spill"><div class="spill-l">Take Profit</div><div class="spill-v"><span style="color:#3fb950;font-weight:700">$106.76</span></div></div>
+  </div>
+  <div class="conv-track"><div class="conv-fill" style="width:52%;background:#d2992288"></div></div>
+  <div class="sig-thesis" id="t_SQM_short_term">
+    <p>SQM — horizonte CORTO PLAZO. Convicción MEDIA. Setup técnico: RSI 59, momentum 1m +7.6%, momentum 3m +5.4%. Stop loss ATR en $81.15 (riesgo ≈ 8.8% desde entrada).</p>
     
   </div>
 </div>
@@ -750,12 +753,6 @@ tr:hover td{background:var(--s2)}
       </tr></thead>
       <tbody>
 <tr>
-  <td><span class="rt-ticker" style="color:#e6edf3">AMD</span></td>
-  <td><span style="color:#f85149;font-weight:700">▼ 3.8%</span></td>
-  <td class="muted" style="font-size:.8rem;max-width:320px">Google, Meta, Microsoft, Amazon, Apple earnings: What to expect</td>
-  <td><span class="muted" style="font-size:.75rem">BUY_CP</span></td>
-</tr>
-<tr>
   <td><span class="rt-ticker" style="color:#e6edf3">PBR</span></td>
   <td><span style="color:#3fb950;font-weight:700">▲ 0.4%</span></td>
   <td class="muted" style="font-size:.8rem;max-width:320px">Petrobras Stock Outperforms Industry in the Past Year: Time to Buy?</td>
@@ -774,9 +771,21 @@ tr:hover td{background:var(--s2)}
   <td><span class="muted" style="font-size:.75rem">BUY_CP</span></td>
 </tr>
 <tr>
+  <td><span class="rt-ticker" style="color:#e6edf3">SQM</span></td>
+  <td><span style="color:#3fb950;font-weight:700">▲ 2.8%</span></td>
+  <td class="muted" style="font-size:.8rem;max-width:320px">A Look At SQM’s Valuation After Rothschild Redburn’s Cautious Lithium Ou...</td>
+  <td><span class="muted" style="font-size:.75rem">BUY_CP</span></td>
+</tr>
+<tr>
   <td><span class="rt-ticker" style="color:#e6edf3">LAC</span></td>
   <td><span style="color:#3fb950;font-weight:700">▲ 13.1%</span></td>
   <td class="muted" style="font-size:.8rem;max-width:320px">This is Why Wedbush is Bullish on Lithium Americas Corp. (LAC) as a Rare...</td>
+  <td><span class="muted" style="font-size:.75rem">—</span></td>
+</tr>
+<tr>
+  <td><span class="rt-ticker" style="color:#e6edf3">AMD</span></td>
+  <td><span style="color:#f85149;font-weight:700">▼ 3.8%</span></td>
+  <td class="muted" style="font-size:.8rem;max-width:320px">Google, Meta, Microsoft, Amazon, Apple earnings: What to expect</td>
   <td><span class="muted" style="font-size:.75rem">—</span></td>
 </tr>
 <tr>
@@ -798,15 +807,9 @@ tr:hover td{background:var(--s2)}
   <td><span class="muted" style="font-size:.75rem">—</span></td>
 </tr>
 <tr>
-  <td><span class="rt-ticker" style="color:#e6edf3">NOC</span></td>
-  <td><span style="color:#3fb950;font-weight:700">▲ 0.0%</span></td>
-  <td class="muted" style="font-size:.8rem;max-width:320px">Defense Stocks Have Been Surprisingly Weak Since the Iran War Started. N...</td>
-  <td><span class="muted" style="font-size:.75rem">—</span></td>
-</tr>
-<tr>
-  <td><span class="rt-ticker" style="color:#e6edf3">ASML</span></td>
-  <td><span style="color:#f85149;font-weight:700">▼ 1.7%</span></td>
-  <td class="muted" style="font-size:.8rem;max-width:320px">2 Unstoppable Growth Stocks That Could Soar 20% and 26% in 2026, Accordi...</td>
+  <td><span class="rt-ticker" style="color:#e6edf3">CRWD</span></td>
+  <td><span style="color:#3fb950;font-weight:700">▲ 1.4%</span></td>
+  <td class="muted" style="font-size:.8rem;max-width:320px">Mizuho Upgrades CrowdStrike With a $520 Price Target: Is AI Security the...</td>
   <td><span class="muted" style="font-size:.75rem">—</span></td>
 </tr></tbody>
     </table>
@@ -816,7 +819,53 @@ tr:hover td{background:var(--s2)}
   <div class="section-gap"></div>
   <div class="card"><p class="muted" style="padding:20px">Discovery corre los viernes. Sin datos todavia.</p></div>
 </div>
-<div class="tab-content" id="tab-historial"><div class="card"><p class="muted" style="padding:40px;text-align:center">Sin historial de operaciones todavia. Las ordenes ejecutadas apareceran aqui.</p></div></div>
+<div class="tab-content" id="tab-historial">
+<div class="card">
+  <div class="card-head"><div>
+    <div class="card-title">Historial de Operaciones</div>
+    <div class="card-sub">6 posiciones · 1 cerradas</div>
+  </div></div>
+  
+  <div style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:16px">
+    <div class="kpi-card" style="flex:1;min-width:110px">
+      <div class="kpi-label">Trades cerrados</div>
+      <div class="kpi-val">1</div>
+    </div>
+    <div class="kpi-card" style="flex:1;min-width:110px">
+      <div class="kpi-label">Win rate real</div>
+      <div class="kpi-val" style="color:#3fb950">100.0%</div>
+    </div>
+    <div class="kpi-card" style="flex:1;min-width:130px;background:rgba(63,185,80,.15)22">
+      <div class="kpi-label">P&L realizado</div>
+      <div class="kpi-val" style="color:#3fb950">+$0.56</div>
+    </div>
+    <div class="kpi-card" style="flex:1;min-width:110px">
+      <div class="kpi-label">Hold promedio</div>
+      <div class="kpi-val">0.2d</div>
+    </div>
+  </div>
+  <div style="overflow-x:auto">
+    <table style="width:100%;border-collapse:collapse;font-size:.82rem">
+      <thead>
+        <tr style="color:var(--mt);font-size:.78rem">
+          <th style="text-align:left;padding:6px 10px">Fecha</th>
+          <th style="text-align:left;padding:6px 10px">Ticker</th>
+          <th style="text-align:left;padding:6px 10px">Sleeve</th>
+          <th style="text-align:right;padding:6px 10px">Entrada</th>
+          <th style="text-align:right;padding:6px 10px">Salida</th>
+          <th style="text-align:right;padding:6px 10px">P&L $</th>
+          <th style="text-align:right;padding:6px 10px">P&L %</th>
+          <th style="text-align:right;padding:6px 10px">Hold</th>
+          <th style="text-align:left;padding:6px 10px">Estado</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr style="border-bottom:1px solid var(--border);"><td style="padding:7px 10px;color:var(--mt);font-size:.78rem">2026-04-27</td><td style="padding:7px 10px"><b>TSM</b></td><td style="padding:7px 10px">CP</td><td style="padding:7px 10px;text-align:right">$403.87</td><td style="text-align:right;color:var(--mt)">—</td><td style="text-align:right;color:var(--mt)">—</td><td style="text-align:right;color:var(--mt)">—</td><td style="text-align:right;color:var(--mt)">—</td><td style="padding:7px 10px;color:#3fb950;font-size:.78rem">ABIERTO</td></tr><tr style="border-bottom:1px solid var(--border);"><td style="padding:7px 10px;color:var(--mt);font-size:.78rem">2026-04-27</td><td style="padding:7px 10px"><b>RIO</b></td><td style="padding:7px 10px">LP</td><td style="padding:7px 10px;text-align:right">$100.26</td><td style="text-align:right;color:var(--mt)">—</td><td style="text-align:right;color:var(--mt)">—</td><td style="text-align:right;color:var(--mt)">—</td><td style="text-align:right;color:var(--mt)">—</td><td style="padding:7px 10px;color:#3fb950;font-size:.78rem">ABIERTO</td></tr><tr style="border-bottom:1px solid var(--border);"><td style="padding:7px 10px;color:var(--mt);font-size:.78rem">2026-04-27</td><td style="padding:7px 10px"><b>TSM</b></td><td style="padding:7px 10px">CP</td><td style="padding:7px 10px;text-align:right">$403.29</td><td style="text-align:right;color:var(--mt)">—</td><td style="text-align:right;color:var(--mt)">—</td><td style="text-align:right;color:var(--mt)">—</td><td style="text-align:right;color:var(--mt)">—</td><td style="padding:7px 10px;color:#3fb950;font-size:.78rem">ABIERTO</td></tr><tr style="border-bottom:1px solid var(--border);"><td style="padding:7px 10px;color:var(--mt);font-size:.78rem">2026-04-27</td><td style="padding:7px 10px"><b>AMD</b></td><td style="padding:7px 10px">CP</td><td style="padding:7px 10px;text-align:right">$334.50</td><td style="text-align:right">$336.27</td><td style="text-align:right;color:#3fb950;font-weight:600">+$0.56</td><td style="text-align:right;color:#3fb950">+0.4%</td><td style="text-align:right">0.2d</td><td style="padding:7px 10px;color:#8b949e;font-size:.78rem">CERRADO</td></tr><tr style="border-bottom:1px solid var(--border);"><td style="padding:7px 10px;color:var(--mt);font-size:.78rem">2026-04-27</td><td style="padding:7px 10px"><b>RIO</b></td><td style="padding:7px 10px">LP</td><td style="padding:7px 10px;text-align:right">$99.81</td><td style="text-align:right;color:var(--mt)">—</td><td style="text-align:right;color:var(--mt)">—</td><td style="text-align:right;color:var(--mt)">—</td><td style="text-align:right;color:var(--mt)">—</td><td style="padding:7px 10px;color:#3fb950;font-size:.78rem">ABIERTO</td></tr><tr style="border-bottom:1px solid var(--border);"><td style="padding:7px 10px;color:var(--mt);font-size:.78rem">2026-04-27</td><td style="padding:7px 10px"><b>PBR</b></td><td style="padding:7px 10px">LP</td><td style="padding:7px 10px;text-align:right">$21.02</td><td style="text-align:right;color:var(--mt)">—</td><td style="text-align:right;color:var(--mt)">—</td><td style="text-align:right;color:var(--mt)">—</td><td style="text-align:right;color:var(--mt)">—</td><td style="padding:7px 10px;color:#3fb950;font-size:.78rem">ABIERTO</td></tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+</div>
 
 <script>
 // ── tabs ──
