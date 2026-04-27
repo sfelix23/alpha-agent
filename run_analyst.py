@@ -155,21 +155,22 @@ def main() -> None:
     log.info("Régimen de mercado: %s — %s", macro.regime, macro.regime_reason)
 
     # Sleeve CP dinámica: en BULL + VIX < 20 aumentar exposición CP para capturar momentum
+    # PARAMS es frozen dataclass → usar object.__setattr__ para overrides en runtime
     vix_now = (macro.prices or {}).get("vix", 99) or 99
     if macro.regime.upper() == "BULL" and vix_now < 20:
-        PARAMS.weight_short_term  = 0.25
-        PARAMS.weight_long_term   = 0.65
-        PARAMS.top_n_short_term   = 2   # 2 slots CP en momentum bull para diversificar señales
+        object.__setattr__(PARAMS, "weight_short_term", 0.25)
+        object.__setattr__(PARAMS, "weight_long_term",  0.65)
+        object.__setattr__(PARAMS, "top_n_short_term",  2)
         log.info("📈 Régimen BULL + VIX %.1f < 20 → sleeve CP 25%% / LP 65%% / 2 slots CP (modo momentum)", vix_now)
     else:
-        PARAMS.weight_short_term  = 0.20
-        PARAMS.weight_long_term   = 0.70
-        PARAMS.top_n_short_term   = 1
+        object.__setattr__(PARAMS, "weight_short_term", 0.20)
+        object.__setattr__(PARAMS, "weight_long_term",  0.70)
+        object.__setattr__(PARAMS, "top_n_short_term",  1)
 
     # Viernes: sin nuevas posiciones CP (evitar gap de fin de semana)
     from datetime import datetime as _dt
     if _dt.now().weekday() == 4:
-        PARAMS.top_n_short_term = 0
+        object.__setattr__(PARAMS, "top_n_short_term", 0)
         log.info("📅 Viernes → CP desactivado (gap risk de fin de semana)")
 
     # 2.5 Datos alternativos: Fear & Greed + Yield Curve + OpenInsider
