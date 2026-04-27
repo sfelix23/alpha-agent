@@ -269,8 +269,11 @@ def build_signals(
     sig.portfolio = {t: round(float(w), 4) for t, w in weights_series.items() if w > 0.01}
 
     # ── CP: top N por score_st con pesos proporcionales ───────────────
+    # Excluir tickers ya elegidos como LP para evitar doble sizing del mismo activo.
+    lp_tickers = {s.ticker for s in sig.long_term}
     st_df = scores["short_term"]
-    top_st = st_df.head(PARAMS.top_n_short_term)
+    st_df_eligible = st_df[~st_df.index.isin(lp_tickers)]
+    top_st = st_df_eligible.head(PARAMS.top_n_short_term)
     raw = top_st["score_st"].clip(lower=0)
     if raw.sum() > 0:
         weights_st = raw / raw.sum()
@@ -282,7 +285,7 @@ def build_signals(
             ticker=ticker, horizon="CP",
             quant_row=row,
             tech_row=row,
-            weight=float(weights_st.loc[ticker]),
+            weight=float(weights_st.get(ticker, 1.0 / max(len(top_st), 1))),
             macro=macro,
             capital=cap,
         ))

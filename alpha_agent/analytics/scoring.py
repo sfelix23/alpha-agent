@@ -25,9 +25,11 @@ import numpy as np
 import pandas as pd
 
 from alpha_agent.config import (
+    ALPHA_PREMIUM_LP,
     MAX_PAIR_CORRELATION,
     MAX_SECTOR_WEIGHT_LP,
     PARAMS,
+    QQQ_MEGA_CAPS,
     SECTOR_MAP,
 )
 
@@ -237,6 +239,7 @@ def build_scores(
     sentiment_deltas: dict[str, float] | None = None,
     insider_signal: dict[str, float] | None = None,
     fear_greed: int | None = None,
+    held_lp: set[str] | None = None,
 ) -> dict[str, pd.DataFrame]:
     """
     Devuelve {'long_term': df, 'short_term': df} con rankings mejorados.
@@ -257,13 +260,17 @@ def build_scores(
     lp = lp.sort_values("sharpe", ascending=False)
 
     # Score base: Sharpe + alpha Jensen + Information Ratio (consistencia del alpha)
+    # alpha_jensen: peso reducido (0.5 → 0.25) — es backward-looking; el alpha de los últimos
+    # 2 años predice mal el próximo mes a nivel de stock individual (mean-reversion del alpha).
     ir_term = _zscore(lp["information_ratio"].fillna(0)) if "information_ratio" in lp.columns else 0
-    lp["score_lp"] = _zscore(lp["sharpe"]) + 0.5 * _zscore(lp["alpha_jensen"]) + 0.3 * ir_term
+    lp["score_lp"] = _zscore(lp["sharpe"]) + 0.25 * _zscore(lp["alpha_jensen"]) + 0.3 * ir_term
 
     # Momentum 6m ajustado (excluye reversal del último mes) — factor académico #1
+    # Peso aumentado (0.25 → 0.40): Jegadeesh & Titman (1993), el factor más robusto OOS.
+    # El momentum de 2-6m es forward-looking: predice el próximo mes mejor que el alpha histórico.
     if "ret_6m" in lp.columns and "ret_1m" in lp.columns:
         ret_6m_lp = lp["ret_6m"].fillna(0) - lp["ret_1m"].fillna(0)
-        lp["score_lp"] += 0.25 * _zscore(ret_6m_lp)
+        lp["score_lp"] += 0.40 * _zscore(ret_6m_lp)
 
     # Bonus EMA50: solo activos en tendencia alcista
     if "above_ema50" in lp.columns:
@@ -301,6 +308,24 @@ def build_scores(
         elif fear_greed >= 80:     # extreme greed → reduce conviction
             lp["score_lp"] *= 0.90
             logger.info("F&G %d (extreme greed) → LP scores ×0.90", fear_greed)
+
+    # Premium estructural por ineficiencia de mercado: Argentina, energía intl, minería, defensa.
+    # En estos sectores el CAPM + macro + noticias locales agrega alpha real porque hay
+    # menos cobertura institucional y menor eficiencia de mercado que en mega-cap tech.
+    alpha_tickers_in_lp = [t for t in lp.index if t in ALPHA_PREMIUM_LP]
+    if alpha_tickers_in_lp:
+        lp.loc[alpha_tickers_in_lp, "score_lp"] += 0.20
+        logger.info("Alpha premium (+0.20 LP): %s", alpha_tickers_in_lp)
+
+    # Stickiness LP: posiciones ya abiertas reciben +0.30 para evitar rotación innecesaria.
+    # La mayor causa de underperformance vs buy-and-hold es la rotación excesiva (reemplazar
+    # una buena posición por otra que luce mejor en el modelo pero no lo es en la práctica).
+    # Solo se reemplaza un LP si el nuevo candidato supera al actual en más de 0.30 puntos.
+    if held_lp:
+        held_in_lp = [t for t in held_lp if t in lp.index]
+        if held_in_lp:
+            lp.loc[held_in_lp, "score_lp"] += 0.30
+            logger.info("Stickiness LP (+0.30): %s (posiciones ya abiertas)", held_in_lp)
 
     lp = lp.sort_values("score_lp", ascending=False)
 
@@ -375,9 +400,22 @@ def build_scores(
         )
         score_st += 0.12 * oversold_bounce.astype(float)
 
-    # Penalización RSI sobrecomprado (no perseguir rallies tardíos)
+    # Penalización RSI sobrecomprado escalonada:
+    # RSI > 75: -0.30 (señal débil de CP — ya subió demasiado)
+    # RSI > 82: -0.70 adicional (sobrecompra extrema — mean-reversion estadísticamente probable)
+    # Antes era -0.15 fijo. El aumento refleja que RSI > 80 en CP reduce win-rate histórico.
     if "rsi" in st.columns:
-        score_st -= 0.15 * (st["rsi"].fillna(50) > 75).astype(float)
+        rsi_col = st["rsi"].fillna(50)
+        score_st -= 0.30 * (rsi_col > 75).astype(float)
+        score_st -= 0.70 * (rsi_col > 82).astype(float)
+
+    # Exclusión de mega-caps QQQ del sleeve CP: mercado perfectamente eficiente en estos nombres.
+    # Compramos NVDA/AMD/MSFT CP después de +20% semanal = pagamos el run que ya hicieron los quant funds.
+    # El sistema tiene ventaja en sectores menos eficientes (Argentina, energía, materiales).
+    mega_in_cp = [t for t in st.index if t in QQQ_MEGA_CAPS]
+    if mega_in_cp:
+        score_st.loc[score_st.index.isin(QQQ_MEGA_CAPS)] -= 2.0
+        logger.info("QQQ mega-cap penalty (-2.0 CP): %s", mega_in_cp)
 
     # Momentum confluence: penalizar señales contradictorias entre timeframes
     # 5d vs 1m: si el ultra-corto y el mensual se contradicen → -0.15

@@ -49,6 +49,29 @@ BENCHMARK_TICKER: str = "SPY"
 # (son benchmarks o ETFs que solo usamos como referencia)
 EXCLUIR_DE_OPTIMIZACION: set[str] = {"SPY", "QQQ", "GLD", "IBIT", "ETHE"}
 
+# Mega-caps de alta eficiencia de mercado — excluir del sleeve CP.
+# En estos nombres el mercado es perfectamente eficiente (decenas de quant funds
+# corriendo CAPM, ML, HFT). Comprar momentum CP en NVDA o AMD después de +20%
+# semanal es lo opuesto de tener ventaja: es comprar lo que ya compraron todos.
+QQQ_MEGA_CAPS: frozenset[str] = frozenset({
+    "NVDA", "AAPL", "MSFT", "AMZN", "META", "GOOGL", "TSLA",
+    "AVGO", "COST", "AMD", "ASML", "NFLX",
+})
+
+# Tickers donde el sistema tiene ventaja informacional estructural sobre el mercado:
+# Argentina (cobertura institucional muy baja), energía internacional, minerales,
+# defensa. En estos sectores el CAPM + macro + noticias locales agrega alpha real.
+ALPHA_PREMIUM_LP: frozenset[str] = frozenset({
+    # Argentina ADRs — mercado ineficiente, pocos fondos los cubren
+    "GGAL", "BMA", "TGS", "VIST", "IRS", "LOMA", "EDN", "TGNO4.BA", "YPF", "PAM",
+    # Energía internacional no-SPY
+    "PBR", "SHEL", "TTE", "SLB", "XOM", "CVX",
+    # Minería / metales / uranio
+    "RIO", "VALE", "NEM", "GOLD", "FCX", "SQM", "LAC", "CCJ",
+    # Defensa — poco cubierta por quant retail, macro signals importan
+    "LMT", "RTX", "NOC", "GD", "AVAV",
+})
+
 # Mapeo ticker → sector, para el guard de concentración sectorial.
 # Si un ticker no está acá, se etiqueta como "Other".
 SECTOR_MAP: dict[str, str] = {

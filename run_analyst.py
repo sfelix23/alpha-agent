@@ -235,6 +235,21 @@ def main() -> None:
     except Exception as exc:
         log.debug("Reddit sentiment no disponible: %s", exc)
 
+    # Detectar posiciones LP ya abiertas para el stickiness bonus en scoring.
+    # Solo rotamos un LP si el nuevo candidato supera al actual en >0.30 puntos.
+    held_lp: set[str] = set()
+    try:
+        from alpha_agent.analytics.trade_db import get_trades
+        open_trades = get_trades(limit=200)
+        held_lp = {
+            t["ticker"] for t in open_trades
+            if t.get("sleeve") == "LP" and t.get("closed_at") is None and t.get("side") == "BUY"
+        }
+        if held_lp:
+            log.info("Posiciones LP abiertas (stickiness): %s", sorted(held_lp))
+    except Exception as exc:
+        log.debug("No se pudo leer posiciones abiertas LP: %s", exc)
+
     scores = build_scores(
         capm, technical,
         closes=closes,
@@ -243,6 +258,7 @@ def main() -> None:
         sentiment_deltas=sentiment_deltas if sentiment_deltas else None,
         insider_signal=insider_signal if insider_signal else None,
         fear_greed=fg_value,
+        held_lp=held_lp if held_lp else None,
     )
     log.info("Top LP post-guard: %s", scores["long_term"].head(PARAMS.top_n_long_term).index.tolist())
     log.info("Top CP: %s", scores["short_term"].head(PARAMS.top_n_short_term).index.tolist())
