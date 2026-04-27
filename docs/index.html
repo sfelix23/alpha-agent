@@ -258,7 +258,7 @@ tr:hover td{background:var(--s2)}
 <div class="topbar">
   <div class="logo">ALPHA<span>&nbsp;/&nbsp;TERMINAL</span></div>
   <div class="topbar-meta">
-    <span><span class="live"></span>&nbsp;27 de April de 2026 — 13:17</span>
+    <span><span class="live"></span>&nbsp;27 de April de 2026 — 15:30</span>
     <span style="color:var(--bd)">|</span>
     <span>Paper</span>
     <span style="color:var(--bd)">|</span>
@@ -342,8 +342,8 @@ tr:hover td{background:var(--s2)}
       <div class="card-title">Retorno Acumulado — % vs benchmarks</div>
       <div class="card-sub" style="display:flex;gap:16px;align-items:center;flex-wrap:wrap">
         <span><span style="color:#3fb950;font-weight:700;font-size:.9rem">+0.00%</span> Portfolio</span>
-        <span style="font-size:.78rem;color:#58a6ff">&#9135;&#9135; SPY +8.70%</span>
-        <span style="font-size:.78rem;color:#e3b341">&#9135;&#9135; QQQ +12.94%</span>
+        <span style="font-size:.78rem;color:#58a6ff">&#9135;&#9135; SPY +12.45%</span>
+        <span style="font-size:.78rem;color:#e3b341">&#9135;&#9135; QQQ +17.64%</span>
       </div>
     </div>
     <div class="pill" style="color:#3fb950">$1,600.00</div>
@@ -365,11 +365,11 @@ tr:hover td{background:var(--s2)}
           borderColor:'#3fb950',backgroundColor:g,fill:true,tension:.4,
           pointRadius:2,pointHoverRadius:7,pointBackgroundColor:'#3fb950',borderWidth:2.5}
         ,
-    {data:[0.0, -1.786, -3.461, -3.783, -0.987, -0.241, -0.151, 0.321, 0.365, 2.922, 3.515, 3.447, 4.458, 5.731, 6.565, 6.827, 8.118, 7.902, 7.195, 8.281, 7.861, 8.696],label:'SPY',
+    {data:[0.0, -0.334, 2.563, 3.335, 3.429, 3.917, 3.963, 6.611, 7.226, 7.155, 8.202, 9.521, 10.385, 10.656, 11.994, 11.77, 11.038, 12.162, 11.727, 12.593, 12.446],label:'SPY',
       borderColor:'#58a6ff',backgroundColor:'transparent',fill:false,
       tension:.4,pointRadius:0,borderWidth:1.5,borderDash:[5,3]}
         ,
-    {data:[0.0, -2.387, -4.294, -5.025, -1.81, -0.597, -0.483, 0.116, 0.131, 3.108, 3.806, 3.955, 5.03, 6.937, 8.435, 8.957, 10.382, 10.032, 9.613, 11.447, 10.82, 12.939],label:'QQQ',
+    {data:[0.0, -0.764, 2.595, 3.863, 3.982, 4.607, 4.623, 7.734, 8.463, 8.619, 9.743, 11.735, 13.299, 13.845, 15.335, 14.969, 14.531, 16.447, 15.792, 18.006, 17.636],label:'QQQ',
       borderColor:'#e3b341',backgroundColor:'transparent',fill:false,
       tension:.4,pointRadius:0,borderWidth:1.5,borderDash:[3,3]}
       ]
@@ -697,8 +697,8 @@ tr:hover td{background:var(--s2)}
   window._charts=window._charts||{};
   window._charts.sector=new Chart(document.getElementById('sectorChart'),{
     type:'bar',
-    data:{labels:["Tech", "Energy", "Industrials", "Materials", "ETF", "Comm", "Financials", "GoldMiners", "Defense", "Healthcare"],datasets:[{data:[14.26, 6.76, 5.91, 4.85, 4.62, 1.53, -0.01, -1.53, -5.27, -5.49],
-      backgroundColor:["#3fb950", "#3fb950", "#3fb950", "#3fb950", "#3fb950", "#3fb950", "#f85149", "#f85149", "#f85149", "#f85149"],borderRadius:6,borderSkipped:false}]},
+    data:{labels:["Tech", "Industrials", "Energy", "Materials", "Comm", "ETF", "Financials", "Healthcare", "Defense", "GoldMiners"],datasets:[{data:[13.73, 5.9, 5.72, 4.54, 3.55, 2.84, 2.25, -3.88, -5.7, -6.18],
+      backgroundColor:["#3fb950", "#3fb950", "#3fb950", "#3fb950", "#3fb950", "#3fb950", "#3fb950", "#f85149", "#f85149", "#f85149"],borderRadius:6,borderSkipped:false}]},
     options:{
       animation:{duration:700},
       plugins:{legend:{display:false},tooltip:{backgroundColor:'#161b22',borderColor:'#30363d',
@@ -733,61 +733,61 @@ tr:hover td{background:var(--s2)}
       <tbody>
 <tr>
   <td><span class="rt-ticker" style="color:#e6edf3">AMD</span></td>
-  <td><span style="color:#3fb950;font-weight:700">▲ 13.9%</span></td>
+  <td><span style="color:#f85149;font-weight:700">▼ 4.1%</span></td>
   <td class="muted" style="font-size:.8rem;max-width:320px">What's next for Tesla</td>
   <td><span class="muted" style="font-size:.75rem">BUY_CP</span></td>
 </tr>
 <tr>
   <td><span class="rt-ticker" style="color:#e6edf3">NEM</span></td>
-  <td><span style="color:#3fb950;font-weight:700">▲ 8.7%</span></td>
+  <td><span style="color:#f85149;font-weight:700">▼ 3.4%</span></td>
   <td class="muted" style="font-size:.8rem;max-width:320px">Gold Faces Headwinds From Calmer Markets, Yet Newmont’s Record Cash Flow...</td>
   <td><span class="muted" style="font-size:.75rem">CALL</span></td>
 </tr>
 <tr>
   <td><span class="rt-ticker" style="color:#e6edf3">TSM</span></td>
-  <td><span style="color:#3fb950;font-weight:700">▲ 5.2%</span></td>
+  <td><span style="color:#3fb950;font-weight:700">▲ 0.5%</span></td>
   <td class="muted" style="font-size:.8rem;max-width:320px">Chip stocks just added $3 trillion in market value — but are the most ov...</td>
   <td><span class="muted" style="font-size:.75rem">BUY_CP</span></td>
 </tr>
 <tr>
   <td><span class="rt-ticker" style="color:#e6edf3">SQM</span></td>
-  <td><span style="color:#3fb950;font-weight:700">▲ 3.9%</span></td>
+  <td><span style="color:#3fb950;font-weight:700">▲ 0.1%</span></td>
   <td class="muted" style="font-size:.8rem;max-width:320px">ALB vs. SQM: Which Lithium Stock Should You Bet on Now?</td>
   <td><span class="muted" style="font-size:.75rem">CALL</span></td>
 </tr>
 <tr>
   <td><span class="rt-ticker" style="color:#e6edf3">RTX</span></td>
-  <td><span style="color:#f85149;font-weight:700">▼ 2.8%</span></td>
+  <td><span style="color:#f85149;font-weight:700">▼ 0.0%</span></td>
   <td class="muted" style="font-size:.8rem;max-width:320px">Leveraged ETFs Explained: 3 Picks for Active Traders Who Want Speed</td>
   <td><span class="muted" style="font-size:.75rem">BUY_LP</span></td>
 </tr>
 <tr>
   <td><span class="rt-ticker" style="color:#e6edf3">GOOGL</span></td>
-  <td><span style="color:#3fb950;font-weight:700">▲ 1.6%</span></td>
+  <td><span style="color:#3fb950;font-weight:700">▲ 1.7%</span></td>
   <td class="muted" style="font-size:.8rem;max-width:320px">Are Intel's impressive earnings a precursor to AMD's?</td>
   <td><span class="muted" style="font-size:.75rem">BUY_LP</span></td>
 </tr>
 <tr>
   <td><span class="rt-ticker" style="color:#e6edf3">GLD</span></td>
-  <td><span style="color:#3fb950;font-weight:700">▲ 0.5%</span></td>
+  <td><span style="color:#f85149;font-weight:700">▼ 0.8%</span></td>
   <td class="muted" style="font-size:.8rem;max-width:320px">Gold Faces Headwinds From Calmer Markets, Yet Newmont’s Record Cash Flow...</td>
   <td><span class="muted" style="font-size:.75rem">BUY_LP</span></td>
 </tr>
 <tr>
   <td><span class="rt-ticker" style="color:#e6edf3">NVDA</span></td>
-  <td><span style="color:#3fb950;font-weight:700">▲ 4.3%</span></td>
+  <td><span style="color:#3fb950;font-weight:700">▲ 0.8%</span></td>
   <td class="muted" style="font-size:.8rem;max-width:320px">Are Intel's impressive earnings a precursor to AMD's?</td>
   <td><span class="muted" style="font-size:.75rem">—</span></td>
 </tr>
 <tr>
   <td><span class="rt-ticker" style="color:#e6edf3">NOC</span></td>
-  <td><span style="color:#f85149;font-weight:700">▼ 2.1%</span></td>
+  <td><span style="color:#3fb950;font-weight:700">▲ 0.5%</span></td>
   <td class="muted" style="font-size:.8rem;max-width:320px">Lockheed Falls on Earnings Miss. Defense Fears Linger.</td>
   <td><span class="muted" style="font-size:.75rem">—</span></td>
 </tr>
 <tr>
   <td><span class="rt-ticker" style="color:#e6edf3">AVAV</span></td>
-  <td><span style="color:#f85149;font-weight:700">▼ 2.8%</span></td>
+  <td><span style="color:#f85149;font-weight:700">▼ 0.8%</span></td>
   <td class="muted" style="font-size:.8rem;max-width:320px">These Are the 3 Biggest Winners From the Proposed $1.5 Trillion Defense ...</td>
   <td><span class="muted" style="font-size:.75rem">—</span></td>
 </tr></tbody>
