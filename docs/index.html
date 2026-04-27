@@ -258,7 +258,7 @@ tr:hover td{background:var(--s2)}
 <div class="topbar">
   <div class="logo">ALPHA<span>&nbsp;/&nbsp;TERMINAL</span></div>
   <div class="topbar-meta">
-    <span><span class="live"></span>&nbsp;26 de April de 2026 — 15:08</span>
+    <span><span class="live"></span>&nbsp;27 de April de 2026 — 20:53</span>
     <span style="color:var(--bd)">|</span>
     <span>Paper</span>
     <span style="color:var(--bd)">|</span>
@@ -268,15 +268,15 @@ tr:hover td{background:var(--s2)}
 
 <div class="ticker-tape">
   <div class="tape-inner" id="tape-inner">
-    <span class="tape-item">VIX <b id="t-vix">18.7</b></span>
-    <span class="tape-item">WTI <b id="t-wti">$94.4</b></span>
-    <span class="tape-item">GOLD <b id="t-gold">$4722</b></span>
+    <span class="tape-item">VIX <b id="t-vix">18.5</b></span>
+    <span class="tape-item">WTI <b id="t-wti">$97.0</b></span>
+    <span class="tape-item">GOLD <b id="t-gold">$4691</b></span>
     <span class="tape-item">DXY <b id="t-dxy">98.5</b></span>
     <span class="tape-item">RÉGIMEN <b style="color:#22c55e">BULL</b></span>
     <span class="tape-item">·&nbsp;&nbsp;&nbsp;·&nbsp;&nbsp;&nbsp;·</span>
-    <span class="tape-item">VIX <b id="t-vix2">18.7</b></span>
-    <span class="tape-item">WTI <b id="t-wti2">$94.4</b></span>
-    <span class="tape-item">GOLD <b id="t-gold2">$4722</b></span>
+    <span class="tape-item">VIX <b id="t-vix2">18.5</b></span>
+    <span class="tape-item">WTI <b id="t-wti2">$97.0</b></span>
+    <span class="tape-item">GOLD <b id="t-gold2">$4691</b></span>
     <span class="tape-item">DXY <b id="t-dxy2">98.5</b></span>
     <span class="tape-item">RÉGIMEN <b style="color:#22c55e">BULL</b></span>
   </div>
@@ -292,14 +292,14 @@ tr:hover td{background:var(--s2)}
 
 
 <div class="tab-content" id="tab-resumen">
-  <div class="fresh-banner fresh-warn">⚠️ Senales de hace 22h — El dashboard puede no reflejar la sesion de hoy.</div>
-  <p class="ts">Senales actualizadas: 2026-04-25 20:03 &nbsp;|&nbsp; Paper Trading</p>
+  
+  <p class="ts">Senales actualizadas: 2026-04-27 14:40 &nbsp;|&nbsp; Paper Trading</p>
   
 <div class="kpi-row">
-  <div class="kpi kpi-hero" data-countup="1600.00">
+  <div class="kpi kpi-hero" data-countup="1603.49">
     <div class="kpi-lbl">Patrimonio Total</div>
-    <div class="kpi-val kpi-hero-val" style="color:#3fb950" id="kpi-equity">$1,600.00</div>
-    <div class="kpi-tag" style="background:rgba(63,185,80,.15);color:#3fb950">$0.00 &nbsp; +0.00% total</div>
+    <div class="kpi-val kpi-hero-val" style="color:#3fb950" id="kpi-equity">$1,603.49</div>
+    <div class="kpi-tag" style="background:rgba(63,185,80,.15);color:#3fb950">$3.49 &nbsp; +0.22% total</div>
   </div>
   
   <div class="kpi">
@@ -309,7 +309,7 @@ tr:hover td{background:var(--s2)}
   </div>
   <div class="kpi">
     <div class="kpi-lbl">VIX — Volatilidad</div>
-    <div class="kpi-val" style="color:#d29922">18.7</div>
+    <div class="kpi-val" style="color:#d29922">18.5</div>
     <div class="kpi-sub">Moderado — sizing 100%</div>
   </div>
   <div class="kpi">
@@ -329,8 +329,8 @@ tr:hover td{background:var(--s2)}
   </div>
   <div class="kpi">
     <div class="kpi-lbl">Petroleo WTI</div>
-    <div class="kpi-val">$94.40</div>
-    <div class="kpi-sub">Oro: $4,722.30 &middot; DXY: 98.5</div>
+    <div class="kpi-val">$96.98</div>
+    <div class="kpi-sub">Oro: $4,691.30 &middot; DXY: 98.5</div>
   </div>
 </div>
   
@@ -342,8 +342,8 @@ tr:hover td{background:var(--s2)}
       <div class="card-title">Retorno Acumulado — % vs benchmarks</div>
       <div class="card-sub" style="display:flex;gap:16px;align-items:center;flex-wrap:wrap">
         <span><span style="color:#3fb950;font-weight:700;font-size:.9rem">+0.00%</span> Portfolio</span>
-        <span style="font-size:.78rem;color:#58a6ff">&#9135;&#9135; SPY +8.70%</span>
-        <span style="font-size:.78rem;color:#e3b341">&#9135;&#9135; QQQ +12.94%</span>
+        
+        <span style="font-size:.78rem;color:#e3b341">&#9135;&#9135; QQQ +18.98%</span>
       </div>
     </div>
     <div class="pill" style="color:#3fb950">$1,600.00</div>
@@ -359,17 +359,14 @@ tr:hover td{background:var(--s2)}
   window._charts.eq = new Chart(ctx,{
     type:'line',
     data:{
-      labels:["23 Apr", "24 Apr"],
+      labels:["24 Apr", "25 Apr"],
       datasets:[
         {data:[0.0, 0.0],label:'Portfolio',
           borderColor:'#3fb950',backgroundColor:g,fill:true,tension:.4,
           pointRadius:2,pointHoverRadius:7,pointBackgroundColor:'#3fb950',borderWidth:2.5}
+        
         ,
-    {data:[0.0, -1.786, -3.461, -3.783, -0.987, -0.241, -0.151, 0.321, 0.365, 2.922, 3.515, 3.447, 4.458, 5.731, 6.565, 6.827, 8.118, 7.902, 7.195, 8.281, 7.861, 8.696],label:'SPY',
-      borderColor:'#58a6ff',backgroundColor:'transparent',fill:false,
-      tension:.4,pointRadius:0,borderWidth:1.5,borderDash:[5,3]}
-        ,
-    {data:[0.0, -2.387, -4.294, -5.025, -1.81, -0.597, -0.483, 0.116, 0.131, 3.108, 3.806, 3.955, 5.03, 6.937, 8.435, 8.957, 10.382, 10.032, 9.613, 11.447, 10.82, 12.939],label:'QQQ',
+    {data:[0.0, 3.385, 4.663, 4.783, 5.413, 5.429, 8.564, 9.298, 9.456, 10.588, 12.596, 14.172, 14.722, 16.223, 15.854, 15.413, 17.344, 16.683, 18.915, 18.978],label:'QQQ',
       borderColor:'#e3b341',backgroundColor:'transparent',fill:false,
       tension:.4,pointRadius:0,borderWidth:1.5,borderDash:[3,3]}
       ]
@@ -410,11 +407,11 @@ tr:hover td{background:var(--s2)}
   <div class="cal-wrap">
     <table class="cal-table">
       <thead><tr><th class="cal-th">Lun</th><th class="cal-th">Mar</th><th class="cal-th">Mie</th><th class="cal-th">Jue</th><th class="cal-th">Vie</th><th class="cal-th">Sab</th><th class="cal-th">Dom</th></tr></thead>
-      <tbody><tr><td class="cal-empty"></td><td class="cal-empty"></td><td class="cal-cell cal-nd"><span class="cal-n">1</span><span class="cal-q">—</span></td><td class="cal-cell cal-nd"><span class="cal-n">2</span><span class="cal-q">—</span></td><td class="cal-cell cal-nd"><span class="cal-n">3</span><span class="cal-q">—</span></td><td class="cal-cell cal-wk"><span class="cal-n">4</span></td><td class="cal-cell cal-wk"><span class="cal-n">5</span></td></tr><tr><td class="cal-cell cal-nd"><span class="cal-n">6</span><span class="cal-q">—</span></td><td class="cal-cell cal-nd"><span class="cal-n">7</span><span class="cal-q">—</span></td><td class="cal-cell cal-nd"><span class="cal-n">8</span><span class="cal-q">—</span></td><td class="cal-cell cal-nd"><span class="cal-n">9</span><span class="cal-q">—</span></td><td class="cal-cell cal-nd"><span class="cal-n">10</span><span class="cal-q">—</span></td><td class="cal-cell cal-wk"><span class="cal-n">11</span></td><td class="cal-cell cal-wk"><span class="cal-n">12</span></td></tr><tr><td class="cal-cell cal-nd"><span class="cal-n">13</span><span class="cal-q">—</span></td><td class="cal-cell cal-nd"><span class="cal-n">14</span><span class="cal-q">—</span></td><td class="cal-cell cal-nd"><span class="cal-n">15</span><span class="cal-q">—</span></td><td class="cal-cell cal-nd"><span class="cal-n">16</span><span class="cal-q">—</span></td><td class="cal-cell cal-nd"><span class="cal-n">17</span><span class="cal-q">—</span></td><td class="cal-cell cal-wk"><span class="cal-n">18</span></td><td class="cal-cell cal-wk"><span class="cal-n">19</span></td></tr><tr><td class="cal-cell cal-nd"><span class="cal-n">20</span><span class="cal-q">—</span></td><td class="cal-cell cal-nd"><span class="cal-n">21</span><span class="cal-q">—</span></td><td class="cal-cell cal-nd"><span class="cal-n">22</span><span class="cal-q">—</span></td><td class="cal-cell cal-nd"><span class="cal-n">23</span><span class="cal-q">—</span></td><td class="cal-cell" style="background:var(--s2)">
-  <span class="cal-n">24</span>
+      <tbody><tr><td class="cal-empty"></td><td class="cal-empty"></td><td class="cal-cell cal-nd"><span class="cal-n">1</span><span class="cal-q">—</span></td><td class="cal-cell cal-nd"><span class="cal-n">2</span><span class="cal-q">—</span></td><td class="cal-cell cal-nd"><span class="cal-n">3</span><span class="cal-q">—</span></td><td class="cal-cell cal-wk"><span class="cal-n">4</span></td><td class="cal-cell cal-wk"><span class="cal-n">5</span></td></tr><tr><td class="cal-cell cal-nd"><span class="cal-n">6</span><span class="cal-q">—</span></td><td class="cal-cell cal-nd"><span class="cal-n">7</span><span class="cal-q">—</span></td><td class="cal-cell cal-nd"><span class="cal-n">8</span><span class="cal-q">—</span></td><td class="cal-cell cal-nd"><span class="cal-n">9</span><span class="cal-q">—</span></td><td class="cal-cell cal-nd"><span class="cal-n">10</span><span class="cal-q">—</span></td><td class="cal-cell cal-wk"><span class="cal-n">11</span></td><td class="cal-cell cal-wk"><span class="cal-n">12</span></td></tr><tr><td class="cal-cell cal-nd"><span class="cal-n">13</span><span class="cal-q">—</span></td><td class="cal-cell cal-nd"><span class="cal-n">14</span><span class="cal-q">—</span></td><td class="cal-cell cal-nd"><span class="cal-n">15</span><span class="cal-q">—</span></td><td class="cal-cell cal-nd"><span class="cal-n">16</span><span class="cal-q">—</span></td><td class="cal-cell cal-nd"><span class="cal-n">17</span><span class="cal-q">—</span></td><td class="cal-cell cal-wk"><span class="cal-n">18</span></td><td class="cal-cell cal-wk"><span class="cal-n">19</span></td></tr><tr><td class="cal-cell cal-nd"><span class="cal-n">20</span><span class="cal-q">—</span></td><td class="cal-cell cal-nd"><span class="cal-n">21</span><span class="cal-q">—</span></td><td class="cal-cell cal-nd"><span class="cal-n">22</span><span class="cal-q">—</span></td><td class="cal-cell cal-nd"><span class="cal-n">23</span><span class="cal-q">—</span></td><td class="cal-cell cal-nd"><span class="cal-n">24</span><span class="cal-q">—</span></td><td class="cal-cell" style="background:var(--s2)">
+  <span class="cal-n">25</span>
   <span class="cal-p" style="color:#7d8590">+0.00%</span>
   <span class="cal-q" style="color:#7d8590">+$0</span>
-</td><td class="cal-cell cal-wk"><span class="cal-n">25</span></td><td class="cal-cell cal-wk"><span class="cal-n">26</span></td></tr><tr><td class="cal-cell cal-nd"><span class="cal-n">27</span><span class="cal-q">—</span></td><td class="cal-cell cal-nd"><span class="cal-n">28</span><span class="cal-q">—</span></td><td class="cal-cell cal-nd"><span class="cal-n">29</span><span class="cal-q">—</span></td><td class="cal-cell cal-nd"><span class="cal-n">30</span><span class="cal-q">—</span></td><td class="cal-empty"></td><td class="cal-empty"></td><td class="cal-empty"></td></tr></tbody>
+</td><td class="cal-cell cal-wk"><span class="cal-n">26</span></td></tr><tr><td class="cal-cell cal-nd"><span class="cal-n">27</span><span class="cal-q">—</span></td><td class="cal-cell cal-nd"><span class="cal-n">28</span><span class="cal-q">—</span></td><td class="cal-cell cal-nd"><span class="cal-n">29</span><span class="cal-q">—</span></td><td class="cal-cell cal-nd"><span class="cal-n">30</span><span class="cal-q">—</span></td><td class="cal-empty"></td><td class="cal-empty"></td><td class="cal-empty"></td></tr></tbody>
     </table>
   </div>
 </div>
@@ -467,13 +464,118 @@ tr:hover td{background:var(--s2)}
 </div>
 
 <div class="tab-content" id="tab-posiciones">
-  <div class="card"><p class="muted" style="padding:60px;text-align:center;font-size:1rem">
-    Sin posiciones abiertas en este momento.
-  </p></div>
+  <div class="pos-summary">
+    <div class="kpi">
+      <div class="kpi-lbl">Posiciones activas</div>
+      <div class="kpi-val">3</div>
+    </div>
+    <div class="kpi">
+      <div class="kpi-lbl">Valor de mercado total</div>
+      <div class="kpi-val">$724.02</div>
+    </div>
+    <div class="kpi">
+      <div class="kpi-lbl">P&amp;L no realizado</div>
+      <div class="kpi-val" style="color:#3fb950">+$2.71</div>
+    </div>
+  </div>
+  <div class="pos-layout">
+    <div class="pos-chart-col">
+      <div class="card-title" style="margin-bottom:12px">Distribucion</div>
+      <canvas id="allocChart" width="220" height="220"></canvas>
+      <div id="allocLegend" class="alloc-legend"></div>
+    </div>
+    <div class="pos-cards-col">
+      
+<div class="pos-card" style="border-top:3px solid #58a6ff">
+  <div class="pos-top">
+    <div>
+      <div class="pos-ticker" style="color:#58a6ff">PBR</div>
+      <div class="pos-sub">53.0% del portfolio &middot; 18.1389 acc.</div>
+    </div>
+    <div style="text-align:right">
+      <div class="pos-pnl" style="color:#3fb950">▲ $2.36</div>
+      <div class="pos-pnl-pct" style="color:#3fb950">+0.6%</div>
+    </div>
+  </div>
+  <div class="pos-bar-track"><div style="width:3%;height:100%;background:#3fb950;border-radius:2px;opacity:.8"></div></div>
+  <div class="pos-meta">
+    <span>Entrada <b>$21.02</b></span>
+    <span>Valor actual <b>$383.64</b></span>
+    <span>P&L <b style="color:#3fb950">+$2.36</b></span>
+  </div>
 </div>
+<div class="pos-card" style="border-top:3px solid #3fb950">
+  <div class="pos-top">
+    <div>
+      <div class="pos-ticker" style="color:#3fb950">RIO</div>
+      <div class="pos-sub">32.9% del portfolio &middot; 2.3824 acc.</div>
+    </div>
+    <div style="text-align:right">
+      <div class="pos-pnl" style="color:#3fb950">▲ $0.05</div>
+      <div class="pos-pnl-pct" style="color:#3fb950">+0.0%</div>
+    </div>
+  </div>
+  <div class="pos-bar-track"><div style="width:0%;height:100%;background:#3fb950;border-radius:2px;opacity:.8"></div></div>
+  <div class="pos-meta">
+    <span>Entrada <b>$99.93</b></span>
+    <span>Valor actual <b>$238.12</b></span>
+    <span>P&L <b style="color:#3fb950">+$0.05</b></span>
+  </div>
+</div>
+<div class="pos-card" style="border-top:3px solid #d29922">
+  <div class="pos-top">
+    <div>
+      <div class="pos-ticker" style="color:#d29922">TSM</div>
+      <div class="pos-sub">14.1% del portfolio &middot; 0.2525 acc.</div>
+    </div>
+    <div style="text-align:right">
+      <div class="pos-pnl" style="color:#3fb950">▲ $0.30</div>
+      <div class="pos-pnl-pct" style="color:#3fb950">+0.3%</div>
+    </div>
+  </div>
+  <div class="pos-bar-track"><div style="width:1%;height:100%;background:#3fb950;border-radius:2px;opacity:.8"></div></div>
+  <div class="pos-meta">
+    <span>Entrada <b>$403.79</b></span>
+    <span>Valor actual <b>$102.26</b></span>
+    <span>P&L <b style="color:#3fb950">+$0.30</b></span>
+  </div>
+</div>
+    </div>
+  </div>
+  
+</div>
+<script>
+(function(){
+  const labels=["PBR", "RIO", "TSM"];
+  const values=[383.64, 238.12, 102.26];
+  const colors=["#58a6ff", "#3fb950", "#d29922"];
+  window._charts = window._charts||{};
+  window._charts.alloc = new Chart(document.getElementById('allocChart'),{
+    type:'doughnut',
+    data:{labels,datasets:[{data:values,backgroundColor:colors.map(c=>c+'cc'),
+      borderWidth:2,borderColor:'#0d1117',hoverBorderColor:'#fff'}]},
+    options:{
+      cutout:'72%',
+      animation:{duration:900,easing:'easeInOutQuart'},
+      plugins:{
+        legend:{display:false},
+        tooltip:{backgroundColor:'#161b22',borderColor:'#30363d',borderWidth:1,
+          titleColor:'#7d8590',bodyColor:'#e6edf3',padding:10,
+          callbacks:{label:c=>' $'+c.parsed.toLocaleString('es-AR',{minimumFractionDigits:2})}}
+      }
+    }
+  });
+  const leg=document.getElementById('allocLegend');
+  const tot=values.reduce((a,b)=>a+b,0);
+  labels.forEach((l,i)=>{
+    const pct=(values[i]/tot*100).toFixed(1);
+    leg.innerHTML+=`<div class="leg-row"><span class="leg-dot" style="background:${colors[i]}"></span>${l}<span class="muted" style="margin-left:auto">${pct}%</span></div>`;
+  });
+})();
+</script>
 
 <div class="tab-content" id="tab-senales">
-  <p class="ts" style="margin-bottom:16px">Ultima actualizacion: 2026-04-25 20:03 &nbsp;&middot;&nbsp; Clic en cada senal para ver el analisis completo</p>
+  <p class="ts" style="margin-bottom:16px">Ultima actualizacion: 2026-04-27 14:40 &nbsp;&middot;&nbsp; Clic en cada senal para ver el analisis completo</p>
   
 <div class="sleeve-block">
   <div class="sleeve-header" style="border-left:3px solid #58a6ff">
@@ -489,21 +591,21 @@ tr:hover td{background:var(--s2)}
       <span class="conv-badge" style="background:#3fb95022;color:#3fb950;border:1px solid #3fb95055">Alta</span>
     </div>
     <div class="sig-right">
-      <span class="muted" style="font-size:.78rem">$20.87</span>
-      <span class="sig-alloc">$686.05</span>
+      <span class="muted" style="font-size:.78rem">$21.05</span>
+      <span class="sig-alloc">$648.03</span>
       <span class="sig-arrow" id="arrow_t_PBR_long_term">&#9660;</span>
     </div>
   </div>
   <div class="sig-pills">
-    <div class="spill"><div class="spill-l">Sharpe</div><div class="spill-v" style="color:#58a6ff">2.81</div></div>
-    <div class="spill"><div class="spill-l">Alfa Jensen</div><div class="spill-v" style="color:#3fb950">+79.48%</div></div>
+    <div class="spill"><div class="spill-l">Sharpe</div><div class="spill-v" style="color:#58a6ff">2.86</div></div>
+    <div class="spill"><div class="spill-l">Alfa Jensen</div><div class="spill-v" style="color:#3fb950">+80.94%</div></div>
     <div class="spill"><div class="spill-l">Beta</div><div class="spill-v">0.51</div></div>
-    <div class="spill"><div class="spill-l">Stop Loss</div><div class="spill-v"><span style="color:#f85149;font-weight:700">$19.41</span></div></div>
-    <div class="spill"><div class="spill-l">Take Profit</div><div class="spill-v"><span style="color:#3fb950;font-weight:700">$23.79</span></div></div>
+    <div class="spill"><div class="spill-l">Stop Loss</div><div class="spill-v"><span style="color:#f85149;font-weight:700">$19.59</span></div></div>
+    <div class="spill"><div class="spill-l">Take Profit</div><div class="spill-v"><span style="color:#3fb950;font-weight:700">$24.00</span></div></div>
   </div>
   <div class="conv-track"><div class="conv-fill" style="width:88%;background:#3fb95088"></div></div>
   <div class="sig-thesis" id="t_PBR_long_term">
-    <p>PBR — horizonte LARGO PLAZO. Convicción ALTA. La tesis CAPM/Markowitz sostiene un Sharpe de 2.81 con beta 0.51 (retorno esperado CAPM +13.2%, alfa de Jensen +79.5%). Cumple el filtro de calidad (β razonable + Sharpe elevado) y aparece en el óptimo de la frontera eficiente. El flujo de noticias es positivo (sentiment +0.50 sobre 6 titulares). Régimen de mercado BULL (SPY +7.3% sobre SMA200 con pendiente positiva) — viento de cola para posiciones largas. Contexto sectorial: WTI +4.5% en el último mes.</p>
+    <p>PBR — horizonte LARGO PLAZO. Convicción ALTA. La tesis CAPM/Markowitz sostiene un Sharpe de 2.86 con beta 0.51 (retorno esperado CAPM +13.0%, alfa de Jensen +80.9%). Cumple el filtro de calidad (β razonable + Sharpe elevado) y aparece en el óptimo de la frontera eficiente. El flujo de noticias es positivo (sentiment +0.67 sobre 6 titulares). Régimen de mercado BULL (SPY +7.4% sobre SMA200 con pendiente positiva) — viento de cola para posiciones largas. Contexto sectorial: WTI +2.6% en el último mes.</p>
     
   </div>
 </div>
@@ -514,21 +616,21 @@ tr:hover td{background:var(--s2)}
       <span class="conv-badge" style="background:#3fb95022;color:#3fb950;border:1px solid #3fb95055">Alta</span>
     </div>
     <div class="sig-right">
-      <span class="muted" style="font-size:.78rem">$99.61</span>
-      <span class="sig-alloc">$433.95</span>
+      <span class="muted" style="font-size:.78rem">$99.51</span>
+      <span class="sig-alloc">$391.97</span>
       <span class="sig-arrow" id="arrow_t_RIO_long_term">&#9660;</span>
     </div>
   </div>
   <div class="sig-pills">
-    <div class="spill"><div class="spill-l">Sharpe</div><div class="spill-v" style="color:#58a6ff">2.44</div></div>
-    <div class="spill"><div class="spill-l">Alfa Jensen</div><div class="spill-v" style="color:#3fb950">+50.52%</div></div>
+    <div class="spill"><div class="spill-l">Sharpe</div><div class="spill-v" style="color:#58a6ff">2.40</div></div>
+    <div class="spill"><div class="spill-l">Alfa Jensen</div><div class="spill-v" style="color:#3fb950">+49.68%</div></div>
     <div class="spill"><div class="spill-l">Beta</div><div class="spill-v">0.69</div></div>
-    <div class="spill"><div class="spill-l">Stop Loss</div><div class="spill-v"><span style="color:#f85149;font-weight:700">$95.03</span></div></div>
-    <div class="spill"><div class="spill-l">Take Profit</div><div class="spill-v"><span style="color:#3fb950;font-weight:700">$113.56</span></div></div>
+    <div class="spill"><div class="spill-l">Stop Loss</div><div class="spill-v"><span style="color:#f85149;font-weight:700">$95.13</span></div></div>
+    <div class="spill"><div class="spill-l">Take Profit</div><div class="spill-v"><span style="color:#3fb950;font-weight:700">$113.44</span></div></div>
   </div>
   <div class="conv-track"><div class="conv-fill" style="width:88%;background:#3fb95088"></div></div>
   <div class="sig-thesis" id="t_RIO_long_term">
-    <p>RIO — horizonte LARGO PLAZO. Convicción ALTA. La tesis CAPM/Markowitz sostiene un Sharpe de 2.44 con beta 0.69 (retorno esperado CAPM +16.2%, alfa de Jensen +50.5%). Cumple el filtro de calidad (β razonable + Sharpe elevado) y aparece en el óptimo de la frontera eficiente. El flujo de noticias es positivo (sentiment +1.00 sobre 6 titulares). Régimen de mercado BULL (SPY +7.3% sobre SMA200 con pendiente positiva) — viento de cola para posiciones largas. Contexto sectorial: oro +3.8% en el último mes.</p>
+    <p>RIO — horizonte LARGO PLAZO. Convicción ALTA. La tesis CAPM/Markowitz sostiene un Sharpe de 2.40 con beta 0.69 (retorno esperado CAPM +16.0%, alfa de Jensen +49.7%). Cumple el filtro de calidad (β razonable + Sharpe elevado) y aparece en el óptimo de la frontera eficiente. El flujo de noticias es positivo (sentiment +0.50 sobre 6 titulares). Régimen de mercado BULL (SPY +7.4% sobre SMA200 con pendiente positiva) — viento de cola para posiciones largas. Contexto sectorial: oro +7.2% en el último mes.</p>
     
   </div>
 </div>
@@ -537,7 +639,7 @@ tr:hover td{background:var(--s2)}
 <div class="sleeve-block">
   <div class="sleeve-header" style="border-left:3px solid #d29922">
     <span class="sleeve-label" style="color:#d29922">Corto Plazo</span>
-    <span class="sleeve-count muted">1 senal</span>
+    <span class="sleeve-count muted">2 senales</span>
   </div>
   <div class="sig-grid">
     
@@ -548,21 +650,46 @@ tr:hover td{background:var(--s2)}
       <span class="conv-badge" style="background:#3fb95022;color:#3fb950;border:1px solid #3fb95055">Alta</span>
     </div>
     <div class="sig-right">
-      <span class="muted" style="font-size:.78rem">$347.81</span>
-      <span class="sig-alloc">$320.00</span>
+      <span class="muted" style="font-size:.78rem">$334.07</span>
+      <span class="sig-alloc">$242.24</span>
       <span class="sig-arrow" id="arrow_t_AMD_short_term">&#9660;</span>
     </div>
   </div>
   <div class="sig-pills">
-    <div class="spill"><div class="spill-l">Sharpe</div><div class="spill-v" style="color:#58a6ff">2.60</div></div>
-    <div class="spill"><div class="spill-l">Alfa Jensen</div><div class="spill-v" style="color:#3fb950">+111.54%</div></div>
+    <div class="spill"><div class="spill-l">Sharpe</div><div class="spill-v" style="color:#58a6ff">2.36</div></div>
+    <div class="spill"><div class="spill-l">Alfa Jensen</div><div class="spill-v" style="color:#3fb950">+99.16%</div></div>
     <div class="spill"><div class="spill-l">Beta</div><div class="spill-v">2.03</div></div>
-    <div class="spill"><div class="spill-l">Stop Loss</div><div class="spill-v"><span style="color:#f85149;font-weight:700">$320.17</span></div></div>
-    <div class="spill"><div class="spill-l">Take Profit</div><div class="spill-v"><span style="color:#3fb950;font-weight:700">$416.91</span></div></div>
+    <div class="spill"><div class="spill-l">Stop Loss</div><div class="spill-v"><span style="color:#f85149;font-weight:700">$307.34</span></div></div>
+    <div class="spill"><div class="spill-l">Take Profit</div><div class="spill-v"><span style="color:#3fb950;font-weight:700">$400.90</span></div></div>
   </div>
   <div class="conv-track"><div class="conv-fill" style="width:88%;background:#3fb95088"></div></div>
   <div class="sig-thesis" id="t_AMD_short_term">
-    <p>AMD — horizonte CORTO PLAZO. Convicción ALTA. Setup técnico: RSI 89, momentum 1m +70.7%, momentum 3m +38.4%. ⚠️ RSI en sobrecompra → riesgo de reversión a la media. Stop loss ATR en $320.17 (riesgo ≈ 7.9% desde entrada). Sentiment de noticias refuerza el setup.</p>
+    <p>AMD — horizonte CORTO PLAZO. Convicción ALTA. Setup técnico: RSI 80, momentum 1m +65.4%, momentum 3m +32.6%. ⚠️ RSI en sobrecompra → riesgo de reversión a la media. Stop loss ATR en $305.51 (riesgo ≈ 8.5% desde entrada). Sentiment de noticias refuerza el setup.</p>
+    
+  </div>
+</div>
+<div class="sig-card" onclick="toggleSig('t_TSM_short_term')">
+  <div class="sig-head">
+    <div class="sig-left">
+      <span class="sig-ticker">TSM</span>
+      <span class="conv-badge" style="background:#d2992222;color:#d29922;border:1px solid #d2992255">Media</span>
+    </div>
+    <div class="sig-right">
+      <span class="muted" style="font-size:.78rem">$401.40</span>
+      <span class="sig-alloc">$157.76</span>
+      <span class="sig-arrow" id="arrow_t_TSM_short_term">&#9660;</span>
+    </div>
+  </div>
+  <div class="sig-pills">
+    <div class="spill"><div class="spill-l">Sharpe</div><div class="spill-v" style="color:#58a6ff">1.96</div></div>
+    <div class="spill"><div class="spill-l">Alfa Jensen</div><div class="spill-v" style="color:#3fb950">+53.70%</div></div>
+    <div class="spill"><div class="spill-l">Beta</div><div class="spill-v">1.60</div></div>
+    <div class="spill"><div class="spill-l">Stop Loss</div><div class="spill-v"><span style="color:#f85149;font-weight:700">$374.65</span></div></div>
+    <div class="spill"><div class="spill-l">Take Profit</div><div class="spill-v"><span style="color:#3fb950;font-weight:700">$468.27</span></div></div>
+  </div>
+  <div class="conv-track"><div class="conv-fill" style="width:52%;background:#d2992288"></div></div>
+  <div class="sig-thesis" id="t_TSM_short_term">
+    <p>TSM — horizonte CORTO PLAZO. Convicción MEDIA. Setup técnico: RSI 68, momentum 1m +22.9%, momentum 3m +19.0%. Stop loss ATR en $374.65 (riesgo ≈ 6.7% desde entrada).</p>
     
   </div>
 </div>
@@ -571,7 +698,7 @@ tr:hover td{background:var(--s2)}
 </div>
 
 <div class="tab-content" id="tab-mercado">
-  <p class="ts" style="margin-bottom:16px">SPY +7.3% sobre SMA200 con pendiente positiva</p>
+  <p class="ts" style="margin-bottom:16px">SPY +7.4% sobre SMA200 con pendiente positiva</p>
   <div class="two-col">
     
 <div class="card">
@@ -588,8 +715,8 @@ tr:hover td{background:var(--s2)}
   window._charts=window._charts||{};
   window._charts.sector=new Chart(document.getElementById('sectorChart'),{
     type:'bar',
-    data:{labels:["Tech", "Energy", "Industrials", "Materials", "ETF", "Comm", "Financials", "GoldMiners", "Defense", "Healthcare"],datasets:[{data:[14.26, 6.76, 5.91, 4.85, 4.62, 1.53, -0.01, -1.53, -5.27, -5.49],
-      backgroundColor:["#3fb950", "#3fb950", "#3fb950", "#3fb950", "#3fb950", "#3fb950", "#f85149", "#f85149", "#f85149", "#f85149"],borderRadius:6,borderSkipped:false}]},
+    data:{labels:["Tech", "Industrials", "Energy", "Materials", "ETF", "Comm", "Financials", "Healthcare", "Defense", "GoldMiners"],datasets:[{data:[14.59, 6.23, 5.32, 4.78, 3.05, 2.91, 2.3, -4.34, -5.28, -6.0],
+      backgroundColor:["#3fb950", "#3fb950", "#3fb950", "#3fb950", "#3fb950", "#3fb950", "#3fb950", "#f85149", "#f85149", "#f85149"],borderRadius:6,borderSkipped:false}]},
     options:{
       animation:{duration:700},
       plugins:{legend:{display:false},tooltip:{backgroundColor:'#161b22',borderColor:'#30363d',
@@ -609,10 +736,10 @@ tr:hover td{background:var(--s2)}
     <div>
       <div class="card-title">Radar del Universo — 10 Activos</div>
       <div class="card-sub">
-        <span style="color:#3fb950">&#9650; 26 al alza</span> &nbsp;
-        <span style="color:#f85149">&#9660; 27 a la baja</span> &nbsp;&middot;&nbsp;
-        Ganador: <b style="color:#3fb950">AMD +13.9%</b> &nbsp;
-        Perdedor: <b style="color:#f85149">LLY -3.7%</b>
+        <span style="color:#3fb950">&#9650; 16 al alza</span> &nbsp;
+        <span style="color:#f85149">&#9660; 37 a la baja</span> &nbsp;&middot;&nbsp;
+        Ganador: <b style="color:#3fb950">LAC +7.4%</b> &nbsp;
+        Perdedor: <b style="color:#f85149">NEM -4.0%</b>
       </div>
     </div>
   </div>
@@ -624,62 +751,62 @@ tr:hover td{background:var(--s2)}
       <tbody>
 <tr>
   <td><span class="rt-ticker" style="color:#e6edf3">AMD</span></td>
-  <td><span style="color:#3fb950;font-weight:700">▲ 13.9%</span></td>
-  <td class="muted" style="font-size:.8rem;max-width:320px">This Ultimate AI Stock Has Gained 26% This Year and Still Isn't Done</td>
+  <td><span style="color:#f85149;font-weight:700">▼ 3.8%</span></td>
+  <td class="muted" style="font-size:.8rem;max-width:320px">Google, Meta, Microsoft, Amazon, Apple earnings: What to expect</td>
   <td><span class="muted" style="font-size:.75rem">BUY_CP</span></td>
 </tr>
 <tr>
-  <td><span class="rt-ticker" style="color:#e6edf3">RIO</span></td>
-  <td><span style="color:#3fb950;font-weight:700">▲ 0.8%</span></td>
-  <td class="muted" style="font-size:.8rem;max-width:320px">Rio Tinto Balances Cyclone Relief With Copper And Iron Ore Progress</td>
-  <td><span class="muted" style="font-size:.75rem">BUY_LP</span></td>
-</tr>
-<tr>
   <td><span class="rt-ticker" style="color:#e6edf3">PBR</span></td>
-  <td><span style="color:#f85149;font-weight:700">▼ 1.3%</span></td>
-  <td class="muted" style="font-size:.8rem;max-width:320px">DVYE’s 5.1% Yield Hides a Commodity Bet, Here’s What Retirees Should Know</td>
+  <td><span style="color:#3fb950;font-weight:700">▲ 0.4%</span></td>
+  <td class="muted" style="font-size:.8rem;max-width:320px">Petrobras Stock Outperforms Industry in the Past Year: Time to Buy?</td>
   <td><span class="muted" style="font-size:.75rem">BUY_LP</span></td>
 </tr>
 <tr>
-  <td><span class="rt-ticker" style="color:#e6edf3">NEM</span></td>
-  <td><span style="color:#3fb950;font-weight:700">▲ 8.7%</span></td>
-  <td class="muted" style="font-size:.8rem;max-width:320px">These Stocks Are Today’s Movers: Intel, Nvidia, AMD, Organon, Charter, X...</td>
+  <td><span class="rt-ticker" style="color:#e6edf3">RIO</span></td>
+  <td><span style="color:#3fb950;font-weight:700">▲ 0.3%</span></td>
+  <td class="muted" style="font-size:.8rem;max-width:320px">RIO vs. SCCO: Which Mining Stock Has Better Growth Prospects?</td>
+  <td><span class="muted" style="font-size:.75rem">BUY_LP</span></td>
+</tr>
+<tr>
+  <td><span class="rt-ticker" style="color:#e6edf3">TSM</span></td>
+  <td><span style="color:#3fb950;font-weight:700">▲ 0.6%</span></td>
+  <td class="muted" style="font-size:.8rem;max-width:320px">Will Nvidia's explosive rally end soon?</td>
+  <td><span class="muted" style="font-size:.75rem">BUY_CP</span></td>
+</tr>
+<tr>
+  <td><span class="rt-ticker" style="color:#e6edf3">LAC</span></td>
+  <td><span style="color:#3fb950;font-weight:700">▲ 13.1%</span></td>
+  <td class="muted" style="font-size:.8rem;max-width:320px">This is Why Wedbush is Bullish on Lithium Americas Corp. (LAC) as a Rare...</td>
   <td><span class="muted" style="font-size:.75rem">—</span></td>
 </tr>
 <tr>
-  <td><span class="rt-ticker" style="color:#e6edf3">NVDA</span></td>
-  <td><span style="color:#3fb950;font-weight:700">▲ 4.3%</span></td>
-  <td class="muted" style="font-size:.8rem;max-width:320px">Prediction: Artificial Intelligence (AI) Stocks Will Lead the Nasdaq to ...</td>
+  <td><span class="rt-ticker" style="color:#e6edf3">FCX</span></td>
+  <td><span style="color:#f85149;font-weight:700">▼ 0.8%</span></td>
+  <td class="muted" style="font-size:.8rem;max-width:320px">Could Freeport-McMoRan (FCX) Benefit From The SpaceX IPO?</td>
   <td><span class="muted" style="font-size:.75rem">—</span></td>
 </tr>
 <tr>
   <td><span class="rt-ticker" style="color:#e6edf3">VIST</span></td>
-  <td><span style="color:#3fb950;font-weight:700">▲ 0.8%</span></td>
+  <td><span style="color:#3fb950;font-weight:700">▲ 1.5%</span></td>
   <td class="muted" style="font-size:.8rem;max-width:320px">4 PEG-Driven GARP Picks for a Volatile Market in 2026</td>
   <td><span class="muted" style="font-size:.75rem">—</span></td>
 </tr>
 <tr>
-  <td><span class="rt-ticker" style="color:#e6edf3">AVAV</span></td>
-  <td><span style="color:#f85149;font-weight:700">▼ 2.8%</span></td>
-  <td class="muted" style="font-size:.8rem;max-width:320px">These Are the 3 Biggest Winners From the Proposed $1.5 Trillion Defense ...</td>
+  <td><span class="rt-ticker" style="color:#e6edf3">SHEL</span></td>
+  <td><span style="color:#f85149;font-weight:700">▼ 2.5%</span></td>
+  <td class="muted" style="font-size:.8rem;max-width:320px">Shell acquiring Arc for $13.6B, China blocks Meta's bid for Manus AI</td>
   <td><span class="muted" style="font-size:.75rem">—</span></td>
 </tr>
 <tr>
   <td><span class="rt-ticker" style="color:#e6edf3">NOC</span></td>
-  <td><span style="color:#f85149;font-weight:700">▼ 2.1%</span></td>
-  <td class="muted" style="font-size:.8rem;max-width:320px">3 Profitable Stocks We Steer Clear Of</td>
+  <td><span style="color:#3fb950;font-weight:700">▲ 0.0%</span></td>
+  <td class="muted" style="font-size:.8rem;max-width:320px">Defense Stocks Have Been Surprisingly Weak Since the Iran War Started. N...</td>
   <td><span class="muted" style="font-size:.75rem">—</span></td>
 </tr>
 <tr>
-  <td><span class="rt-ticker" style="color:#e6edf3">TSM</span></td>
-  <td><span style="color:#3fb950;font-weight:700">▲ 5.2%</span></td>
-  <td class="muted" style="font-size:.8rem;max-width:320px">This Ultimate AI Stock Has Gained 26% This Year and Still Isn't Done</td>
-  <td><span class="muted" style="font-size:.75rem">—</span></td>
-</tr>
-<tr>
-  <td><span class="rt-ticker" style="color:#e6edf3">LMT</span></td>
-  <td><span style="color:#f85149;font-weight:700">▼ 3.1%</span></td>
-  <td class="muted" style="font-size:.8rem;max-width:320px">Lockheed Martin CEO sends strong 2-word message on Middle East</td>
+  <td><span class="rt-ticker" style="color:#e6edf3">ASML</span></td>
+  <td><span style="color:#f85149;font-weight:700">▼ 1.7%</span></td>
+  <td class="muted" style="font-size:.8rem;max-width:320px">2 Unstoppable Growth Stocks That Could Soar 20% and 26% in 2026, Accordi...</td>
   <td><span class="muted" style="font-size:.75rem">—</span></td>
 </tr></tbody>
     </table>
