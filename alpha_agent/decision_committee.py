@@ -179,20 +179,28 @@ def _meta_agent(cand: dict, opinions: list[AgentOpinion], direction: str) -> tup
     )
 
     system = (
-        "Sos el meta-agente coordinador de un comite de trading algoritmico. "
-        "Tu rol es integrar las opiniones de 4 especialistas y tomar la decision final. "
+        "Sos el meta-agente coordinador de un sistema de trading orientado al crecimiento "
+        "de capital en el mediano plazo. El objetivo es MULTIPLICAR el capital tomando riesgo "
+        "productivo — no riesgo vacio, pero tampoco timidez que impide operar. "
+        "El sistema ya filtro el candidato con criterios cuantitativos: si llego hasta aca, "
+        "tiene un setup tecnico minimamente valido. Tu rol es calibrar el tamano, no vetar. "
+        "Solo emitis NO-GO si hay una razon concreta de peso (earnings en 1-2 dias, "
+        "macro en colapso, Risk veta por drawdown severo del dia). La duda beneficia al trade. "
         "Respondé EXACTAMENTE: DECISION|SIZE_FACTOR|REASONING "
-        "(DECISION = GO o NO-GO, SIZE_FACTOR = 0.5 o 1.0, "
-        "REASONING = 2-3 oraciones en español justificando la decision). Sin texto extra."
+        "(DECISION = GO o NO-GO, SIZE_FACTOR = 0.5 / 0.75 / 1.0, "
+        "REASONING = 2-3 oraciones en espanol). Sin texto extra."
     )
     user = (
         f"TRADE PROPUESTO: {cand['ticker']} {direction}\n"
         f"Score cuantitativo: {cand.get('dt_score',0):.3f} | "
         f"Gap: {cand.get('gap_pct',0)*100:+.1f}% | ORB: {cand.get('orb_score',0):.2f}\n\n"
         f"OPINIONES DEL COMITE:\n{ops_text}\n\n"
-        f"Resumen: {go_count}/4 GO | {reduce_count}/4 REDUCE | "
-        f"Confianza promedio: {avg_conf:.0f}%\n\n"
-        f"Regla de veto: si Risk dice NO-GO, el size_factor no puede ser 1.0."
+        f"Resumen votos: GO={go_count}/4 | REDUCE={reduce_count}/4 | conf.avg={avg_conf:.0f}%\n\n"
+        f"Regla de sizing (aplicar literalmente):\n"
+        f"  2/4 GO -> GO con size 0.5 (probar el setup con mitad del capital)\n"
+        f"  3/4 GO -> GO con size 0.75\n"
+        f"  4/4 GO -> GO con size 1.0\n"
+        f"  NO-GO solo si: earnings inminentes (1-2 dias) O Risk reporta drawdown severo hoy."
     )
 
     try:
@@ -219,8 +227,9 @@ def _meta_agent(cand: dict, opinions: list[AgentOpinion], direction: str) -> tup
 
     except Exception as e:
         log.error("Meta-agente fallo: %s", e)
-        go = go_count >= 3
-        size_f = 1.0 if go_count == 4 else 0.5
+        # Fallback: 2/4 GO ya alcanza para ejecutar (growth mode)
+        go = go_count >= 2
+        size_f = 1.0 if go_count == 4 else 0.75 if go_count == 3 else 0.5
         return go, size_f, f"Fallback mayoría: {go_count}/4 GO"
 
 

@@ -129,27 +129,26 @@ class FinancialParams:
     history_interval: str = "1d"
     min_obs: int = 60                     # mínimo de observaciones para incluir un activo
 
-    # ── CONCENTRATED MODE para $1,600 ──────────────────────────────────────────
-    # Con capital chico, la diversificación destruye retornos.
-    # 2 LP de alta convicción + 1 CP momentum. Sin opciones (theta decay con $160 = regalo al mercado).
-    # Sleeves: 70% LP (2 pos × $560) + 20% CP (1 pos × $320) + 10% cash reserva
-    weight_long_term: float = 0.70
-    weight_short_term: float = 0.20
-    weight_options: float = 0.00          # OFF — opciones con $160 pierden más de lo que ganan
+    # ── GROWTH MODE para $1,600 ────────────────────────────────────────────────
+    # Objetivo: multiplicar capital en plazo medio-largo con riesgo productivo.
+    # Más CP (momentum, 1-5 días) que LP (hold semanas) para capitalizar tendencias.
+    # Sleeves: 55% LP (2 pos × $440) + 35% CP (2 pos × $280) + 10% cash reserva
+    weight_long_term: float = 0.55
+    weight_short_term: float = 0.35
+    weight_options: float = 0.00          # OFF — opciones con capital chico destruyen capital
 
-    # Filtros LP — más selectivos en concentrated mode
-    max_beta_lp: float = 1.8             # aceptar beta más alto = más upside en bull
-    min_sharpe_lp: float = 0.40
+    # Filtros LP — menos estrictos para que haya más candidatos
+    max_beta_lp: float = 2.0             # beta alto = más upside en bull (era 1.8)
+    min_sharpe_lp: float = 0.30          # menos estricto (era 0.40) — más candidatos LP
 
     # Parámetros técnicos para CP
     rsi_oversold: float = 35.0
-    rsi_overbought: float = 70.0
-    atr_stop_multiple: float = 2.0        # stop loss = precio - 2*ATR
+    rsi_overbought: float = 75.0          # era 70 — permite entrar en momentum fuerte
+    atr_stop_multiple: float = 2.0
 
-    # Concentrated: 2 LP (alta convicción, ~$480/pos) + 1 CP (momentum, ~$320)
-    # Con $1600: LP = $960 ÷ 2 = $480 cada una, CP = $320, OPT = $160
+    # Growth: 2 LP (alta convicción, ~$440/pos) + 2 CP (momentum, ~$280/pos)
     top_n_long_term: int = 2
-    top_n_short_term: int = 1
+    top_n_short_term: int = 2             # era 1 — 2 CP para más exposición al momentum
 
     # Bucket options — call sobre el pick #1 del LP
     top_n_bearish: int = 1                # máx 1 put direccional
@@ -158,9 +157,9 @@ class FinancialParams:
     # Concentración máxima — hasta 50% en la mejor idea
     max_weight_per_asset: float = 0.50    # 50% max en un solo nombre
 
-    # Kill switch — concentrated mode acepta más volatilidad intradía
-    # Con 2 posiciones concentradas, un -3% puede ser ruido normal en días volátiles
-    max_daily_drawdown: float = 0.05      # 5% ($80 en $1600) — más realista para posiciones concentradas
+    # Kill switch — growth mode acepta volatilidad intradía para capturar tendencias
+    # -6% en $1600 = $96 pérdida diaria máxima antes del kill switch
+    max_daily_drawdown: float = 0.06      # 6% — era 5%, más margen para que las posiciones respiren
 
     # Límites derivados — calibrados para capital ~$1600 USD
     max_options_allocation: float = 0.20  # techo duro sobre el bucket options (= weight_options)

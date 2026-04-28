@@ -52,18 +52,18 @@ DT_UNIVERSE: list[str] = [
 MAX_PRICE_USD = 280.0   # $1400 / 5 shares = $280 máximo
 MIN_QTY_SHARES = 5      # minimo de shares para que valga operar
 
-MIN_GAP_PCT   = 0.015   # gap mínimo desde cierre anterior (+1.5%)
-MIN_VOL_RATIO = 1.5     # volumen reciente vs media histórica
-RSI_MIN       = 42.0    # evita stocks dormidos o en colapso
-RSI_MAX       = 74.0    # evita compra en sobrecompra extrema
-MIN_DT_SCORE  = 0.20    # umbral mínimo de score combinado
+MIN_GAP_PCT   = 0.010   # gap mínimo desde cierre anterior (+1.0%, era 1.5%)
+MIN_VOL_RATIO = 1.2     # volumen reciente vs media histórica (era 1.5x)
+RSI_MIN       = 38.0    # era 42 — acepta momentum naciente
+RSI_MAX       = 78.0    # era 74 — permite entrar en momentum fuerte
+MIN_DT_SCORE  = 0.15    # umbral mínimo de score combinado (era 0.20)
 
-# Bracket: TP ampliado para capturar tendencias intraday más largas
-# SL -1.5% (ajustado), TP1 +2.5% (primer objetivo, 50% del capital),
-# TP2 +5.0% (segundo objetivo, 50% restante). Estrategia dual-bracket.
-DT_SL_PCT  = 0.015   # -1.5% stop loss
-DT_TP1_PCT = 0.025   # +2.5% primer take profit (50% del tamaño)
-DT_TP2_PCT = 0.050   # +5.0% segundo take profit (50% restante)
+# Bracket: TP2 extendido a 7% para capturar tendencias intraday largas.
+# La estrategia dual captura siempre algo (TP1) y deja correr la mitad (TP2).
+# SL ajustado: -1.5% (riesgo contenido, R/R favorable).
+DT_SL_PCT  = 0.015   # -1.5% stop loss (sin cambio)
+DT_TP1_PCT = 0.030   # +3.0% primer take profit — era 2.5%, más margen
+DT_TP2_PCT = 0.070   # +7.0% segundo take profit — era 5.0%, deja correr tendencias
 
 
 def _spy_direction() -> str:
