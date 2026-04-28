@@ -1429,9 +1429,226 @@ def _tab_historial(trades: list[dict]) -> str:
 </div>"""
 
 
+def _tab_daytrader(dt_trades: list[dict]) -> str:
+    """Day Trading tab — sleeve DT, cuenta Alpaca separada."""
+    buys        = [t for t in dt_trades if t.get("side", "").upper() == "BUY"]
+    closed      = [t for t in buys if t.get("closed_at")]
+    open_trades = [t for t in buys if not t.get("closed_at")]
+    n_closed    = len(closed)
+    wins        = [t for t in closed if (t.get("pnl_usd") or 0) > 0]
+    win_rate    = len(wins) / n_closed * 100 if n_closed else None
+    total_pnl   = sum(t.get("pnl_usd") or 0 for t in closed)
+    best_t      = max(closed, key=lambda t: t.get("pnl_usd") or 0, default=None)
+    worst_t     = min(closed, key=lambda t: t.get("pnl_usd") or 0, default=None)
+
+    if not buys:
+        return (
+            '<div class="tab-content" id="tab-daytrader">'
+            '<div class="card"><p class="muted" style="padding:60px;text-align:center;font-size:1rem">'
+            'Sin operaciones DT todavia. El Day Trader corre a las 11:30 ART durante la ventana de mercado (10:00-14:00 EDT).<br>'
+            '<span style="font-size:.82rem;color:var(--mt)">Cuenta separada: ALPACA_DT_API_KEY &mdash; estrategia gap+ORB+VWAP, 1 posicion concentrada de $1400</span>'
+            '</p></div></div>'
+        )
+
+    pnl_c   = _c(total_pnl)
+    pnl_bg  = _bg(total_pnl)
+    ret_pct = total_pnl / 1400 * 100
+
+    kpi_html = f"""<div class="kpi-row" style="margin-bottom:16px">
+  <div class="kpi kpi-hero">
+    <div class="kpi-lbl">P&L Realizado DT</div>
+    <div class="kpi-val" style="color:{pnl_c}">{"+" if total_pnl>=0 else ""}{_usd(total_pnl)}</div>
+    <div class="kpi-tag" style="background:{pnl_bg};color:{pnl_c}">{"+" if ret_pct>=0 else ""}{ret_pct:.1f}% sobre $1400</div>
+  </div>"""
+
+    if win_rate is not None:
+        wr_c = "#3fb950" if win_rate > 55 else "#d29922" if win_rate > 45 else "#f85149"
+        kpi_html += f"""
+  <div class="kpi">
+    <div class="kpi-lbl">Win Rate DT</div>
+    <div class="kpi-val" style="color:{wr_c}">{win_rate:.1f}%</div>
+    <div class="kpi-sub">{len(wins)} de {n_closed} trades</div>
+  </div>"""
+
+    kpi_html += f"""
+  <div class="kpi">
+    <div class="kpi-lbl">Trades totales</div>
+    <div class="kpi-val">{len(buys)}</div>
+    <div class="kpi-sub">{n_closed} cerrados &middot; {len(open_trades)} abiertos</div>
+  </div>"""
+
+    if best_t:
+        bpnl = best_t.get("pnl_usd") or 0
+        kpi_html += f"""
+  <div class="kpi">
+    <div class="kpi-lbl">Mejor trade</div>
+    <div class="kpi-val" style="color:#3fb950">+{_usd(bpnl)}</div>
+    <div class="kpi-sub">{best_t.get("ticker","?")} {best_t.get("date","")[:10]}</div>
+  </div>"""
+
+    if worst_t and n_closed > 1:
+        wpnl = worst_t.get("pnl_usd") or 0
+        kpi_html += f"""
+  <div class="kpi">
+    <div class="kpi-lbl">Peor trade</div>
+    <div class="kpi-val" style="color:#f85149">{_usd(wpnl)}</div>
+    <div class="kpi-sub">{worst_t.get("ticker","?")} {worst_t.get("date","")[:10]}</div>
+  </div>"""
+
+    kpi_html += "</div>"
+
+    # Cumulative P&L chart
+    chart_html = ""
+    if closed:
+        sorted_closed = sorted(closed, key=lambda t: t.get("date", ""))
+        dates    = [t.get("date", "")[:10] for t in sorted_closed]
+        pnls_raw = [t.get("pnl_usd") or 0 for t in sorted_closed]
+        cum_pnls = []
+        running  = 0.0
+        for p in pnls_raw:
+            running += p
+            cum_pnls.append(round(running, 2))
+        last_cum    = cum_pnls[-1]
+        chart_color = _c(last_cum)
+        chart_html = f"""<div class="card" style="margin-bottom:14px">
+  <div class="card-head">
+    <div>
+      <div class="card-title">P&L Acumulado &mdash; Day Trading</div>
+      <div class="card-sub">Resultado intraday por operacion &middot; SL -1.5% &middot; TP1 +2.5% &middot; TP2 +5.0%</div>
+    </div>
+    <div class="pill" style="color:{chart_color}">{"+" if last_cum>=0 else ""}{_usd(last_cum)}</div>
+  </div>
+  <canvas id="dtChart" height="80"></canvas>
+</div>
+<script>
+(function(){{
+  const ctx=document.getElementById('dtChart');
+  const g=ctx.getContext('2d').createLinearGradient(0,0,0,200);
+  g.addColorStop(0,'{chart_color}33');g.addColorStop(1,'{chart_color}00');
+  window._charts=window._charts||{{}};
+  window._charts.dt=new Chart(ctx,{{
+    type:'line',
+    data:{{
+      labels:{json.dumps(dates)},
+      datasets:[{{data:{json.dumps(cum_pnls)},label:'P&L acumulado DT',
+        borderColor:'{chart_color}',backgroundColor:g,fill:true,tension:.3,
+        pointRadius:4,pointHoverRadius:7,pointBackgroundColor:'{chart_color}',borderWidth:2.5}}]
+    }},
+    options:{{
+      animation:{{duration:900,easing:'easeInOutQuart'}},
+      interaction:{{mode:'index',intersect:false}},
+      plugins:{{
+        legend:{{display:false}},
+        tooltip:{{backgroundColor:'#161b22',borderColor:'#30363d',borderWidth:1,
+          titleColor:'#7d8590',bodyColor:'#e6edf3',padding:12,
+          callbacks:{{label:c=>` P&L: ${{c.parsed.y>=0?'+':''}}$${{Math.abs(c.parsed.y).toFixed(2)}}`}}
+        }}
+      }},
+      scales:{{
+        x:{{ticks:{{color:'#7d8590',font:{{size:11}}}},grid:{{color:'#21262d'}}}},
+        y:{{ticks:{{color:'#7d8590',callback:v=>(v>=0?'+':'')+v.toFixed(0)+'$',font:{{size:11}}}},grid:{{color:'#21262d'}}}}
+      }}
+    }}
+  }});
+}})();
+</script>"""
+
+    # Trade table
+    rows_html = ""
+    for t in buys:
+        date_str  = t.get("date","")[:10]
+        ticker    = t.get("ticker","")
+        entry     = t.get("price")
+        exit_p    = t.get("exit_price")
+        sl        = t.get("stop_loss")
+        tp        = t.get("take_profit")
+        pnl_usd   = t.get("pnl_usd")
+        pnl_pct   = t.get("pnl_pct")
+        is_closed = bool(t.get("closed_at"))
+        status_label = "CERRADO" if is_closed else "ABIERTO"
+        status_color = "#8b949e" if is_closed else "#3fb950"
+
+        if is_closed and pnl_usd is not None:
+            pc       = _c(pnl_usd)
+            pnl_cell = f'<td style="text-align:right;color:{pc};font-weight:700">{"+" if pnl_usd>=0 else ""}{_usd(pnl_usd)}</td>'
+            pct_cell = f'<td style="text-align:right;color:{pc}">{"+" if (pnl_pct or 0)>=0 else ""}{(pnl_pct or 0):.1f}%</td>'
+        else:
+            pnl_cell = '<td style="text-align:right;color:var(--mt)">—</td>'
+            pct_cell = '<td style="text-align:right;color:var(--mt)">—</td>'
+
+        exit_cell = f'<td style="text-align:right">${exit_p:,.2f}</td>' if exit_p else '<td style="text-align:right;color:var(--mt)">—</td>'
+        sl_cell   = f'<td style="text-align:right;color:#f85149">${sl:,.2f}</td>' if sl else '<td style="text-align:right;color:var(--mt)">—</td>'
+        tp_cell   = f'<td style="text-align:right;color:#3fb950">${tp:,.2f}</td>' if tp else '<td style="text-align:right;color:var(--mt)">—</td>'
+
+        rows_html += (
+            f"<tr>"
+            f'<td style="color:var(--mt);font-size:.78rem">{date_str}</td>'
+            f'<td><b style="color:#f59e0b">{_esc(ticker)}</b></td>'
+            f'<td style="text-align:right">{f"${entry:,.2f}" if entry else "—"}</td>'
+            f'{sl_cell}{tp_cell}{exit_cell}{pnl_cell}{pct_cell}'
+            f'<td style="color:{status_color};font-size:.78rem">{status_label}</td>'
+            f"</tr>"
+        )
+
+    table_html = f"""<div class="card">
+  <div class="card-head">
+    <div>
+      <div class="card-title">Log de Operaciones DT</div>
+      <div class="card-sub">Cuenta separada &middot; $1400/trade &middot; gap+ORB+VWAP+RSI &middot; Dual bracket</div>
+    </div>
+  </div>
+  <div style="overflow-x:auto">
+    <table style="width:100%;border-collapse:collapse;font-size:.82rem">
+      <thead>
+        <tr style="color:var(--mt);font-size:.78rem">
+          <th style="text-align:left;padding:6px 10px">Fecha</th>
+          <th style="text-align:left;padding:6px 10px">Ticker</th>
+          <th style="text-align:right;padding:6px 10px">Entrada</th>
+          <th style="text-align:right;padding:6px 10px">SL</th>
+          <th style="text-align:right;padding:6px 10px">TP</th>
+          <th style="text-align:right;padding:6px 10px">Salida</th>
+          <th style="text-align:right;padding:6px 10px">P&L $</th>
+          <th style="text-align:right;padding:6px 10px">P&L %</th>
+          <th style="text-align:left;padding:6px 10px">Estado</th>
+        </tr>
+      </thead>
+      <tbody>{rows_html}</tbody>
+    </table>
+  </div>
+</div>"""
+
+    info_html = """<div class="card" style="border-left:3px solid #f59e0b">
+  <div class="card-head">
+    <div>
+      <div class="card-title">Estrategia Day Trading</div>
+      <div class="card-sub">Cuenta Alpaca separada &middot; ALPACA_DT_API_KEY</div>
+    </div>
+  </div>
+  <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:12px;font-size:.8rem;color:var(--mt)">
+    <div><b style="color:var(--tx)">Capital DT</b><br>$1400/trade (87.5% de $1600)</div>
+    <div><b style="color:var(--tx)">Posiciones</b><br>1 concentrada por dia</div>
+    <div><b style="color:var(--tx)">Stop Loss</b><br>-1.5% fijo</div>
+    <div><b style="color:var(--tx)">Dual bracket</b><br>TP1 +2.5% (50%) &middot; TP2 +5.0% (50%)</div>
+    <div><b style="color:var(--tx)">Filtros</b><br>Gap &gt;1.5% &middot; VWAP &middot; ORB &middot; Vol 1.5x &middot; RSI 42-74</div>
+    <div><b style="color:var(--tx)">Cierre EOD</b><br>15:00 EDT automatico</div>
+    <div><b style="color:var(--tx)">Horario entrada</b><br>11:30 ART (10:30 EDT)</div>
+    <div><b style="color:var(--tx)">Universo</b><br>15 tickers &middot; max $280/accion</div>
+  </div>
+</div>"""
+
+    return f"""<div class="tab-content" id="tab-daytrader">
+  {kpi_html}
+  {chart_html}
+  <div class="section-gap"></div>
+  {table_html}
+  <div class="section-gap"></div>
+  {info_html}
+</div>"""
+
+
 def build_html(equity, initial, history, positions, signals_data,
                spy_history=None, qqq_history=None, metrics=None, perf_data=None, discovery_data=None,
-               trades=None, mc_result=None):
+               trades=None, mc_result=None, dt_trades=None):
     if spy_history is None:
         spy_history = []
     if qqq_history is None:
@@ -1467,6 +1684,7 @@ def build_html(equity, initial, history, positions, signals_data,
     t_senales    = _tab_senales(signals_data)
     t_mercado    = _tab_mercado(signals_data, discovery_data=discovery_data)
     t_historial  = _tab_historial(trades or [])
+    t_daytrader  = _tab_daytrader(dt_trades or [])
 
     return f"""<!DOCTYPE html>
 <html lang="es">
@@ -1514,7 +1732,8 @@ def build_html(equity, initial, history, positions, signals_data,
   <button class="tab-btn" data-tab="posiciones">Posiciones</button>
   <button class="tab-btn" data-tab="senales">Senales</button>
   <button class="tab-btn" data-tab="mercado">Mercado</button>
-  <button class="tab-btn" data-tab="historial">Historial</button>
+  <button class="tab-btn" data-tab="historial">Historial LP/CP</button>
+  <button class="tab-btn" data-tab="daytrader">Day Trading</button>
 </nav>
 
 {t_resumen}
@@ -1522,6 +1741,7 @@ def build_html(equity, initial, history, positions, signals_data,
 {t_senales}
 {t_mercado}
 {t_historial}
+{t_daytrader}
 
 <script>
 // ── tabs ──
@@ -1725,9 +1945,13 @@ def generate() -> None:
 
     # Trade history from SQLite
     trades: list[dict] = []
+    dt_trades: list[dict] = []
     try:
         from alpha_agent.analytics.trade_db import get_trades
-        trades = get_trades(limit=200)
+        all_trades = get_trades(limit=500)
+        dt_trades  = [t for t in all_trades if t.get("sleeve") == "DT"]
+        trades     = [t for t in all_trades if t.get("sleeve") != "DT"]
+        logger.info("Trades: %d LP/CP, %d DT", len(trades), len(dt_trades))
     except Exception as e:
         logger.debug("trade_db no disponible: %s", e)
 
@@ -1748,7 +1972,7 @@ def generate() -> None:
     html    = build_html(equity, initial, history, positions, signals_data,
                          spy_history=spy_history, qqq_history=qqq_history,
                          metrics=metrics, perf_data=perf_data, discovery_data=discovery_data,
-                         trades=trades, mc_result=mc_result)
+                         trades=trades, mc_result=mc_result, dt_trades=dt_trades)
     OUT_PATH.write_text(html, encoding="utf-8")
     logger.info("Dashboard generado -> %s (%d bytes)", OUT_PATH, len(html))
 

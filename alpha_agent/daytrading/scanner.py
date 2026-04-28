@@ -328,10 +328,10 @@ def scan_dt_candidates(
     if top:
         best = top[0]
         log.info(
-            "DT BEST: %s score=%.3f | %d shares x $%.2f = $%.0f | SL $%.2f TP $%.2f",
+            "DT BEST: %s score=%.3f | %d shares x $%.2f = $%.0f | SL $%.2f TP1 $%.2f TP2 $%.2f",
             best["ticker"], best["dt_score"], best["qty_shares"],
             best["current_price"], best["notional"],
-            best["stop_loss"], best["take_profit"],
+            best["stop_loss"], best["take_profit_1"], best["take_profit_2"],
         )
     else:
         log.info("DT: sin candidatos sobre umbral %.2f", MIN_DT_SCORE)
