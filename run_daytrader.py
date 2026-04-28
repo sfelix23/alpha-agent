@@ -70,10 +70,14 @@ def _build_dt_broker():
     Broker apuntando a la cuenta DT (keys ALPACA_DT_*).
     Fallback a ALPACA_* si las DT keys no existen (dev / dry-run).
     """
-    api_key = os.getenv("ALPACA_DT_API_KEY") or os.getenv("ALPACA_API_KEY")
-    secret  = os.getenv("ALPACA_DT_SECRET_KEY") or os.getenv("ALPACA_SECRET_KEY")
+    api_key = os.getenv("ALPACA_DT_API_KEY")
+    secret  = os.getenv("ALPACA_DT_SECRET_KEY")
     if not (api_key and secret):
-        raise RuntimeError("Faltan ALPACA_DT_API_KEY / ALPACA_DT_SECRET_KEY en .env")
+        logger.warning(
+            "ALPACA_DT_API_KEY / ALPACA_DT_SECRET_KEY no configuradas. "
+            "Agregar al .env cuando tengas la nueva cuenta Alpaca paper."
+        )
+        raise RuntimeError("DT keys ausentes — agrega ALPACA_DT_API_KEY al .env")
 
     # Inyectamos las keys DT para que AlpacaBroker las lea
     os.environ["ALPACA_API_KEY"]    = api_key
@@ -167,7 +171,11 @@ def main() -> None:
         logger.info("Fuera de ventana DT (10:00-14:00 EDT). Saliendo.")
         return
 
-    broker = _build_dt_broker()
+    try:
+        broker = _build_dt_broker()
+    except RuntimeError as e:
+        logger.warning("DT no configurado: %s", e)
+        return   # exit limpio — no rompe run_autonomous.ps1
 
     try:
         if not broker.is_market_open():
