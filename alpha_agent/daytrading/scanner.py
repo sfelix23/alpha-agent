@@ -1,14 +1,16 @@
 """
-Day Trading scanner — detecta setups intraday de alta probabilidad.
+Day Trading scanner — detecta el mejor setup intraday del dia.
 
-Universo: acciones US de alta liquidez (QQQ mega-caps + momentum names).
-Lógica: gap alcista + precio > VWAP + volumen acelerado + RSI no sobrecomprado.
+Estrategia concentrada: 1 sola posicion, maximo capital desplegado.
+Con $1600 en la cuenta DT, se busca el ticker con mejor setup y se
+entra concentrado — no tiene sentido diversificar en DT con capital chico.
 
 Filtros de entrada:
-  gap     > +1.5%  desde el cierre anterior
-  price   > VWAP   (tendencia intraday confirmada)
-  vol_ratio > 1.5x (dinero institucional entrando)
-  RSI(15m) 42–74   (ni dormido ni sobrecomprado)
+  price   < MAX_PRICE  (minimo 5 shares a $1400 budget → maximo ~$280/accion)
+  gap     > +1.5%      desde el cierre anterior
+  price   > VWAP       (tendencia intraday confirmada)
+  vol_ratio > 1.5x     (dinero institucional entrando)
+  RSI(15m) 42–74       (ni dormido ni sobrecomprado)
 """
 
 from __future__ import annotations
@@ -20,17 +22,35 @@ import pandas as pd
 
 log = logging.getLogger(__name__)
 
-# ── Universo DT: muy líquidos, spreads ajustados, suficiente volatilidad ──────
+# ── Universo DT: líquidos, spreads ajustados, precio accesible con $1400 ──────
+# Se excluyen stocks > ~$280 porque con $1400 quedamos con < 5 shares
+# y el P&L en dólares es irrelevante (1 share × 3.5% = $31 máximo).
 DT_UNIVERSE: list[str] = [
-    # Mega-caps (liquidez máxima, gaps frecuentes con noticias/earnings)
-    "NVDA", "AMD", "TSLA", "META", "GOOGL", "AMZN", "AAPL", "MSFT", "AVGO", "NFLX",
-    # High-beta momentum (más volátiles, mejores para DT)
-    "COIN", "CRWD", "PLTR", "MELI", "SOFI",
-    # Energía / materiales (gaps con crude oil / macro)
-    "XOM", "CVX", "SLB", "FCX",
-    # Defensa / cripto ETF (momentum fuerte con noticias geopolíticas)
-    "LMT", "RTX", "IBIT",
+    # Bajo $150 — muchas shares, P&L proporcional al capital
+    "AMD",   # ~$120  → ~11 shares
+    "GOOGL", # ~$165  → ~8 shares
+    "AVGO",  # ~$175  → ~8 shares
+    "AMZN",  # ~$210  → ~6 shares
+    "AAPL",  # ~$210  → ~6 shares
+    "COIN",  # ~$220  → ~6 shares
+    "TSLA",  # ~$280  → ~5 shares (límite)
+    # Alta volatilidad — gaps frecuentes y bruscos
+    "PLTR",  # ~$25   → ~56 shares
+    "SOFI",  # ~$12   → ~116 shares
+    "FCX",   # ~$45   → ~31 shares
+    "SLB",   # ~$40   → ~35 shares
+    # Energía — reacciona a macro (crude, OPEC, DXY)
+    "XOM",   # ~$115  → ~12 shares
+    "CVX",   # ~$155  → ~9 shares
+    # Defensa — gaps con noticias geopolíticas
+    "RTX",   # ~$130  → ~10 shares
+    "LMT",   # ~$470  → 3 shares → solo entra si supera el filtro MIN_QTY
 ]
+
+# Precio máximo por accion: con $1400 budget, queremos minimo 5 shares
+# para que el P&L en dólares sea significativo
+MAX_PRICE_USD = 280.0   # $1400 / 5 shares = $280 máximo
+MIN_QTY_SHARES = 5      # minimo de shares para que valga operar
 
 MIN_GAP_PCT   = 0.015   # gap mínimo desde cierre anterior (+1.5%)
 MIN_VOL_RATIO = 1.5     # volumen reciente vs media histórica
@@ -155,14 +175,19 @@ def _score_ticker(df: pd.DataFrame) -> tuple[float, dict]:
 
 def scan_dt_candidates(
     exclude_tickers: set[str] | None = None,
-    limit: int = 2,
+    budget_per_pos: float = 1400.0,
+    limit: int = 1,
 ) -> list[dict]:
     """
-    Escanea DT_UNIVERSE y retorna los mejores candidatos intraday.
+    Escanea DT_UNIVERSE y retorna el mejor candidato del dia.
+
+    Modo concentrado: limit=1 por defecto — 1 sola posicion con todo el budget.
+    Filtra stocks donde budget_per_pos / price < MIN_QTY_SHARES.
 
     Returns list of dicts:
-      ticker, dt_score, current_price, gap_pct, vwap, vwap_dev_pct,
-      vol_ratio, rsi, stop_loss, take_profit
+      ticker, dt_score, current_price, qty_shares, notional,
+      gap_pct, vwap, vwap_dev_pct, vol_ratio, rsi,
+      stop_loss, take_profit
     """
     exclude    = exclude_tickers or set()
     candidates = []
@@ -180,28 +205,36 @@ def scan_dt_candidates(
             continue
 
         price = metrics.get("current_price", 0.0)
-        if price <= 0:
+        if price <= 0 or price > MAX_PRICE_USD:
+            log.debug("DT skip %s: precio %.2f > maximo %.0f", ticker, price, MAX_PRICE_USD)
             continue
 
-        # Bracket fijo desde precio actual de mercado
+        qty = int(budget_per_pos / price)
+        if qty < MIN_QTY_SHARES:
+            log.debug("DT skip %s: solo %d shares con $%.0f", ticker, qty, budget_per_pos)
+            continue
+
+        notional = qty * price
         sl = round(price * 0.985, 2)   # -1.5%
-        tp = round(price * 1.035, 2)   # +3.5%  (R/R 2.33:1)
+        tp = round(price * 1.035, 2)   # +3.5% (R/R 2.33:1)
 
         candidates.append({
-            "ticker":       ticker,
-            "dt_score":     round(score, 3),
+            "ticker":        ticker,
+            "dt_score":      round(score, 3),
             "current_price": price,
-            "gap_pct":      metrics.get("gap_pct", 0.0),
-            "vwap":         metrics.get("vwap", 0.0),
-            "vwap_dev_pct": metrics.get("vwap_dev_pct", 0.0),
-            "vol_ratio":    metrics.get("vol_ratio", 0.0),
-            "rsi":          metrics.get("rsi", 0.0),
-            "stop_loss":    sl,
-            "take_profit":  tp,
+            "qty_shares":    qty,
+            "notional":      round(notional, 2),
+            "gap_pct":       metrics.get("gap_pct", 0.0),
+            "vwap":          metrics.get("vwap", 0.0),
+            "vwap_dev_pct":  metrics.get("vwap_dev_pct", 0.0),
+            "vol_ratio":     metrics.get("vol_ratio", 0.0),
+            "rsi":           metrics.get("rsi", 0.0),
+            "stop_loss":     sl,
+            "take_profit":   tp,
         })
         log.info(
-            "DT candidato %s: score=%.3f gap=%.1f%% vol=%.1fx RSI=%.0f",
-            ticker, score,
+            "DT candidato %s: score=%.3f precio=$%.2f shares=%d gap=%.1f%% vol=%.1fx RSI=%.0f",
+            ticker, score, price, qty,
             metrics.get("gap_pct", 0.0) * 100,
             metrics.get("vol_ratio", 0.0),
             metrics.get("rsi", 0.0),
@@ -210,7 +243,13 @@ def scan_dt_candidates(
     candidates.sort(key=lambda x: x["dt_score"], reverse=True)
     top = candidates[:limit]
     if top:
-        log.info("DT top picks: %s", [(c["ticker"], c["dt_score"]) for c in top])
+        best = top[0]
+        log.info(
+            "DT BEST: %s score=%.3f | %d shares x $%.2f = $%.0f | SL $%.2f TP $%.2f",
+            best["ticker"], best["dt_score"], best["qty_shares"],
+            best["current_price"], best["notional"],
+            best["stop_loss"], best["take_profit"],
+        )
     else:
         log.info("DT: sin candidatos sobre umbral %.2f", MIN_DT_SCORE)
     return top
