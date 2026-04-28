@@ -253,6 +253,58 @@ def main():
             alerts.append("_(dry-run: no se cerraron posiciones)_")
 
     else:
+        # ── 5b. EOD DT close: cerrar posiciones DT antes del cierre de mercado
+        # NYSE cierra 16:00 EDT. Forzamos cierre DT a las 15:00 EDT = 19:00 UTC
+        # para asegurarnos de no tener overnight en el sleeve de day trading.
+        from datetime import timezone as _tz
+        _now_utc = datetime.now(_tz.utc)
+        if _now_utc.hour >= 19:
+            try:
+                from alpha_agent.analytics.trade_db import get_open_dt_tickers
+                dt_open = get_open_dt_tickers()
+                if dt_open:
+                    logger.info("EOD DT close: cerrando %d posicion(es) DT %s", len(dt_open), sorted(dt_open))
+                    for pos in positions:
+                        if pos.ticker not in dt_open:
+                            continue
+                        current_dt = current_price_from_position(pos)
+                        pnl_dt = pos.unrealized_pl
+                        pnl_pct_dt = pnl_pct_from_position(pos)
+                        logger.info(
+                            "EOD DT: cerrando %s | P&L $%+.2f (%+.1f%%)",
+                            pos.ticker, pnl_dt, pnl_pct_dt,
+                        )
+                        alerts.append(
+                            f"EOD DT CLOSE *{pos.ticker}* | P&L ${pnl_dt:+.2f} ({pnl_pct_dt:+.1f}%)"
+                        )
+                        if args.live and not args.dry_run:
+                            try:
+                                from alpaca.trading.requests import MarketOrderRequest
+                                from alpaca.trading.enums import OrderSide, TimeInForce
+                                order = MarketOrderRequest(
+                                    symbol=pos.ticker,
+                                    qty=abs(pos.qty),
+                                    side=OrderSide.SELL,
+                                    time_in_force=TimeInForce.DAY,
+                                )
+                                broker._trading.submit_order(order)
+                                closes.append(f"{pos.ticker} (EOD-DT)")
+                                alerts.append(f"  SELL {abs(pos.qty):.0f} {pos.ticker} enviado")
+                                from alpha_agent.analytics.trade_db import log_trade_close
+                                log_trade_close(
+                                    ticker=pos.ticker,
+                                    exit_price=round(current_dt, 2),
+                                    pnl_usd=round(pnl_dt, 2),
+                                    pnl_pct=round(pnl_pct_dt, 2),
+                                )
+                            except Exception as _eod_e:
+                                logger.error("EOD DT close %s: %s", pos.ticker, _eod_e)
+                                alerts.append(f"  ERROR cerrando {pos.ticker}: {_eod_e}")
+                        else:
+                            alerts.append("  (dry-run: no enviado)")
+            except Exception as _eod_err:
+                logger.debug("EOD DT check: %s", _eod_err)
+
         # ── 6. POR POSICIÓN: check stops, TPs, trailing
         for pos in positions:
             ticker = pos.ticker

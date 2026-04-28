@@ -180,6 +180,17 @@ def get_recent_stopouts(hours: int = 36) -> set[str]:
     return {r["ticker"] for r in rows}
 
 
+def get_open_dt_tickers() -> set[str]:
+    """Tickers con posicion DT abierta hoy (sleeve='DT', sin cerrar)."""
+    today = datetime.now().strftime("%Y-%m-%d")
+    with _conn() as con:
+        rows = con.execute(
+            "SELECT ticker FROM trades WHERE sleeve='DT' AND side='BUY' AND closed_at IS NULL AND date=?",
+            (today,),
+        ).fetchall()
+    return {r["ticker"] for r in rows}
+
+
 def get_summary() -> dict:
     """Win-rate, P&L promedio y estadísticas de trades cerrados."""
     with _conn() as con:

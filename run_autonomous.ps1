@@ -122,6 +122,17 @@ if ($LASTEXITCODE -ne 0) {
     exit 1
 }
 
+# -- 3. Day Trader en modo LIVE -----------------------------------------------
+# Corre en paralelo al LP/CP. Solo entra si hay setup valido (gap+VWAP+vol+RSI).
+# La ventana de entradas es 10:00-14:00 EDT; fuera de ese horario sale solo.
+Log "Paso 3/3: daytrader live (intraday)"
+$dtCmd = "python run_daytrader.py --live"
+Invoke-Expression "$dtCmd 2>&1" | Tee-Object -FilePath $logFile -Append -Encoding UTF8
+if ($LASTEXITCODE -ne 0) {
+    Log "WARNING: daytrader salio con exit $LASTEXITCODE (puede ser ventana fuera de horario)"
+    # No abortar: el day trader es opcional, no critico para LP/CP
+}
+
 # ── Actualizar health file como OK ────────────────────────────────────────────
 try {
     @{ last_run = (Get-Date -Format "yyyy-MM-ddTHH:mm:ss"); status = "ok"; equity = $equityResult } | ConvertTo-Json | Out-File -FilePath $healthFile -Encoding utf8 -Force
