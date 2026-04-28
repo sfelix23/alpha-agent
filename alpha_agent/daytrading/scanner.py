@@ -66,24 +66,31 @@ DT_TP1_PCT = 0.025   # +2.5% primer take profit (50% del tamaño)
 DT_TP2_PCT = 0.050   # +5.0% segundo take profit (50% restante)
 
 
-def _spy_is_bullish() -> bool:
+def _spy_direction() -> str:
     """
-    Filtro de mercado: SPY cotiza por encima de su VWAP intraday.
-    Si el mercado general está bajando, no hacemos DT largo.
-    Falla silenciosamente (retorna True) si no hay datos.
+    Determina la dirección intraday del mercado:
+      "BULL" → SPY sobre VWAP → operar LONG
+      "BEAR" → SPY bajo VWAP  → operar SHORT
+      "FLAT" → sin datos suficientes → omitir
     """
     df = _fetch_15m_raw("SPY")
     if df is None or len(df) < 4:
-        return True
+        return "FLAT"
     today_str = df.index[-1].strftime("%Y-%m-%d")
     today_df  = df[df.index.strftime("%Y-%m-%d") == today_str]
     if len(today_df) < 2:
-        return True
-    current = float(today_df["Close"].iloc[-1])
-    vwap    = _vwap(today_df)
-    bullish = current > vwap
-    log.debug("SPY VWAP filter: %.2f vs VWAP %.2f -> %s", current, vwap, "BULL" if bullish else "BEAR")
-    return bullish
+        return "FLAT"
+    current   = float(today_df["Close"].iloc[-1])
+    vwap_val  = _vwap(today_df)
+    dev       = (current - vwap_val) / vwap_val
+    direction = "BULL" if dev > 0 else "BEAR"
+    log.info("SPY intraday: $%.2f vs VWAP $%.2f (dev %+.2f%%) → %s",
+             current, vwap_val, dev * 100, direction)
+    return direction
+
+
+def _spy_is_bullish() -> bool:
+    return _spy_direction() == "BULL"
 
 
 def _orb_score(today_df: pd.DataFrame) -> float:
@@ -243,6 +250,88 @@ def _score_ticker(df: pd.DataFrame) -> tuple[float, dict]:
     return float(score), metrics
 
 
+def _score_ticker_short(df: pd.DataFrame) -> tuple[float, dict]:
+    """
+    Score [0, 1] para candidatos SHORT (espejo del long).
+    Busca gap bajista + precio bajo VWAP + volumen + RSI sobrecomprado.
+    """
+    metrics: dict = {}
+
+    today_str = df.index[-1].strftime("%Y-%m-%d")
+    today_df  = df[df.index.strftime("%Y-%m-%d") == today_str]
+    prev_df   = df[df.index.strftime("%Y-%m-%d") < today_str]
+
+    if len(today_df) < 4 or len(prev_df) < 4:
+        return 0.0, {}
+
+    prev_close = float(prev_df["Close"].iloc[-1])
+    today_open = float(today_df["Close"].iloc[0])
+    current    = float(today_df["Close"].iloc[-1])
+
+    # 1. Gap bajista
+    gap_pct = (today_open - prev_close) / prev_close if prev_close > 0 else 0.0
+    metrics["gap_pct"] = round(gap_pct, 4)
+    if gap_pct > -MIN_GAP_PCT:  # necesitamos gap NEGATIVO > 1.5%
+        return 0.0, metrics
+    gap_score = float(np.clip(abs(gap_pct) / 0.06, 0.0, 1.0))
+
+    # 2. Precio BAJO el VWAP (tendencia bajista intraday)
+    vwap_val = _vwap(today_df)
+    metrics["vwap"] = round(vwap_val, 2)
+    vwap_dev = (current - vwap_val) / vwap_val if vwap_val > 0 else 0.0
+    metrics["vwap_dev_pct"] = round(vwap_dev, 4)
+    if vwap_dev > 0.0:
+        return 0.0, metrics  # precio sobre VWAP → no short
+    vwap_score = float(np.clip(abs(vwap_dev) / 0.02, 0.0, 1.0))
+
+    # 3. Volumen acelerado
+    vol = today_df["Volume"]
+    if len(vol) >= 6:
+        recent    = float(vol.iloc[-2:].mean())
+        base      = float(vol.iloc[:-2].mean())
+        vol_ratio = recent / base if base > 0 else 1.0
+    else:
+        vol_ratio = 1.0
+    metrics["vol_ratio"] = round(vol_ratio, 2)
+    if vol_ratio < MIN_VOL_RATIO:
+        return 0.0, metrics
+    vol_score = float(np.clip((vol_ratio - 1.0) / 3.0, 0.0, 1.0))
+
+    # 4. RSI sobrevendido-neutral (26-58 para short: no sobrevendido extremo)
+    rsi_val = _rsi(today_df["Close"])
+    metrics["rsi"] = round(rsi_val, 1)
+    if not (26.0 <= rsi_val <= 58.0):
+        return 0.0, metrics
+    rsi_score = float(np.clip(1.0 - abs(rsi_val - 42.0) / 16.0, 0.0, 1.0))
+
+    # 5. ORB inverso: precio bajo el minimo del opening range
+    if len(today_df) >= 3:
+        orb_low = float(today_df["Low"].iloc[:2].min())
+        breakout_down = (orb_low - current) / orb_low if current < orb_low else 0.0
+        orb = float(np.clip(breakout_down / 0.015, 0.0, 1.0))
+    else:
+        orb = 0.0
+    metrics["orb_score"] = round(orb, 3)
+
+    score = (
+        0.30 * gap_score
+        + 0.25 * orb
+        + 0.20 * vwap_score
+        + 0.20 * vol_score
+        + 0.05 * rsi_score
+    )
+    metrics.update({
+        "current_price": round(current, 2),
+        "prev_close":    round(prev_close, 2),
+        "gap_score":     round(gap_score, 3),
+        "vwap_score":    round(vwap_score, 3),
+        "vol_score":     round(vol_score, 3),
+        "rsi_score":     round(rsi_score, 3),
+        "dt_score":      round(score, 3),
+    })
+    return float(score), metrics
+
+
 def scan_dt_candidates(
     exclude_tickers: set[str] | None = None,
     budget_per_pos: float = 1400.0,
@@ -251,21 +340,23 @@ def scan_dt_candidates(
     """
     Escanea DT_UNIVERSE y retorna el mejor candidato del dia.
 
-    Modo concentrado: limit=1 por defecto — 1 sola posicion con todo el budget.
-    Filtra stocks donde budget_per_pos / price < MIN_QTY_SHARES.
+    Detecta automaticamente la direccion del mercado:
+      SPY > VWAP → busca LONG  (gap alcista + ORB break up)
+      SPY < VWAP → busca SHORT (gap bajista + ORB break down)
 
-    Returns list of dicts:
-      ticker, dt_score, current_price, qty_shares, notional,
-      gap_pct, vwap, vwap_dev_pct, vol_ratio, rsi,
-      stop_loss, take_profit
+    Returns list of dicts con campo 'direction': 'LONG' | 'SHORT'
     """
-    exclude    = exclude_tickers or set()
+    exclude   = exclude_tickers or set()
     candidates = []
 
-    # Filtro de mercado global: solo operar long cuando SPY está sobre su VWAP
-    if not _spy_is_bullish():
-        log.info("DT: SPY por debajo de VWAP — mercado bajista intraday. Sin entradas.")
+    direction = _spy_direction()
+    if direction == "FLAT":
+        log.info("DT: SPY sin datos suficientes. Sin entradas.")
         return []
+
+    log.info("DT: mercado intraday %s — escaneando candidatos %s", direction, direction)
+
+    score_fn = _score_ticker if direction == "LONG" else _score_ticker_short
 
     for ticker in DT_UNIVERSE:
         if ticker in exclude:
@@ -274,7 +365,7 @@ def scan_dt_candidates(
         if df is None:
             continue
 
-        score, metrics = _score_ticker(df)
+        score, metrics = score_fn(df)
         if score < MIN_DT_SCORE:
             log.debug("DT skip %s: score=%.3f", ticker, score)
             continue
@@ -289,21 +380,27 @@ def scan_dt_candidates(
             log.debug("DT skip %s: solo %d shares con $%.0f", ticker, qty, budget_per_pos)
             continue
 
-        # Dual bracket: mitad cierra en TP1, mitad en TP2
-        qty1     = qty // 2         # primer tramo (toma ganancia rápida)
-        qty2     = qty - qty1       # segundo tramo (deja correr la tendencia)
+        qty1    = qty // 2
+        qty2    = qty - qty1
         notional = qty * price
-        sl  = round(price * (1 - DT_SL_PCT),  2)
-        tp1 = round(price * (1 + DT_TP1_PCT), 2)
-        tp2 = round(price * (1 + DT_TP2_PCT), 2)
+
+        if direction == "LONG":
+            sl  = round(price * (1 - DT_SL_PCT),  2)
+            tp1 = round(price * (1 + DT_TP1_PCT), 2)
+            tp2 = round(price * (1 + DT_TP2_PCT), 2)
+        else:  # SHORT: SL arriba, TP abajo
+            sl  = round(price * (1 + DT_SL_PCT),  2)
+            tp1 = round(price * (1 - DT_TP1_PCT), 2)
+            tp2 = round(price * (1 - DT_TP2_PCT), 2)
 
         candidates.append({
             "ticker":        ticker,
+            "direction":     direction,
             "dt_score":      round(score, 3),
             "current_price": price,
             "qty_shares":    qty,
-            "qty1":          qty1,    # shares para TP1 (+2.5%)
-            "qty2":          qty2,    # shares para TP2 (+5.0%)
+            "qty1":          qty1,
+            "qty2":          qty2,
             "notional":      round(notional, 2),
             "gap_pct":       metrics.get("gap_pct", 0.0),
             "orb_score":     metrics.get("orb_score", 0.0),
@@ -316,8 +413,8 @@ def scan_dt_candidates(
             "take_profit_2": tp2,
         })
         log.info(
-            "DT candidato %s: score=%.3f precio=$%.2f shares=%d gap=%.1f%% vol=%.1fx RSI=%.0f",
-            ticker, score, price, qty,
+            "DT candidato %s [%s]: score=%.3f precio=$%.2f shares=%d gap=%.1f%% vol=%.1fx RSI=%.0f",
+            ticker, direction, score, price, qty,
             metrics.get("gap_pct", 0.0) * 100,
             metrics.get("vol_ratio", 0.0),
             metrics.get("rsi", 0.0),
@@ -328,11 +425,11 @@ def scan_dt_candidates(
     if top:
         best = top[0]
         log.info(
-            "DT BEST: %s score=%.3f | %d shares x $%.2f = $%.0f | SL $%.2f TP1 $%.2f TP2 $%.2f",
-            best["ticker"], best["dt_score"], best["qty_shares"],
+            "DT BEST [%s]: %s score=%.3f | %d shares x $%.2f = $%.0f | SL $%.2f TP1 $%.2f TP2 $%.2f",
+            best["direction"], best["ticker"], best["dt_score"], best["qty_shares"],
             best["current_price"], best["notional"],
             best["stop_loss"], best["take_profit_1"], best["take_profit_2"],
         )
     else:
-        log.info("DT: sin candidatos sobre umbral %.2f", MIN_DT_SCORE)
+        log.info("DT [%s]: sin candidatos sobre umbral %.2f", direction, MIN_DT_SCORE)
     return top

@@ -114,10 +114,12 @@ def _held_tickers(broker) -> set:
         return set()
 
 
-def _bracket_order(broker, ticker: str, qty: int, sl: float, tp: float, live: bool) -> str | None:
-    """Envía un bracket order individual (BUY + stop + take profit)."""
+def _bracket_order(broker, ticker: str, qty: int, sl: float, tp: float,
+                   live: bool, direction: str = "LONG") -> str | None:
+    """Bracket order individual — soporta LONG (BUY) y SHORT (SELL)."""
+    side_label = "BUY" if direction == "LONG" else "SHORT"
     if not live:
-        logger.info("[DRY-RUN] BUY %d %s | SL=%.2f TP=%.2f", qty, ticker, sl, tp)
+        logger.info("[DRY-RUN] %s %d %s | SL=%.2f TP=%.2f", side_label, qty, ticker, sl, tp)
         return "dry-run"
     try:
         from alpaca.trading.requests import (
@@ -125,10 +127,11 @@ def _bracket_order(broker, ticker: str, qty: int, sl: float, tp: float, live: bo
         )
         from alpaca.trading.enums import OrderSide, TimeInForce, OrderClass
 
-        req = MarketOrderRequest(
+        side = OrderSide.BUY if direction == "LONG" else OrderSide.SELL
+        req  = MarketOrderRequest(
             symbol=ticker,
             qty=qty,
-            side=OrderSide.BUY,
+            side=side,
             time_in_force=TimeInForce.DAY,
             order_class=OrderClass.BRACKET,
             take_profit=TakeProfitRequest(limit_price=round(tp, 2)),
@@ -142,23 +145,36 @@ def _bracket_order(broker, ticker: str, qty: int, sl: float, tp: float, live: bo
 
 
 def _dual_bracket(broker, ticker: str, qty1: int, qty2: int, sl: float,
-                  tp1: float, tp2: float, live: bool) -> tuple[str | None, str | None]:
-    """
-    Dual bracket: dos ordenes independientes sobre el mismo ticker.
-      Tramo 1: qty1 shares, TP +2.5% — cierre rapido para asegurar ganancia
-      Tramo 2: qty2 shares, TP +5.0% — deja correr la tendencia
-    Ambas comparten el mismo SL.
-    Retorna (order_id_1, order_id_2).
-    """
-    oid1 = _bracket_order(broker, ticker, qty1, sl, tp1, live) if qty1 >= 1 else None
-    oid2 = _bracket_order(broker, ticker, qty2, sl, tp2, live) if qty2 >= 1 else None
+                  tp1: float, tp2: float, live: bool,
+                  direction: str = "LONG") -> tuple[str | None, str | None]:
+    """Dual bracket: dos ordenes independientes. Soporta LONG y SHORT."""
+    oid1 = _bracket_order(broker, ticker, qty1, sl, tp1, live, direction) if qty1 >= 1 else None
+    oid2 = _bracket_order(broker, ticker, qty2, sl, tp2, live, direction) if qty2 >= 1 else None
     return oid1, oid2
+
+
+def _get_macro_ctx(macro) -> dict:
+    """Extrae dict plano del macro snapshot para el Decision Committee."""
+    try:
+        pr = macro.prices or {}
+        return {
+            "regime":      macro.regime,
+            "vix":         float(pr.get("vix", 0) or 0),
+            "wti":         float(pr.get("oil_wti", 0) or 0),
+            "dxy":         float(pr.get("dxy", 0) or 0),
+            "gold":        float(pr.get("gold", 0) or 0),
+            "spy_vwap_dev": 0.0,  # el scanner ya aplicó el filtro
+        }
+    except Exception:
+        return {}
 
 
 def main() -> None:
     parser = argparse.ArgumentParser(description="Day Trader -- cuenta DT separada.")
-    parser.add_argument("--live",    action="store_true", help="Ordenes reales en Alpaca DT.")
-    parser.add_argument("--dry-run", action="store_true", help="Loguear sin ejecutar.")
+    parser.add_argument("--live",       action="store_true", help="Ordenes reales en Alpaca DT.")
+    parser.add_argument("--dry-run",    action="store_true", help="Loguear sin ejecutar.")
+    parser.add_argument("--no-committee", action="store_true",
+                        help="Saltar el Decision Committee (modo reglas puras).")
     args = parser.parse_args()
     live = args.live and not args.dry_run
 
@@ -175,7 +191,7 @@ def main() -> None:
         broker = _build_dt_broker()
     except RuntimeError as e:
         logger.warning("DT no configurado: %s", e)
-        return   # exit limpio — no rompe run_autonomous.ps1
+        return
 
     try:
         if not broker.is_market_open():
@@ -202,41 +218,106 @@ def main() -> None:
         logger.info("Sin setup DT valido hoy. Saliendo.")
         return
 
-    cand     = candidates[0]
-    ticker   = cand["ticker"]
-    price    = cand["current_price"]
-    qty      = cand["qty_shares"]
-    qty1     = cand["qty1"]          # tramo 1 → TP +2.5%
-    qty2     = cand["qty2"]          # tramo 2 → TP +5.0%
-    notional = cand["notional"]
-    sl       = cand["stop_loss"]
-    tp1      = cand["take_profit_1"]
-    tp2      = cand["take_profit_2"]
+    cand      = candidates[0]
+    ticker    = cand["ticker"]
+    direction = cand.get("direction", "LONG")
+    price     = cand["current_price"]
+    qty       = cand["qty_shares"]
+    qty1      = cand["qty1"]
+    qty2      = cand["qty2"]
+    notional  = cand["notional"]
+    sl        = cand["stop_loss"]
+    tp1       = cand["take_profit_1"]
+    tp2       = cand["take_profit_2"]
 
-    regime, vix = "UNKNOWN", 0.0
+    # ── Macro snapshot ─────────────────────────────────────────────────────
+    regime, vix, macro_ctx = "UNKNOWN", 0.0, {}
     try:
         from alpha_agent.macro.macro_context import fetch_macro_snapshot
-        macro  = fetch_macro_snapshot()
-        regime = macro.regime
-        vix    = float(macro.prices.get("vix", 0.0))
+        macro_snap = fetch_macro_snapshot()
+        regime     = macro_snap.regime
+        vix        = float(macro_snap.prices.get("vix", 0.0))
+        macro_ctx  = _get_macro_ctx(macro_snap)
     except Exception:
         pass
 
-    logger.info(
-        "DT ENTRADA: %s | score=%.3f | %d shares x $%.2f = $%.0f",
-        ticker, cand["dt_score"], qty, price, notional,
-    )
-    logger.info(
-        "  Tramo1: %d shares SL $%.2f TP1 $%.2f (+2.5%%)",
-        qty1, sl, tp1,
-    )
-    logger.info(
-        "  Tramo2: %d shares SL $%.2f TP2 $%.2f (+5.0%%)",
-        qty2, sl, tp2,
-    )
+    # ── Polymarket ─────────────────────────────────────────────────────────
+    polymarket = {}
+    try:
+        from alpha_agent.macro.polymarket import fetch_polymarket_signals
+        polymarket = fetch_polymarket_signals()
+        if polymarket:
+            logger.info("Polymarket: %s", " | ".join(f"{k}={v:.0%}" for k, v in polymarket.items()))
+    except Exception as e:
+        logger.debug("Polymarket no disponible: %s", e)
 
-    # Dual bracket: 2 ordenes independientes para el mismo ticker
-    oid1, oid2 = _dual_bracket(broker, ticker, qty1, qty2, sl, tp1, tp2, live)
+    # ── Decision Committee ─────────────────────────────────────────────────
+    size_factor   = 1.0
+    committee_msg = ""
+    if not args.no_committee:
+        try:
+            from alpha_agent.decision_committee import evaluate as committee_eval
+            from alpha_agent.analytics.trade_db import get_trades
+
+            recent = get_trades(limit=10)
+            dt_recent = [t for t in recent if t.get("sleeve") == "DT"]
+            pnl_today = sum(t.get("pnl_usd") or 0 for t in dt_recent
+                            if t.get("date") == datetime.now().strftime("%Y-%m-%d"))
+            trades_today = len([t for t in dt_recent
+                                 if t.get("date") == datetime.now().strftime("%Y-%m-%d")])
+
+            decision = committee_eval(
+                candidate=cand,
+                direction=direction,
+                macro_ctx=macro_ctx,
+                portfolio_heat=0.0,
+                pnl_today=pnl_today,
+                trades_today=trades_today,
+                polymarket=polymarket,
+            )
+            committee_msg = decision.reasoning
+            logger.info(
+                "Committee: %s | size=%.1f | GO=%d/4 | %s",
+                "GO" if decision.go else "NO-GO",
+                decision.size_factor, decision.go_count,
+                decision.reasoning[:100],
+            )
+
+            if not decision.go:
+                logger.info("Committee VETÓ el trade. Saliendo.")
+                try:
+                    from alpha_agent.notifications import send_whatsapp
+                    send_whatsapp(
+                        f"DT COMMITTEE VETO {ticker} [{direction}]\n"
+                        f"Score cuant: {cand['dt_score']:.3f} — aprobado por reglas\n"
+                        f"Veto: {decision.reasoning[:200]}\n"
+                        f"Votes GO: {decision.go_count}/4"
+                    )
+                except Exception:
+                    pass
+                return
+
+            size_factor = decision.size_factor
+            if size_factor < 1.0:
+                qty  = max(1, int(qty * size_factor))
+                qty1 = qty // 2
+                qty2 = qty - qty1
+                notional = qty * price
+                logger.info("Committee: size reducido a %.0f%% → %d shares", size_factor * 100, qty)
+
+        except Exception as e:
+            logger.warning("Decision Committee falló, usando reglas puras: %s", e)
+
+    # ── Log + ejecución ────────────────────────────────────────────────────
+    dir_icon = "↑ LONG" if direction == "LONG" else "↓ SHORT"
+    logger.info(
+        "DT ENTRADA [%s]: %s | score=%.3f | %d shares x $%.2f = $%.0f",
+        dir_icon, ticker, cand["dt_score"], qty, price, notional,
+    )
+    logger.info("  Tramo1: %d shares SL $%.2f TP1 $%.2f", qty1, sl, tp1)
+    logger.info("  Tramo2: %d shares SL $%.2f TP2 $%.2f", qty2, sl, tp2)
+
+    oid1, oid2 = _dual_bracket(broker, ticker, qty1, qty2, sl, tp1, tp2, live, direction)
     if oid1 is None and oid2 is None:
         logger.error("DT: fallaron ambos bracket orders para %s. Saliendo.", ticker)
         return
@@ -244,9 +325,9 @@ def main() -> None:
     if live:
         try:
             from alpha_agent.analytics.trade_db import log_trade
-            # Loguear como un solo trade con el TP2 (el objetivo principal)
+            side_db = "BUY" if direction == "LONG" else "SELL"
             log_trade(
-                ticker=ticker, side="BUY",
+                ticker=ticker, side=side_db,
                 qty=float(qty), price=price, notional=notional,
                 sleeve="DT", status="filled",
                 order_id=str(oid1) + "+" + str(oid2),
@@ -262,18 +343,23 @@ def main() -> None:
     orb_s   = cand.get("orb_score", 0.0)
     vol_r   = cand["vol_ratio"]
     rsi_v   = cand["rsi"]
-    rr2     = (tp2 - price) / (price - sl) if (price - sl) > 0 else 0.0
+    if direction == "LONG":
+        rr2 = (tp2 - price) / (price - sl) if (price - sl) > 0 else 0.0
+        dir_label = "LONG"
+    else:
+        rr2 = (price - tp2) / (sl - price) if (sl - price) > 0 else 0.0
+        dir_label = "SHORT"
+
+    committee_line = f"\n  Committee: {committee_msg[:120]}" if committee_msg else ""
     msg = (
-        "DAY TRADER | " + ts + " | " + regime + " | VIX " + str(round(vix, 1)) + "\n"
-        + "ENTRADA " + ticker + " (" + str(qty) + " shares = $" + str(round(notional)) + ")\n"
-        + "  Tramo1: " + str(qty1) + " shares -> TP $" + str(tp1) + " (+2.5%)\n"
-        + "  Tramo2: " + str(qty2) + " shares -> TP $" + str(tp2) + " (+5.0%) R/R " + str(round(rr2, 1)) + ":1\n"
-        + "  SL $" + str(sl) + " (-1.5%)\n"
-        + "  gap=" + str(round(gap_pct * 100, 1)) + "% "
-        + "ORB=" + str(round(orb_s, 2)) + " "
-        + "vol=" + str(round(vol_r, 1)) + "x "
-        + "RSI=" + str(round(rsi_v)) + "\n"
-        + "  Cierre EOD automatico 15:00 EDT"
+        f"DAY TRADER | {ts} | {regime} | VIX {round(vix,1)}\n"
+        f"ENTRADA {dir_label} {ticker} ({qty} shares = ${round(notional)})\n"
+        f"  Tramo1: {qty1} shares -> TP ${tp1} ({'2.5%'})\n"
+        f"  Tramo2: {qty2} shares -> TP ${tp2} ({'5.0%'}) R/R {round(rr2,1)}:1\n"
+        f"  SL ${sl} (1.5%)\n"
+        f"  gap={round(gap_pct*100,1)}% ORB={round(orb_s,2)} vol={round(vol_r,1)}x RSI={round(rsi_v)}"
+        f"{committee_line}\n"
+        f"  Cierre EOD automatico 15:00 EDT"
     )
     logger.info("WhatsApp DT (%d chars)...", len(msg))
     try:
@@ -281,7 +367,7 @@ def main() -> None:
     except Exception as e:
         logger.error("WhatsApp DT: %s", e)
 
-    logger.info("=== DAYTRADER OK === %s %d shares $%.0f", ticker, qty, notional)
+    logger.info("=== DAYTRADER OK === [%s] %s %d shares $%.0f", direction, ticker, qty, notional)
 
 
 if __name__ == "__main__":
