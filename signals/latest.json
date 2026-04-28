@@ -1,7 +1,7 @@
 {
-  "generated_at": "2026-04-27T16:34:53",
+  "generated_at": "2026-04-28T16:01:35",
   "horizon": "medium_long_70_30_high_conviction",
-  "capital_usd": 1600.0,
+  "capital_usd": 1599.76,
   "params": {
     "weight_long_term": 0.65,
     "weight_short_term": 0.25,
@@ -18,90 +18,90 @@
   },
   "macro": {
     "regime": "bull",
-    "regime_reason": "SPY +7.4% sobre SMA200 con pendiente positiva",
+    "regime_reason": "SPY +6.5% sobre SMA200 con pendiente positiva",
     "prices": {
-      "oil_wti": 96.17,
-      "oil_brent": 101.42,
-      "gold": 4697.0,
-      "dxy": 98.463,
-      "vix": 18.43,
-      "us10y": 4.336
+      "oil_wti": 99.84,
+      "oil_brent": 104.22,
+      "gold": 4598.1,
+      "dxy": 98.629,
+      "vix": 18.59,
+      "us10y": 4.362
     },
     "changes_1d": {
-      "oil_wti": 0.0187,
+      "oil_wti": 0.036,
       "oil_brent": -0.0371,
-      "gold": -0.0054,
-      "dxy": -0.0005,
-      "vix": -0.015,
+      "gold": -0.0165,
+      "dxy": 0.0015,
+      "vix": 0.0316,
       "us10y": 0.006
     },
     "changes_1m": {
-      "oil_wti": 0.0179,
-      "oil_brent": -0.061,
-      "gold": 0.0735,
-      "dxy": -0.0144,
-      "vix": -0.3284,
-      "us10y": -0.0181
+      "oil_wti": 0.002,
+      "oil_brent": -0.0742,
+      "gold": 0.0236,
+      "dxy": -0.0152,
+      "vix": -0.4013,
+      "us10y": -0.0176
     },
-    "spy_vs_sma200": 0.0739
+    "spy_vs_sma200": 0.0653
   },
   "long_term": [
     {
       "ticker": "PBR",
       "side": "BUY",
       "horizon": "LP",
-      "price": 21.05,
-      "stop_loss": 19.59,
-      "take_profit": 24.0,
-      "weight_target": 0.6216,
+      "price": 21.33,
+      "stop_loss": 19.88,
+      "take_profit": 24.32,
+      "weight_target": 0.6561,
       "thesis": {
         "ticker": "PBR",
         "horizon": "LP",
         "conviction": "ALTA",
         "quant": {
-          "mu_anual": 0.9394906661909062,
-          "sigma_anual": 0.3133023048099212,
-          "beta": 0.5069059249674506,
-          "alpha_jensen": 0.8093693189881355,
-          "sharpe": 2.8550401719310323,
-          "expected_return_capm": 0.13012134720277066
+          "mu_anual": 0.9670722775570711,
+          "sigma_anual": 0.3131787557911944,
+          "beta": 0.5038500807394027,
+          "alpha_jensen": 0.8465483160539797,
+          "sharpe": 2.944236352263447,
+          "expected_return_capm": 0.12052396150309137
         },
         "technical": {
-          "price": 21.05,
-          "rsi": 57.36,
-          "atr": 0.7251,
-          "stop_loss_atr": 19.59,
-          "ret_1m": 0.019181915943298655,
-          "ret_3m": 0.4093479956788295,
-          "dist_52w_high": -0.036485753427337064
+          "price": 21.33,
+          "rsi": 60.58,
+          "atr": 0.7294,
+          "stop_loss_atr": 19.88,
+          "ret_1m": 0.03124019586557436,
+          "ret_3m": 0.3953255771613704,
+          "dist_52w_high": -0.023208577145124587
         },
         "fundamental": {
-          "sentiment_score": 0.667,
+          "sentiment_score": 0.333,
           "n_headlines": 6,
-          "positive": 4,
-          "negative": 0,
+          "positive": 3,
+          "negative": 1,
           "sample_titles": [
-            "Petrobras Stock Outperforms Industry in the Past Year: Time to Buy?",
-            "5 Ways To Invest in Latin America’s Energy Boom",
-            "How Chris Ong helped Seatrium emerge from a messy merger between two shipyards to become a profitable offshore oil and wind giant"
+            "Sector Update: Energy Stocks Higher Pre-Bell Tuesday",
+            "Investment Advisor Exits $47.5 Million MercadoLibre Position, According to Latest SEC Filing",
+            "Petrobras Stock Outperforms Industry in the Past Year: Time to Buy?"
           ]
         },
         "macro": {
           "regime": "bull",
-          "regime_reason": "SPY +7.4% sobre SMA200 con pendiente positiva",
-          "vix": 18.43,
-          "oil_wti": 96.17,
-          "dxy_1m": -0.0144,
-          "gold_1m": 0.0735
+          "regime_reason": "SPY +6.5% sobre SMA200 con pendiente positiva",
+          "vix": 18.59,
+          "oil_wti": 99.84,
+          "dxy_1m": -0.0152,
+          "gold_1m": 0.0236
         },
         "risk": {
-          "dollars_allocated": 646.49,
-          "weight_of_total_portfolio": 0.4041,
-          "max_loss_usd_if_stop_hit": 44.84,
-          "max_loss_pct_of_capital": 0.028,
-          "stop_loss": 19.59
+          "dollars_allocated": 682.27,
+          "weight_of_total_portfolio": 0.4265,
+          "max_loss_usd_if_stop_hit": 46.38,
+          "max_loss_pct_of_capital": 0.029,
+          "stop_loss": 19.88
         },
-        "thesis_text": "PBR — horizonte LARGO PLAZO. Convicción ALTA. La tesis CAPM/Markowitz sostiene un Sharpe de 2.86 con beta 0.51 (retorno esperado CAPM +13.0%, alfa de Jensen +80.9%). Cumple el filtro de calidad (β razonable + Sharpe elevado) y aparece en el óptimo de la frontera eficiente. El flujo de noticias es positivo (sentiment +0.67 sobre 6 titulares). Régimen de mercado BULL (SPY +7.4% sobre SMA200 con pendiente positiva) — viento de cola para posiciones largas. Contexto sectorial: WTI +1.8% en el último mes.",
+        "thesis_text": "PBR — horizonte LARGO PLAZO. Convicción ALTA. La tesis CAPM/Markowitz sostiene un Sharpe de 2.94 con beta 0.50 (retorno esperado CAPM +12.1%, alfa de Jensen +84.7%). Cumple el filtro de calidad (β razonable + Sharpe elevado) y aparece en el óptimo de la frontera eficiente. El flujo de noticias es positivo (sentiment +0.33 sobre 6 titulares). Régimen de mercado BULL (SPY +6.5% sobre SMA200 con pendiente positiva) — viento de cola para posiciones largas. Contexto sectorial: WTI +0.2% en el último mes.",
         "key_risks": [
           "Sin riesgos macro mayores detectados; el riesgo principal es idiosincrático del activo."
         ]
@@ -112,58 +112,58 @@
       "ticker": "RIO",
       "side": "BUY",
       "horizon": "LP",
-      "price": 99.51,
-      "stop_loss": 95.13,
-      "take_profit": 113.44,
-      "weight_target": 0.3784,
+      "price": 98.49,
+      "stop_loss": 94.83,
+      "take_profit": 112.28,
+      "weight_target": 0.3439,
       "thesis": {
         "ticker": "RIO",
         "horizon": "LP",
         "conviction": "ALTA",
         "quant": {
-          "mu_anual": 0.6570403204508223,
-          "sigma_anual": 0.2548913156746808,
-          "beta": 0.686264835151647,
-          "alpha_jensen": 0.49680042202243735,
-          "sharpe": 2.4011815342974363,
-          "expected_return_capm": 0.16023989842838493
+          "mu_anual": 0.6211370508174424,
+          "sigma_anual": 0.2548857091026535,
+          "beta": 0.6878357774928343,
+          "alpha_jensen": 0.473034789320166,
+          "sharpe": 2.2603740823515808,
+          "expected_return_capm": 0.1481022614972764
         },
         "technical": {
-          "price": 99.51,
-          "rsi": 60.33,
-          "atr": 2.1941,
-          "stop_loss_atr": 95.13,
-          "ret_1m": 0.14860341748269068,
-          "ret_3m": 0.10104260144478383,
-          "dist_52w_high": -0.007628633814925512
+          "price": 98.49,
+          "rsi": 50.14,
+          "atr": 1.8293,
+          "stop_loss_atr": 94.83,
+          "ret_1m": 0.10887185546239997,
+          "ret_3m": 0.08433332465370369,
+          "dist_52w_high": -0.01785002929115409
         },
         "fundamental": {
-          "sentiment_score": 0.667,
+          "sentiment_score": 0.333,
           "n_headlines": 6,
-          "positive": 4,
+          "positive": 2,
           "negative": 0,
           "sample_titles": [
             "JPMorgan Lifts PT on Rio Tinto Group (RIO) Following Q1 Results",
-            "Solis Minerals eyes lithium growth in Brazil with major acquisition - ICYMI",
-            "Teck Resources, IBD Stock Of The Day, Flirts With Buy Point At Highs"
+            "Rio Tinto Balances Cyclone Relief With Copper And Iron Ore Progress",
+            "Analysts Express Mixed Views on Rio Tinto Group (RIO) Following Q1 Production Results"
           ]
         },
         "macro": {
           "regime": "bull",
-          "regime_reason": "SPY +7.4% sobre SMA200 con pendiente positiva",
-          "vix": 18.43,
-          "oil_wti": 96.17,
-          "dxy_1m": -0.0144,
-          "gold_1m": 0.0735
+          "regime_reason": "SPY +6.5% sobre SMA200 con pendiente positiva",
+          "vix": 18.59,
+          "oil_wti": 99.84,
+          "dxy_1m": -0.0152,
+          "gold_1m": 0.0236
         },
         "risk": {
-          "dollars_allocated": 393.51,
-          "weight_of_total_portfolio": 0.2459,
-          "max_loss_usd_if_stop_hit": 17.32,
-          "max_loss_pct_of_capital": 0.0108,
-          "stop_loss": 95.13
+          "dollars_allocated": 357.58,
+          "weight_of_total_portfolio": 0.2235,
+          "max_loss_usd_if_stop_hit": 13.29,
+          "max_loss_pct_of_capital": 0.0083,
+          "stop_loss": 94.83
         },
-        "thesis_text": "RIO — horizonte LARGO PLAZO. Convicción ALTA. La tesis CAPM/Markowitz sostiene un Sharpe de 2.40 con beta 0.69 (retorno esperado CAPM +16.0%, alfa de Jensen +49.7%). Cumple el filtro de calidad (β razonable + Sharpe elevado) y aparece en el óptimo de la frontera eficiente. El flujo de noticias es positivo (sentiment +0.67 sobre 6 titulares). Régimen de mercado BULL (SPY +7.4% sobre SMA200 con pendiente positiva) — viento de cola para posiciones largas. Contexto sectorial: oro +7.3% en el último mes.",
+        "thesis_text": "RIO — horizonte LARGO PLAZO. Convicción ALTA. La tesis CAPM/Markowitz sostiene un Sharpe de 2.26 con beta 0.69 (retorno esperado CAPM +14.8%, alfa de Jensen +47.3%). Cumple el filtro de calidad (β razonable + Sharpe elevado) y aparece en el óptimo de la frontera eficiente. El flujo de noticias es positivo (sentiment +0.33 sobre 6 titulares). Régimen de mercado BULL (SPY +6.5% sobre SMA200 con pendiente positiva) — viento de cola para posiciones largas. Contexto sectorial: oro +2.4% en el último mes.",
         "key_risks": [
           "Sin riesgos macro mayores detectados; el riesgo principal es idiosincrático del activo."
         ]
@@ -176,58 +176,58 @@
       "ticker": "TSM",
       "side": "BUY",
       "horizon": "CP",
-      "price": 401.4,
-      "stop_loss": 374.65,
-      "take_profit": 468.27,
-      "weight_target": 0.566,
+      "price": 388.16,
+      "stop_loss": 362.39,
+      "take_profit": 452.59,
+      "weight_target": 0.5069,
       "thesis": {
         "ticker": "TSM",
         "horizon": "CP",
-        "conviction": "MEDIA",
+        "conviction": "ALTA",
         "quant": {
-          "mu_anual": 0.8504462314204758,
-          "sigma_anual": 0.4108469208906922,
-          "beta": 1.5983271791453635,
-          "alpha_jensen": 0.5370497577189826,
-          "sharpe": 1.9604533719622756,
-          "expected_return_capm": 0.3133964737014933
+          "mu_anual": 0.7489962633861216,
+          "sigma_anual": 0.4116822843325699,
+          "beta": 1.6031591660182742,
+          "alpha_jensen": 0.4636927767616654,
+          "sharpe": 1.7100475055113402,
+          "expected_return_capm": 0.28530348662445615
         },
         "technical": {
-          "price": 401.4,
-          "rsi": 67.69,
-          "atr": 13.376,
-          "stop_loss_atr": 374.65,
-          "ret_1m": 0.22851506022070844,
-          "ret_3m": 0.1897383337797145,
-          "dist_52w_high": -0.0026213603791198636
+          "price": 388.16,
+          "rsi": 60.12,
+          "atr": 12.885,
+          "stop_loss_atr": 362.39,
+          "ret_1m": 0.22641391362435814,
+          "ret_3m": 0.13717141281303502,
+          "dist_52w_high": -0.04153293216436449
         },
         "fundamental": {
-          "sentiment_score": 0.167,
+          "sentiment_score": 0.5,
           "n_headlines": 6,
-          "positive": 3,
-          "negative": 2,
+          "positive": 4,
+          "negative": 1,
           "sample_titles": [
-            "Will Nvidia's explosive rally end soon?",
-            "Will Intel Stock Keep Soaring as Q4 Earnings Approach?",
-            "5 Winning Leveraged ETFs of Last Week"
+            "Brace for eye-popping AI spending plans when 'Magnificent 7' earnings roll in",
+            "Demand Surge Fuels Taiwan Semiconductor Manufacturing Company’s (TSM) Rally",
+            "4 Best-Performing ETF Areas of Last Week"
           ]
         },
         "macro": {
           "regime": "bull",
-          "regime_reason": "SPY +7.4% sobre SMA200 con pendiente positiva",
-          "vix": 18.43,
-          "oil_wti": 96.17,
-          "dxy_1m": -0.0144,
-          "gold_1m": 0.0735
+          "regime_reason": "SPY +6.5% sobre SMA200 con pendiente positiva",
+          "vix": 18.59,
+          "oil_wti": 99.84,
+          "dxy_1m": -0.0152,
+          "gold_1m": 0.0236
         },
         "risk": {
-          "dollars_allocated": 226.4,
-          "weight_of_total_portfolio": 0.1415,
-          "max_loss_usd_if_stop_hit": 15.09,
-          "max_loss_pct_of_capital": 0.0094,
-          "stop_loss": 374.65
+          "dollars_allocated": 202.71,
+          "weight_of_total_portfolio": 0.1267,
+          "max_loss_usd_if_stop_hit": 13.46,
+          "max_loss_pct_of_capital": 0.0084,
+          "stop_loss": 362.39
         },
-        "thesis_text": "TSM — horizonte CORTO PLAZO. Convicción MEDIA. Setup técnico: RSI 68, momentum 1m +22.9%, momentum 3m +19.0%. Stop loss ATR en $374.65 (riesgo ≈ 6.7% desde entrada).",
+        "thesis_text": "TSM — horizonte CORTO PLAZO. Convicción ALTA. Setup técnico: RSI 60, momentum 1m +22.6%, momentum 3m +13.7%. Stop loss ATR en $362.39 (riesgo ≈ 6.6% desde entrada). Sentiment de noticias refuerza el setup.",
         "key_risks": [
           "Sin riesgos macro mayores detectados; el riesgo principal es idiosincrático del activo."
         ]
@@ -235,61 +235,61 @@
       "option": null
     },
     {
-      "ticker": "SQM",
+      "ticker": "SLB",
       "side": "BUY",
       "horizon": "CP",
-      "price": 88.96,
-      "stop_loss": 81.84,
-      "take_profit": 106.76,
-      "weight_target": 0.434,
+      "price": 56.19,
+      "stop_loss": 52.71,
+      "take_profit": 64.89,
+      "weight_target": 0.4931,
       "thesis": {
-        "ticker": "SQM",
+        "ticker": "SLB",
         "horizon": "CP",
-        "conviction": "MEDIA",
+        "conviction": "ALTA",
         "quant": {
-          "mu_anual": 0.9420577884220994,
-          "sigma_anual": 0.46776458656066255,
-          "beta": 1.0242061342565252,
-          "alpha_jensen": 0.7250696508463641,
-          "sharpe": 1.9177548155534931,
-          "expected_return_capm": 0.21698813757573526
+          "mu_anual": 0.7298900798387363,
+          "sigma_anual": 0.3450740048255178,
+          "beta": 1.0195214052897226,
+          "alpha_jensen": 0.5320702266560531,
+          "sharpe": 1.9847628921947977,
+          "expected_return_capm": 0.19781985318268325
         },
         "technical": {
-          "price": 88.96,
-          "rsi": 58.7,
-          "atr": 3.9067,
-          "stop_loss_atr": 81.15,
-          "ret_1m": 0.07569531278396902,
-          "ret_3m": 0.05440317871835765,
-          "dist_52w_high": -0.0666246840497221
+          "price": 56.19,
+          "rsi": 70.44,
+          "atr": 1.745,
+          "stop_loss_atr": 52.71,
+          "ret_1m": 0.090529808384191,
+          "ret_3m": 0.1566684121300519,
+          "dist_52w_high": 0.0
         },
         "fundamental": {
-          "sentiment_score": 0.167,
+          "sentiment_score": 0.5,
           "n_headlines": 6,
-          "positive": 2,
-          "negative": 1,
+          "positive": 3,
+          "negative": 0,
           "sample_titles": [
-            "Is lithium’s downturn not over yet?",
-            "Mining Stock Albemarle Breaks Out Amid Surging Lithium Prices",
-            "SQM, IBD Stock Of The Day, Breaks Out As Iran War Provides Dual Catalysts"
+            "SLB's Production Exposure, Data Center Solutions, Digital Segment to Support Earnings in 2026, Morgan Stanley Says",
+            "Why NESR (NESR) Stock Is Up Today",
+            "SLB (SLB) Stock Trades Up, Here Is Why"
           ]
         },
         "macro": {
           "regime": "bull",
-          "regime_reason": "SPY +7.4% sobre SMA200 con pendiente positiva",
-          "vix": 18.43,
-          "oil_wti": 96.17,
-          "dxy_1m": -0.0144,
-          "gold_1m": 0.0735
+          "regime_reason": "SPY +6.5% sobre SMA200 con pendiente positiva",
+          "vix": 18.59,
+          "oil_wti": 99.84,
+          "dxy_1m": -0.0152,
+          "gold_1m": 0.0236
         },
         "risk": {
-          "dollars_allocated": 173.6,
-          "weight_of_total_portfolio": 0.1085,
-          "max_loss_usd_if_stop_hit": 15.24,
-          "max_loss_pct_of_capital": 0.0095,
-          "stop_loss": 81.15
+          "dollars_allocated": 197.23,
+          "weight_of_total_portfolio": 0.1233,
+          "max_loss_usd_if_stop_hit": 12.21,
+          "max_loss_pct_of_capital": 0.0076,
+          "stop_loss": 52.71
         },
-        "thesis_text": "SQM — horizonte CORTO PLAZO. Convicción MEDIA. Setup técnico: RSI 59, momentum 1m +7.6%, momentum 3m +5.4%. Stop loss ATR en $81.15 (riesgo ≈ 8.8% desde entrada).",
+        "thesis_text": "SLB — horizonte CORTO PLAZO. Convicción ALTA. Setup técnico: RSI 70, momentum 1m +9.1%, momentum 3m +15.7%. ⚠️ RSI en sobrecompra → riesgo de reversión a la media. Stop loss ATR en $52.71 (riesgo ≈ 6.2% desde entrada). Sentiment de noticias refuerza el setup.",
         "key_risks": [
           "Sin riesgos macro mayores detectados; el riesgo principal es idiosincrático del activo."
         ]
@@ -300,145 +300,145 @@
   "options_book": [],
   "hedge_book": [],
   "portfolio": {
-    "PBR": 0.2619,
-    "GOOGL": 0.2112,
-    "RIO": 0.1594,
-    "TTE": 0.1575,
-    "TSM": 0.0621,
-    "SQM": 0.0318,
-    "SLB": 0.0222,
-    "ASML": 0.0117,
-    "NEM": 0.0105,
-    "AMZN": 0.0172,
-    "SPY": 0.0285
+    "PBR": 0.3522,
+    "GOOGL": 0.2142,
+    "RIO": 0.1846,
+    "TSM": 0.0571,
+    "SQM": 0.0451,
+    "AAPL": 0.0101,
+    "SPY": 0.0289,
+    "SHEL": 0.0306,
+    "VALE": 0.0295,
+    "ASML": 0.0109,
+    "CVX": 0.0217
   },
   "radar": {
     "entries": [
       {
+        "ticker": "TSM",
+        "sector": "Tech",
+        "price": 388.17,
+        "pct_1d": -0.0415,
+        "pct_1w": 0.0546,
+        "pct_1m": 0.188,
+        "action": "BUY_CP",
+        "headline": "Brace for eye-popping AI spending plans when 'Magnificent 7' earnings ro...",
+        "sentiment": 0.5,
+        "n_headlines": 6
+      },
+      {
+        "ticker": "SLB",
+        "sector": "Energy",
+        "price": 56.19,
+        "pct_1d": 0.0175,
+        "pct_1w": 0.0649,
+        "pct_1m": 0.0504,
+        "action": "BUY_CP",
+        "headline": "SLB Q1 Earnings Call Highlights",
+        "sentiment": 0.5,
+        "n_headlines": 6
+      },
+      {
         "ticker": "PBR",
         "sector": "Energy",
-        "price": 21.05,
-        "pct_1d": 0.0084,
-        "pct_1w": 0.0197,
-        "pct_1m": 0.0412,
+        "price": 21.33,
+        "pct_1d": 0.0178,
+        "pct_1w": 0.0146,
+        "pct_1m": 0.0332,
         "action": "BUY_LP",
-        "headline": "Petrobras Stock Outperforms Industry in the Past Year: Time to Buy?",
-        "sentiment": 0.667,
+        "headline": "Sector Update: Energy Stocks Higher Pre-Bell Tuesday",
+        "sentiment": 0.333,
         "n_headlines": 6
       },
       {
         "ticker": "RIO",
         "sector": "Materials",
-        "price": 99.51,
-        "pct_1d": -0.001,
-        "pct_1w": -0.0032,
-        "pct_1m": 0.1599,
+        "price": 98.49,
+        "pct_1d": -0.0146,
+        "pct_1w": 0.0079,
+        "pct_1m": 0.1368,
         "action": "BUY_LP",
-        "headline": "RIO vs. SCCO: Which Mining Stock Has Better Growth Prospects?",
-        "sentiment": 0.5,
-        "n_headlines": 6
-      },
-      {
-        "ticker": "TSM",
-        "sector": "Tech",
-        "price": 401.26,
-        "pct_1d": -0.003,
-        "pct_1w": 0.0956,
-        "pct_1m": 0.2304,
-        "action": "BUY_CP",
-        "headline": "Will Nvidia's explosive rally end soon?",
+        "headline": "Analysts Express Mixed Views on Rio Tinto Group (RIO) Following Q1 Produ...",
         "sentiment": 0.167,
-        "n_headlines": 6
-      },
-      {
-        "ticker": "SQM",
-        "sector": "Materials",
-        "price": 89.06,
-        "pct_1d": 0.003,
-        "pct_1w": 0.0072,
-        "pct_1m": 0.151,
-        "action": "BUY_CP",
-        "headline": "A Look At SQM’s Valuation After Rothschild Redburn’s Cautious Lithium Ou...",
-        "sentiment": 0.0,
         "n_headlines": 6
       },
       {
         "ticker": "LAC",
         "sector": "Materials",
-        "price": 4.99,
-        "pct_1d": 0.0744,
-        "pct_1w": 0.001,
-        "pct_1m": 0.2848,
+        "price": 4.84,
+        "pct_1d": -0.0776,
+        "pct_1w": 0.0216,
+        "pct_1m": 0.2417,
         "action": "—",
-        "headline": "This is Why Wedbush is Bullish on Lithium Americas Corp. (LAC) as a Rare...",
+        "headline": "Here is Why Lithium Americas (LAC) is One of the Top EV Penny Stocks to ...",
         "sentiment": 0.833,
         "n_headlines": 6
       },
       {
         "ticker": "AMD",
         "sector": "Tech",
-        "price": 334.0,
-        "pct_1d": -0.0397,
-        "pct_1w": 0.2148,
-        "pct_1m": 0.6391,
+        "price": 319.63,
+        "pct_1d": -0.0448,
+        "pct_1w": 0.1235,
+        "pct_1m": 0.5824,
         "action": "—",
-        "headline": "Google, Meta, Microsoft, Amazon, Apple earnings: What to expect",
-        "sentiment": 0.5,
+        "headline": "Tech stocks today: Oracle, AMD, and other AI-driven names sink, with Big...",
+        "sentiment": -0.833,
         "n_headlines": 6
       },
       {
         "ticker": "FCX",
         "sector": "Materials",
-        "price": 60.37,
-        "pct_1d": -0.0111,
-        "pct_1w": -0.1398,
-        "pct_1m": 0.0837,
+        "price": 58.19,
+        "pct_1d": -0.0393,
+        "pct_1w": -0.1388,
+        "pct_1m": 0.037,
         "action": "—",
         "headline": "Could Freeport-McMoRan (FCX) Benefit From The SpaceX IPO?",
         "sentiment": 0.833,
         "n_headlines": 6
       },
       {
-        "ticker": "VIST",
-        "sector": "Energy",
-        "price": 72.01,
-        "pct_1d": 0.0158,
-        "pct_1w": 0.0832,
-        "pct_1m": -0.0041,
-        "action": "—",
-        "headline": "4 PEG-Driven GARP Picks for a Volatile Market in 2026",
-        "sentiment": 0.833,
-        "n_headlines": 6
-      },
-      {
-        "ticker": "SHEL",
-        "sector": "Energy",
-        "price": 86.83,
-        "pct_1d": -0.0258,
-        "pct_1w": -0.0133,
-        "pct_1m": -0.0578,
-        "action": "—",
-        "headline": "Shell acquiring Arc for $13.6B, China blocks Meta's bid for Manus AI",
-        "sentiment": 0.833,
-        "n_headlines": 6
-      },
-      {
-        "ticker": "CRWD",
+        "ticker": "AVGO",
         "sector": "Tech",
-        "price": 455.76,
-        "pct_1d": 0.017,
-        "pct_1w": 0.0522,
-        "pct_1m": 0.1608,
+        "price": 395.16,
+        "pct_1d": -0.0551,
+        "pct_1w": -0.0174,
+        "pct_1m": 0.3142,
         "action": "—",
-        "headline": "Mizuho Upgrades CrowdStrike With a $520 Price Target: Is AI Security the...",
+        "headline": "These Stocks Are Today’s Movers: Oracle, AMD, Intel, Corning, Erasca, Ra...",
+        "sentiment": -0.833,
+        "n_headlines": 6
+      },
+      {
+        "ticker": "AVAV",
+        "sector": "Defense",
+        "price": 187.26,
+        "pct_1d": -0.0433,
+        "pct_1w": -0.1086,
+        "pct_1m": 0.0154,
+        "action": "—",
+        "headline": "AeroVironment vs. Teledyne: Which Defense Tech Stock Is Better?",
+        "sentiment": 0.667,
+        "n_headlines": 6
+      },
+      {
+        "ticker": "CCJ",
+        "sector": "Materials",
+        "price": 116.11,
+        "pct_1d": -0.0569,
+        "pct_1w": -0.0043,
+        "pct_1m": 0.1173,
+        "action": "—",
+        "headline": "Cameco (CCJ) Earnings Expected to Grow: Should You Buy?",
         "sentiment": 0.667,
         "n_headlines": 6
       }
     ],
-    "n_up": 16,
-    "n_down": 37,
-    "biggest_winner": "LAC +7.4%",
-    "biggest_loser": "NEM -4.0%"
+    "n_up": 17,
+    "n_down": 36,
+    "biggest_winner": "TTE +2.7%",
+    "biggest_loser": "LAC -7.8%"
   },
   "edgar_alerts": []
 }
