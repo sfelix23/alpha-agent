@@ -129,6 +129,11 @@ def compute_technical_indicators(ohlc: dict[str, pd.DataFrame]) -> pd.DataFrame:
         golden_cross  = int(last_ema20 > last_ema50)   # 1 = tendencia alcista
         above_ema50   = int(close.iloc[-1] > last_ema50)
 
+        # ── SMA 200 (tendencia primaria) ─────────────────────────────────────
+        sma200 = close.rolling(200).mean()
+        last_sma200  = float(sma200.iloc[-1]) if len(close) >= 200 and not np.isnan(sma200.iloc[-1]) else float(close.mean())
+        above_sma200 = int(close.iloc[-1] > last_sma200)
+
         # ── Bollinger Bands ──────────────────────────────────────────────────
         bb_pos = _bollinger_position(close)
         last_bb_pos = float(bb_pos.iloc[-1]) if not np.isnan(bb_pos.iloc[-1]) else 0.5
@@ -190,11 +195,13 @@ def compute_technical_indicators(ohlc: dict[str, pd.DataFrame]) -> pd.DataFrame:
             "macd_signal":   round(last_macd_sig, 4),
             "macd_hist":     round(last_macd_hist, 4),
             "macd_bullish":  macd_bullish,
-            # Nuevos — EMA / tendencia
+            # Nuevos — EMA / SMA / tendencia
             "ema20":         round(last_ema20, 2),
             "ema50":         round(last_ema50, 2),
+            "sma200":        round(last_sma200, 2),
             "golden_cross":  golden_cross,
             "above_ema50":   above_ema50,
+            "above_sma200":  above_sma200,
             # Nuevos — Bollinger
             "bb_position":   round(last_bb_pos, 3),
             "bb_squeeze":    bb_squeeze,

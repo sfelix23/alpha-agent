@@ -58,6 +58,70 @@ RSI_MIN       = 42.0    # evita stocks dormidos o en colapso
 RSI_MAX       = 74.0    # evita compra en sobrecompra extrema
 MIN_DT_SCORE  = 0.20    # umbral mínimo de score combinado
 
+# Bracket: TP ampliado para capturar tendencias intraday más largas
+# SL -1.5% (ajustado), TP1 +2.5% (primer objetivo, 50% del capital),
+# TP2 +5.0% (segundo objetivo, 50% restante). Estrategia dual-bracket.
+DT_SL_PCT  = 0.015   # -1.5% stop loss
+DT_TP1_PCT = 0.025   # +2.5% primer take profit (50% del tamaño)
+DT_TP2_PCT = 0.050   # +5.0% segundo take profit (50% restante)
+
+
+def _spy_is_bullish() -> bool:
+    """
+    Filtro de mercado: SPY cotiza por encima de su VWAP intraday.
+    Si el mercado general está bajando, no hacemos DT largo.
+    Falla silenciosamente (retorna True) si no hay datos.
+    """
+    df = _fetch_15m_raw("SPY")
+    if df is None or len(df) < 4:
+        return True
+    today_str = df.index[-1].strftime("%Y-%m-%d")
+    today_df  = df[df.index.strftime("%Y-%m-%d") == today_str]
+    if len(today_df) < 2:
+        return True
+    current = float(today_df["Close"].iloc[-1])
+    vwap    = _vwap(today_df)
+    bullish = current > vwap
+    log.debug("SPY VWAP filter: %.2f vs VWAP %.2f -> %s", current, vwap, "BULL" if bullish else "BEAR")
+    return bullish
+
+
+def _orb_score(today_df: pd.DataFrame) -> float:
+    """
+    Opening Range Breakout score [0, 1].
+    ORB high = máximo de las primeras 2 velas (primeros 30 min de mercado).
+    Si el precio actual supera el ORB high con momentum, el score es 1.0.
+    Si está en el ORB o por debajo, el score es 0.
+    """
+    if len(today_df) < 3:
+        return 0.0
+    orb_high = float(today_df["High"].iloc[:2].max())
+    current  = float(today_df["Close"].iloc[-1])
+    if current <= orb_high:
+        return 0.0
+    # Score proporcional al breakout sobre el ORB
+    breakout_pct = (current - orb_high) / orb_high
+    return float(np.clip(breakout_pct / 0.015, 0.0, 1.0))  # saturado en +1.5% sobre ORB
+
+
+def _fetch_15m_raw(ticker: str) -> pd.DataFrame | None:
+    """Descarga 2 días de datos de 15 min (sin logs de debug en este nivel)."""
+    try:
+        import warnings
+        import yfinance as yf
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore")
+            df = yf.download(ticker, period="2d", interval="15m",
+                             progress=False, auto_adjust=True)
+        if df is None or df.empty or len(df) < 8:
+            return None
+        if isinstance(df.columns, pd.MultiIndex):
+            df.columns = df.columns.get_level_values(0)
+        return df
+    except Exception as e:
+        log.debug("fetch_15m %s: %s", ticker, e)
+        return None
+
 
 def _fetch_15m(ticker: str) -> pd.DataFrame | None:
     try:
@@ -154,11 +218,17 @@ def _score_ticker(df: pd.DataFrame) -> tuple[float, dict]:
     # RSI óptimo 55–65: score 1.0; alejar de ese centro reduce el score
     rsi_score = float(np.clip(1.0 - abs(rsi_val - 60.0) / 15.0, 0.0, 1.0))
 
+    # 5. ORB (Opening Range Breakout): precio sobre el máximo de los primeros 30min
+    orb = _orb_score(today_df)
+    metrics["orb_score"] = round(orb, 3)
+
+    # Pesos: gap lidera, ORB confirma tendencia, VWAP y volumen validan
     score = (
-        0.35 * gap_score
-        + 0.30 * vwap_score
-        + 0.25 * vol_score
-        + 0.10 * rsi_score
+        0.30 * gap_score
+        + 0.25 * orb
+        + 0.20 * vwap_score
+        + 0.20 * vol_score
+        + 0.05 * rsi_score
     )
 
     metrics.update({
@@ -192,6 +262,11 @@ def scan_dt_candidates(
     exclude    = exclude_tickers or set()
     candidates = []
 
+    # Filtro de mercado global: solo operar long cuando SPY está sobre su VWAP
+    if not _spy_is_bullish():
+        log.info("DT: SPY por debajo de VWAP — mercado bajista intraday. Sin entradas.")
+        return []
+
     for ticker in DT_UNIVERSE:
         if ticker in exclude:
             continue
@@ -214,23 +289,31 @@ def scan_dt_candidates(
             log.debug("DT skip %s: solo %d shares con $%.0f", ticker, qty, budget_per_pos)
             continue
 
+        # Dual bracket: mitad cierra en TP1, mitad en TP2
+        qty1     = qty // 2         # primer tramo (toma ganancia rápida)
+        qty2     = qty - qty1       # segundo tramo (deja correr la tendencia)
         notional = qty * price
-        sl = round(price * 0.985, 2)   # -1.5%
-        tp = round(price * 1.035, 2)   # +3.5% (R/R 2.33:1)
+        sl  = round(price * (1 - DT_SL_PCT),  2)
+        tp1 = round(price * (1 + DT_TP1_PCT), 2)
+        tp2 = round(price * (1 + DT_TP2_PCT), 2)
 
         candidates.append({
             "ticker":        ticker,
             "dt_score":      round(score, 3),
             "current_price": price,
             "qty_shares":    qty,
+            "qty1":          qty1,    # shares para TP1 (+2.5%)
+            "qty2":          qty2,    # shares para TP2 (+5.0%)
             "notional":      round(notional, 2),
             "gap_pct":       metrics.get("gap_pct", 0.0),
+            "orb_score":     metrics.get("orb_score", 0.0),
             "vwap":          metrics.get("vwap", 0.0),
             "vwap_dev_pct":  metrics.get("vwap_dev_pct", 0.0),
             "vol_ratio":     metrics.get("vol_ratio", 0.0),
             "rsi":           metrics.get("rsi", 0.0),
             "stop_loss":     sl,
-            "take_profit":   tp,
+            "take_profit_1": tp1,
+            "take_profit_2": tp2,
         })
         log.info(
             "DT candidato %s: score=%.3f precio=$%.2f shares=%d gap=%.1f%% vol=%.1fx RSI=%.0f",

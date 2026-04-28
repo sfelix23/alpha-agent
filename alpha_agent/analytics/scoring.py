@@ -272,6 +272,25 @@ def build_scores(
         ret_6m_lp = lp["ret_6m"].fillna(0) - lp["ret_1m"].fillna(0)
         lp["score_lp"] += 0.40 * _zscore(ret_6m_lp)
 
+    # Filtro SMA200: penalizar stocks bajo tendencia primaria bajista.
+    # Comprar LP bajo la SMA200 es apostar contra la marea — estadísticamente pierde.
+    # Excepción: ALPHA_PREMIUM_LP en mercados emergentes (menos eficientes).
+    if "above_sma200" in lp.columns:
+        below_200 = (lp["above_sma200"].fillna(1) == 0)
+        # Argentina/emergentes son excepciones: correlacion SMA200 menos predictiva
+        exempt = [t for t in lp.index[below_200] if t in ALPHA_PREMIUM_LP]
+        non_exempt = [t for t in lp.index[below_200] if t not in ALPHA_PREMIUM_LP]
+        if non_exempt:
+            lp.loc[non_exempt, "score_lp"] -= 0.45
+            logger.info("SMA200 filter (-0.45 LP): %s", non_exempt)
+        if exempt:
+            lp.loc[exempt, "score_lp"] -= 0.15   # penalización suave para emergentes
+            logger.info("SMA200 filter (-0.15 LP, emergente): %s", exempt)
+
+    # Momentum 3m: confirmación de que el trend es reciente (no solo legado de 6m)
+    if "ret_3m" in lp.columns:
+        lp["score_lp"] += 0.15 * _zscore(lp["ret_3m"].fillna(0))
+
     # Bonus EMA50: solo activos en tendencia alcista
     if "above_ema50" in lp.columns:
         lp["score_lp"] += 0.2 * lp["above_ema50"].fillna(0)

@@ -7,7 +7,7 @@
 param([switch]$Uninstall)
 
 $baseDir = "D:\Agente"
-$taskNames = @("Alpha Wake", "Alpha Dashboard", "Alpha Analyst", "Alpha Monitor", "Alpha Rebalancer", "Alpha Health", "Alpha Portfolio Review", "Alpha Email Digest")
+$taskNames = @("Alpha Wake", "Alpha Dashboard", "Alpha Analyst", "Alpha Monitor", "Alpha DayTrader", "Alpha Rebalancer", "Alpha Health", "Alpha Portfolio Review", "Alpha Email Digest")
 
 # 1. Verificar admin
 $me = New-Object Security.Principal.WindowsPrincipal([Security.Principal.WindowsIdentity]::GetCurrent())
@@ -138,6 +138,38 @@ if (Get-ScheduledTask -TaskName "Alpha Analyst" -ErrorAction SilentlyContinue) {
     Write-Host "  [OK] Alpha Analyst    - 10:35 ART" -ForegroundColor Green
 } else {
     Write-Host "  [FAIL] Alpha Analyst" -ForegroundColor Red
+}
+
+# =========================================================
+# TAREA 2b: Alpha DayTrader - 11:30 ART (ORB window: 60min post-open)
+# La estrategia DT necesita que el Opening Range (primeros 30 min) ya este
+# definido antes de entrar. 11:30 ART = 10:30 EDT = 60 min post-apertura.
+# Usa la cuenta Alpaca SEPARADA (ALPACA_DT_API_KEY / ALPACA_DT_SECRET_KEY).
+# =========================================================
+$dtArg = "-NoProfile -ExecutionPolicy Bypass -Command `"cd '$baseDir'; python '$baseDir\run_daytrader.py' --live 2>&1`""
+
+$aDT = New-ScheduledTaskAction `
+    -Execute "powershell.exe" `
+    -Argument $dtArg `
+    -WorkingDirectory $baseDir
+
+$tDT = New-ScheduledTaskTrigger -Weekly `
+    -DaysOfWeek Monday,Tuesday,Wednesday,Thursday,Friday `
+    -At "11:30"
+
+Register-ScheduledTask `
+    -TaskName "Alpha DayTrader" `
+    -Action $aDT `
+    -Trigger $tDT `
+    -Settings (New-BaseSettings 30) `
+    -Principal $principal `
+    -Description "Day Trader: gap+ORB+VWAP, 1 posicion concentrada, dual bracket" `
+    -Force | Out-Null
+
+if (Get-ScheduledTask -TaskName "Alpha DayTrader" -ErrorAction SilentlyContinue) {
+    Write-Host "  [OK] Alpha DayTrader  - 11:30 ART (ORB window)" -ForegroundColor Green
+} else {
+    Write-Host "  [FAIL] Alpha DayTrader" -ForegroundColor Red
 }
 
 # =========================================================
@@ -305,6 +337,7 @@ Write-Host ""
 Write-Host "HORARIO (lunes a viernes):" -ForegroundColor Cyan
 Write-Host "  10:00  PC despierta de Sleep"
 Write-Host "  10:35  Analyst + Trader + WhatsApp"
+Write-Host "  11:30  DayTrader (ORB window, cuenta separada)"
 Write-Host "  11:05  Monitor cada 30 min hasta 16:35"
 Write-Host "  12:30  Health check (alerta si bot no corrió)"
 Write-Host "  15:00  Rebalancer semanal (viernes)"

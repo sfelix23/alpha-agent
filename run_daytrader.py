@@ -110,7 +110,8 @@ def _held_tickers(broker) -> set:
         return set()
 
 
-def _bracket_order(broker, ticker: str, qty: int, sl: float, tp: float, live: bool):
+def _bracket_order(broker, ticker: str, qty: int, sl: float, tp: float, live: bool) -> str | None:
+    """Envía un bracket order individual (BUY + stop + take profit)."""
     if not live:
         logger.info("[DRY-RUN] BUY %d %s | SL=%.2f TP=%.2f", qty, ticker, sl, tp)
         return "dry-run"
@@ -134,6 +135,20 @@ def _bracket_order(broker, ticker: str, qty: int, sl: float, tp: float, live: bo
     except Exception as e:
         logger.error("bracket_order %s: %s", ticker, e)
         return None
+
+
+def _dual_bracket(broker, ticker: str, qty1: int, qty2: int, sl: float,
+                  tp1: float, tp2: float, live: bool) -> tuple[str | None, str | None]:
+    """
+    Dual bracket: dos ordenes independientes sobre el mismo ticker.
+      Tramo 1: qty1 shares, TP +2.5% — cierre rapido para asegurar ganancia
+      Tramo 2: qty2 shares, TP +5.0% — deja correr la tendencia
+    Ambas comparten el mismo SL.
+    Retorna (order_id_1, order_id_2).
+    """
+    oid1 = _bracket_order(broker, ticker, qty1, sl, tp1, live) if qty1 >= 1 else None
+    oid2 = _bracket_order(broker, ticker, qty2, sl, tp2, live) if qty2 >= 1 else None
+    return oid1, oid2
 
 
 def main() -> None:
@@ -183,10 +198,12 @@ def main() -> None:
     ticker   = cand["ticker"]
     price    = cand["current_price"]
     qty      = cand["qty_shares"]
+    qty1     = cand["qty1"]          # tramo 1 → TP +2.5%
+    qty2     = cand["qty2"]          # tramo 2 → TP +5.0%
     notional = cand["notional"]
     sl       = cand["stop_loss"]
-    tp       = cand["take_profit"]
-    rr       = (tp - price) / (price - sl) if (price - sl) > 0 else 0.0
+    tp1      = cand["take_profit_1"]
+    tp2      = cand["take_profit_2"]
 
     regime, vix = "UNKNOWN", 0.0
     try:
@@ -198,23 +215,35 @@ def main() -> None:
         pass
 
     logger.info(
-        "DT ENTRADA: %s | score=%.3f | %d x $%.2f = $%.0f | SL $%.2f TP $%.2f R/R %.1f:1",
-        ticker, cand["dt_score"], qty, price, notional, sl, tp, rr,
+        "DT ENTRADA: %s | score=%.3f | %d shares x $%.2f = $%.0f",
+        ticker, cand["dt_score"], qty, price, notional,
+    )
+    logger.info(
+        "  Tramo1: %d shares SL $%.2f TP1 $%.2f (+2.5%%)",
+        qty1, sl, tp1,
+    )
+    logger.info(
+        "  Tramo2: %d shares SL $%.2f TP2 $%.2f (+5.0%%)",
+        qty2, sl, tp2,
     )
 
-    order_id = _bracket_order(broker, ticker, qty, sl, tp, live)
-    if order_id is None:
-        logger.error("DT: fallo bracket order %s. Saliendo.", ticker)
+    # Dual bracket: 2 ordenes independientes para el mismo ticker
+    oid1, oid2 = _dual_bracket(broker, ticker, qty1, qty2, sl, tp1, tp2, live)
+    if oid1 is None and oid2 is None:
+        logger.error("DT: fallaron ambos bracket orders para %s. Saliendo.", ticker)
         return
 
     if live:
         try:
             from alpha_agent.analytics.trade_db import log_trade
+            # Loguear como un solo trade con el TP2 (el objetivo principal)
             log_trade(
                 ticker=ticker, side="BUY",
                 qty=float(qty), price=price, notional=notional,
-                sleeve="DT", status="filled", order_id=order_id,
-                stop_loss=sl, take_profit=tp, regime=regime, vix=vix,
+                sleeve="DT", status="filled",
+                order_id=str(oid1) + "+" + str(oid2),
+                stop_loss=sl, take_profit=tp2,
+                regime=regime, vix=vix,
             )
         except Exception as e_db:
             logger.warning("trade_db DT: %s", e_db)
@@ -222,14 +251,18 @@ def main() -> None:
     from alpha_agent.notifications import send_whatsapp
     ts      = datetime.now().strftime("%H:%M")
     gap_pct = cand["gap_pct"]
+    orb_s   = cand.get("orb_score", 0.0)
     vol_r   = cand["vol_ratio"]
     rsi_v   = cand["rsi"]
+    rr2     = (tp2 - price) / (price - sl) if (price - sl) > 0 else 0.0
     msg = (
         "DAY TRADER | " + ts + " | " + regime + " | VIX " + str(round(vix, 1)) + "\n"
-        + "ENTRADA " + ticker + "\n"
-        + "  $" + str(round(price, 2)) + " x " + str(qty) + " = $" + str(round(notional)) + "\n"
-        + "  SL $" + str(sl) + " (-1.5%) | TP $" + str(tp) + " (+3.5%) | R/R " + str(round(rr, 1)) + ":1\n"
+        + "ENTRADA " + ticker + " (" + str(qty) + " shares = $" + str(round(notional)) + ")\n"
+        + "  Tramo1: " + str(qty1) + " shares -> TP $" + str(tp1) + " (+2.5%)\n"
+        + "  Tramo2: " + str(qty2) + " shares -> TP $" + str(tp2) + " (+5.0%) R/R " + str(round(rr2, 1)) + ":1\n"
+        + "  SL $" + str(sl) + " (-1.5%)\n"
         + "  gap=" + str(round(gap_pct * 100, 1)) + "% "
+        + "ORB=" + str(round(orb_s, 2)) + " "
         + "vol=" + str(round(vol_r, 1)) + "x "
         + "RSI=" + str(round(rsi_v)) + "\n"
         + "  Cierre EOD automatico 15:00 EDT"
