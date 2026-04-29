@@ -1,14 +1,14 @@
 {
-  "generated_at": "2026-04-28T16:01:35",
+  "generated_at": "2026-04-29T16:26:06",
   "horizon": "medium_long_70_30_high_conviction",
-  "capital_usd": 1599.76,
+  "capital_usd": 1608.26,
   "params": {
     "weight_long_term": 0.65,
     "weight_short_term": 0.25,
     "weight_options": 0.0,
     "risk_free_rate": 0.045,
-    "max_beta_lp": 1.8,
-    "min_sharpe_lp": 0.4,
+    "max_beta_lp": 2.0,
+    "min_sharpe_lp": 0.3,
     "top_n_long_term": 2,
     "top_n_short_term": 2,
     "top_n_bearish": 1,
@@ -20,153 +20,231 @@
     "regime": "bull",
     "regime_reason": "SPY +6.5% sobre SMA200 con pendiente positiva",
     "prices": {
-      "oil_wti": 99.84,
-      "oil_brent": 104.22,
-      "gold": 4598.1,
-      "dxy": 98.629,
-      "vix": 18.59,
-      "us10y": 4.362
+      "oil_wti": 106.63,
+      "oil_brent": 110.63,
+      "gold": 4572.0,
+      "dxy": 98.821,
+      "vix": 18.43,
+      "us10y": 4.398
     },
     "changes_1d": {
-      "oil_wti": 0.036,
-      "oil_brent": -0.0371,
-      "gold": -0.0165,
-      "dxy": 0.0015,
-      "vix": 0.0316,
-      "us10y": 0.006
+      "oil_wti": 0.067,
+      "oil_brent": -0.0057,
+      "gold": -0.0042,
+      "dxy": 0.002,
+      "vix": 0.0337,
+      "us10y": 0.0101
     },
     "changes_1m": {
-      "oil_wti": 0.002,
-      "oil_brent": -0.0742,
-      "gold": 0.0236,
-      "dxy": -0.0152,
-      "vix": -0.4013,
-      "us10y": -0.0176
+      "oil_wti": 0.0365,
+      "oil_brent": -0.0191,
+      "gold": 0.0102,
+      "dxy": -0.0168,
+      "vix": -0.3979,
+      "us10y": 0.0129
     },
-    "spy_vs_sma200": 0.0653
+    "spy_vs_sma200": 0.065
   },
   "long_term": [
     {
       "ticker": "PBR",
       "side": "BUY",
       "horizon": "LP",
-      "price": 21.33,
-      "stop_loss": 19.88,
-      "take_profit": 24.32,
-      "weight_target": 0.6561,
+      "price": 21.76,
+      "stop_loss": 20.36,
+      "take_profit": 24.81,
+      "weight_target": 0.837,
       "thesis": {
         "ticker": "PBR",
         "horizon": "LP",
         "conviction": "ALTA",
         "quant": {
-          "mu_anual": 0.9670722775570711,
-          "sigma_anual": 0.3131787557911944,
-          "beta": 0.5038500807394027,
-          "alpha_jensen": 0.8465483160539797,
-          "sharpe": 2.944236352263447,
-          "expected_return_capm": 0.12052396150309137
+          "mu_anual": 1.0120005304479829,
+          "sigma_anual": 0.3132191578145615,
+          "beta": 0.5041206960401768,
+          "alpha_jensen": 0.8918664023980927,
+          "sharpe": 3.0872968856537395,
+          "expected_return_capm": 0.1201341280498902
         },
         "technical": {
-          "price": 21.33,
-          "rsi": 60.58,
-          "atr": 0.7294,
-          "stop_loss_atr": 19.88,
-          "ret_1m": 0.03124019586557436,
-          "ret_3m": 0.3953255771613704,
-          "dist_52w_high": -0.023208577145124587
+          "price": 21.76,
+          "rsi": 58.95,
+          "atr": 0.7023,
+          "stop_loss_atr": 20.36,
+          "ret_1m": 0.05506643487702978,
+          "ret_3m": 0.4106075359542658,
+          "dist_52w_high": -0.0035216482515411096
         },
         "fundamental": {
-          "sentiment_score": 0.333,
+          "sentiment_score": 0.5,
           "n_headlines": 6,
-          "positive": 3,
+          "positive": 4,
           "negative": 1,
           "sample_titles": [
-            "Sector Update: Energy Stocks Higher Pre-Bell Tuesday",
-            "Investment Advisor Exits $47.5 Million MercadoLibre Position, According to Latest SEC Filing",
-            "Petrobras Stock Outperforms Industry in the Past Year: Time to Buy?"
+            "Petrobras Inks a Deal to Buy Argonauta Field Stake in Campos Basin",
+            "Petrobras (PBR) Advances While Market Declines: Some Information for Investors",
+            "Sector Update: Energy Stocks Rise Tuesday Afternoon"
           ]
         },
         "macro": {
           "regime": "bull",
           "regime_reason": "SPY +6.5% sobre SMA200 con pendiente positiva",
-          "vix": 18.59,
-          "oil_wti": 99.84,
-          "dxy_1m": -0.0152,
-          "gold_1m": 0.0236
+          "vix": 18.43,
+          "oil_wti": 106.63,
+          "dxy_1m": -0.0168,
+          "gold_1m": 0.0102
         },
         "risk": {
-          "dollars_allocated": 682.27,
-          "weight_of_total_portfolio": 0.4265,
-          "max_loss_usd_if_stop_hit": 46.38,
-          "max_loss_pct_of_capital": 0.029,
-          "stop_loss": 19.88
+          "dollars_allocated": 875.02,
+          "weight_of_total_portfolio": 0.5441,
+          "max_loss_usd_if_stop_hit": 56.3,
+          "max_loss_pct_of_capital": 0.035,
+          "stop_loss": 20.36
         },
-        "thesis_text": "PBR — horizonte LARGO PLAZO. Convicción ALTA. La tesis CAPM/Markowitz sostiene un Sharpe de 2.94 con beta 0.50 (retorno esperado CAPM +12.1%, alfa de Jensen +84.7%). Cumple el filtro de calidad (β razonable + Sharpe elevado) y aparece en el óptimo de la frontera eficiente. El flujo de noticias es positivo (sentiment +0.33 sobre 6 titulares). Régimen de mercado BULL (SPY +6.5% sobre SMA200 con pendiente positiva) — viento de cola para posiciones largas. Contexto sectorial: WTI +0.2% en el último mes.",
+        "thesis_text": "PBR — horizonte LARGO PLAZO. Convicción ALTA. La tesis CAPM/Markowitz sostiene un Sharpe de 3.09 con beta 0.50 (retorno esperado CAPM +12.0%, alfa de Jensen +89.2%). Cumple el filtro de calidad (β razonable + Sharpe elevado) y aparece en el óptimo de la frontera eficiente. El flujo de noticias es positivo (sentiment +0.50 sobre 6 titulares). Régimen de mercado BULL (SPY +6.5% sobre SMA200 con pendiente positiva) — viento de cola para posiciones largas. Contexto sectorial: WTI +3.6% en el último mes.",
         "key_risks": [
           "Sin riesgos macro mayores detectados; el riesgo principal es idiosincrático del activo."
-        ]
+        ],
+        "swarm": {
+          "go": false,
+          "size_factor": 0.0,
+          "reasoning": "Los cuatro especialistas coinciden unánimemente en NO-GO con confianza promedio del 40%, lo que refleja un consenso de alta desconfianza en la robustez del modelo. El EV positivo (+393.67) está contaminado por métricas irreales (Sharpe 3.09, Alfa Jensen +89.2%/año) que violan los límites del realismo financiero y sugieren data snooping, sesgo de supervivencia o error de modelado. El RiskAuditorLP emite NO-GO con argumento sólido sobre inconsistencia estructural del modelo CAPM, activando la regla dura de veto independientemente del EV reportado.",
+          "go_count": 0,
+          "ev": 393.67,
+          "ev_positive": true,
+          "opinions": [
+            {
+              "agent": "QuantAnalyst",
+              "stance": "NO-GO",
+              "confidence": 40,
+              "reasoning": "**ANÁLISIS CUANTITATIVO PBR**\n\n**[PASO 1: CALIDAD SHARPE & ALFA]**\n- Sharpe 3.09 es excelente (>1.0 es bueno, >2.0 es muy bueno)\n- Alfa Jensen +89.2%/año es extraordinariamente alto → sugiere misprici",
+              "cot": "**ANÁLISIS CUANTITATIVO PBR**\n\n**[PASO 1: CALIDAD SHARPE & ALFA]**\n- Sharpe 3.09 es excelente (>1.0 es bueno, >2.0 es muy bueno)\n- Alfa Jensen +89.2%/año es extraordinariamente alto → sugiere mispricing severo O data snooping/sesgo de supervivencia\n- ⚠️ Red flag: Alfa de esta magnitud raramente pers"
+            },
+            {
+              "agent": "MacroLP",
+              "stance": "NO-GO",
+              "confidence": 40,
+              "reasoning": "# PBR Macro Strategic Assessment\n\n**Paso 1: Régimen Macro vs Sector**\n- BULL régimen + VIX 18.4 (neutral-elevated) = risk-on pero con cautelación\n- Energy sector típicamente se beneficia en bull con i",
+              "cot": "# PBR Macro Strategic Assessment\n\n**Paso 1: Régimen Macro vs Sector**\n- BULL régimen + VIX 18.4 (neutral-elevated) = risk-on pero con cautelación\n- Energy sector típicamente se beneficia en bull con inflación/geopolítica\n- WTI $106.6 es nivel sólido pero NO en ATH → demanda global moderada, no exube"
+            },
+            {
+              "agent": "SentimentLP",
+              "stance": "NO-GO",
+              "confidence": 40,
+              "reasoning": "# Análisis PBR - Sentiment + Fundamental\n\n## Paso 1: Calidad y Dirección del Flujo de Noticias\n- **Argonauta Field acquisition**: catalizador positivo concreto (expansión de activos en Campos Basin, c",
+              "cot": "# Análisis PBR - Sentiment + Fundamental\n\n## Paso 1: Calidad y Dirección del Flujo de Noticias\n- **Argonauta Field acquisition**: catalizador positivo concreto (expansión de activos en Campos Basin, cuenca madura pero productiva)\n- **Outperformance vs. mercado**: señal de fortaleza relativa durante "
+            },
+            {
+              "agent": "RiskAuditorLP",
+              "stance": "NO-GO",
+              "confidence": 40,
+              "reasoning": "# RISK AUDIT: PBR @ 50% | $804\n\n## PASO 1: Inconsistencia Sharpe/Tamaño\n- **Sharpe 3.09** es **anormalmente alto** (típico <2.0 en equity long-only)\n- **Alfa +89.2%** viola realismo: CAPM no genera al",
+              "cot": "# RISK AUDIT: PBR @ 50% | $804\n\n## PASO 1: Inconsistencia Sharpe/Tamaño\n- **Sharpe 3.09** es **anormalmente alto** (típico <2.0 en equity long-only)\n- **Alfa +89.2%** viola realismo: CAPM no genera alfas sostenidos de este tamaño\n- **Red flag crítica**: modelo CAPM/Markowitz teórico ≠ realidad; asum"
+            }
+          ],
+          "debate_id": "PBR-LP-1777479998"
+        }
       },
       "option": null
     },
     {
-      "ticker": "RIO",
+      "ticker": "SQM",
       "side": "BUY",
       "horizon": "LP",
-      "price": 98.49,
-      "stop_loss": 94.83,
-      "take_profit": 112.28,
-      "weight_target": 0.3439,
+      "price": 91.24,
+      "stop_loss": 82.87,
+      "take_profit": 107.66,
+      "weight_target": 0.163,
       "thesis": {
-        "ticker": "RIO",
+        "ticker": "SQM",
         "horizon": "LP",
         "conviction": "ALTA",
         "quant": {
-          "mu_anual": 0.6211370508174424,
-          "sigma_anual": 0.2548857091026535,
-          "beta": 0.6878357774928343,
-          "alpha_jensen": 0.473034789320166,
-          "sharpe": 2.2603740823515808,
-          "expected_return_capm": 0.1481022614972764
+          "mu_anual": 0.9875918780180706,
+          "sigma_anual": 0.4676418883343824,
+          "beta": 1.0252442099332284,
+          "alpha_jensen": 0.7897895226365081,
+          "sharpe": 2.015627559317527,
+          "expected_return_capm": 0.19780235538156238
         },
         "technical": {
-          "price": 98.49,
-          "rsi": 50.14,
-          "atr": 1.8293,
-          "stop_loss_atr": 94.83,
-          "ret_1m": 0.10887185546239997,
-          "ret_3m": 0.08433332465370369,
-          "dist_52w_high": -0.01785002929115409
+          "price": 91.24,
+          "rsi": 62.86,
+          "atr": 4.1843,
+          "stop_loss_atr": 82.87,
+          "ret_1m": 0.12719295599722802,
+          "ret_3m": 0.11752818829540224,
+          "dist_52w_high": -0.04275518888495411
         },
         "fundamental": {
-          "sentiment_score": 0.333,
+          "sentiment_score": 0.0,
           "n_headlines": 6,
           "positive": 2,
-          "negative": 0,
+          "negative": 2,
           "sample_titles": [
-            "JPMorgan Lifts PT on Rio Tinto Group (RIO) Following Q1 Results",
-            "Rio Tinto Balances Cyclone Relief With Copper And Iron Ore Progress",
-            "Analysts Express Mixed Views on Rio Tinto Group (RIO) Following Q1 Production Results"
+            "A Look At SQM’s Valuation After Rothschild Redburn’s Cautious Lithium Outlook",
+            "Is lithium’s downturn not over yet?",
+            "Mining Stock Albemarle Breaks Out Amid Surging Lithium Prices"
           ]
         },
         "macro": {
           "regime": "bull",
           "regime_reason": "SPY +6.5% sobre SMA200 con pendiente positiva",
-          "vix": 18.59,
-          "oil_wti": 99.84,
-          "dxy_1m": -0.0152,
-          "gold_1m": 0.0236
+          "vix": 18.43,
+          "oil_wti": 106.63,
+          "dxy_1m": -0.0168,
+          "gold_1m": 0.0102
         },
         "risk": {
-          "dollars_allocated": 357.58,
-          "weight_of_total_portfolio": 0.2235,
-          "max_loss_usd_if_stop_hit": 13.29,
-          "max_loss_pct_of_capital": 0.0083,
-          "stop_loss": 94.83
+          "dollars_allocated": 170.35,
+          "weight_of_total_portfolio": 0.1059,
+          "max_loss_usd_if_stop_hit": 15.63,
+          "max_loss_pct_of_capital": 0.0097,
+          "stop_loss": 82.87
         },
-        "thesis_text": "RIO — horizonte LARGO PLAZO. Convicción ALTA. La tesis CAPM/Markowitz sostiene un Sharpe de 2.26 con beta 0.69 (retorno esperado CAPM +14.8%, alfa de Jensen +47.3%). Cumple el filtro de calidad (β razonable + Sharpe elevado) y aparece en el óptimo de la frontera eficiente. El flujo de noticias es positivo (sentiment +0.33 sobre 6 titulares). Régimen de mercado BULL (SPY +6.5% sobre SMA200 con pendiente positiva) — viento de cola para posiciones largas. Contexto sectorial: oro +2.4% en el último mes.",
+        "thesis_text": "SQM — horizonte LARGO PLAZO. Convicción ALTA. La tesis CAPM/Markowitz sostiene un Sharpe de 2.02 con beta 1.03 (retorno esperado CAPM +19.8%, alfa de Jensen +79.0%). Cumple el filtro de calidad (β razonable + Sharpe elevado) y aparece en el óptimo de la frontera eficiente. Flujo de noticias neutral (6 titulares). Régimen de mercado BULL (SPY +6.5% sobre SMA200 con pendiente positiva) — viento de cola para posiciones largas.",
         "key_risks": [
           "Sin riesgos macro mayores detectados; el riesgo principal es idiosincrático del activo."
-        ]
+        ],
+        "swarm": {
+          "go": false,
+          "size_factor": 0.5,
+          "reasoning": "Los cuatro especialistas emitieron NO-GO con confianza promedio de apenas 46%, reflejando señales contradictorias: alfa de Jensen anómalamente alto que sugiere errores metodológicos, outlook cauteloso en litio (Rothschild Redburn), y concentración extrema del 50% de cartera en una sola posición. Aunque el EV es positivo (+366.12), la regla dura de RiskAuditor NO-GO con argumento sólido (concentración idiosincrática + inconsistencias cuantitativas) impone NO-GO. La decisión final es NO-GO por unanimidad de especialistas y argumento de riesgo estructural validado.",
+          "go_count": 0,
+          "ev": 366.12,
+          "ev_positive": true,
+          "opinions": [
+            {
+              "agent": "QuantAnalyst",
+              "stance": "NO-GO",
+              "confidence": 40,
+              "reasoning": "**ANÁLISIS CUANTITATIVO SQM**\n\n**[Paso 1: Sharpe y Alfa de Jensen]**\n- Sharpe de 2.02 está en rango superior (benchmarks sólidos ~0.4-0.8)\n- Alfa Jensen de +79.0%/año es extraordinariamente alto → sug",
+              "cot": "**ANÁLISIS CUANTITATIVO SQM**\n\n**[Paso 1: Sharpe y Alfa de Jensen]**\n- Sharpe de 2.02 está en rango superior (benchmarks sólidos ~0.4-0.8)\n- Alfa Jensen de +79.0%/año es extraordinariamente alto → sugiere mispricing severo O sesgo en cálculo\n- Red flag: alfa tan extremo requiere validación de metodo"
+            },
+            {
+              "agent": "MacroLP",
+              "stance": "NO-GO",
+              "confidence": 40,
+              "reasoning": "# SQM Macro Strategic Assessment\n\n## Paso 1: Régimen Macro vs. Sector\n**BULL régimen + Materials sector = favorable base**\n- Commodities broadly bid in bull cycles\n- SQM (lithium/potash producer) bene",
+              "cot": "# SQM Macro Strategic Assessment\n\n## Paso 1: Régimen Macro vs. Sector\n**BULL régimen + Materials sector = favorable base**\n- Commodities broadly bid in bull cycles\n- SQM (lithium/potash producer) benefits from risk-on appetite\n- Energy prices elevated ($106.6 WTI) → support for commodity complexes\n-"
+            },
+            {
+              "agent": "SentimentLP",
+              "stance": "NO-GO",
+              "confidence": 65,
+              "reasoning": "Cautious outlook pesa más que alza de peers; sin earnings; neutral sentiment mask commodity uncertainty**",
+              "cot": "# SQM - Análisis Sentiment & Fundamental\n\n**[Paso 1: Calidad y dirección del flujo de noticias]**\nMixed signals: Rothschild Redburn mantiene outlook cauteloso en litio (headwind), pero Albemarle rompe al alza con precios de litio en alza (contradictorio). El titular sobre \"valuación después de outlo"
+            },
+            {
+              "agent": "RiskAuditorLP",
+              "stance": "NO-GO",
+              "confidence": 40,
+              "reasoning": "# RISK AUDIT: SQM Position\n\n## PASO 1: Inconsistencia Sharpe/Alfa vs Tamaño\n\n**ALERTA CRÍTICA:**\n- Sharpe 2.02 + alfa +79% = perfil *teoricamente* premium\n- PERO: 50% de cartera en una acción = **conc",
+              "cot": "# RISK AUDIT: SQM Position\n\n## PASO 1: Inconsistencia Sharpe/Alfa vs Tamaño\n\n**ALERTA CRÍTICA:**\n- Sharpe 2.02 + alfa +79% = perfil *teoricamente* premium\n- PERO: 50% de cartera en una acción = **concentración extrema**\n- Con vol anual 30%, exposición idiosincrática domina completamente el riesgo si"
+            }
+          ],
+          "debate_id": "SQM-LP-1777480015"
+        }
       },
       "option": null
     }
@@ -176,61 +254,100 @@
       "ticker": "TSM",
       "side": "BUY",
       "horizon": "CP",
-      "price": 388.16,
-      "stop_loss": 362.39,
-      "take_profit": 452.59,
-      "weight_target": 0.5069,
+      "price": 391.27,
+      "stop_loss": 365.46,
+      "take_profit": 455.79,
+      "weight_target": 0.423,
       "thesis": {
         "ticker": "TSM",
         "horizon": "CP",
-        "conviction": "ALTA",
+        "conviction": "MEDIA",
         "quant": {
-          "mu_anual": 0.7489962633861216,
-          "sigma_anual": 0.4116822843325699,
-          "beta": 1.6031591660182742,
-          "alpha_jensen": 0.4636927767616654,
-          "sharpe": 1.7100475055113402,
-          "expected_return_capm": 0.28530348662445615
+          "mu_anual": 0.7622277846563278,
+          "sigma_anual": 0.4107446803976654,
+          "beta": 1.6008938450958237,
+          "alpha_jensen": 0.4786306310450731,
+          "sharpe": 1.7461645126163012,
+          "expected_return_capm": 0.2835971536112547
         },
         "technical": {
-          "price": 388.16,
-          "rsi": 60.12,
-          "atr": 12.885,
-          "stop_loss_atr": 362.39,
-          "ret_1m": 0.22641391362435814,
-          "ret_3m": 0.13717141281303502,
-          "dist_52w_high": -0.04153293216436449
+          "price": 391.27,
+          "rsi": 62.11,
+          "atr": 12.9005,
+          "stop_loss_atr": 365.46,
+          "ret_1m": 0.15776029610402653,
+          "ret_3m": 0.15555186023392298,
+          "dist_52w_high": -0.03386563389080277
         },
         "fundamental": {
-          "sentiment_score": 0.5,
+          "sentiment_score": 0.0,
           "n_headlines": 6,
-          "positive": 4,
-          "negative": 1,
+          "positive": 2,
+          "negative": 2,
           "sample_titles": [
-            "Brace for eye-popping AI spending plans when 'Magnificent 7' earnings roll in",
-            "Demand Surge Fuels Taiwan Semiconductor Manufacturing Company’s (TSM) Rally",
-            "4 Best-Performing ETF Areas of Last Week"
+            "Why OpenAI whiffs should still worry Oracle and CoreWeave investors",
+            "TSMC Just Broke Out. Yet the Stock Still Looks Strikingly Inexpensive",
+            "Applied Materials At 42x: Boom Or Bubble?"
           ]
         },
         "macro": {
           "regime": "bull",
           "regime_reason": "SPY +6.5% sobre SMA200 con pendiente positiva",
-          "vix": 18.59,
-          "oil_wti": 99.84,
-          "dxy_1m": -0.0152,
-          "gold_1m": 0.0236
+          "vix": 18.43,
+          "oil_wti": 106.63,
+          "dxy_1m": -0.0168,
+          "gold_1m": 0.0102
         },
         "risk": {
-          "dollars_allocated": 202.71,
-          "weight_of_total_portfolio": 0.1267,
-          "max_loss_usd_if_stop_hit": 13.46,
-          "max_loss_pct_of_capital": 0.0084,
-          "stop_loss": 362.39
+          "dollars_allocated": 210.57,
+          "weight_of_total_portfolio": 0.1309,
+          "max_loss_usd_if_stop_hit": 13.89,
+          "max_loss_pct_of_capital": 0.0086,
+          "stop_loss": 365.46
         },
-        "thesis_text": "TSM — horizonte CORTO PLAZO. Convicción ALTA. Setup técnico: RSI 60, momentum 1m +22.6%, momentum 3m +13.7%. Stop loss ATR en $362.39 (riesgo ≈ 6.6% desde entrada). Sentiment de noticias refuerza el setup.",
+        "thesis_text": "TSM — horizonte CORTO PLAZO. Convicción MEDIA. Setup técnico: RSI 62, momentum 1m +15.8%, momentum 3m +15.6%. Stop loss ATR en $365.46 (riesgo ≈ 6.6% desde entrada).",
         "key_risks": [
           "Sin riesgos macro mayores detectados; el riesgo principal es idiosincrático del activo."
-        ]
+        ],
+        "swarm": {
+          "go": false,
+          "size_factor": 0.5,
+          "reasoning": "Fallback: 0/4 GO",
+          "go_count": 0,
+          "ev": 272.62,
+          "ev_positive": true,
+          "opinions": [
+            {
+              "agent": "TechnicalCP",
+              "stance": "NO-GO",
+              "confidence": 40,
+              "reasoning": "**PASO 1: RSI y señal**\nRSI 62 está en zona neutral-alcista (40-70), no sobrecomprado. Indica momentum positivo sostenido sin exceso. NO es rebote desde sobreventa, sino confirmación de tendencia alci",
+              "cot": "**PASO 1: RSI y señal**\nRSI 62 está en zona neutral-alcista (40-70), no sobrecomprado. Indica momentum positivo sostenido sin exceso. NO es rebote desde sobreventa, sino confirmación de tendencia alcista en marcha.\n\n**PASO 2: Momentum coherencia**\nMomentum 1m (+15.8%) = momentum 3m (+15.6%) → señal "
+            },
+            {
+              "agent": "MacroLP",
+              "stance": "NO-GO",
+              "confidence": 40,
+              "reasoning": "# TSM Macro Strategic Assessment\n\n## [Paso 1: Régimen Macro vs Sector Alignment]\n**BULL regime + Tech sector = FAVORABLE**\n- Rising risk appetite (VIX 18.4 = moderate, non-stressed)\n- Bull regime typi",
+              "cot": "# TSM Macro Strategic Assessment\n\n## [Paso 1: Régimen Macro vs Sector Alignment]\n**BULL regime + Tech sector = FAVORABLE**\n- Rising risk appetite (VIX 18.4 = moderate, non-stressed)\n- Bull regime typically supports semiconductor capex cycles and AI demand tailwinds\n- TSM as foundry leader benefits f"
+            },
+            {
+              "agent": "SentimentLP",
+              "stance": "NO-GO",
+              "confidence": 40,
+              "reasoning": "**ANÁLISIS TSM - CONTEXTO NOTICIOSO & FUNDAMENTAL**\n\n**[Paso 1: Calidad y dirección del flujo de noticias]**\nMixto-positivo con matices: \n- Titular 1 (OpenAI/Oracle/CoreWeave) → riesgo sistémico en de",
+              "cot": "**ANÁLISIS TSM - CONTEXTO NOTICIOSO & FUNDAMENTAL**\n\n**[Paso 1: Calidad y dirección del flujo de noticias]**\nMixto-positivo con matices: \n- Titular 1 (OpenAI/Oracle/CoreWeave) → riesgo sistémico en demanda AI, pero NO directamente sobre TSM\n- Titular 2 → BULLISH explícito: breakout técnico + valorac"
+            },
+            {
+              "agent": "RiskAuditorLP",
+              "stance": "NO-GO",
+              "confidence": 40,
+              "reasoning": "# RISK AUDIT: TSM Position\n\n**[PASO 1: Inconsistencia Sharpe/Alfa vs Tamaño]**\n- Sharpe 1.75 + Alfa +47.9% son métricas fuertemente positivas\n- **PERO**: Convicción MEDIA contradice un peso del 50% (p",
+              "cot": "# RISK AUDIT: TSM Position\n\n**[PASO 1: Inconsistencia Sharpe/Alfa vs Tamaño]**\n- Sharpe 1.75 + Alfa +47.9% son métricas fuertemente positivas\n- **PERO**: Convicción MEDIA contradice un peso del 50% (posición dominante)\n- Para 50% de cartera, se espera convicción ALTA (≥80%), no MEDIA\n- **Bandera roj"
+            }
+          ],
+          "debate_id": "TSM-CP-1777480033"
+        }
       },
       "option": null
     },
@@ -238,30 +355,30 @@
       "ticker": "SLB",
       "side": "BUY",
       "horizon": "CP",
-      "price": 56.19,
-      "stop_loss": 52.71,
-      "take_profit": 64.89,
-      "weight_target": 0.4931,
+      "price": 55.66,
+      "stop_loss": 52.18,
+      "take_profit": 64.36,
+      "weight_target": 0.577,
       "thesis": {
         "ticker": "SLB",
         "horizon": "CP",
         "conviction": "ALTA",
         "quant": {
-          "mu_anual": 0.7298900798387363,
-          "sigma_anual": 0.3450740048255178,
-          "beta": 1.0195214052897226,
-          "alpha_jensen": 0.5320702266560531,
-          "sharpe": 1.9847628921947977,
-          "expected_return_capm": 0.19781985318268325
+          "mu_anual": 0.6954102020153782,
+          "sigma_anual": 0.3445429261721932,
+          "beta": 1.0218315127040525,
+          "alpha_jensen": 0.4981164748901569,
+          "sharpe": 1.8877479483944501,
+          "expected_return_capm": 0.19729372712522125
         },
         "technical": {
-          "price": 56.19,
-          "rsi": 70.44,
-          "atr": 1.745,
-          "stop_loss_atr": 52.71,
-          "ret_1m": 0.090529808384191,
-          "ret_3m": 0.1566684121300519,
-          "dist_52w_high": 0.0
+          "price": 55.66,
+          "rsi": 66.67,
+          "atr": 1.7386,
+          "stop_loss_atr": 52.18,
+          "ret_1m": 0.0830901052437798,
+          "ret_3m": 0.15558783179837699,
+          "dist_52w_high": -0.008726654766713748
         },
         "fundamental": {
           "sentiment_score": 0.5,
@@ -269,30 +386,69 @@
           "positive": 3,
           "negative": 0,
           "sample_titles": [
-            "SLB's Production Exposure, Data Center Solutions, Digital Segment to Support Earnings in 2026, Morgan Stanley Says",
-            "Why NESR (NESR) Stock Is Up Today",
-            "SLB (SLB) Stock Trades Up, Here Is Why"
+            "Goldman Just Raised Its Brent Forecast to $90: 5 Energy Stocks Built for Higher Oil",
+            "SLB Shot Up Following Q1 Report. Here is Why",
+            "SLB's Production Exposure, Data Center Solutions, Digital Segment to Support Earnings in 2026, Morgan Stanley Says"
           ]
         },
         "macro": {
           "regime": "bull",
           "regime_reason": "SPY +6.5% sobre SMA200 con pendiente positiva",
-          "vix": 18.59,
-          "oil_wti": 99.84,
-          "dxy_1m": -0.0152,
-          "gold_1m": 0.0236
+          "vix": 18.43,
+          "oil_wti": 106.63,
+          "dxy_1m": -0.0168,
+          "gold_1m": 0.0102
         },
         "risk": {
-          "dollars_allocated": 197.23,
-          "weight_of_total_portfolio": 0.1233,
-          "max_loss_usd_if_stop_hit": 12.21,
-          "max_loss_pct_of_capital": 0.0076,
-          "stop_loss": 52.71
+          "dollars_allocated": 191.5,
+          "weight_of_total_portfolio": 0.1191,
+          "max_loss_usd_if_stop_hit": 11.97,
+          "max_loss_pct_of_capital": 0.0074,
+          "stop_loss": 52.18
         },
-        "thesis_text": "SLB — horizonte CORTO PLAZO. Convicción ALTA. Setup técnico: RSI 70, momentum 1m +9.1%, momentum 3m +15.7%. ⚠️ RSI en sobrecompra → riesgo de reversión a la media. Stop loss ATR en $52.71 (riesgo ≈ 6.2% desde entrada). Sentiment de noticias refuerza el setup.",
+        "thesis_text": "SLB — horizonte CORTO PLAZO. Convicción ALTA. Setup técnico: RSI 67, momentum 1m +8.3%, momentum 3m +15.6%. Stop loss ATR en $52.18 (riesgo ≈ 6.3% desde entrada). Sentiment de noticias refuerza el setup.",
         "key_risks": [
           "Sin riesgos macro mayores detectados; el riesgo principal es idiosincrático del activo."
-        ]
+        ],
+        "swarm": {
+          "go": false,
+          "size_factor": 0.5,
+          "reasoning": "El consenso unánime de los cuatro especialistas es NO-GO, con cero votos GO y confianza promedio baja de 56%, lo que refleja resistencia estructural al entry actual. A pesar del EV positivo (+250.26), la convergencia de señales técnicas (RSI 67 cerca de máximos 52w con ATR comprimido), riesgo macro de recesión limitando upside energético, y las inconsistencias métricas señaladas por RiskAuditor (MDD subestimado, Sharpe teórico no observado) invalidan la tesis de entrada inmediata. La regla dura de EV negativo no aplica, pero con 0 GO y argumento sólido del RiskAuditor sobre subestimación de riesgo, la decisión correcta es NO-GO.",
+          "go_count": 0,
+          "ev": 250.26,
+          "ev_positive": true,
+          "opinions": [
+            {
+              "agent": "TechnicalCP",
+              "stance": "NO-GO",
+              "confidence": 72,
+              "reasoning": "RSI+momentum coherent in bull, but proximity to 52w high + ATR tightness limits margin; wait for sub-$54.5 entry or fresh breakout catalyst**",
+              "cot": "# SLB – Short-term Momentum Analysis\n\n**[Paso 1: RSI Position & Signal]**\nRSI at 67 indicates upper-zone momentum without overbought extremes (<70). This is a healthy bull signal, not a reversal warning. No divergence risk flagged yet.\n\n**[Paso 2: 1m/3m Momentum Coherence]**\n+8.3% (1m) nested within"
+            },
+            {
+              "agent": "MacroLP",
+              "stance": "NO-GO",
+              "confidence": 72,
+              "reasoning": "Régimen BULL + WTI $106+ sostiene fundamentales SLB en LP, pero riesgo recesión limita upside; posición",
+              "cot": "# SLB Macro Strategic Analysis\n\n**[Paso 1: Régimen Macro vs Sector]**\n- BULL régimen + WTI $106.6 (elevated, above $100 floor) = directamente favorable para oilfield services\n- VIX 18.4 (neutral-to-elevated) no genera pánico de deleveraging en energy\n- DXY 98.8 moderado, no sofoca demanda de commodi"
+            },
+            {
+              "agent": "SentimentLP",
+              "stance": "NO-GO",
+              "confidence": 40,
+              "reasoning": "**SLB ANALYSIS**\n\n[PASO 1: CALIDAD Y DIRECCIÓN DEL FLUJO]\nFlujo noticioso **fuertemente positivo**: Goldman upgrade de Brent a $90 proporciona tailwind macro para upstream operators; SLB recibió boost",
+              "cot": "**SLB ANALYSIS**\n\n[PASO 1: CALIDAD Y DIRECCIÓN DEL FLUJO]\nFlujo noticioso **fuertemente positivo**: Goldman upgrade de Brent a $90 proporciona tailwind macro para upstream operators; SLB recibió boost post-earnings; cobertura sell-side (MS) resalta catalizadores específicos (producción, data centers"
+            },
+            {
+              "agent": "RiskAuditorLP",
+              "stance": "NO-GO",
+              "confidence": 40,
+              "reasoning": "**[PASO 1: INCONSISTENCIA SHARPE/ALFA vs TAMAÑO]**\n- Sharpe 1.89 + Alfa +49.8% son *métricas teóricas* (CAPM), no observadas\n- El riesgo declarado (30% vol anual) genera MDD de apenas $83 en posición ",
+              "cot": "**[PASO 1: INCONSISTENCIA SHARPE/ALFA vs TAMAÑO]**\n- Sharpe 1.89 + Alfa +49.8% son *métricas teóricas* (CAPM), no observadas\n- El riesgo declarado (30% vol anual) genera MDD de apenas $83 en posición de $804 → **implícitamente subestimado**\n- RSI 67 = sobreventa técnica avanzada → riesgo de reversió"
+            }
+          ],
+          "debate_id": "SLB-CP-1777480056"
+        }
       },
       "option": null
     }
@@ -300,145 +456,147 @@
   "options_book": [],
   "hedge_book": [],
   "portfolio": {
-    "PBR": 0.3522,
-    "GOOGL": 0.2142,
-    "RIO": 0.1846,
-    "TSM": 0.0571,
-    "SQM": 0.0451,
-    "AAPL": 0.0101,
-    "SPY": 0.0289,
-    "SHEL": 0.0306,
-    "VALE": 0.0295,
-    "ASML": 0.0109,
-    "CVX": 0.0217
+    "PBR": 0.2679,
+    "GOOGL": 0.2051,
+    "TTE": 0.2048,
+    "SQM": 0.0522,
+    "RIO": 0.0602,
+    "TSM": 0.0357,
+    "CVX": 0.0153,
+    "VALE": 0.0135,
+    "AMZN": 0.0114,
+    "SHEL": 0.0193,
+    "QQQ": 0.0164,
+    "XOM": 0.0183,
+    "SPY": 0.0176
   },
   "radar": {
     "entries": [
       {
-        "ticker": "TSM",
-        "sector": "Tech",
-        "price": 388.17,
-        "pct_1d": -0.0415,
-        "pct_1w": 0.0546,
-        "pct_1m": 0.188,
-        "action": "BUY_CP",
-        "headline": "Brace for eye-popping AI spending plans when 'Magnificent 7' earnings ro...",
-        "sentiment": 0.5,
-        "n_headlines": 6
-      },
-      {
         "ticker": "SLB",
         "sector": "Energy",
-        "price": 56.19,
-        "pct_1d": 0.0175,
-        "pct_1w": 0.0649,
-        "pct_1m": 0.0504,
+        "price": 55.65,
+        "pct_1d": 0.0001,
+        "pct_1w": 0.024,
+        "pct_1m": 0.0801,
         "action": "BUY_CP",
-        "headline": "SLB Q1 Earnings Call Highlights",
+        "headline": "Investors Heavily Search SLB Limited (SLB): Here is What You Need to Know",
         "sentiment": 0.5,
         "n_headlines": 6
       },
       {
         "ticker": "PBR",
         "sector": "Energy",
-        "price": 21.33,
-        "pct_1d": 0.0178,
-        "pct_1w": 0.0146,
-        "pct_1m": 0.0332,
+        "price": 21.76,
+        "pct_1d": 0.0252,
+        "pct_1w": 0.0336,
+        "pct_1m": 0.052,
         "action": "BUY_LP",
-        "headline": "Sector Update: Energy Stocks Higher Pre-Bell Tuesday",
-        "sentiment": 0.333,
-        "n_headlines": 6
-      },
-      {
-        "ticker": "RIO",
-        "sector": "Materials",
-        "price": 98.49,
-        "pct_1d": -0.0146,
-        "pct_1w": 0.0079,
-        "pct_1m": 0.1368,
-        "action": "BUY_LP",
-        "headline": "Analysts Express Mixed Views on Rio Tinto Group (RIO) Following Q1 Produ...",
+        "headline": "Petrobras Inks a Deal to Buy Argonauta Field Stake in Campos Basin",
         "sentiment": 0.167,
         "n_headlines": 6
       },
       {
-        "ticker": "LAC",
+        "ticker": "SQM",
         "sector": "Materials",
-        "price": 4.84,
-        "pct_1d": -0.0776,
-        "pct_1w": 0.0216,
-        "pct_1m": 0.2417,
-        "action": "—",
-        "headline": "Here is Why Lithium Americas (LAC) is One of the Top EV Penny Stocks to ...",
-        "sentiment": 0.833,
+        "price": 91.24,
+        "pct_1d": 0.0203,
+        "pct_1w": 0.0493,
+        "pct_1m": 0.1275,
+        "action": "BUY_LP",
+        "headline": "A Look At SQM’s Valuation After Rothschild Redburn’s Cautious Lithium Ou...",
+        "sentiment": 0.0,
         "n_headlines": 6
       },
       {
-        "ticker": "AMD",
+        "ticker": "TSM",
         "sector": "Tech",
-        "price": 319.63,
-        "pct_1d": -0.0448,
-        "pct_1w": 0.1235,
-        "pct_1m": 0.5824,
-        "action": "—",
-        "headline": "Tech stocks today: Oracle, AMD, and other AI-driven names sink, with Big...",
-        "sentiment": -0.833,
+        "price": 391.24,
+        "pct_1d": -0.0028,
+        "pct_1w": 0.0098,
+        "pct_1m": 0.2361,
+        "action": "BUY_CP",
+        "headline": "Why OpenAI whiffs should still worry Oracle and CoreWeave investors",
+        "sentiment": 0.0,
         "n_headlines": 6
       },
       {
-        "ticker": "FCX",
-        "sector": "Materials",
-        "price": 58.19,
-        "pct_1d": -0.0393,
-        "pct_1w": -0.1388,
-        "pct_1m": 0.037,
+        "ticker": "GD",
+        "sector": "Defense",
+        "price": 347.25,
+        "pct_1d": 0.107,
+        "pct_1w": 0.0827,
+        "pct_1m": 0.0237,
         "action": "—",
-        "headline": "Could Freeport-McMoRan (FCX) Benefit From The SpaceX IPO?",
+        "headline": "General Dynamics Stock Rises on Strong Earnings. Why It Outshone Lockheed.",
         "sentiment": 0.833,
-        "n_headlines": 6
-      },
-      {
-        "ticker": "AVGO",
-        "sector": "Tech",
-        "price": 395.16,
-        "pct_1d": -0.0551,
-        "pct_1w": -0.0174,
-        "pct_1m": 0.3142,
-        "action": "—",
-        "headline": "These Stocks Are Today’s Movers: Oracle, AMD, Intel, Corning, Erasca, Ra...",
-        "sentiment": -0.833,
         "n_headlines": 6
       },
       {
         "ticker": "AVAV",
         "sector": "Defense",
-        "price": 187.26,
-        "pct_1d": -0.0433,
-        "pct_1w": -0.1086,
-        "pct_1m": 0.0154,
+        "price": 183.95,
+        "pct_1d": -0.0436,
+        "pct_1w": -0.1245,
+        "pct_1m": 0.0394,
         "action": "—",
         "headline": "AeroVironment vs. Teledyne: Which Defense Tech Stock Is Better?",
         "sentiment": 0.667,
         "n_headlines": 6
       },
       {
-        "ticker": "CCJ",
+        "ticker": "FCX",
         "sector": "Materials",
-        "price": 116.11,
-        "pct_1d": -0.0569,
-        "pct_1w": -0.0043,
-        "pct_1m": 0.1173,
+        "price": 56.97,
+        "pct_1d": -0.0213,
+        "pct_1w": -0.1903,
+        "pct_1m": 0.0448,
         "action": "—",
-        "headline": "Cameco (CCJ) Earnings Expected to Grow: Should You Buy?",
+        "headline": "Investors Heavily Search Freeport-McMoRan Inc. (FCX): Here is What You N...",
         "sentiment": 0.667,
+        "n_headlines": 6
+      },
+      {
+        "ticker": "COIN",
+        "sector": "Crypto",
+        "price": 178.73,
+        "pct_1d": -0.0792,
+        "pct_1w": -0.1334,
+        "pct_1m": 0.1115,
+        "action": "—",
+        "headline": "Visa Stock Soars Because AI Agents Will Pay With Cards",
+        "sentiment": 0.167,
+        "n_headlines": 6
+      },
+      {
+        "ticker": "VIST",
+        "sector": "Energy",
+        "price": 74.46,
+        "pct_1d": 0.0183,
+        "pct_1w": 0.0838,
+        "pct_1m": -0.0273,
+        "action": "—",
+        "headline": "4 PEG-Driven GARP Picks for a Volatile Market in 2026",
+        "sentiment": 0.833,
+        "n_headlines": 6
+      },
+      {
+        "ticker": "PLTR",
+        "sector": "Defense",
+        "price": 136.76,
+        "pct_1d": -0.0313,
+        "pct_1w": -0.1039,
+        "pct_1m": -0.0057,
+        "action": "—",
+        "headline": "Palantir Expected to Deliver Robust Q1, Led by Growing Demand for AIP, W...",
+        "sentiment": 0.5,
         "n_headlines": 6
       }
     ],
-    "n_up": 17,
-    "n_down": 36,
-    "biggest_winner": "TTE +2.7%",
-    "biggest_loser": "LAC -7.8%"
+    "n_up": 16,
+    "n_down": 37,
+    "biggest_winner": "GD +10.7%",
+    "biggest_loser": "COIN -7.9%"
   },
   "edgar_alerts": []
 }
