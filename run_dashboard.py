@@ -152,8 +152,8 @@ def _tres_cuentas_panel(lp_trades: list, dt_trades: list, scalp_trades: list) ->
 </div>"""
 
     lp_block    = _account_stats(lp_trades,    "LP / CP",  "#f59e0b", 1600.0, "ALPACA_API_KEY · hold semanal")
-    dt_block    = _account_stats(dt_trades,    "Day Trade", "#818cf8", 1400.0, "ALPACA_DT_API_KEY · $1400/trade")
-    scalp_block = _account_stats(scalp_trades, "Scalping",  "#34d399", 400.0,  "ALPACA_SCALP_API_KEY · $400/trade")
+    dt_block    = _account_stats(dt_trades,    "Day Trade", "#818cf8", 1600.0, "ALPACA_DT_API_KEY · $1400/trade")
+    scalp_block = _account_stats(scalp_trades, "Scalping",  "#34d399", 1600.0, "ALPACA_SCALP_API_KEY · $400/trade")
 
     return f"""<div class="card">
   <div class="card-head" style="margin-bottom:12px">
@@ -1554,13 +1554,13 @@ def _tab_daytrader(dt_trades: list[dict]) -> str:
 
     pnl_c   = _c(total_pnl)
     pnl_bg  = _bg(total_pnl)
-    ret_pct = total_pnl / 1400 * 100
+    ret_pct = total_pnl / 1600 * 100
 
     kpi_html = f"""<div class="kpi-row" style="margin-bottom:16px">
   <div class="kpi kpi-hero">
     <div class="kpi-lbl">P&L Realizado DT</div>
     <div class="kpi-val" style="color:{pnl_c}">{"+" if total_pnl>=0 else ""}{_usd(total_pnl)}</div>
-    <div class="kpi-tag" style="background:{pnl_bg};color:{pnl_c}">{"+" if ret_pct>=0 else ""}{ret_pct:.1f}% sobre $1400</div>
+    <div class="kpi-tag" style="background:{pnl_bg};color:{pnl_c}">{"+" if ret_pct>=0 else ""}{ret_pct:.1f}% sobre $1600</div>
   </div>"""
 
     if win_rate is not None:
@@ -1886,16 +1886,15 @@ def _tab_scalper(scalp_trades: list[dict]) -> str:
             '</span></p></div></div>'
         )
 
-    budget    = 400.0 * max(len(buys), 1)
     pnl_c     = _c(total_pnl)
     pnl_bg    = _bg(total_pnl)
-    ret_pct   = total_pnl / budget * 100
+    ret_pct   = total_pnl / 1600 * 100
 
     kpi_html = f"""<div class="kpi-row" style="margin-bottom:16px">
   <div class="kpi kpi-hero">
     <div class="kpi-lbl">P&L Realizado SCALP</div>
     <div class="kpi-val" style="color:{pnl_c}">{"+" if total_pnl>=0 else ""}{_usd(total_pnl)}</div>
-    <div class="kpi-tag" style="background:{pnl_bg};color:{pnl_c}">{"+" if ret_pct>=0 else ""}{ret_pct:.1f}% sobre capital deployado</div>
+    <div class="kpi-tag" style="background:{pnl_bg};color:{pnl_c}">{"+" if ret_pct>=0 else ""}{ret_pct:.1f}% sobre $1600</div>
   </div>"""
 
     if win_rate is not None:
