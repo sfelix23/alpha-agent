@@ -10,4 +10,3 @@ alpaca-py>=0.20
 feedparser>=6.0
 requests>=2.31
 lxml
-pandas-ta
