@@ -1,0 +1,54 @@
+name: Market Monitor
+
+on:
+  schedule:
+    # Cada 30 min de 11:05 a 16:35 ART = 14:05 a 19:35 UTC, lunes a viernes
+    # Cron: :05 y :35 de cada hora entre 14 y 19 UTC
+    - cron: '5,35 14-19 * * 1-5'
+  workflow_dispatch:
+
+jobs:
+  monitor:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Create .env
+        run: |
+          cat > .env << EOF
+          ALPACA_API_KEY=${{ secrets.ALPACA_API_KEY }}
+          ALPACA_SECRET_KEY=${{ secrets.ALPACA_SECRET_KEY }}
+          ALPACA_DT_API_KEY=${{ secrets.ALPACA_DT_API_KEY }}
+          ALPACA_DT_SECRET_KEY=${{ secrets.ALPACA_DT_SECRET_KEY }}
+          TWILIO_SID=${{ secrets.TWILIO_SID }}
+          TWILIO_TOKEN=${{ secrets.TWILIO_TOKEN }}
+          TWILIO_FROM=${{ secrets.TWILIO_FROM }}
+          TWILIO_TO=${{ secrets.TWILIO_TO }}
+          ANTHROPIC_API_KEY=${{ secrets.ANTHROPIC_API_KEY }}
+          EOF
+
+      - name: Run Monitor
+        run: python run_monitor.py --live
+
+      - name: Commit DB if changed
+        run: |
+          git config user.name  "alpha-bot"
+          git config user.email "alpha-bot@users.noreply.github.com"
+          git pull --rebase origin master
+          git add alpha_agent/analytics/trade_db.sqlite || true
+          git diff --staged --quiet || git commit -m "chore: monitor $(date -u +%H:%M)"
+          git push

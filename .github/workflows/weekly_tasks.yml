@@ -1,0 +1,70 @@
+name: Weekly Tasks
+
+on:
+  schedule:
+    # Rebalancer: viernes 15:00 ART = 18:00 UTC
+    - cron: '0 18 * * 5'
+    # Email digest: viernes 17:00 ART = 20:00 UTC
+    - cron: '0 20 * * 5'
+    # Portfolio review: domingos 20:00 ART = 23:00 UTC
+    - cron: '0 23 * * 0'
+  workflow_dispatch:
+
+jobs:
+  weekly:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Create .env
+        run: |
+          cat > .env << EOF
+          ALPACA_API_KEY=${{ secrets.ALPACA_API_KEY }}
+          ALPACA_SECRET_KEY=${{ secrets.ALPACA_SECRET_KEY }}
+          ALPACA_DT_API_KEY=${{ secrets.ALPACA_DT_API_KEY }}
+          ALPACA_DT_SECRET_KEY=${{ secrets.ALPACA_DT_SECRET_KEY }}
+          TWILIO_SID=${{ secrets.TWILIO_SID }}
+          TWILIO_TOKEN=${{ secrets.TWILIO_TOKEN }}
+          TWILIO_FROM=${{ secrets.TWILIO_FROM }}
+          TWILIO_TO=${{ secrets.TWILIO_TO }}
+          ANTHROPIC_API_KEY=${{ secrets.ANTHROPIC_API_KEY }}
+          GOOGLE_API_KEY=${{ secrets.GOOGLE_API_KEY }}
+          EOF
+
+      - name: Rebalancer (viernes 18:00 UTC)
+        if: github.event.schedule == '0 18 * * 5'
+        run: python run_rebalancer.py --live
+
+      - name: Email Digest (viernes 20:00 UTC)
+        if: github.event.schedule == '0 20 * * 5'
+        run: python run_email_digest.py
+
+      - name: Portfolio Review (domingo 23:00 UTC)
+        if: github.event.schedule == '0 23 * * 0'
+        run: python run_portfolio_review.py
+
+      - name: Update Dashboard
+        run: python run_dashboard.py --no-open || true
+
+      - name: Commit results
+        run: |
+          git config user.name  "alpha-bot"
+          git config user.email "alpha-bot@users.noreply.github.com"
+          git pull --rebase origin master
+          git add docs/index.html alpha_agent/analytics/trade_db.sqlite signals/ || true
+          git diff --staged --quiet || git commit -m "chore: weekly tasks $(date -u +%Y-%m-%d)"
+          git push
