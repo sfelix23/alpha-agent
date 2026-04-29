@@ -1,12 +1,13 @@
 name: "Alpha Monitor"
-# Vigila stops/TPs cada 30 min durante el horario de mercado.
-# También actualiza el dashboard en GitHub Pages.
+# Vigila stops/TPs cada 30 min durante horario de mercado.
 
 on:
   schedule:
-    # :05 y :35 de cada hora, 14:00-19:00 UTC = 11:00-16:00 ART, lunes a viernes
-    - cron: "5,35 14-19 * * 1-5"
+    - cron: "5,35 14-19 * * 1-5"   # 11:05-16:35 ART, lun-vie
   workflow_dispatch: {}
+
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
 permissions:
   contents: write
@@ -29,34 +30,32 @@ jobs:
           cache: "pip"
 
       - name: Install dependencies
-        run: pip install -r requirements.txt
+        run: pip install --prefer-binary -r requirements.txt
 
       - name: Create .env
         run: |
-          cat > .env <<EOF
-          ALPACA_API_KEY=${{ secrets.ALPACA_API_KEY }}
-          ALPACA_SECRET_KEY=${{ secrets.ALPACA_SECRET_KEY }}
-          ALPACA_DT_API_KEY=${{ secrets.ALPACA_DT_API_KEY }}
-          ALPACA_DT_SECRET_KEY=${{ secrets.ALPACA_DT_SECRET_KEY }}
-          TWILIO_SID=${{ secrets.TWILIO_SID }}
-          TWILIO_TOKEN=${{ secrets.TWILIO_TOKEN }}
-          MY_PHONE_NUMBER=${{ secrets.MY_PHONE_NUMBER }}
-          ANTHROPIC_API_KEY=${{ secrets.ANTHROPIC_API_KEY }}
-          EOF
+          printf 'ALPACA_API_KEY=%s\n'        "${{ secrets.ALPACA_API_KEY }}"        >  .env
+          printf 'ALPACA_SECRET_KEY=%s\n'     "${{ secrets.ALPACA_SECRET_KEY }}"     >> .env
+          printf 'ALPACA_DT_API_KEY=%s\n'     "${{ secrets.ALPACA_DT_API_KEY }}"     >> .env
+          printf 'ALPACA_DT_SECRET_KEY=%s\n'  "${{ secrets.ALPACA_DT_SECRET_KEY }}"  >> .env
+          printf 'TWILIO_SID=%s\n'            "${{ secrets.TWILIO_SID }}"            >> .env
+          printf 'TWILIO_TOKEN=%s\n'          "${{ secrets.TWILIO_TOKEN }}"          >> .env
+          printf 'MY_PHONE_NUMBER=%s\n'       "${{ secrets.MY_PHONE_NUMBER }}"       >> .env
+          printf 'ANTHROPIC_API_KEY=%s\n'     "${{ secrets.ANTHROPIC_API_KEY }}"     >> .env
+          echo ".env creado OK"
 
       - name: Validate secrets
         run: |
-          python - <<'PYEOF'
+          python -c '
           import os, sys
           from dotenv import load_dotenv
           load_dotenv()
           if not os.getenv("ALPACA_API_KEY"):
-              print("ERROR: ALPACA_API_KEY no configurado. Agrega el secret en GitHub.")
-              sys.exit(1)
-          print("Secrets OK")
-          PYEOF
+              sys.exit("ALPACA_API_KEY faltante. Agregar en GitHub Settings->Secrets->Actions")
+          print("Secrets OK, ALPACA_API_KEY:", os.getenv("ALPACA_API_KEY")[:4]+"...")
+          '
 
-      - name: Run Monitor (stops/TPs/trailing)
+      - name: Run Monitor
         run: python run_monitor.py --live
 
       - name: Generate Dashboard
@@ -71,3 +70,32 @@ jobs:
           git diff --staged --quiet || git commit -m "chore: monitor $(date -u +%H:%M) [skip ci]"
           git push
         continue-on-error: true
+
+      - name: Escribir estado del workflow
+        if: always()
+        run: |
+          python -c '
+          import json, sys
+          from pathlib import Path
+          from datetime import datetime, timezone
+          f = Path("signals/workflow_status.json")
+          data = json.loads(f.read_text()) if f.exists() else {}
+          data["alpha_monitor"] = {"ts": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M"), "ok": sys.argv[1] == "true"}
+          f.write_text(json.dumps(data, indent=2))
+          ' "${{ job.status == 'success' }}"
+          git config user.name "alpha-bot" 2>/dev/null || true
+          git config user.email "alpha-bot@users.noreply.github.com" 2>/dev/null || true
+          git add signals/workflow_status.json 2>/dev/null || true
+          git diff --staged --quiet || git commit -m "chore: workflow status [skip ci]" 2>/dev/null || true
+          git push 2>/dev/null || true
+        continue-on-error: true
+
+      - name: WhatsApp - notificar fallo critico
+        if: failure()
+        run: |
+          curl -s -X POST \
+            "https://api.twilio.com/2010-04-01/Accounts/${{ secrets.TWILIO_SID }}/Messages.json" \
+            -u "${{ secrets.TWILIO_SID }}:${{ secrets.TWILIO_TOKEN }}" \
+            --data-urlencode "From=whatsapp:+14155238886" \
+            --data-urlencode "To=whatsapp:${{ secrets.MY_PHONE_NUMBER }}" \
+            --data-urlencode "Body=ALPHA MONITOR FALLO. Posiciones sin vigilancia. Ver: https://github.com/sfelix23/alpha-agent/actions"

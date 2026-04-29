@@ -1,16 +1,18 @@
 name: "Alpha Daily"
-# Corre analyst + trader LP/CP + day trader cada mañana.
-# También se puede disparar manualmente con el botón "Run workflow".
+# Analyst + Trader LP/CP + Day Trader cada mañana.
+# Disparo manual: Actions → Alpha Daily → Run workflow.
 
 on:
   schedule:
-    # 13:40 UTC = 10:40 ART (lunes a viernes)
-    - cron: "40 13 * * 1-5"
+    - cron: "40 13 * * 1-5"   # 10:40 ART (UTC-3), lun-vie
   workflow_dispatch:
     inputs:
       force:
-        description: "Forzar aunque ya corrió hoy (true/false)"
+        description: "Forzar aunque ya corrió hoy"
         default: "false"
+
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
 permissions:
   contents: write
@@ -33,75 +35,101 @@ jobs:
           cache: "pip"
 
       - name: Install dependencies
-        run: pip install -r requirements.txt
+        run: pip install --prefer-binary -r requirements.txt
 
       - name: Create .env
         run: |
-          cat > .env <<EOF
-          ALPACA_API_KEY=${{ secrets.ALPACA_API_KEY }}
-          ALPACA_SECRET_KEY=${{ secrets.ALPACA_SECRET_KEY }}
-          ALPACA_DT_API_KEY=${{ secrets.ALPACA_DT_API_KEY }}
-          ALPACA_DT_SECRET_KEY=${{ secrets.ALPACA_DT_SECRET_KEY }}
-          TWILIO_SID=${{ secrets.TWILIO_SID }}
-          TWILIO_TOKEN=${{ secrets.TWILIO_TOKEN }}
-          MY_PHONE_NUMBER=${{ secrets.MY_PHONE_NUMBER }}
-          ANTHROPIC_API_KEY=${{ secrets.ANTHROPIC_API_KEY }}
-          GOOGLE_API_KEY=${{ secrets.GOOGLE_API_KEY }}
-          EOF
+          printf 'ALPACA_API_KEY=%s\n'        "${{ secrets.ALPACA_API_KEY }}"        >  .env
+          printf 'ALPACA_SECRET_KEY=%s\n'     "${{ secrets.ALPACA_SECRET_KEY }}"     >> .env
+          printf 'ALPACA_DT_API_KEY=%s\n'     "${{ secrets.ALPACA_DT_API_KEY }}"     >> .env
+          printf 'ALPACA_DT_SECRET_KEY=%s\n'  "${{ secrets.ALPACA_DT_SECRET_KEY }}"  >> .env
+          printf 'TWILIO_SID=%s\n'            "${{ secrets.TWILIO_SID }}"            >> .env
+          printf 'TWILIO_TOKEN=%s\n'          "${{ secrets.TWILIO_TOKEN }}"          >> .env
+          printf 'MY_PHONE_NUMBER=%s\n'       "${{ secrets.MY_PHONE_NUMBER }}"       >> .env
+          printf 'ANTHROPIC_API_KEY=%s\n'     "${{ secrets.ANTHROPIC_API_KEY }}"     >> .env
+          printf 'GOOGLE_API_KEY=%s\n'        "${{ secrets.GOOGLE_API_KEY }}"        >> .env
+          echo ".env creado OK"
 
       - name: Validate secrets
         run: |
-          python - <<'PYEOF'
+          python -c '
           import os, sys
           from dotenv import load_dotenv
           load_dotenv()
-          missing = [k for k in ["ALPACA_API_KEY","ALPACA_SECRET_KEY","ANTHROPIC_API_KEY","TWILIO_SID","TWILIO_TOKEN","MY_PHONE_NUMBER"]
-                     if not os.getenv(k)]
+          need = ["ALPACA_API_KEY","ALPACA_SECRET_KEY","ANTHROPIC_API_KEY","TWILIO_SID","TWILIO_TOKEN","MY_PHONE_NUMBER"]
+          missing = [k for k in need if not os.getenv(k)]
           if missing:
-              print(f"ERROR: Secrets faltantes en GitHub → Settings → Secrets → Actions: {missing}")
-              print("Agrega los secrets y vuelve a correr el workflow.")
-              sys.exit(1)
-          print("Secrets OK:", [k for k in ["ALPACA_API_KEY","ALPACA_DT_API_KEY","ANTHROPIC_API_KEY","TWILIO_SID"] if os.getenv(k)])
-          PYEOF
+              sys.exit("Secrets faltantes en GitHub Settings->Secrets->Actions: " + str(missing))
+          print("Secrets OK:", {k: os.getenv(k)[:4]+"..." for k in need})
+          '
 
       - name: Get equity LP/CP
         id: equity
         run: |
-          EQUITY=$(python -c "
+          EQUITY=$(python -c '
           from dotenv import load_dotenv; load_dotenv()
           from trader_agent.brokers.alpaca_broker import AlpacaBroker
           try:
               b = AlpacaBroker(paper=True)
-              print(f'{b.get_equity():.2f}')
-          except Exception:
-              print('1600.00')
-          " 2>/dev/null || echo "1600.00")
+              print(f"{b.get_equity():.2f}")
+          except Exception as e:
+              print("1600.00")
+          ' 2>/dev/null || echo "1600.00")
           echo "capital=$EQUITY" >> $GITHUB_OUTPUT
           echo "Equity LP/CP: $EQUITY"
 
-      - name: Run Analyst (genera señales LP/CP)
+      - name: Run Analyst
         run: |
-          FORCE_FLAG=""
-          if [ "${{ github.event.inputs.force }}" = "true" ]; then FORCE_FLAG="--force"; fi
-          python run_analyst.py --send --capital ${{ steps.equity.outputs.capital }} $FORCE_FLAG
+          FORCE=""
+          [ "${{ github.event.inputs.force }}" = "true" ] && FORCE="--force"
+          python run_analyst.py --send --capital ${{ steps.equity.outputs.capital }} $FORCE
 
       - name: Run Trader LP/CP
         run: python run_trader.py --live --capital ${{ steps.equity.outputs.capital }}
 
       - name: Run Day Trader
         run: python run_daytrader.py --live
-        continue-on-error: true   # no rompe el pipeline si el mercado ya cerró
+        continue-on-error: true
 
       - name: Generate Dashboard
         run: python run_dashboard.py --no-open
 
-      - name: Commit signals y dashboard
+      - name: Commit resultados
         run: |
           git config user.name  "alpha-bot"
           git config user.email "alpha-bot@users.noreply.github.com"
           git pull --rebase origin master || true
           git add signals/latest.json signals/trades.db signals/capital_baseline.json \
                   signals/performance_log.json docs/index.html || true
-          git diff --staged --quiet || git commit -m "chore: daily run $(date -u +%Y-%m-%dT%H:%M) [skip ci]"
+          git diff --staged --quiet || git commit -m "chore: daily $(date -u +%Y-%m-%dT%H:%M) [skip ci]"
           git push
         continue-on-error: true
+
+      - name: Escribir estado del workflow
+        if: always()
+        run: |
+          python -c '
+          import json, sys
+          from pathlib import Path
+          from datetime import datetime, timezone
+          f = Path("signals/workflow_status.json")
+          data = json.loads(f.read_text()) if f.exists() else {}
+          data["alpha_daily"] = {"ts": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M"), "ok": sys.argv[1] == "true"}
+          f.write_text(json.dumps(data, indent=2))
+          ' "${{ job.status == 'success' }}"
+          git config user.name "alpha-bot" 2>/dev/null || true
+          git config user.email "alpha-bot@users.noreply.github.com" 2>/dev/null || true
+          git add signals/workflow_status.json 2>/dev/null || true
+          git diff --staged --quiet || git commit -m "chore: workflow status [skip ci]" 2>/dev/null || true
+          git push 2>/dev/null || true
+        continue-on-error: true
+
+      - name: WhatsApp - notificar fallo
+        if: failure()
+        run: |
+          curl -s -X POST \
+            "https://api.twilio.com/2010-04-01/Accounts/${{ secrets.TWILIO_SID }}/Messages.json" \
+            -u "${{ secrets.TWILIO_SID }}:${{ secrets.TWILIO_TOKEN }}" \
+            --data-urlencode "From=whatsapp:+14155238886" \
+            --data-urlencode "To=whatsapp:${{ secrets.MY_PHONE_NUMBER }}" \
+            --data-urlencode "Body=ALPHA DAILY FALLO en GitHub Actions. Ver: https://github.com/sfelix23/alpha-agent/actions"

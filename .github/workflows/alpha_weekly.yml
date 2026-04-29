@@ -1,11 +1,13 @@
 name: "Alpha Weekly"
-# Rebalancer semanal — viernes antes del cierre de mercado.
+# Rebalancer semanal — viernes antes del cierre.
 
 on:
   schedule:
-    # Viernes 18:00 UTC = 15:00 ART (antes del cierre NYSE)
-    - cron: "0 18 * * 5"
+    - cron: "0 18 * * 5"   # Viernes 15:00 ART
   workflow_dispatch: {}
+
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
 permissions:
   contents: write
@@ -28,30 +30,28 @@ jobs:
           cache: "pip"
 
       - name: Install dependencies
-        run: pip install -r requirements.txt
+        run: pip install --prefer-binary -r requirements.txt
 
       - name: Create .env
         run: |
-          cat > .env <<EOF
-          ALPACA_API_KEY=${{ secrets.ALPACA_API_KEY }}
-          ALPACA_SECRET_KEY=${{ secrets.ALPACA_SECRET_KEY }}
-          TWILIO_SID=${{ secrets.TWILIO_SID }}
-          TWILIO_TOKEN=${{ secrets.TWILIO_TOKEN }}
-          MY_PHONE_NUMBER=${{ secrets.MY_PHONE_NUMBER }}
-          ANTHROPIC_API_KEY=${{ secrets.ANTHROPIC_API_KEY }}
-          EOF
+          printf 'ALPACA_API_KEY=%s\n'    "${{ secrets.ALPACA_API_KEY }}"    >  .env
+          printf 'ALPACA_SECRET_KEY=%s\n' "${{ secrets.ALPACA_SECRET_KEY }}" >> .env
+          printf 'TWILIO_SID=%s\n'        "${{ secrets.TWILIO_SID }}"        >> .env
+          printf 'TWILIO_TOKEN=%s\n'      "${{ secrets.TWILIO_TOKEN }}"      >> .env
+          printf 'MY_PHONE_NUMBER=%s\n'   "${{ secrets.MY_PHONE_NUMBER }}"   >> .env
+          printf 'ANTHROPIC_API_KEY=%s\n' "${{ secrets.ANTHROPIC_API_KEY }}" >> .env
+          echo ".env creado OK"
 
       - name: Validate secrets
         run: |
-          python - <<'PYEOF'
+          python -c '
           import os, sys
           from dotenv import load_dotenv
           load_dotenv()
           if not os.getenv("ALPACA_API_KEY"):
-              print("ERROR: ALPACA_API_KEY no configurado.")
-              sys.exit(1)
+              sys.exit("ALPACA_API_KEY faltante.")
           print("Secrets OK")
-          PYEOF
+          '
 
       - name: Run Rebalancer
         run: python run_rebalancer.py --live
@@ -68,3 +68,13 @@ jobs:
           git diff --staged --quiet || git commit -m "chore: weekly rebalance $(date -u +%Y-%m-%d) [skip ci]"
           git push
         continue-on-error: true
+
+      - name: WhatsApp - notificar fallo
+        if: failure()
+        run: |
+          curl -s -X POST \
+            "https://api.twilio.com/2010-04-01/Accounts/${{ secrets.TWILIO_SID }}/Messages.json" \
+            -u "${{ secrets.TWILIO_SID }}:${{ secrets.TWILIO_TOKEN }}" \
+            --data-urlencode "From=whatsapp:+14155238886" \
+            --data-urlencode "To=whatsapp:${{ secrets.MY_PHONE_NUMBER }}" \
+            --data-urlencode "Body=ALPHA WEEKLY FALLO. Rebalancer no ejecutado. Ver: https://github.com/sfelix23/alpha-agent/actions"

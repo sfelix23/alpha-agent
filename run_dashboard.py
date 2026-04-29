@@ -122,6 +122,63 @@ def _calc_metrics(history: list[dict], spy_history: list[dict], qqq_history: lis
     }
 
 
+# ─── WORKFLOW HEALTH PANEL ────────────────────────────────────────────────────
+
+def _workflow_health_panel(status: dict) -> str:
+    """Mini-panel con estado de los 3 workflows de GitHub Actions."""
+    from datetime import datetime, timezone
+
+    workflows = [
+        ("alpha_daily",   "Alpha Daily",   "Analyst + Trader + DayTrader · 10:40 ART"),
+        ("alpha_monitor", "Alpha Monitor", "Stops/TPs cada 30 min · 11:00-16:00 ART"),
+        ("alpha_weekly",  "Alpha Weekly",  "Rebalancer semanal · viernes 15:00 ART"),
+    ]
+
+    now_utc = datetime.now(timezone.utc)
+
+    def _pill(key, label, desc):
+        entry = status.get(key, {})
+        ts    = entry.get("ts", "")
+        ok    = entry.get("ok", None)
+        if not ts:
+            color, icon, age_str = "#6e7681", "○", "nunca corrió"
+        else:
+            try:
+                dt  = datetime.fromisoformat(ts).replace(tzinfo=timezone.utc)
+                age = (now_utc - dt).total_seconds() / 3600
+                age_str = f"hace {age:.0f}h" if age >= 1 else f"hace {int(age*60)}min"
+            except Exception:
+                age_str = ts[:16]
+            if ok is True:
+                color, icon = "#3fb950", "✓"
+            elif ok is False:
+                color, icon = "#f85149", "✗"
+            else:
+                color, icon = "#d29922", "?"
+
+        return f"""<div style="display:flex;align-items:center;gap:10px;padding:8px 0;
+  border-bottom:1px solid var(--bd)">
+  <span style="font-size:1rem;color:{color};width:16px;text-align:center;flex-shrink:0">{icon}</span>
+  <div style="flex:1;min-width:0">
+    <div style="font-size:.82rem;font-weight:700;color:var(--tx)">{label}</div>
+    <div style="font-size:.72rem;color:var(--mt);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{desc}</div>
+  </div>
+  <div style="font-size:.72rem;color:{color};flex-shrink:0">{age_str}</div>
+</div>"""
+
+    pills = "".join(_pill(k, l, d) for k, l, d in workflows)
+    return f"""<div class="card" style="min-width:260px">
+  <div class="card-head" style="margin-bottom:8px">
+    <div class="card-title">GitHub Actions</div>
+    <div class="card-sub">Estado de los workflows automáticos</div>
+  </div>
+  {pills}
+  <div style="font-size:.68rem;color:var(--mt);margin-top:8px">
+    El scalper corre localmente en tu PC — no aparece aquí.
+  </div>
+</div>"""
+
+
 # ─── TAB: RESUMEN ─────────────────────────────────────────────────────────────
 
 def _tres_cuentas_panel(lp_trades: list, dt_trades: list, scalp_trades: list) -> str:
@@ -169,7 +226,7 @@ def _tres_cuentas_panel(lp_trades: list, dt_trades: list, scalp_trades: list) ->
 def _tab_resumen(equity, initial, regime, vix, wti, gold, dxy,
                  history, spy_history, signals_data, metrics, age_hours,
                  perf_data=None, qqq_history=None, mc_result=None,
-                 tres_cuentas_html=""):
+                 tres_cuentas_html="", wf_health_html=""):
     pnl     = equity - initial
     pnl_pct = (pnl / initial * 100) if initial else 0
     pc      = _c(pnl)
@@ -305,6 +362,8 @@ def _tab_resumen(equity, initial, regime, vix, wti, gold, dxy,
   {adv_kpis}
   <div class="section-gap"></div>
   {tres_cuentas_html}
+  <div class="section-gap"></div>
+  {wf_health_html}
   <div class="section-gap"></div>
   {eq_chart}
   <div class="section-gap"></div>
@@ -2080,7 +2139,8 @@ def _tab_scalper(scalp_trades: list[dict]) -> str:
 
 def build_html(equity, initial, history, positions, signals_data,
                spy_history=None, qqq_history=None, metrics=None, perf_data=None, discovery_data=None,
-               trades=None, mc_result=None, dt_trades=None, scalp_trades=None):
+               trades=None, mc_result=None, dt_trades=None, scalp_trades=None,
+               workflow_status=None):
     if spy_history is None:
         spy_history = []
     if qqq_history is None:
@@ -2109,11 +2169,12 @@ def build_html(equity, initial, history, positions, signals_data,
         except Exception:
             pass
 
-    tres_cuentas = _tres_cuentas_panel(trades or [], dt_trades or [], scalp_trades or [])
+    tres_cuentas   = _tres_cuentas_panel(trades or [], dt_trades or [], scalp_trades or [])
+    wf_health      = _workflow_health_panel(workflow_status or {})
     t_resumen    = _tab_resumen(equity, initial, regime, vix, wti, gold, dxy,
                                 history, spy_history, signals_data, metrics, age_hours,
                                 perf_data=perf_data, qqq_history=qqq_history, mc_result=mc_result,
-                                tres_cuentas_html=tres_cuentas)
+                                tres_cuentas_html=tres_cuentas, wf_health_html=wf_health)
     t_posiciones = _tab_posiciones(positions)
     t_senales    = _tab_senales(signals_data)
     t_mercado    = _tab_mercado(signals_data, discovery_data=discovery_data)
@@ -2380,6 +2441,15 @@ def generate() -> None:
         except Exception:
             pass
 
+    # Workflow status (GitHub Actions health)
+    workflow_status: dict = {}
+    ws_path = BASE_DIR / "signals" / "workflow_status.json"
+    if ws_path.exists():
+        try:
+            workflow_status = json.loads(ws_path.read_text(encoding="utf-8"))
+        except Exception:
+            pass
+
     # Trade history from SQLite — separado por cuenta
     trades: list[dict]       = []
     dt_trades: list[dict]    = []
@@ -2412,7 +2482,8 @@ def generate() -> None:
                          spy_history=spy_history, qqq_history=qqq_history,
                          metrics=metrics, perf_data=perf_data, discovery_data=discovery_data,
                          trades=trades, mc_result=mc_result,
-                         dt_trades=dt_trades, scalp_trades=scalp_trades)
+                         dt_trades=dt_trades, scalp_trades=scalp_trades,
+                         workflow_status=workflow_status)
     OUT_PATH.write_text(html, encoding="utf-8")
     logger.info("Dashboard generado -> %s (%d bytes)", OUT_PATH, len(html))
 
