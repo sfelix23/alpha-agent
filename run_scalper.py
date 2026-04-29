@@ -13,7 +13,7 @@ Parámetros:
   TP:      0.4-1.5% (1.5× el tamaño del rango)
   R/R:     ~2:1
   Máx:     4 trades/día
-  Cuenta:  ALPACA_DT_API_KEY (misma que el day trader)
+  Cuenta:  ALPACA_SCALP_API_KEY / ALPACA_SCALP_SECRET_KEY  ← cuenta separada
 
 IMPORTANTE: Este script debe correr como proceso continuo durante el horario
 de mercado. NO es compatible con GitHub Actions (cron tiene latencia de ~30-60s).
@@ -67,14 +67,20 @@ def _setup_logging() -> None:
 
 
 def _build_broker():
-    api_key = os.getenv("ALPACA_DT_API_KEY")
-    secret  = os.getenv("ALPACA_DT_SECRET_KEY")
+    """Broker exclusivo de la cuenta SCALP — separada de LP/CP y DT."""
+    api_key = os.getenv("ALPACA_SCALP_API_KEY")
+    secret  = os.getenv("ALPACA_SCALP_SECRET_KEY")
     if not (api_key and secret):
-        raise RuntimeError("ALPACA_DT_API_KEY / ALPACA_DT_SECRET_KEY no configuradas en .env")
+        raise RuntimeError(
+            "ALPACA_SCALP_API_KEY / ALPACA_SCALP_SECRET_KEY no configuradas. "
+            "Crear nueva cuenta Alpaca paper y agregar al .env"
+        )
     os.environ["ALPACA_API_KEY"]    = api_key
     os.environ["ALPACA_SECRET_KEY"] = secret
     from trader_agent.brokers.alpaca_broker import AlpacaBroker
-    return AlpacaBroker(paper=True)
+    broker = AlpacaBroker(paper=True)
+    log.info("SCALP broker → cuenta separada (%s...)", api_key[:8])
+    return broker
 
 
 def _place_bracket(broker, ticker: str, bracket: dict, live: bool) -> str | None:
@@ -141,8 +147,8 @@ async def _stream_and_trade(live: bool) -> None:
     )
     from alpha_agent.scalping.swarm_scalp import validate_scalp
 
-    api_key = os.getenv("ALPACA_DT_API_KEY", "")
-    secret  = os.getenv("ALPACA_DT_SECRET_KEY", "")
+    api_key = os.getenv("ALPACA_SCALP_API_KEY", "")
+    secret  = os.getenv("ALPACA_SCALP_SECRET_KEY", "")
 
     orb_states:   dict[str, ORBState] = {t: ORBState(ticker=t) for t in SCALP_UNIVERSE}
     trades_today: int                 = 0

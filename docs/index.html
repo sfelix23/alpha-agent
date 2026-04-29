@@ -258,7 +258,7 @@ tr:hover td{background:var(--s2)}
 <div class="topbar">
   <div class="logo">ALPHA<span>&nbsp;/&nbsp;TERMINAL</span></div>
   <div class="topbar-meta">
-    <span><span class="live"></span>&nbsp;28 de April de 2026 — 22:51</span>
+    <span><span class="live"></span>&nbsp;28 de April de 2026 — 23:07</span>
     <span style="color:var(--bd)">|</span>
     <span>Paper</span>
     <span style="color:var(--bd)">|</span>
@@ -289,6 +289,7 @@ tr:hover td{background:var(--s2)}
   <button class="tab-btn" data-tab="mercado">Mercado</button>
   <button class="tab-btn" data-tab="historial">Historial LP/CP</button>
   <button class="tab-btn" data-tab="daytrader">Day Trading</button>
+  <button class="tab-btn" data-tab="scalper">Scalping</button>
 </nav>
 
 
@@ -297,10 +298,10 @@ tr:hover td{background:var(--s2)}
   <p class="ts">Senales actualizadas: 2026-04-28 16:01 &nbsp;|&nbsp; Paper Trading</p>
   
 <div class="kpi-row">
-  <div class="kpi kpi-hero" data-countup="1600.74">
+  <div class="kpi kpi-hero" data-countup="1600.92">
     <div class="kpi-lbl">Patrimonio Total</div>
-    <div class="kpi-val kpi-hero-val" style="color:#3fb950" id="kpi-equity">$1,600.74</div>
-    <div class="kpi-tag" style="background:rgba(63,185,80,.15);color:#3fb950">$0.98 &nbsp; +0.06% total&nbsp;&middot;&nbsp;<span style="color:#7d8590">SPY +12.61%</span></div>
+    <div class="kpi-val kpi-hero-val" style="color:#3fb950" id="kpi-equity">$1,600.92</div>
+    <div class="kpi-tag" style="background:rgba(63,185,80,.15);color:#3fb950">$1.16 &nbsp; +0.07% total&nbsp;&middot;&nbsp;<span style="color:#7d8590">SPY +12.61%</span></div>
   </div>
   
   <div class="kpi" style="border-left:3px solid #f85149;padding-left:12px">
@@ -353,6 +354,55 @@ tr:hover td{background:var(--s2)}
   </div>
   <div class="kpi"><div class="kpi-lbl">Alpha vs SPY (1M)</div><div class="kpi-val" style="color:#f85149">-12.61%</div><div class="kpi-sub">Portfolio +0.00% · SPY +12.61%</div></div>
   <div class="kpi"><div class="kpi-lbl">Alpha vs QQQ (1M)</div><div class="kpi-val" style="color:#f85149">-17.78%</div><div class="kpi-sub">QQQ +17.78%</div></div>
+</div>
+  <div class="section-gap"></div>
+  <div class="card">
+  <div class="card-head" style="margin-bottom:12px">
+    <div class="card-title">Las 3 Cuentas — Comparativa</div>
+    <div class="card-sub">Cuentas Alpaca paper independientes &middot; P&L realizado total</div>
+  </div>
+  <div style="display:flex;gap:12px;flex-wrap:wrap">
+    
+<div style="flex:1;min-width:200px;padding:16px;border:1px solid #f59e0b33;
+  border-left:3px solid #f59e0b;border-radius:8px;background:var(--bg)">
+  <div style="font-size:.72rem;font-weight:700;color:#f59e0b;text-transform:uppercase;
+    letter-spacing:.06em;margin-bottom:8px">LP / CP</div>
+  <div style="font-size:1.1rem;font-weight:700;color:#3fb950;margin-bottom:4px">+$0.56</div>
+  <div style="font-size:.75rem;color:var(--mt);margin-bottom:6px">ALPACA_API_KEY · hold semanal</div>
+  <div style="display:flex;gap:12px;font-size:.75rem">
+    <div><span style="color:var(--mt)">Win rate</span>&nbsp;
+      <span style="color:#3fb950;font-weight:700">100.0%</span></div>
+    <div><span style="color:var(--mt)">Trades</span>&nbsp;
+      <span style="color:var(--tx)">1</span></div>
+  </div>
+</div>
+<div style="flex:1;min-width:200px;padding:16px;border:1px solid #818cf833;
+  border-left:3px solid #818cf8;border-radius:8px;background:var(--bg)">
+  <div style="font-size:.72rem;font-weight:700;color:#818cf8;text-transform:uppercase;
+    letter-spacing:.06em;margin-bottom:8px">Day Trade</div>
+  <div style="font-size:1.1rem;font-weight:700;color:#3fb950;margin-bottom:4px">—</div>
+  <div style="font-size:.75rem;color:var(--mt);margin-bottom:6px">ALPACA_DT_API_KEY · $1400/trade</div>
+  <div style="display:flex;gap:12px;font-size:.75rem">
+    <div><span style="color:var(--mt)">Win rate</span>&nbsp;
+      <span style="color:#f85149;font-weight:700">—</span></div>
+    <div><span style="color:var(--mt)">Trades</span>&nbsp;
+      <span style="color:var(--tx)">0</span></div>
+  </div>
+</div>
+<div style="flex:1;min-width:200px;padding:16px;border:1px solid #34d39933;
+  border-left:3px solid #34d399;border-radius:8px;background:var(--bg)">
+  <div style="font-size:.72rem;font-weight:700;color:#34d399;text-transform:uppercase;
+    letter-spacing:.06em;margin-bottom:8px">Scalping</div>
+  <div style="font-size:1.1rem;font-weight:700;color:#3fb950;margin-bottom:4px">—</div>
+  <div style="font-size:.75rem;color:var(--mt);margin-bottom:6px">ALPACA_SCALP_API_KEY · $400/trade</div>
+  <div style="display:flex;gap:12px;font-size:.75rem">
+    <div><span style="color:var(--mt)">Win rate</span>&nbsp;
+      <span style="color:#f85149;font-weight:700">—</span></div>
+    <div><span style="color:var(--mt)">Trades</span>&nbsp;
+      <span style="color:var(--tx)">0</span></div>
+  </div>
+</div>
+  </div>
 </div>
   <div class="section-gap"></div>
   
@@ -498,11 +548,11 @@ tr:hover td{background:var(--s2)}
     </div>
     <div class="kpi">
       <div class="kpi-lbl">Valor de mercado total</div>
-      <div class="kpi-val">$793.72</div>
+      <div class="kpi-val">$793.90</div>
     </div>
     <div class="kpi">
       <div class="kpi-lbl">P&amp;L no realizado</div>
-      <div class="kpi-val" style="color:#3fb950">+$0.50</div>
+      <div class="kpi-val" style="color:#3fb950">+$0.68</div>
     </div>
   </div>
   <div class="pos-layout">
@@ -571,18 +621,18 @@ tr:hover td{background:var(--s2)}
   <div class="pos-top">
     <div>
       <div class="pos-ticker" style="color:#f85149">TSM</div>
-      <div class="pos-sub">12.4% del portfolio &middot; 0.2525 acc.</div>
+      <div class="pos-sub">12.5% del portfolio &middot; 0.2525 acc.</div>
     </div>
     <div style="text-align:right">
-      <div class="pos-pnl" style="color:#f85149">▼ $3.21</div>
-      <div class="pos-pnl-pct" style="color:#f85149">-3.1%</div>
+      <div class="pos-pnl" style="color:#f85149">▼ $3.03</div>
+      <div class="pos-pnl-pct" style="color:#f85149">-3.0%</div>
     </div>
   </div>
-  <div class="pos-bar-track"><div style="width:16%;height:100%;background:#f85149;border-radius:2px;opacity:.8"></div></div>
+  <div class="pos-bar-track"><div style="width:15%;height:100%;background:#f85149;border-radius:2px;opacity:.8"></div></div>
   <div class="pos-meta">
     <span>Entrada <b>$403.79</b></span>
-    <span>Valor actual <b>$98.75</b></span>
-    <span>P&L <b style="color:#f85149">$-3.21</b></span>
+    <span>Valor actual <b>$98.93</b></span>
+    <span>P&L <b style="color:#f85149">$-3.03</b></span>
   </div>
 </div>
     </div>
@@ -592,7 +642,7 @@ tr:hover td{background:var(--s2)}
 <script>
 (function(){
   const labels=["PBR", "RIO", "SQM", "TSM"];
-  const values=[385.09, 203.38, 106.5, 98.75];
+  const values=[385.09, 203.38, 106.5, 98.93];
   const colors=["#58a6ff", "#3fb950", "#d29922", "#f85149"];
   window._charts = window._charts||{};
   window._charts.alloc = new Chart(document.getElementById('allocChart'),{
@@ -652,6 +702,7 @@ tr:hover td{background:var(--s2)}
   <div class="sig-thesis" id="t_PBR_long_term">
     <p>PBR — horizonte LARGO PLAZO. Convicción ALTA. La tesis CAPM/Markowitz sostiene un Sharpe de 2.94 con beta 0.50 (retorno esperado CAPM +12.1%, alfa de Jensen +84.7%). Cumple el filtro de calidad (β razonable + Sharpe elevado) y aparece en el óptimo de la frontera eficiente. El flujo de noticias es positivo (sentiment +0.33 sobre 6 titulares). Régimen de mercado BULL (SPY +6.5% sobre SMA200 con pendiente positiva) — viento de cola para posiciones largas. Contexto sectorial: WTI +0.2% en el último mes.</p>
     
+    
   </div>
 </div>
 <div class="sig-card" onclick="toggleSig('t_RIO_long_term')">
@@ -676,6 +727,7 @@ tr:hover td{background:var(--s2)}
   <div class="conv-track"><div class="conv-fill" style="width:88%;background:#3fb95088"></div></div>
   <div class="sig-thesis" id="t_RIO_long_term">
     <p>RIO — horizonte LARGO PLAZO. Convicción ALTA. La tesis CAPM/Markowitz sostiene un Sharpe de 2.26 con beta 0.69 (retorno esperado CAPM +14.8%, alfa de Jensen +47.3%). Cumple el filtro de calidad (β razonable + Sharpe elevado) y aparece en el óptimo de la frontera eficiente. El flujo de noticias es positivo (sentiment +0.33 sobre 6 titulares). Régimen de mercado BULL (SPY +6.5% sobre SMA200 con pendiente positiva) — viento de cola para posiciones largas. Contexto sectorial: oro +2.4% en el último mes.</p>
+    
     
   </div>
 </div>
@@ -711,6 +763,7 @@ tr:hover td{background:var(--s2)}
   <div class="sig-thesis" id="t_TSM_short_term">
     <p>TSM — horizonte CORTO PLAZO. Convicción ALTA. Setup técnico: RSI 60, momentum 1m +22.6%, momentum 3m +13.7%. Stop loss ATR en $362.39 (riesgo ≈ 6.6% desde entrada). Sentiment de noticias refuerza el setup.</p>
     
+    
   </div>
 </div>
 <div class="sig-card" onclick="toggleSig('t_SLB_short_term')">
@@ -735,6 +788,7 @@ tr:hover td{background:var(--s2)}
   <div class="conv-track"><div class="conv-fill" style="width:88%;background:#3fb95088"></div></div>
   <div class="sig-thesis" id="t_SLB_short_term">
     <p>SLB — horizonte CORTO PLAZO. Convicción ALTA. Setup técnico: RSI 70, momentum 1m +9.1%, momentum 3m +15.7%. ⚠️ RSI en sobrecompra → riesgo de reversión a la media. Stop loss ATR en $52.71 (riesgo ≈ 6.2% desde entrada). Sentiment de noticias refuerza el setup.</p>
+    
     
   </div>
 </div>
@@ -909,6 +963,7 @@ tr:hover td{background:var(--s2)}
 </div>
 </div>
 <div class="tab-content" id="tab-daytrader"><div class="card"><p class="muted" style="padding:60px;text-align:center;font-size:1rem">Sin operaciones DT todavia. El Day Trader corre a las 11:30 ART durante la ventana de mercado (10:00-14:00 EDT).<br><span style="font-size:.82rem;color:var(--mt)">Cuenta separada: ALPACA_DT_API_KEY &mdash; estrategia gap+ORB+VWAP, 1 posicion concentrada de $1400</span></p></div></div>
+<div class="tab-content" id="tab-scalper"><div class="card"><p class="muted" style="padding:60px;text-align:center;font-size:1rem">Sin operaciones SCALP todavia. El Scalper corre manualmente durante horario de mercado (9:30-15:45 EDT).<br><span style="font-size:.82rem;color:var(--mt)">Cuenta separada: ALPACA_SCALP_API_KEY &mdash; estrategia ORB 15-min, $400/trade, max 4 trades/dia</span></p></div></div>
 
 <script>
 // ── tabs ──

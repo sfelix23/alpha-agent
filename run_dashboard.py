@@ -124,9 +124,52 @@ def _calc_metrics(history: list[dict], spy_history: list[dict], qqq_history: lis
 
 # ─── TAB: RESUMEN ─────────────────────────────────────────────────────────────
 
+def _tres_cuentas_panel(lp_trades: list, dt_trades: list, scalp_trades: list) -> str:
+    """Tarjeta resumen de las 3 cuentas Alpaca separadas."""
+    def _account_stats(trades: list, label: str, color: str, budget: float, description: str) -> str:
+        closed  = [t for t in trades if t.get("side","BUY").upper() in ("BUY","SELL") and t.get("closed_at")]
+        n       = len(closed)
+        wins    = [t for t in closed if (t.get("pnl_usd") or 0) > 0]
+        total_p = sum(t.get("pnl_usd") or 0 for t in closed)
+        wr      = len(wins)/n*100 if n else None
+        pc      = _c(total_p)
+        wr_c    = "#3fb950" if (wr or 0) > 55 else "#d29922" if (wr or 0) > 45 else "#f85149"
+        pnl_str = (("+" if total_p >= 0 else "") + _usd(total_p)) if n else "—"
+        wr_str  = f"{wr:.1f}%" if wr is not None else "—"
+        return f"""
+<div style="flex:1;min-width:200px;padding:16px;border:1px solid {color}33;
+  border-left:3px solid {color};border-radius:8px;background:var(--bg)">
+  <div style="font-size:.72rem;font-weight:700;color:{color};text-transform:uppercase;
+    letter-spacing:.06em;margin-bottom:8px">{label}</div>
+  <div style="font-size:1.1rem;font-weight:700;color:{pc};margin-bottom:4px">{pnl_str}</div>
+  <div style="font-size:.75rem;color:var(--mt);margin-bottom:6px">{description}</div>
+  <div style="display:flex;gap:12px;font-size:.75rem">
+    <div><span style="color:var(--mt)">Win rate</span>&nbsp;
+      <span style="color:{wr_c};font-weight:700">{wr_str}</span></div>
+    <div><span style="color:var(--mt)">Trades</span>&nbsp;
+      <span style="color:var(--tx)">{n}</span></div>
+  </div>
+</div>"""
+
+    lp_block    = _account_stats(lp_trades,    "LP / CP",  "#f59e0b", 1600.0, "ALPACA_API_KEY · hold semanal")
+    dt_block    = _account_stats(dt_trades,    "Day Trade", "#818cf8", 1400.0, "ALPACA_DT_API_KEY · $1400/trade")
+    scalp_block = _account_stats(scalp_trades, "Scalping",  "#34d399", 400.0,  "ALPACA_SCALP_API_KEY · $400/trade")
+
+    return f"""<div class="card">
+  <div class="card-head" style="margin-bottom:12px">
+    <div class="card-title">Las 3 Cuentas — Comparativa</div>
+    <div class="card-sub">Cuentas Alpaca paper independientes &middot; P&L realizado total</div>
+  </div>
+  <div style="display:flex;gap:12px;flex-wrap:wrap">
+    {lp_block}{dt_block}{scalp_block}
+  </div>
+</div>"""
+
+
 def _tab_resumen(equity, initial, regime, vix, wti, gold, dxy,
                  history, spy_history, signals_data, metrics, age_hours,
-                 perf_data=None, qqq_history=None, mc_result=None):
+                 perf_data=None, qqq_history=None, mc_result=None,
+                 tres_cuentas_html=""):
     pnl     = equity - initial
     pnl_pct = (pnl / initial * 100) if initial else 0
     pc      = _c(pnl)
@@ -260,6 +303,8 @@ def _tab_resumen(equity, initial, regime, vix, wti, gold, dxy,
   {ts_info}
   {kpis}
   {adv_kpis}
+  <div class="section-gap"></div>
+  {tres_cuentas_html}
   <div class="section-gap"></div>
   {eq_chart}
   <div class="section-gap"></div>
@@ -1817,9 +1862,226 @@ def _tab_daytrader(dt_trades: list[dict]) -> str:
 </div>"""
 
 
+# ─── TAB: SCALPING ────────────────────────────────────────────────────────────
+
+def _tab_scalper(scalp_trades: list[dict]) -> str:
+    """Scalping tab — sleeve SCALP, cuenta Alpaca separada (ALPACA_SCALP_*)."""
+    buys        = [t for t in scalp_trades if t.get("side", "").upper() in ("BUY", "SELL")]
+    closed      = [t for t in buys if t.get("closed_at")]
+    open_trades = [t for t in buys if not t.get("closed_at")]
+    n_closed    = len(closed)
+    wins        = [t for t in closed if (t.get("pnl_usd") or 0) > 0]
+    win_rate    = len(wins) / n_closed * 100 if n_closed else None
+    total_pnl   = sum(t.get("pnl_usd") or 0 for t in closed)
+    best_t      = max(closed, key=lambda t: t.get("pnl_usd") or 0, default=None)
+    worst_t     = min(closed, key=lambda t: t.get("pnl_usd") or 0, default=None)
+
+    if not buys:
+        return (
+            '<div class="tab-content" id="tab-scalper">'
+            '<div class="card"><p class="muted" style="padding:60px;text-align:center;font-size:1rem">'
+            'Sin operaciones SCALP todavia. El Scalper corre manualmente durante horario de mercado (9:30-15:45 EDT).<br>'
+            '<span style="font-size:.82rem;color:var(--mt)">'
+            'Cuenta separada: ALPACA_SCALP_API_KEY &mdash; estrategia ORB 15-min, $400/trade, max 4 trades/dia'
+            '</span></p></div></div>'
+        )
+
+    budget    = 400.0 * max(len(buys), 1)
+    pnl_c     = _c(total_pnl)
+    pnl_bg    = _bg(total_pnl)
+    ret_pct   = total_pnl / budget * 100
+
+    kpi_html = f"""<div class="kpi-row" style="margin-bottom:16px">
+  <div class="kpi kpi-hero">
+    <div class="kpi-lbl">P&L Realizado SCALP</div>
+    <div class="kpi-val" style="color:{pnl_c}">{"+" if total_pnl>=0 else ""}{_usd(total_pnl)}</div>
+    <div class="kpi-tag" style="background:{pnl_bg};color:{pnl_c}">{"+" if ret_pct>=0 else ""}{ret_pct:.1f}% sobre capital deployado</div>
+  </div>"""
+
+    if win_rate is not None:
+        wr_c = "#3fb950" if win_rate > 55 else "#d29922" if win_rate > 45 else "#f85149"
+        kpi_html += f"""
+  <div class="kpi">
+    <div class="kpi-lbl">Win Rate</div>
+    <div class="kpi-val" style="color:{wr_c}">{win_rate:.1f}%</div>
+    <div class="kpi-sub">{len(wins)} de {n_closed} trades</div>
+  </div>"""
+
+    kpi_html += f"""
+  <div class="kpi">
+    <div class="kpi-lbl">Trades totales</div>
+    <div class="kpi-val">{len(buys)}</div>
+    <div class="kpi-sub">{n_closed} cerrados &middot; {len(open_trades)} abiertos</div>
+  </div>"""
+
+    if best_t:
+        bpnl = best_t.get("pnl_usd") or 0
+        kpi_html += f"""
+  <div class="kpi">
+    <div class="kpi-lbl">Mejor scalp</div>
+    <div class="kpi-val" style="color:#3fb950">+{_usd(bpnl)}</div>
+    <div class="kpi-sub">{best_t.get("ticker","?")} {best_t.get("date","")[:10]}</div>
+  </div>"""
+
+    if worst_t and n_closed > 1:
+        wpnl = worst_t.get("pnl_usd") or 0
+        kpi_html += f"""
+  <div class="kpi">
+    <div class="kpi-lbl">Peor scalp</div>
+    <div class="kpi-val" style="color:#f85149">{_usd(wpnl)}</div>
+    <div class="kpi-sub">{worst_t.get("ticker","?")} {worst_t.get("date","")[:10]}</div>
+  </div>"""
+
+    kpi_html += "</div>"
+
+    # Cumulative P&L chart
+    chart_html = ""
+    if closed:
+        sorted_closed = sorted(closed, key=lambda t: t.get("date",""))
+        dates    = [t.get("date","")[:10] for t in sorted_closed]
+        pnls_raw = [t.get("pnl_usd") or 0 for t in sorted_closed]
+        cum_pnls, running = [], 0.0
+        for p in pnls_raw:
+            running += p
+            cum_pnls.append(round(running, 2))
+        last_cum    = cum_pnls[-1]
+        chart_color = _c(last_cum)
+        import json as _json
+        dates_js = _json.dumps(dates)
+        pnls_js  = _json.dumps(cum_pnls)
+        chart_html = f"""<div class="card" style="margin-bottom:14px">
+  <div class="card-head">
+    <div>
+      <div class="card-title">P&L Acumulado &mdash; Scalping</div>
+      <div class="card-sub">ORB 15-min &middot; SL 0.3-0.5% &middot; TP 0.4-1.5% &middot; $400/trade</div>
+    </div>
+    <div class="pill" style="color:{chart_color}">{"+" if last_cum>=0 else ""}{_usd(last_cum)}</div>
+  </div>
+  <canvas id="scalpChart" height="80"></canvas>
+</div>
+<script>
+(function(){{
+  const ctx=document.getElementById('scalpChart');
+  const g=ctx.getContext('2d').createLinearGradient(0,0,0,200);
+  g.addColorStop(0,'{chart_color}33');g.addColorStop(1,'{chart_color}00');
+  window._charts=window._charts||{{}};
+  window._charts.scalp=new Chart(ctx,{{
+    type:'line',
+    data:{{
+      labels:{dates_js},
+      datasets:[{{data:{pnls_js},borderColor:'{chart_color}',backgroundColor:g,
+        borderWidth:2,pointRadius:3,tension:0.3,fill:true}}]
+    }},
+    options:{{
+      responsive:true,plugins:{{legend:{{display:false}},tooltip:{{callbacks:{{
+        label:ctx=>'$'+ctx.raw.toFixed(2)
+      }}}}}},
+      scales:{{x:{{ticks:{{color:'#8b949e',maxTicksLimit:8}},grid:{{color:'#30363d22'}}}},
+               y:{{ticks:{{color:'#8b949e',callback:v=>'$'+v}},grid:{{color:'#30363d44'}}}}}}
+    }}
+  }});
+}})();
+</script>"""
+
+    # Trade table
+    rows_html = ""
+    for t in sorted(buys, key=lambda x: x.get("date",""), reverse=True):
+        date_str = t.get("date","")[:10]
+        ticker   = t.get("ticker","")
+        side     = t.get("side","BUY").upper()
+        entry    = t.get("price")
+        exit_p   = t.get("exit_price")
+        sl       = t.get("stop_loss")
+        tp       = t.get("take_profit")
+        pnl_usd  = t.get("pnl_usd")
+        pnl_pct  = t.get("pnl_pct")
+        is_closed = bool(t.get("closed_at"))
+        side_color = "#3fb950" if side == "BUY" else "#f85149"
+        status_label = "CERRADO" if is_closed else "ABIERTO"
+        status_color = "#8b949e" if is_closed else "#3fb950"
+        if is_closed and pnl_usd is not None:
+            pc       = _c(pnl_usd)
+            pnl_cell = f'<td style="text-align:right;color:{pc};font-weight:700">{"+" if pnl_usd>=0 else ""}{_usd(pnl_usd)}</td>'
+            pct_cell = f'<td style="text-align:right;color:{pc}">{"+" if (pnl_pct or 0)>=0 else ""}{(pnl_pct or 0):.2f}%</td>'
+        else:
+            pnl_cell = '<td style="text-align:right;color:var(--mt)">—</td>'
+            pct_cell = '<td style="text-align:right;color:var(--mt)">—</td>'
+        exit_cell = f'<td style="text-align:right">${exit_p:,.2f}</td>' if exit_p else '<td style="text-align:right;color:var(--mt)">—</td>'
+        sl_cell   = f'<td style="text-align:right;color:#f85149">${sl:,.2f}</td>' if sl else '<td>—</td>'
+        tp_cell   = f'<td style="text-align:right;color:#3fb950">${tp:,.2f}</td>' if tp else '<td>—</td>'
+        rows_html += (
+            f"<tr>"
+            f'<td style="color:var(--mt);font-size:.78rem">{date_str}</td>'
+            f'<td><b style="color:#f59e0b">{_esc(ticker)}</b></td>'
+            f'<td style="color:{side_color};font-size:.78rem;font-weight:700">{side}</td>'
+            f'<td style="text-align:right">{f"${entry:,.2f}" if entry else "—"}</td>'
+            f'{sl_cell}{tp_cell}{exit_cell}{pnl_cell}{pct_cell}'
+            f'<td style="color:{status_color};font-size:.78rem">{status_label}</td>'
+            f"</tr>"
+        )
+
+    table_html = f"""<div class="card">
+  <div class="card-head">
+    <div>
+      <div class="card-title">Log de Operaciones SCALP</div>
+      <div class="card-sub">Cuenta separada &middot; $400/trade &middot; ORB 15-min &middot; Swarm 2-agentes</div>
+    </div>
+  </div>
+  <div style="overflow-x:auto">
+    <table style="width:100%;border-collapse:collapse;font-size:.82rem">
+      <thead>
+        <tr style="color:var(--mt);font-size:.78rem">
+          <th style="text-align:left;padding:6px 10px">Fecha</th>
+          <th style="text-align:left;padding:6px 10px">Ticker</th>
+          <th style="text-align:left;padding:6px 10px">Lado</th>
+          <th style="text-align:right;padding:6px 10px">Entrada</th>
+          <th style="text-align:right;padding:6px 10px">SL</th>
+          <th style="text-align:right;padding:6px 10px">TP</th>
+          <th style="text-align:right;padding:6px 10px">Salida</th>
+          <th style="text-align:right;padding:6px 10px">P&L $</th>
+          <th style="text-align:right;padding:6px 10px">P&L %</th>
+          <th style="text-align:left;padding:6px 10px">Estado</th>
+        </tr>
+      </thead>
+      <tbody>{rows_html}</tbody>
+    </table>
+  </div>
+</div>"""
+
+    info_html = """<div class="card" style="border-left:3px solid #34d399">
+  <div class="card-head">
+    <div>
+      <div class="card-title">Estrategia Scalping ORB</div>
+      <div class="card-sub">Cuenta Alpaca separada &middot; ALPACA_SCALP_API_KEY</div>
+    </div>
+  </div>
+  <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:12px;font-size:.8rem;color:var(--mt)">
+    <div><b style="color:var(--tx)">Capital</b><br>$400/trade (cuenta separada $1600)</div>
+    <div><b style="color:var(--tx)">Max trades/dia</b><br>4 trades &middot; 1 por ticker</div>
+    <div><b style="color:var(--tx)">Rango ORB</b><br>9:30-9:45 ET (15 min)</div>
+    <div><b style="color:var(--tx)">Stop Loss</b><br>0.3-0.5% (borde opuesto del rango)</div>
+    <div><b style="color:var(--tx)">Take Profit</b><br>0.4-1.5% (1.5x el rango)</div>
+    <div><b style="color:var(--tx)">R/R</b><br>~2:1 (TP 1.5x el SL)</div>
+    <div><b style="color:var(--tx)">Cierre EOD</b><br>15:45 ET forzado</div>
+    <div><b style="color:var(--tx)">Swarm</b><br>2 agentes Haiku &lt;3s latencia</div>
+    <div><b style="color:var(--tx)">Ejecucion</b><br>Proceso local (no GitHub Actions)</div>
+    <div><b style="color:var(--tx)">Universe</b><br>13 tickers alta liquidez</div>
+  </div>
+</div>"""
+
+    return f"""<div class="tab-content" id="tab-scalper">
+  {kpi_html}
+  {chart_html}
+  <div class="section-gap"></div>
+  {table_html}
+  <div class="section-gap"></div>
+  {info_html}
+</div>"""
+
+
 def build_html(equity, initial, history, positions, signals_data,
                spy_history=None, qqq_history=None, metrics=None, perf_data=None, discovery_data=None,
-               trades=None, mc_result=None, dt_trades=None):
+               trades=None, mc_result=None, dt_trades=None, scalp_trades=None):
     if spy_history is None:
         spy_history = []
     if qqq_history is None:
@@ -1848,14 +2110,17 @@ def build_html(equity, initial, history, positions, signals_data,
         except Exception:
             pass
 
+    tres_cuentas = _tres_cuentas_panel(trades or [], dt_trades or [], scalp_trades or [])
     t_resumen    = _tab_resumen(equity, initial, regime, vix, wti, gold, dxy,
                                 history, spy_history, signals_data, metrics, age_hours,
-                                perf_data=perf_data, qqq_history=qqq_history, mc_result=mc_result)
+                                perf_data=perf_data, qqq_history=qqq_history, mc_result=mc_result,
+                                tres_cuentas_html=tres_cuentas)
     t_posiciones = _tab_posiciones(positions)
     t_senales    = _tab_senales(signals_data)
     t_mercado    = _tab_mercado(signals_data, discovery_data=discovery_data)
     t_historial  = _tab_historial(trades or [])
     t_daytrader  = _tab_daytrader(dt_trades or [])
+    t_scalper    = _tab_scalper(scalp_trades or [])
 
     return f"""<!DOCTYPE html>
 <html lang="es">
@@ -1905,6 +2170,7 @@ def build_html(equity, initial, history, positions, signals_data,
   <button class="tab-btn" data-tab="mercado">Mercado</button>
   <button class="tab-btn" data-tab="historial">Historial LP/CP</button>
   <button class="tab-btn" data-tab="daytrader">Day Trading</button>
+  <button class="tab-btn" data-tab="scalper">Scalping</button>
 </nav>
 
 {t_resumen}
@@ -1913,6 +2179,7 @@ def build_html(equity, initial, history, positions, signals_data,
 {t_mercado}
 {t_historial}
 {t_daytrader}
+{t_scalper}
 
 <script>
 // ── tabs ──
@@ -2114,15 +2381,17 @@ def generate() -> None:
         except Exception:
             pass
 
-    # Trade history from SQLite
-    trades: list[dict] = []
-    dt_trades: list[dict] = []
+    # Trade history from SQLite — separado por cuenta
+    trades: list[dict]       = []
+    dt_trades: list[dict]    = []
+    scalp_trades: list[dict] = []
     try:
         from alpha_agent.analytics.trade_db import get_trades
-        all_trades = get_trades(limit=500)
-        dt_trades  = [t for t in all_trades if t.get("sleeve") == "DT"]
-        trades     = [t for t in all_trades if t.get("sleeve") != "DT"]
-        logger.info("Trades: %d LP/CP, %d DT", len(trades), len(dt_trades))
+        all_trades   = get_trades(limit=500)
+        dt_trades    = [t for t in all_trades if t.get("sleeve") == "DT"]
+        scalp_trades = [t for t in all_trades if t.get("sleeve") == "SCALP"]
+        trades       = [t for t in all_trades if t.get("sleeve") not in ("DT", "SCALP")]
+        logger.info("Trades: %d LP/CP, %d DT, %d SCALP", len(trades), len(dt_trades), len(scalp_trades))
     except Exception as e:
         logger.debug("trade_db no disponible: %s", e)
 
@@ -2143,7 +2412,8 @@ def generate() -> None:
     html    = build_html(equity, initial, history, positions, signals_data,
                          spy_history=spy_history, qqq_history=qqq_history,
                          metrics=metrics, perf_data=perf_data, discovery_data=discovery_data,
-                         trades=trades, mc_result=mc_result, dt_trades=dt_trades)
+                         trades=trades, mc_result=mc_result,
+                         dt_trades=dt_trades, scalp_trades=scalp_trades)
     OUT_PATH.write_text(html, encoding="utf-8")
     logger.info("Dashboard generado -> %s (%d bytes)", OUT_PATH, len(html))
 
