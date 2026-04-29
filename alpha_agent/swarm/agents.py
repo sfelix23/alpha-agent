@@ -11,7 +11,7 @@ su veredicto final. El formato de output es:
 
 donde STANCE ∈ {GO, NO-GO, REDUCE}, CONFIDENCE ∈ [0,100].
 
-Agentes:
+Agentes DT (intraday):
   StrategistAgent  → régimen macro estructural, autoriza SHORT
   TechnicalAnalyst → precio, indicadores, estructura, R/R
   SentimentAgent   → noticias, earnings proximity, catalizadores
@@ -272,3 +272,161 @@ def risk_auditor(
     raw = _haiku(system, user)
     ev_val = ev_data.get("ev")
     return _parse_cot("RiskAuditor", raw, ev=ev_val, ev_data=ev_data)
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+# AGENTES LP/CP — análisis de posiciones de mediano plazo
+# ══════════════════════════════════════════════════════════════════════════════
+
+def lp_quant_agent(ticker: str, quant: dict, macro: dict) -> SwarmOpinion:
+    """
+    Evalúa la calidad cuantitativa (CAPM/Markowitz) de un pick LP.
+    Horizonte: semanas/meses. Enfoque: alfa de Jensen, Sharpe, beta.
+    """
+    system = (
+        "Sos un quant analyst especializado en análisis de factores CAPM y Markowitz. "
+        "Evaluás si un activo tiene ventaja cuantitativa real vs el mercado.\n\n"
+        "Razonamiento requerido:\n"
+        "→ [paso 1: calidad del Sharpe y alfa de Jensen — ¿hay edge real?]\n"
+        "→ [paso 2: beta y exposición al riesgo sistémico en el régimen actual]\n"
+        "→ [paso 3: retorno esperado CAPM vs riesgo asumido — ¿vale la pena?]\n"
+        "Luego en UNA sola línea: STANCE|CONFIDENCE|REASONING\n"
+        "(STANCE = GO / NO-GO / REDUCE, sin texto extra)"
+    )
+    mu       = (quant.get("mu_anual", 0) or 0) * 100
+    sigma    = (quant.get("sigma_anual", 0) or 0) * 100
+    sharpe   = quant.get("sharpe", 0) or 0
+    alpha    = (quant.get("alpha_jensen", 0) or 0) * 100
+    beta     = quant.get("beta", 0) or 0
+    exp_ret  = (quant.get("expected_return_capm", 0) or 0) * 100
+    user = (
+        f"Ticker: {ticker}\n"
+        f"Sharpe: {sharpe:.2f} | Alfa Jensen: {alpha:+.1f}%/año | Beta: {beta:.2f}\n"
+        f"Retorno esperado: {mu:+.1f}%/año | Volatilidad: {sigma:.1f}%/año\n"
+        f"Retorno CAPM fair value: {exp_ret:+.1f}%/año\n"
+        f"Régimen macro: {macro.get('regime','?').upper()} | VIX: {macro.get('vix',0):.1f}"
+    )
+    return _parse_cot("QuantAnalyst", _haiku(system, user))
+
+
+def lp_macro_agent(ticker: str, macro: dict, sector: str, polymarket: dict | None) -> SwarmOpinion:
+    """
+    Evalúa si el contexto macro y sectorial favorece el hold LP.
+    """
+    system = (
+        "Sos un macro strategist de largo plazo. Evaluás si el régimen macro "
+        "favorece mantener una posición LP (semanas/meses) en este activo.\n\n"
+        "Razonamiento requerido:\n"
+        "→ [paso 1: ¿el régimen macro (bull/bear/sideways) es consistente con el sector?]\n"
+        "→ [paso 2: riesgos macro específicos para este sector]\n"
+        "→ [paso 3: ¿hay catalizadores macro que aceleren o destruyan la tesis?]\n"
+        "Luego en UNA sola línea: STANCE|CONFIDENCE|REASONING\n"
+        "(STANCE = GO / NO-GO / REDUCE, sin texto extra)"
+    )
+    pm = ""
+    if polymarket:
+        pm = "\nPolymarket: " + " | ".join(f"{k}={v:.0%}" for k, v in list(polymarket.items())[:4])
+    user = (
+        f"Ticker: {ticker} | Sector: {sector}\n"
+        f"Régimen: {macro.get('regime','?').upper()} | VIX: {macro.get('vix',0):.1f}\n"
+        f"WTI: ${macro.get('wti',0):.1f} | DXY: {macro.get('dxy',0):.1f} | "
+        f"Gold: ${macro.get('gold',0):.0f}"
+        + pm
+    )
+    return _parse_cot("MacroLP", _haiku(system, user))
+
+
+def lp_sentiment_agent(ticker: str, sentiment_score: float, headlines: list[str],
+                        earnings_days: int | None) -> SwarmOpinion:
+    """
+    Evalúa si el flujo de noticias y catalizadores apoyan el hold LP.
+    """
+    system = (
+        "Sos un analista de sentiment e información fundamental. "
+        "Evaluás si el contexto noticioso y los catalizadores próximos "
+        "apoyan o ponen en riesgo una posición LP de semanas/meses.\n\n"
+        "Razonamiento requerido:\n"
+        "→ [paso 1: calidad y dirección del flujo de noticias]\n"
+        "→ [paso 2: earnings próximos — ¿riesgo o catalizador?]\n"
+        "→ [paso 3: ¿el sentiment refuerza o contradice la tesis cuantitativa?]\n"
+        "Luego en UNA sola línea: STANCE|CONFIDENCE|REASONING\n"
+        "(STANCE = GO / NO-GO / REDUCE, sin texto extra)"
+    )
+    hl = "\n".join(f"- {h}" for h in headlines[:5]) if headlines else "Sin noticias disponibles."
+    earn = (
+        f"Earnings en {earnings_days} días" if earnings_days and earnings_days <= 30
+        else "Sin earnings próximos (30 días)"
+    )
+    sc_label = "positivo" if sentiment_score > 0.2 else "negativo" if sentiment_score < -0.2 else "neutral"
+    user = (
+        f"Ticker: {ticker}\n"
+        f"Sentiment: {sentiment_score:+.2f} ({sc_label})\n"
+        f"{earn}\nNoticias:\n{hl}"
+    )
+    return _parse_cot("SentimentLP", _haiku(system, user))
+
+
+def lp_risk_auditor(ticker: str, quant: dict, thesis_text: str, weight_target: float,
+                    capital: float, ev_data: dict) -> SwarmOpinion:
+    """
+    Risk Auditor para LP: valida el tamaño de la posición, EV y coherencia del análisis.
+    Lee el texto de la tesis LP y busca sus puntos débiles.
+    """
+    system = (
+        "Sos el Risk Auditor de un hedge fund. Para posiciones LP (hold semanas/meses), "
+        "tu trabajo es evaluar si el tamaño y el perfil de riesgo son correctos.\n\n"
+        "Razonamiento requerido:\n"
+        "→ [paso 1: ¿hay inconsistencia entre el Sharpe/alfa y el tamaño propuesto?]\n"
+        "→ [paso 2: EV positivo con Kelly ¿justifica el peso en el portfolio?]\n"
+        "→ [paso 3: ¿cuál es el escenario adverso realista y cuánto pierde?]\n"
+        "Luego en UNA sola línea: STANCE|CONFIDENCE|REASONING\n"
+        "(STANCE = GO / NO-GO / REDUCE, sin texto extra)"
+    )
+    dollars = capital * weight_target
+    max_loss = dollars * (quant.get("sigma_anual", 0.2) * 0.3)  # 30% de la vol anual ≈ drawdown típico
+    ev_summary = (
+        f"EV estimado: ${ev_data.get('ev', 0):+.2f} | "
+        f"Kelly: {ev_data.get('kelly_fraction', 0)*100:.1f}% | "
+        f"Fuente: {ev_data.get('source', 'N/A')}"
+    )
+    user = (
+        f"Ticker: {ticker}\n"
+        f"Peso en cartera: {weight_target*100:.1f}% = ${dollars:.0f}\n"
+        f"Sharpe: {quant.get('sharpe',0):.2f} | Alfa: {(quant.get('alpha_jensen',0) or 0)*100:+.1f}%\n"
+        f"Pérdida máx estimada (30% vol anual): ${max_loss:.0f}\n"
+        f"{ev_summary}\n\n"
+        f"Tesis de la posición:\n{thesis_text[:400]}"
+    )
+    ev_val = ev_data.get("ev")
+    return _parse_cot("RiskAuditorLP", _haiku(system, user), ev=ev_val, ev_data=ev_data)
+
+
+def cp_technical_agent(ticker: str, tech: dict, macro: dict) -> SwarmOpinion:
+    """
+    Technical agent para CP: momentum 1-5 días, RSI, EMA, setup de rebote/breakout.
+    """
+    system = (
+        "Sos un technical analyst especializado en momentum de corto plazo (1-5 días). "
+        "Evaluás si el setup técnico justifica una entrada CP basada en datos EOD.\n\n"
+        "Razonamiento requerido:\n"
+        "→ [paso 1: posición del RSI y qué señala (rebote, breakout, o sobrecompra)]\n"
+        "→ [paso 2: momentum 1m/3m y coherencia con la dirección propuesta]\n"
+        "→ [paso 3: ¿el setup CP tiene sentido estructural en el contexto de mercado?]\n"
+        "Luego en UNA sola línea: STANCE|CONFIDENCE|REASONING\n"
+        "(STANCE = GO / NO-GO / REDUCE, sin texto extra)"
+    )
+    rsi   = tech.get("rsi", 50) or 50
+    ret1m = (tech.get("ret_1m", 0) or 0) * 100
+    ret3m = (tech.get("ret_3m", 0) or 0) * 100
+    dist  = (tech.get("dist_52w_high", 0) or 0) * 100
+    price = tech.get("price", 0) or 0
+    stop  = tech.get("stop_loss_atr", 0) or 0
+    risk_pct = ((price - stop) / price * 100) if price > 0 and stop > 0 else 0
+    user = (
+        f"Ticker: {ticker}\n"
+        f"RSI(14): {rsi:.0f} | Momentum 1m: {ret1m:+.1f}% | Momentum 3m: {ret3m:+.1f}%\n"
+        f"Distancia al máx 52w: {dist:+.1f}%\n"
+        f"Precio: ${price:.2f} | Stop ATR: ${stop:.2f} (riesgo {risk_pct:.1f}%)\n"
+        f"Régimen: {macro.get('regime','?').upper()} | VIX: {macro.get('vix',0):.1f}"
+    )
+    return _parse_cot("TechnicalCP", _haiku(system, user))

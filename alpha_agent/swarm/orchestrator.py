@@ -24,6 +24,11 @@ from pathlib import Path
 
 from alpha_agent.swarm.agents import (
     SwarmOpinion,
+    cp_technical_agent,
+    lp_macro_agent,
+    lp_quant_agent,
+    lp_risk_auditor,
+    lp_sentiment_agent,
     risk_auditor,
     sentiment_agent,
     strategist_agent,
@@ -318,3 +323,196 @@ def evaluate(
         ev_data=ev_data,
         debate_id=debate_id,
     )
+
+
+# ── API pública: LP/CP ────────────────────────────────────────────────────────
+
+def evaluate_position(
+    ticker: str,
+    horizon: str,
+    quant: dict,
+    tech: dict,
+    sentiment_score: float,
+    headlines: list[str],
+    macro_ctx: dict,
+    weight_target: float,
+    capital: float,
+    thesis_text: str = "",
+    earnings_days: int | None = None,
+    polymarket: dict | None = None,
+    sector: str = "Other",
+) -> SwarmDecision:
+    """
+    Debate adversarial para posiciones LP/CP (no intraday).
+
+    Ronda 1 (paralela): QuantAnalyst + MacroLP + SentimentLP
+    Ronda 2 (secuencial): RiskAuditorLP con contexto del QuantAnalyst
+    Ronda 3: Meta-agente sintetiza
+
+    Args:
+        ticker:         símbolo
+        horizon:        "LP" o "CP"
+        quant:          dict CAPM (sharpe, beta, alpha_jensen, mu_anual, sigma_anual...)
+        tech:           dict técnico (rsi, ret_1m, ret_3m, price, stop_loss_atr...)
+        sentiment_score: float -1..1
+        headlines:      titulares de noticias
+        macro_ctx:      dict con regime, vix, wti, dxy, gold
+        weight_target:  peso asignado dentro del sleeve (0..1)
+        capital:        capital total del portfolio en USD
+        thesis_text:    narrativa ya generada por trade_reasoning
+        earnings_days:  días hasta próximo earnings
+        polymarket:     señales Polymarket
+        sector:         sector del activo
+
+    Returns SwarmDecision compatible con la API del DT swarm.
+    """
+    debate_id = f"{ticker}-{horizon}-{int(time.time())}"
+    log.info("Swarm LP/CP debatiendo %s [%s]...", ticker, horizon)
+
+    # EV para LP/CP — basado en retorno esperado CAPM vs sigma
+    mu      = quant.get("mu_anual", 0.10) or 0.10
+    sigma   = quant.get("sigma_anual", 0.25) or 0.25
+    dollars = capital * weight_target
+    # EV anual aproximado para la posición
+    avg_win  = dollars * max(mu - 0.045, 0.02)   # retorno en exceso sobre rf
+    avg_loss = dollars * sigma * 0.3              # 30% vol como proxy del drawdown típico
+    win_rate = 0.55 if mu > sigma else 0.40       # heurística basada en calidad cuant
+    ev_val   = win_rate * avg_win - (1 - win_rate) * avg_loss
+    b        = avg_win / max(avg_loss, 1)
+    full_k   = (b * win_rate - (1 - win_rate)) / b
+    ev_data  = {
+        "ev":             round(ev_val, 2),
+        "win_rate":       round(win_rate, 3),
+        "avg_win":        round(avg_win, 2),
+        "avg_loss":       round(avg_loss, 2),
+        "source":         "CAPM teórico",
+        "kelly_fraction": round(max(0.0, full_k * 0.5), 3),
+        "ev_positive":    ev_val > 0,
+    }
+
+    # Ronda 1 (paralela)
+    with concurrent.futures.ThreadPoolExecutor(max_workers=3) as ex:
+        if horizon == "LP":
+            f_a = ex.submit(lp_quant_agent, ticker, quant, macro_ctx)
+            f_b = ex.submit(lp_macro_agent, ticker, macro_ctx, sector, polymarket)
+            f_c = ex.submit(lp_sentiment_agent, ticker, sentiment_score, headlines, earnings_days)
+            a_name, b_name, c_name = "QuantAnalyst", "MacroLP", "SentimentLP"
+        else:
+            f_a = ex.submit(cp_technical_agent, ticker, tech, macro_ctx)
+            f_b = ex.submit(lp_macro_agent, ticker, macro_ctx, sector, polymarket)
+            f_c = ex.submit(lp_sentiment_agent, ticker, sentiment_score, headlines, earnings_days)
+            a_name, b_name, c_name = "TechnicalCP", "MacroCP", "SentimentCP"
+
+        op_a = op_b = op_c = None
+        for fut, name in [(f_a, a_name), (f_b, b_name), (f_c, c_name)]:
+            try:
+                op = fut.result(timeout=30)
+                if name == a_name: op_a = op
+                elif name == b_name: op_b = op
+                else: op_c = op
+                log.info("  [%s] %s (%d%%) — %s", op.agent, op.stance, op.confidence, op.reasoning[:70])
+            except Exception as e:
+                log.warning("Ronda1 %s error: %s", name, e)
+                dummy = SwarmOpinion(agent=name, chain_of_thought="", stance="REDUCE",
+                                     confidence=40, reasoning=str(e)[:80])
+                if name == a_name: op_a = dummy
+                elif name == b_name: op_b = dummy
+                else: op_c = dummy
+
+    # Ronda 2 (secuencial): RiskAuditor lee al quant/technical
+    try:
+        op_risk = lp_risk_auditor(ticker, quant, thesis_text, weight_target, capital, ev_data)
+        log.info("  [RiskAuditorLP] %s (%d%%) EV=$%+.2f", op_risk.stance, op_risk.confidence, ev_val)
+    except Exception as e:
+        log.warning("RiskAuditorLP error: %s", e)
+        op_risk = SwarmOpinion(agent="RiskAuditorLP", chain_of_thought="", stance="REDUCE",
+                                confidence=40, reasoning=str(e)[:80], ev=ev_val)
+
+    opinions = [op_a, op_b, op_c, op_risk]
+
+    # Ronda 3: meta-agente
+    go, size_f, reason = _meta_agent_lp(ticker, horizon, opinions, ev_data)
+    go_count = sum(1 for o in opinions if o.stance == "GO")
+
+    log.info("Swarm LP/CP FINAL %s [%s]: %s size=%.2f GO=%d/4",
+             ticker, horizon, "GO" if go else "NO-GO", size_f, go_count)
+
+    def _op_to_dict(o: SwarmOpinion) -> dict:
+        d = {"agent": o.agent, "chain_of_thought": o.chain_of_thought,
+             "stance": o.stance, "confidence": o.confidence, "reasoning": o.reasoning}
+        if o.ev is not None: d["ev"] = o.ev
+        if o.ev_data: d["ev_data"] = o.ev_data
+        return d
+
+    _save_debate({
+        "id": debate_id, "ts": time.strftime("%Y-%m-%dT%H:%M:%S"),
+        "ticker": ticker, "direction": horizon, "dt_score": quant.get("sharpe", 0),
+        "gap_pct": 0, "opinions": [_op_to_dict(o) for o in opinions],
+        "go_count": go_count, "ev_data": ev_data,
+        "decision": {"go": go, "size_factor": size_f, "reasoning": reason},
+    })
+
+    return SwarmDecision(
+        go=go, size_factor=size_f, reasoning=reason,
+        opinions=opinions, go_count=go_count, ev_data=ev_data, debate_id=debate_id,
+    )
+
+
+def _meta_agent_lp(
+    ticker: str, horizon: str,
+    opinions: list[SwarmOpinion], ev_data: dict,
+) -> tuple[bool, float, str]:
+    """Meta-agente Sonnet para posiciones LP/CP."""
+    from anthropic import Anthropic
+    client = Anthropic(api_key=os.getenv("ANTHROPIC_API_KEY"))
+
+    go_count     = sum(1 for o in opinions if o.stance == "GO")
+    reduce_count = sum(1 for o in opinions if o.stance == "REDUCE")
+    avg_conf     = sum(o.confidence for o in opinions) / max(len(opinions), 1)
+    ev_val       = ev_data.get("ev", 0)
+
+    ops_text = "\n".join(
+        f"  [{o.agent}] {o.stance} ({o.confidence}%) — {o.reasoning}"
+        + ("\n    CoT:\n" + "\n".join(f"      {ln}" for ln in o.chain_of_thought.splitlines())
+           if o.chain_of_thought else "")
+        for o in opinions
+    )
+
+    system = (
+        f"Sos el Orquestador de un Swarm de trading de alto crecimiento. "
+        f"Cuatro especialistas debatieron una posición {horizon} (mediano plazo). "
+        f"Sintetizá el debate y emití la decisión final con sizing.\n\n"
+        f"Sizing para {horizon}:\n"
+        f"  EV positivo + 3-4 GO → size 1.0\n"
+        f"  EV positivo + 2 GO → size 0.75\n"
+        f"  EV positivo + mayoría REDUCE → size 0.5\n"
+        f"  EV NEGATIVO → NO-GO (regla dura)\n"
+        f"  RiskAuditor NO-GO con argumento sólido → NO-GO\n\n"
+        f"Respondé EXACTAMENTE: DECISION|SIZE_FACTOR|REASONING\n"
+        f"(DECISION = GO o NO-GO, SIZE_FACTOR = 0.5/0.75/1.0, "
+        f"REASONING = 2-3 oraciones en español)"
+    )
+    user = (
+        f"POSICIÓN: {ticker} [{horizon}]\n\n"
+        f"DEBATE:\n{ops_text}\n\n"
+        f"Resumen: GO={go_count} | REDUCE={reduce_count} | conf.avg={avg_conf:.0f}%\n"
+        f"EV={ev_val:+.2f} ({'POSITIVO' if ev_data.get('ev_positive') else 'NEGATIVO'})"
+    )
+    try:
+        text = client.messages.create(
+            model="claude-sonnet-4-6", max_tokens=400, system=system,
+            messages=[{"role": "user", "content": user}],
+        ).content[0].text.strip()
+        parts    = text.split("|", 2)
+        decision = parts[0].strip().upper()
+        size_f   = float(parts[1].strip()) if len(parts) > 1 else 1.0
+        reason   = parts[2].strip() if len(parts) > 2 else text
+        go = decision == "GO"
+        if not ev_data.get("ev_positive", True):
+            go = False
+            reason = f"EV negativo — posición matemáticamente inválida. " + reason
+        return go, max(0.0, min(1.0, size_f)), reason
+    except Exception as e:
+        log.error("Meta-agente LP falló: %s", e)
+        go = go_count >= 2 and ev_data.get("ev_positive", True)
+        return go, 0.75 if go_count >= 3 else 0.5, f"Fallback: {go_count}/4 GO"

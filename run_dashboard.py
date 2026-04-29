@@ -788,6 +788,62 @@ def _ws_block(ws: dict | None) -> str:
 
 # ─── TAB: SEÑALES ─────────────────────────────────────────────────────────────
 
+def _swarm_inline(swarm: dict | None) -> str:
+    """Mini-bloque del debate Swarm para cada señal LP/CP en el tab Señales."""
+    if not swarm:
+        return ""
+    go       = swarm.get("go", False)
+    size_f   = swarm.get("size_factor", 1.0)
+    go_count = swarm.get("go_count", 0)
+    ev_val   = swarm.get("ev", 0)
+    reasoning = _esc(swarm.get("reasoning", "")[:200])
+    fin_c    = "#3fb950" if go else "#f85149"
+    ev_c     = "#3fb950" if ev_val >= 0 else "#f85149"
+    ev_sign  = "+" if ev_val >= 0 else ""
+
+    agent_icons = {"QuantAnalyst": "Q", "TechnicalCP": "T", "MacroLP": "M",
+                   "MacroCP": "M", "SentimentLP": "N", "SentimentCP": "N",
+                   "RiskAuditorLP": "R"}
+    agent_colors = {"QuantAnalyst": "#818cf8", "TechnicalCP": "#34d399",
+                    "MacroLP": "#60a5fa", "MacroCP": "#60a5fa",
+                    "SentimentLP": "#fbbf24", "SentimentCP": "#fbbf24",
+                    "RiskAuditorLP": "#f87171"}
+    stance_colors = {"GO": "#3fb950", "NO-GO": "#f85149", "REDUCE": "#d29922"}
+
+    pills = ""
+    for op in swarm.get("opinions", []):
+        ag    = op.get("agent", "?")
+        stance = op.get("stance", "?")
+        conf  = op.get("confidence", 0)
+        ic    = agent_colors.get(ag, "#8b949e")
+        sc    = stance_colors.get(stance, "#8b949e")
+        icon  = agent_icons.get(ag, "?")
+        cot   = op.get("cot", "").strip()
+        tip   = _esc(cot[:180]) if cot else _esc(op.get("reasoning", "")[:120])
+        pills += (
+            f'<span title="{tip}" style="display:inline-flex;align-items:center;gap:4px;'
+            f'font-size:.72rem;padding:2px 7px;border-radius:4px;cursor:help;'
+            f'background:{ic}15;border:1px solid {ic}44">'
+            f'<span style="color:{ic};font-weight:700">{icon}</span>'
+            f'<span style="color:{sc};font-weight:700">{stance}</span>'
+            f'<span style="color:var(--mt)">{conf}%</span></span> '
+        )
+
+    return f"""<div style="margin-top:12px;padding:10px 12px;border-radius:6px;
+  background:var(--bg);border:1px solid var(--br)">
+  <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:6px">
+    <span style="font-size:.72rem;font-weight:700;color:#818cf8">SWARM</span>
+    <span style="font-size:.72rem;font-weight:700;color:{fin_c};background:{fin_c}15;
+      padding:1px 7px;border-radius:4px">{'GO' if go else 'NO-GO'} &times;{size_f}</span>
+    <span style="font-size:.72rem;color:#8b949e">{go_count}/4 GO</span>
+    <span style="font-size:.72rem;color:{ev_c};background:{ev_c}15;padding:1px 6px;
+      border-radius:4px">EV {ev_sign}${abs(ev_val):.0f}</span>
+  </div>
+  <div style="margin-bottom:6px">{pills}</div>
+  <div style="font-size:.73rem;color:var(--mt)">{reasoning}</div>
+</div>"""
+
+
 def _tab_senales(signals_data):
     if not signals_data:
         return '<div class="tab-content" id="tab-senales"><div class="card"><p class="muted" style="padding:40px">Sin senales disponibles.</p></div></div>'
@@ -846,6 +902,7 @@ def _tab_senales(signals_data):
   <div class="sig-thesis" id="{uid}">
     <p>{text}</p>
     {_ws_block(th.get("wall_street"))}
+    {_swarm_inline(th.get("swarm"))}
   </div>
 </div>"""
 

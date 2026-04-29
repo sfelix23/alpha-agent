@@ -320,6 +320,72 @@ def main() -> None:
         except ImportError as exc:
             log.warning("Modulos Wall Street no disponibles: %s", exc)
 
+    # 8.2 Swarm debate para señales LP/CP
+    if not args.no_ai:
+        log.info("🧠 Swarm debate para señales LP/CP...")
+        try:
+            from alpha_agent.swarm.orchestrator import evaluate_position as swarm_position
+            macro_dict = {
+                "regime": macro.regime,
+                "vix":    float(macro.prices.get("vix", 0) or 0),
+                "wti":    float(macro.prices.get("oil_wti", 0) or 0),
+                "dxy":    float(macro.prices.get("dxy", 0) or 0),
+                "gold":   float(macro.prices.get("gold", 0) or 0),
+            }
+            poly_signals: dict = {}
+            try:
+                from alpha_agent.macro.polymarket import fetch_polymarket_signals
+                poly_signals = fetch_polymarket_signals()
+            except Exception:
+                pass
+
+            for sig in signals.long_term[:PARAMS.top_n_long_term] + signals.short_term[:PARAMS.top_n_short_term]:
+                try:
+                    th        = sig.thesis or {}
+                    quant     = th.get("quant", {})
+                    tech      = th.get("technical", {})
+                    fund      = th.get("fundamental", {})
+                    thesis_t  = th.get("thesis_text", "")
+                    horizon   = "LP" if sig in signals.long_term else "CP"
+                    from alpha_agent.config import SECTOR_MAP
+                    sector    = SECTOR_MAP.get(sig.ticker, "Other")
+                    swarm_dec = swarm_position(
+                        ticker=sig.ticker, horizon=horizon,
+                        quant=quant, tech=tech,
+                        sentiment_score=float(fund.get("sentiment_score", 0) or 0),
+                        headlines=fund.get("sample_titles", []),
+                        macro_ctx=macro_dict,
+                        weight_target=float(getattr(sig, "weight", 0.5) or 0.5),
+                        capital=capital, thesis_text=thesis_t,
+                        polymarket=poly_signals, sector=sector,
+                    )
+                    if sig.thesis is None:
+                        sig.thesis = {}
+                    sig.thesis["swarm"] = {
+                        "go":          swarm_dec.go,
+                        "size_factor": swarm_dec.size_factor,
+                        "reasoning":   swarm_dec.reasoning,
+                        "go_count":    swarm_dec.go_count,
+                        "ev":          swarm_dec.ev_data.get("ev", 0),
+                        "ev_positive": swarm_dec.ev_data.get("ev_positive", True),
+                        "opinions": [
+                            {"agent": o.agent, "stance": o.stance,
+                             "confidence": o.confidence, "reasoning": o.reasoning,
+                             "cot": o.chain_of_thought}
+                            for o in swarm_dec.opinions
+                        ],
+                        "debate_id": swarm_dec.debate_id,
+                    }
+                    log.info("Swarm %s [%s]: %s size=%.2f GO=%d/4 EV=$%+.2f",
+                             sig.ticker, horizon,
+                             "GO" if swarm_dec.go else "NO-GO",
+                             swarm_dec.size_factor, swarm_dec.go_count,
+                             swarm_dec.ev_data.get("ev", 0))
+                except Exception as exc:
+                    log.warning("Swarm LP/CP %s fallo: %s", sig.ticker, exc)
+        except Exception as exc:
+            log.warning("Swarm LP/CP no disponible: %s", exc)
+
     # 8.5 Derivatives: bearish scoring + hedge layer + directional options
     if PARAMS.enable_options:
         log.info("🎯 Bucket opciones: evaluando candidatos bearish y hedge…")
