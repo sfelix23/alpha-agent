@@ -1,0 +1,70 @@
+name: "Alpha Weekly"
+# Rebalancer semanal — viernes antes del cierre de mercado.
+
+on:
+  schedule:
+    # Viernes 18:00 UTC = 15:00 ART (antes del cierre NYSE)
+    - cron: "0 18 * * 5"
+  workflow_dispatch: {}
+
+permissions:
+  contents: write
+
+jobs:
+  rebalance:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Setup Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: "pip"
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Create .env
+        run: |
+          cat > .env <<EOF
+          ALPACA_API_KEY=${{ secrets.ALPACA_API_KEY }}
+          ALPACA_SECRET_KEY=${{ secrets.ALPACA_SECRET_KEY }}
+          TWILIO_SID=${{ secrets.TWILIO_SID }}
+          TWILIO_TOKEN=${{ secrets.TWILIO_TOKEN }}
+          MY_PHONE_NUMBER=${{ secrets.MY_PHONE_NUMBER }}
+          ANTHROPIC_API_KEY=${{ secrets.ANTHROPIC_API_KEY }}
+          EOF
+
+      - name: Validate secrets
+        run: |
+          python - <<'PYEOF'
+          import os, sys
+          from dotenv import load_dotenv
+          load_dotenv()
+          if not os.getenv("ALPACA_API_KEY"):
+              print("ERROR: ALPACA_API_KEY no configurado.")
+              sys.exit(1)
+          print("Secrets OK")
+          PYEOF
+
+      - name: Run Rebalancer
+        run: python run_rebalancer.py --live
+
+      - name: Generate Dashboard
+        run: python run_dashboard.py --no-open
+
+      - name: Commit
+        run: |
+          git config user.name  "alpha-bot"
+          git config user.email "alpha-bot@users.noreply.github.com"
+          git pull --rebase origin master || true
+          git add signals/ docs/index.html || true
+          git diff --staged --quiet || git commit -m "chore: weekly rebalance $(date -u +%Y-%m-%d) [skip ci]"
+          git push
+        continue-on-error: true

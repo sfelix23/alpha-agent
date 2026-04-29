@@ -1,0 +1,73 @@
+name: "Alpha Monitor"
+# Vigila stops/TPs cada 30 min durante el horario de mercado.
+# También actualiza el dashboard en GitHub Pages.
+
+on:
+  schedule:
+    # :05 y :35 de cada hora, 14:00-19:00 UTC = 11:00-16:00 ART, lunes a viernes
+    - cron: "5,35 14-19 * * 1-5"
+  workflow_dispatch: {}
+
+permissions:
+  contents: write
+
+jobs:
+  monitor:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Setup Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: "pip"
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Create .env
+        run: |
+          cat > .env <<EOF
+          ALPACA_API_KEY=${{ secrets.ALPACA_API_KEY }}
+          ALPACA_SECRET_KEY=${{ secrets.ALPACA_SECRET_KEY }}
+          ALPACA_DT_API_KEY=${{ secrets.ALPACA_DT_API_KEY }}
+          ALPACA_DT_SECRET_KEY=${{ secrets.ALPACA_DT_SECRET_KEY }}
+          TWILIO_SID=${{ secrets.TWILIO_SID }}
+          TWILIO_TOKEN=${{ secrets.TWILIO_TOKEN }}
+          MY_PHONE_NUMBER=${{ secrets.MY_PHONE_NUMBER }}
+          ANTHROPIC_API_KEY=${{ secrets.ANTHROPIC_API_KEY }}
+          EOF
+
+      - name: Validate secrets
+        run: |
+          python - <<'PYEOF'
+          import os, sys
+          from dotenv import load_dotenv
+          load_dotenv()
+          if not os.getenv("ALPACA_API_KEY"):
+              print("ERROR: ALPACA_API_KEY no configurado. Agrega el secret en GitHub.")
+              sys.exit(1)
+          print("Secrets OK")
+          PYEOF
+
+      - name: Run Monitor (stops/TPs/trailing)
+        run: python run_monitor.py --live
+
+      - name: Generate Dashboard
+        run: python run_dashboard.py --no-open
+
+      - name: Commit si hubo cambios
+        run: |
+          git config user.name  "alpha-bot"
+          git config user.email "alpha-bot@users.noreply.github.com"
+          git pull --rebase origin master || true
+          git add signals/trades.db docs/index.html || true
+          git diff --staged --quiet || git commit -m "chore: monitor $(date -u +%H:%M) [skip ci]"
+          git push
+        continue-on-error: true
