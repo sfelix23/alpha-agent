@@ -252,21 +252,22 @@ def main() -> None:
         logger.debug("Polymarket no disponible: %s", e)
 
     # ── Decision Committee ─────────────────────────────────────────────────
-    size_factor   = 1.0
-    committee_msg = ""
+    size_factor  = 1.0
+    swarm_msg    = ""
+    swarm_ev     = 0.0
+    swarm_go_cnt = 0
     if not args.no_committee:
         try:
-            from alpha_agent.decision_committee import evaluate as committee_eval
+            from alpha_agent.swarm import evaluate as swarm_eval
             from alpha_agent.analytics.trade_db import get_trades
 
-            recent = get_trades(limit=10)
+            recent    = get_trades(limit=10)
             dt_recent = [t for t in recent if t.get("sleeve") == "DT"]
-            pnl_today = sum(t.get("pnl_usd") or 0 for t in dt_recent
-                            if t.get("date") == datetime.now().strftime("%Y-%m-%d"))
-            trades_today = len([t for t in dt_recent
-                                 if t.get("date") == datetime.now().strftime("%Y-%m-%d")])
+            today_str = datetime.now().strftime("%Y-%m-%d")
+            pnl_today    = sum(t.get("pnl_usd") or 0 for t in dt_recent if t.get("date") == today_str)
+            trades_today = len([t for t in dt_recent if t.get("date") == today_str])
 
-            decision = committee_eval(
+            decision = swarm_eval(
                 candidate=cand,
                 direction=direction,
                 macro_ctx=macro_ctx,
@@ -275,23 +276,25 @@ def main() -> None:
                 trades_today=trades_today,
                 polymarket=polymarket,
             )
-            committee_msg = decision.reasoning
+            swarm_msg    = decision.reasoning
+            swarm_ev     = decision.ev_data.get("ev", 0.0)
+            swarm_go_cnt = decision.go_count
             logger.info(
-                "Committee: %s | size=%.1f | GO=%d/4 | %s",
+                "Swarm: %s | size=%.2f | GO=%d/4 | EV=$%+.2f | %s",
                 "GO" if decision.go else "NO-GO",
-                decision.size_factor, decision.go_count,
+                decision.size_factor, decision.go_count, swarm_ev,
                 decision.reasoning[:100],
             )
 
             if not decision.go:
-                logger.info("Committee VETÓ el trade. Saliendo.")
+                logger.info("Swarm VETÓ el trade. Saliendo.")
                 try:
                     from alpha_agent.notifications import send_whatsapp
                     send_whatsapp(
-                        f"DT COMMITTEE VETO {ticker} [{direction}]\n"
+                        f"DT SWARM VETO {ticker} [{direction}]\n"
                         f"Score cuant: {cand['dt_score']:.3f} — aprobado por reglas\n"
-                        f"Veto: {decision.reasoning[:200]}\n"
-                        f"Votes GO: {decision.go_count}/4"
+                        f"EV: ${swarm_ev:+.2f} | GO: {swarm_go_cnt}/4\n"
+                        f"Razon: {decision.reasoning[:200]}"
                     )
                 except Exception:
                     pass
@@ -303,10 +306,10 @@ def main() -> None:
                 qty1 = qty // 2
                 qty2 = qty - qty1
                 notional = qty * price
-                logger.info("Committee: size reducido a %.0f%% → %d shares", size_factor * 100, qty)
+                logger.info("Swarm: size ajustado a %.0f%% → %d shares", size_factor * 100, qty)
 
         except Exception as e:
-            logger.warning("Decision Committee falló, usando reglas puras: %s", e)
+            logger.warning("Swarm falló, usando reglas puras: %s", e)
 
     # ── Log + ejecución ────────────────────────────────────────────────────
     dir_icon = "↑ LONG" if direction == "LONG" else "↓ SHORT"
@@ -350,15 +353,21 @@ def main() -> None:
         rr2 = (price - tp2) / (sl - price) if (sl - price) > 0 else 0.0
         dir_label = "SHORT"
 
-    committee_line = f"\n  Committee: {committee_msg[:120]}" if committee_msg else ""
+    swarm_line = ""
+    if swarm_msg:
+        ev_sign = "+" if swarm_ev >= 0 else ""
+        swarm_line = (
+            f"\n  Swarm [{swarm_go_cnt}/4 GO | EV ${ev_sign}{round(swarm_ev, 1)}]: "
+            f"{swarm_msg[:110]}"
+        )
     msg = (
         f"DAY TRADER | {ts} | {regime} | VIX {round(vix,1)}\n"
         f"ENTRADA {dir_label} {ticker} ({qty} shares = ${round(notional)})\n"
-        f"  Tramo1: {qty1} shares -> TP ${tp1} ({'2.5%'})\n"
-        f"  Tramo2: {qty2} shares -> TP ${tp2} ({'5.0%'}) R/R {round(rr2,1)}:1\n"
-        f"  SL ${sl} (1.5%)\n"
+        f"  Tramo1: {qty1} shares -> TP ${round(tp1,2)} (+3%)\n"
+        f"  Tramo2: {qty2} shares -> TP ${round(tp2,2)} (+7%) R/R {round(rr2,1)}:1\n"
+        f"  SL ${round(sl,2)} (-1.5%)\n"
         f"  gap={round(gap_pct*100,1)}% ORB={round(orb_s,2)} vol={round(vol_r,1)}x RSI={round(rsi_v)}"
-        f"{committee_line}\n"
+        f"{swarm_line}\n"
         f"  Cierre EOD automatico 15:00 EDT"
     )
     logger.info("WhatsApp DT (%d chars)...", len(msg))

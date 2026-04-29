@@ -1628,19 +1628,133 @@ def _tab_daytrader(dt_trades: list[dict]) -> str:
     <div><b style="color:var(--tx)">Capital DT</b><br>$1400/trade (87.5% de $1600)</div>
     <div><b style="color:var(--tx)">Posiciones</b><br>1 concentrada por dia</div>
     <div><b style="color:var(--tx)">Stop Loss</b><br>-1.5% fijo</div>
-    <div><b style="color:var(--tx)">Dual bracket</b><br>TP1 +2.5% (50%) &middot; TP2 +5.0% (50%)</div>
-    <div><b style="color:var(--tx)">Filtros</b><br>Gap &gt;1.5% &middot; VWAP &middot; ORB &middot; Vol 1.5x &middot; RSI 42-74</div>
+    <div><b style="color:var(--tx)">Dual bracket</b><br>TP1 +3% (50%) &middot; TP2 +7% (50%)</div>
+    <div><b style="color:var(--tx)">Filtros</b><br>Gap &gt;1% &middot; VWAP &middot; ORB &middot; Vol 1.2x &middot; RSI 38-78</div>
     <div><b style="color:var(--tx)">Cierre EOD</b><br>15:00 EDT automatico</div>
     <div><b style="color:var(--tx)">Horario entrada</b><br>11:30 ART (10:30 EDT)</div>
-    <div><b style="color:var(--tx)">Universo</b><br>15 tickers &middot; max $280/accion</div>
+    <div><b style="color:var(--tx)">Swarm IA</b><br>4 agentes CoT + meta-agente EV</div>
   </div>
 </div>"""
+
+    # ── Swarm debate log ──────────────────────────────────────────────────────
+    swarm_html = ""
+    try:
+        from alpha_agent.swarm.orchestrator import load_debates
+        debates = load_debates(limit=5)
+        if debates:
+            agent_icons = {
+                "Strategist":  ("S", "#818cf8"),
+                "Technical":   ("T", "#34d399"),
+                "Sentiment":   ("N", "#fbbf24"),
+                "RiskAuditor": ("R", "#f87171"),
+            }
+            stance_colors = {"GO": "#3fb950", "NO-GO": "#f85149", "REDUCE": "#d29922"}
+
+            debate_cards = ""
+            for deb in debates:
+                ticker_d  = deb.get("ticker", "?")
+                dir_d     = deb.get("direction", "LONG")
+                ts_d      = deb.get("ts", "")[:16].replace("T", " ")
+                go_cnt    = deb.get("go_count", 0)
+                meta      = deb.get("decision", {})
+                ev_d      = deb.get("ev_data", {})
+                ev_val    = ev_d.get("ev", 0)
+                go_final  = meta.get("go", False)
+                size_f    = meta.get("size_factor", 1.0)
+                reason_d  = _esc(meta.get("reasoning", "")[:180])
+
+                dir_color = "#3fb950" if dir_d == "LONG" else "#f85149"
+                fin_color = "#3fb950" if go_final else "#f85149"
+                ev_color  = "#3fb950" if ev_val >= 0 else "#f85149"
+                ev_sign   = "+" if ev_val >= 0 else ""
+
+                opinion_rows = ""
+                for op in deb.get("opinions", []):
+                    ag      = op.get("agent", "?")
+                    stance  = op.get("stance", "?")
+                    conf    = op.get("confidence", 0)
+                    reas    = _esc(op.get("reasoning", "")[:140])
+                    cot     = op.get("chain_of_thought", "").strip()
+                    icon, ic = agent_icons.get(ag, ("?", "#8b949e"))
+                    sc      = stance_colors.get(stance, "#8b949e")
+
+                    cot_lines_html = ""
+                    if cot:
+                        for ln in cot.splitlines():
+                            if ln.strip():
+                                cot_lines_html += (
+                                    f'<div style="color:var(--mt);font-size:.74rem;'
+                                    f'padding:2px 0 2px 8px;border-left:2px solid {ic}33">'
+                                    f'{_esc(ln.strip())}</div>'
+                                )
+
+                    ev_badge = ""
+                    if ag == "RiskAuditor" and ev_d:
+                        ev_badge = (
+                            f'<span style="margin-left:8px;font-size:.72rem;'
+                            f'background:{ev_color}22;color:{ev_color};'
+                            f'padding:1px 6px;border-radius:4px">'
+                            f'EV {ev_sign}${abs(ev_val):.1f}</span>'
+                        )
+
+                    opinion_rows += f"""
+<div style="margin-bottom:10px">
+  <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px">
+    <div style="width:22px;height:22px;border-radius:50%;background:{ic}22;
+      color:{ic};font-weight:700;font-size:.72rem;display:flex;
+      align-items:center;justify-content:center;flex-shrink:0">{icon}</div>
+    <span style="font-size:.78rem;font-weight:600;color:var(--tx)">{ag}</span>
+    <span style="font-size:.72rem;font-weight:700;color:{sc};
+      background:{sc}22;padding:1px 7px;border-radius:4px">{stance}</span>
+    <span style="font-size:.72rem;color:var(--mt)">{conf}%</span>
+    {ev_badge}
+  </div>
+  {cot_lines_html}
+  <div style="font-size:.76rem;color:var(--mt);padding-left:30px;margin-top:3px">{reas}</div>
+</div>"""
+
+                debate_cards += f"""<div style="border:1px solid var(--br);border-radius:8px;
+  padding:14px;margin-bottom:14px;background:var(--bg)">
+  <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px;flex-wrap:wrap">
+    <span style="font-weight:700;color:var(--tx);font-size:.9rem">{_esc(ticker_d)}</span>
+    <span style="font-size:.75rem;color:{dir_color};background:{dir_color}22;
+      padding:1px 8px;border-radius:4px">{dir_d}</span>
+    <span style="font-size:.72rem;color:var(--mt)">{ts_d}</span>
+    <span style="font-size:.75rem;color:#8b949e">GO {go_cnt}/4</span>
+    <span style="font-size:.75rem;color:{ev_color};background:{ev_color}22;
+      padding:1px 8px;border-radius:4px">EV {ev_sign}${ev_val:.1f}</span>
+    <span style="margin-left:auto;font-size:.8rem;font-weight:700;color:{fin_color}">
+      {'GO' if go_final else 'NO-GO'} &times;{size_f}</span>
+  </div>
+  {opinion_rows}
+  <div style="margin-top:8px;padding:8px 12px;background:{fin_color}11;
+    border-radius:6px;font-size:.76rem;color:var(--mt);border-left:3px solid {fin_color}">
+    <b style="color:{fin_color}">Meta-agente:</b> {reason_d}
+  </div>
+</div>"""
+
+            swarm_html = f"""<div class="card" style="border-left:3px solid #818cf8">
+  <div class="card-head" style="margin-bottom:14px">
+    <div>
+      <div class="card-title">Debate del Swarm &mdash; Ultimas {len(debates)} decisiones</div>
+      <div class="card-sub">
+        S=Strategist &middot; T=Technical &middot; N=Sentiment &middot; R=RiskAuditor
+        &middot; CoT = cadena de pensamiento &middot; EV = Expected Value
+      </div>
+    </div>
+  </div>
+  {debate_cards}
+</div>"""
+    except Exception as e_deb:
+        swarm_html = f'<div class="card"><p class="muted">Debate log no disponible: {_esc(str(e_deb)[:80])}</p></div>'
 
     return f"""<div class="tab-content" id="tab-daytrader">
   {kpi_html}
   {chart_html}
   <div class="section-gap"></div>
   {table_html}
+  <div class="section-gap"></div>
+  {swarm_html}
   <div class="section-gap"></div>
   {info_html}
 </div>"""
