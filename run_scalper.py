@@ -318,7 +318,7 @@ def main() -> None:
     # ProactorEventLoop (default) tiene bugs con conexiones WebSocket largas;
     # SelectorEventLoop es más estable para I/O de red de larga duración.
     if sys.platform == "win32":
-        asyncio.set_event_loop_policy(asyncio.SelectorEventLoopPolicy())
+        asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
 
     _setup_logging()
     log.info("=== SCALPER INIT === live=%s", live)

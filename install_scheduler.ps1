@@ -7,7 +7,7 @@
 param([switch]$Uninstall)
 
 $baseDir = "D:\Agente"
-$taskNames = @("Alpha Wake", "Alpha Dashboard", "Alpha PreMarket", "Alpha Analyst", "Alpha Monitor", "Alpha Midday", "Alpha DayTrader", "Alpha Rebalancer", "Alpha Health", "Alpha Portfolio Review", "Alpha Email Digest")
+$taskNames = @("Alpha Wake", "Alpha Dashboard", "Alpha PreMarket", "Alpha Analyst", "Alpha Monitor", "Alpha Midday", "Alpha DayTrader", "Alpha Scalper", "Alpha Rebalancer", "Alpha Health", "Alpha Portfolio Review", "Alpha Email Digest")
 
 # 1. Verificar admin
 $me = New-Object Security.Principal.WindowsPrincipal([Security.Principal.WindowsIdentity]::GetCurrent())
@@ -138,6 +138,38 @@ if (Get-ScheduledTask -TaskName "Alpha Wake" -ErrorAction SilentlyContinue) {
     Write-Host "  [OK] Alpha Wake       - 10:00 ART" -ForegroundColor Green
 } else {
     Write-Host "  [FAIL] Alpha Wake" -ForegroundColor Red
+}
+
+# =========================================================
+# TAREA 1b: Alpha Scalper - 10:20 ART (antes de la apertura NYSE 10:30 ART)
+# Proceso continuo: WebSocket Alpaca, construye ORB 10:30-10:45, tradea hasta 17:45.
+# Usa la cuenta Alpaca SEPARADA (ALPACA_SCALP_API_KEY / ALPACA_SCALP_SECRET_KEY).
+# Timeout 450 min (7.5h) para cubrir la sesión completa.
+# =========================================================
+$scalperArg = "-NoProfile -ExecutionPolicy Bypass -Command `"cd '$baseDir'; python '$baseDir\run_scalper.py' --live 2>&1`""
+
+$aSC = New-ScheduledTaskAction `
+    -Execute "powershell.exe" `
+    -Argument $scalperArg `
+    -WorkingDirectory $baseDir
+
+$tSC = New-ScheduledTaskTrigger -Weekly `
+    -DaysOfWeek Monday,Tuesday,Wednesday,Thursday,Friday `
+    -At "10:20"
+
+Register-ScheduledTask `
+    -TaskName "Alpha Scalper" `
+    -Action $aSC `
+    -Trigger $tSC `
+    -Settings (New-BaseSettings 450) `
+    -Principal $principal `
+    -Description "Scalper ORB: proceso continuo 10:20-17:45 ART, WebSocket Alpaca, cuenta SCALP" `
+    -Force | Out-Null
+
+if (Get-ScheduledTask -TaskName "Alpha Scalper" -ErrorAction SilentlyContinue) {
+    Write-Host "  [OK] Alpha Scalper    - 10:20 ART (proceso continuo hasta EOD)" -ForegroundColor Green
+} else {
+    Write-Host "  [FAIL] Alpha Scalper" -ForegroundColor Red
 }
 
 # =========================================================
@@ -398,6 +430,7 @@ Write-Host "HORARIO (lunes a viernes):" -ForegroundColor Cyan
 Write-Host "  09:00  Pre-market gap scanner (WhatsApp+Telegram)"
 Write-Host "  09:55  Dashboard Flask + ngrok"
 Write-Host "  10:00  PC despierta de Sleep"
+Write-Host "  10:20  Scalper ORB (proceso continuo, cuenta SCALP separada)"
 Write-Host "  10:35  Analyst + Trader + WhatsApp"
 Write-Host "  10:50  Monitor cada 15 min hasta 17:05 (cobertura completa)"
 Write-Host "  11:30  DayTrader (ORB window, cuenta separada)"
