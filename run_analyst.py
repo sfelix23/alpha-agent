@@ -209,6 +209,19 @@ def main() -> None:
             (1.0 - alloc.lp_pct - alloc.cp_pct) * 100,
             alloc.n_cp_positions, alloc.cp_max_hold_days, alloc.reasoning,
         )
+        # Persistir para que el monitor pueda leer cp_max_hold_days
+        try:
+            import json as _json
+            (Path("signals") / "allocation.json").write_text(
+                _json.dumps({
+                    "cp_max_hold_days": alloc.cp_max_hold_days,
+                    "lp_pct": alloc.lp_pct,
+                    "cp_pct": alloc.cp_pct,
+                    "generated_at": datetime.now().isoformat(),
+                }), encoding="utf-8"
+            )
+        except Exception:
+            pass
     except Exception as _alloc_exc:
         log.warning("AI Allocation no disponible — reglas estáticas: %s", _alloc_exc)
         if macro.regime.upper() == "BULL" and vix_now < 20:
@@ -292,9 +305,10 @@ def main() -> None:
     log.info("Top LP post-guard: %s", scores["long_term"].head(PARAMS.top_n_long_term).index.tolist())
     log.info("Top CP: %s", scores["short_term"].head(PARAMS.top_n_short_term).index.tolist())
 
-    # 6. Markowitz
-    lp_candidates = scores["long_term"].index.tolist()
-    if len(lp_candidates) >= 2:
+    # 6. Markowitz + Kelly (solo si LP tiene capital asignado)
+    _lp_active = PARAMS.weight_long_term > 0
+    lp_candidates = scores["long_term"].index.tolist() if _lp_active else []
+    if _lp_active and len(lp_candidates) >= 2:
         portfolio_lp = optimize_portfolio(closes, capm["mu_anual"], candidates=lp_candidates)
         log.info(
             "Cartera Markowitz: ret=%.2f%% vol=%.2f%% sharpe=%.2f",
@@ -302,17 +316,19 @@ def main() -> None:
             portfolio_lp["volatility"] * 100,
             portfolio_lp["sharpe"],
         )
+        # 6.5 Kelly blend
+        if portfolio_lp["weights"].sum() > 0:
+            portfolio_lp["weights"] = blend_markowitz_kelly(portfolio_lp["weights"], capm)
+            log.info(
+                "Pesos Kelly-Markowitz blended: %s",
+                {t: f"{w:.2%}" for t, w in portfolio_lp["weights"][portfolio_lp["weights"] > 0].items()},
+            )
     else:
-        log.warning("Pocos candidatos LP — saltando Markowitz.")
+        if not _lp_active:
+            log.info("LP sleeve=0%% — saltando Markowitz/Kelly (ahorra ~2 min)")
+        else:
+            log.warning("Pocos candidatos LP — saltando Markowitz.")
         portfolio_lp = {"weights": pd.Series(dtype=float), "exp_return": 0, "volatility": 0, "sharpe": 0}
-
-    # 6.5 Kelly blend — combina pesos Markowitz con Kelly Criterion (half-Kelly)
-    if portfolio_lp["weights"].sum() > 0:
-        portfolio_lp["weights"] = blend_markowitz_kelly(portfolio_lp["weights"], capm)
-        log.info(
-            "Pesos Kelly-Markowitz blended: %s",
-            {t: f"{w:.2%}" for t, w in portfolio_lp["weights"][portfolio_lp["weights"] > 0].items()},
-        )
 
     # 7-8. Señales enriquecidas con noticias + macro + reasoning
     log.info("📰 Fetching noticias y construyendo tesis por activo…")

@@ -152,6 +152,70 @@ def _compute_chandelier_stop(ticker: str) -> float | None:
         return None
 
 
+def _read_cp_max_hold_days() -> int:
+    """Lee cp_max_hold_days del último allocation.json (escrito por el analyst)."""
+    try:
+        data = json.loads((BASE_DIR / "signals" / "allocation.json").read_text(encoding="utf-8"))
+        return int(data.get("cp_max_hold_days", 3))
+    except Exception:
+        return 3
+
+
+def _get_cp_entry_date(ticker: str) -> str | None:
+    """Devuelve la fecha de entrada del trade CP abierto más reciente para el ticker."""
+    try:
+        from alpha_agent.analytics.trade_db import get_trades
+        trades = get_trades(limit=300)
+        for t in trades:
+            if (t.get("ticker") == ticker
+                    and t.get("sleeve") in ("CP", "MIX")
+                    and t.get("closed_at") is None
+                    and t.get("side") == "BUY"):
+                return t.get("date")
+    except Exception:
+        pass
+    return None
+
+
+def _build_eod_summary(broker, positions: list, equity: float, capital_base: float) -> str:
+    """
+    Resumen diario del portfolio enviado al último run del monitor (16:35 ART).
+    Incluye P&L del día, comparación vs SPY y estado de cada posición.
+    """
+    ts = datetime.now().strftime("%d-%b %H:%M")
+    lines = [f"📊 *CIERRE DEL DÍA* · {ts}"]
+
+    total_pnl = sum(p.unrealized_pl for p in positions)
+    pnl_pct = (total_pnl / capital_base * 100) if capital_base > 0 else 0.0
+    pnl_icon = "🟢" if total_pnl >= 0 else "🔴"
+    lines.append(f"{pnl_icon} P&L abierto: ${total_pnl:+.2f} ({pnl_pct:+.2f}%)")
+    lines.append(f"   Equity: ${equity:.2f} | Capital base: ${capital_base:.0f}")
+
+    # SPY daily change
+    try:
+        import yfinance as yf
+        spy = yf.download("SPY", period="2d", interval="1d", progress=False, auto_adjust=True)
+        if spy is not None and len(spy) >= 2:
+            spy_close = spy["Close"].squeeze()
+            spy_chg = float((spy_close.iloc[-1] - spy_close.iloc[-2]) / spy_close.iloc[-2] * 100)
+            lines.append(f"   SPY hoy: {spy_chg:+.2f}% | Alpha vs SPY: {pnl_pct - spy_chg:+.2f}%")
+    except Exception:
+        pass
+
+    # Posiciones
+    if positions:
+        lines.append("")
+        lines.append("*Posiciones:*")
+        for pos in sorted(positions, key=lambda p: p.unrealized_pl, reverse=True):
+            pct = pnl_pct_from_position(pos)
+            icon = "🟢" if pos.unrealized_pl >= 0 else "🔴"
+            lines.append(f"  {icon} {pos.ticker}: ${pos.unrealized_pl:+.2f} ({pct:+.1f}%)")
+    else:
+        lines.append("Sin posiciones abiertas.")
+
+    return "\n".join(lines)
+
+
 def _scan_next_cp_opportunity(closed_ticker: str, pnl_pct: float) -> str | None:
     """
     Después de un cierre por TP en CP, busca inmediatamente el próximo trade.
@@ -190,7 +254,7 @@ def main():
     logger.info("=== MONITOR START === live=%s dry_run=%s", args.live, args.dry_run)
 
     from trader_agent.brokers.alpaca_broker import AlpacaBroker
-    from alpha_agent.notifications import send_whatsapp
+    from alpha_agent.notifications import send_notification
     from alpha_agent.config import PARAMS
 
     broker = AlpacaBroker(paper=True)
@@ -223,6 +287,7 @@ def main():
     # ── 3. Cargar stops/TPs del último análisis
     signals_data = load_signals_latest()
     capital_base = signals_data.get("capital_usd", PARAMS.paper_capital_usd)
+    cp_max_hold_days = _read_cp_max_hold_days()
 
     # ── 4. Kill switch: equity cayó más del threshold desde el capital base
     kill_switch_pct = 0.03  # -3%
@@ -326,6 +391,28 @@ def main():
             action = None
             reason = ""
             claude_override = False
+
+            # ── CP max hold days: rotación forzada por tiempo ────────────────
+            horizon = (signal.get("horizon") or "").upper()
+            if horizon in ("CP", "MIX"):
+                entry_date_str = _get_cp_entry_date(ticker)
+                if entry_date_str:
+                    try:
+                        from datetime import date as _date
+                        entry_date = _date.fromisoformat(entry_date_str)
+                        held_days  = (_date.today() - entry_date).days
+                        if held_days >= cp_max_hold_days:
+                            action = "CLOSE"
+                            reason = (
+                                f"CP MAX HOLD DAYS alcanzado ({held_days}d >= {cp_max_hold_days}d) "
+                                f"— rotación forzada"
+                            )
+                            logger.info(
+                                "CP EXPIRE %s: %d días >= max %d → cerrando",
+                                ticker, held_days, cp_max_hold_days,
+                            )
+                    except Exception:
+                        pass
 
             # Check stop loss
             stop_loss_hit = bool(stop_loss and current <= stop_loss)
@@ -492,7 +579,18 @@ def main():
                     ticker, current, avg_entry, unrealized_pnl, pnl_pct,
                 )
 
-    # ── 7. REPORTE
+    # ── 7. EOD SUMMARY: último run del día (16:35 ART = 19:35 UTC)
+    from datetime import timezone as _tz2
+    _now_utc2 = datetime.now(_tz2.utc)
+    if _now_utc2.hour == 19 and _now_utc2.minute >= 30:
+        try:
+            eod_msg = _build_eod_summary(broker, positions, equity, capital_base)
+            logger.info("Enviando EOD summary...")
+            send_notification(eod_msg)
+        except Exception as _eod_sum_err:
+            logger.warning("EOD summary error: %s", _eod_sum_err)
+
+    # ── 8. REPORTE de alertas
     if alerts:
         now = datetime.now().strftime("%H:%M")
         header = f"🔔 *MONITOR* · {now} · ${equity:.0f}"
@@ -503,11 +601,11 @@ def main():
         footer = "\n".join(footer_parts)
 
         msg = f"{header}\n{body}{footer}"
-        logger.info("Enviando alerta WhatsApp (%d chars)...", len(msg))
+        logger.info("Enviando alerta (%d chars)...", len(msg))
         try:
-            send_whatsapp(msg)
+            send_notification(msg)
         except Exception as e:
-            logger.error("Error enviando WhatsApp: %s", e)
+            logger.error("Error enviando notificacion: %s", e)
     else:
         logger.info("📊 Todas las posiciones dentro de rango. Sin alertas.")
 
