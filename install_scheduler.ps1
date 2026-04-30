@@ -322,7 +322,7 @@ if (Get-ScheduledTask -TaskName "Alpha Portfolio Review" -ErrorAction SilentlyCo
 # =========================================================
 $a7 = New-ScheduledTaskAction `
     -Execute "powershell.exe" `
-    -Argument ("-NoProfile -ExecutionPolicy Bypass -Command `"cd '$baseDir'; python '$baseDir\run_email_digest.py' 2>&1`"") `
+    -Argument ("-NoProfile -ExecutionPolicy Bypass -Command `"cd '$baseDir'; python '$baseDir\run_performance.py' 2>&1`"") `
     -WorkingDirectory $baseDir
 
 $t7 = New-ScheduledTaskTrigger -Weekly `
@@ -335,13 +335,13 @@ Register-ScheduledTask `
     -Trigger $t7 `
     -Settings (New-BaseSettings 10) `
     -Principal $principal `
-    -Description "Email digest semanal HTML" `
+    -Description "Reporte semanal: P&L, Sharpe, win rate, alpha vs SPY" `
     -Force | Out-Null
 
 if (Get-ScheduledTask -TaskName "Alpha Email Digest" -ErrorAction SilentlyContinue) {
-    Write-Host "  [OK] Alpha Email Digest - viernes 17:00" -ForegroundColor Green
+    Write-Host "  [OK] Alpha Performance  - viernes 17:00" -ForegroundColor Green
 } else {
-    Write-Host "  [FAIL] Alpha Email Digest" -ForegroundColor Red
+    Write-Host "  [FAIL] Alpha Performance" -ForegroundColor Red
 }
 
 # Habilitar wake timers

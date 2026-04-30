@@ -425,6 +425,19 @@ def main():
                 action = "CLOSE"
                 reason = f"TAKE PROFIT alcanzado (${current:.2f} >= TP ${take_profit:.2f})"
 
+            # ── Breakeven stop: cuando sube +5%, mover stop a entrada ────────
+            # Protege ganancias sin intervención manual. Solo avanza, nunca retrocede.
+            if action is None and avg_entry > 0 and pnl_pct >= 5.0:
+                breakeven_sl = round(avg_entry * 1.002, 2)  # +0.2% sobre entrada
+                current_sl   = signal.get("stop_loss") or 0.0
+                if breakeven_sl > current_sl + 0.01:
+                    _update_trailing_stop(
+                        broker, ticker, breakeven_sl, abs(qty),
+                        args.live and not args.dry_run, alerts,
+                        f"BREAKEVEN activado (+{pnl_pct:.1f}%) → SL movido a ${breakeven_sl:.2f}",
+                    )
+                    signal["stop_loss"] = breakeven_sl
+
             # Chandelier Exit trailing stop (Chuck LeBeau)
             # Sube dinámicamente con el precio; solo cierra si el precio cae
             elif avg_entry > 0:
