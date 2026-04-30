@@ -376,7 +376,6 @@ def main() -> None:
                     fund      = th.get("fundamental", {})
                     thesis_t  = th.get("thesis_text", "")
                     horizon   = "LP" if sig in signals.long_term else "CP"
-                    from alpha_agent.config import SECTOR_MAP
                     sector    = SECTOR_MAP.get(sig.ticker, "Other")
                     swarm_dec = swarm_position(
                         ticker=sig.ticker, horizon=horizon,
