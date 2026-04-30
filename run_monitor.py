@@ -525,6 +525,7 @@ def main():
             reason = ""
             claude_override = False
             near_tp = False
+            is_cp_expire = False  # True → rotación forzada por tiempo, no vetoable por Claude
 
             # ── CP max hold days: rotación forzada por tiempo ────────────────
             horizon = (signal.get("horizon") or "").upper()
@@ -537,6 +538,7 @@ def main():
                         held_days  = (_date.today() - entry_date).days
                         if held_days >= cp_max_hold_days:
                             action = "CLOSE"
+                            is_cp_expire = True
                             reason = (
                                 f"CP MAX HOLD DAYS alcanzado ({held_days}d >= {cp_max_hold_days}d) "
                                 f"— rotación forzada"
@@ -615,7 +617,7 @@ def main():
                 and (current - stop_loss) / stop_loss < 0.015
             )
 
-            if (action == "CLOSE" or near_stop) and not claude_override:
+            if (action == "CLOSE" or near_stop) and not claude_override and not is_cp_expire:
                 # Si Claude ya vetó este ticker recientemente, no consultar de nuevo:
                 # ejecutar directamente para no quedar en loop de vetos cada 15 min.
                 if _is_in_veto_cooldown(ticker):
@@ -807,8 +809,13 @@ def main():
                     _opt_action = "CLOSE"
                     _opt_reason = f"PRIMA -50% ({_pnl_pct_op:.0f}%) — stop-loss de opciones"
             elif _dte <= 5:
-                _opt_action = "CLOSE"
-                _opt_reason = f"NEAR EXPIRY: {_dte}d al vencimiento — theta acelerado"
+                if _opened_today:
+                    logger.info(
+                        "OPT %s: DTE=%d pero abierta HOY — skip (PDT protection)", _sym, _dte
+                    )
+                else:
+                    _opt_action = "CLOSE"
+                    _opt_reason = f"NEAR EXPIRY: {_dte}d al vencimiento — theta acelerado"
             elif _pnl_pct_op >= 100:
                 _opt_action = "CLOSE"
                 _opt_reason = f"TAKE PROFIT: +{_pnl_pct_op:.0f}% (2× prima)"
@@ -841,8 +848,16 @@ def main():
                         closes.append(f"{_sym} ({_opt_reason[:20]})")
                         alerts.append(f"  ✅ SELL {_contracts} contrato(s) enviado")
                     except Exception as _oe:
-                        logger.error("Error cerrando opción %s: %s", _sym, _oe)
-                        alerts.append(f"  ❌ Error: {_oe}")
+                        _oe_str = str(_oe)
+                        # PDT error (40310100): Alpaca bloquea venta de mismo instrumento
+                        # comprado hoy. Si DTE ≤ 1, la opción expirará sola — no alertar.
+                        if "40310100" in _oe_str and _dte <= 1:
+                            logger.info(
+                                "OPT %s: PDT error + DTE=1 — expirará mañana, sin alerta", _sym
+                            )
+                        else:
+                            logger.error("Error cerrando opción %s: %s", _sym, _oe)
+                            alerts.append(f"  ❌ Error: {_oe}")
                 else:
                     alerts.append("  _(dry-run: no enviado)_")
 
