@@ -152,6 +152,31 @@ def _compute_chandelier_stop(ticker: str) -> float | None:
         return None
 
 
+def _parse_option_symbol(symbol: str) -> dict | None:
+    """
+    Parsea un símbolo OCC de Alpaca.
+    Formato: {UNDERLYING}{YYMMDD}{C/P}{STRIKE*1000 padded 8 digits}
+    Ejemplo: NVDA251219C00950000 → underlying=NVDA, expiry=2025-12-19, type=call, strike=950.0
+    """
+    import re
+    from datetime import date as _d
+    m = re.match(r"^([A-Z]{1,6})(\d{6})([CP])(\d{8})$", symbol)
+    if not m:
+        return None
+    underlying, ds, kind, sk = m.groups()
+    try:
+        expiry = _d(2000 + int(ds[:2]), int(ds[2:4]), int(ds[4:6]))
+        strike = int(sk) / 1000.0
+        return {
+            "underlying": underlying,
+            "expiry": expiry,
+            "type": "call" if kind == "C" else "put",
+            "strike": strike,
+        }
+    except Exception:
+        return None
+
+
 def _check_vix_spike() -> tuple[bool, float, float]:
     """
     Devuelve (spike_detected, vix_now, vix_prev).
@@ -691,6 +716,71 @@ def main():
                     "✅ %s: $%.2f (entry $%.2f) | P&L $%+.2f (%+.1f%%) — OK",
                     ticker, current, avg_entry, unrealized_pnl, pnl_pct,
                 )
+
+        # ── 6b. OPTIONS MONITORING ────────────────────────────────────────────
+        # Las opciones no tienen stop-loss ni TP en Alpaca; se gestionan acá.
+        # Reglas: cerrar si (a) prima perdida ≥50%, (b) ≤5d al vencimiento, (c) +100% ganancia.
+        from datetime import date as _opt_date
+        _today = _opt_date.today()
+        _opt_positions = [p for p in positions if getattr(p, "asset_class", "equity") == "option"]
+
+        for _op in _opt_positions:
+            _sym  = _op.ticker
+            _meta = _parse_option_symbol(_sym)
+            if not _meta:
+                logger.debug("Símbolo de opción no parseable: %s", _sym)
+                continue
+
+            _contracts  = max(1, int(abs(_op.qty)))
+            _cost_basis = _op.avg_price * _contracts * 100
+            _dte        = (_meta["expiry"] - _today).days
+            _pnl_pct_op = (_op.unrealized_pl / _cost_basis * 100) if _cost_basis > 0 else 0.0
+
+            _opt_action = None
+            _opt_reason = ""
+
+            if _pnl_pct_op <= -50:
+                _opt_action = "CLOSE"
+                _opt_reason = f"PRIMA -50% ({_pnl_pct_op:.0f}%) — stop-loss de opciones"
+            elif _dte <= 5:
+                _opt_action = "CLOSE"
+                _opt_reason = f"NEAR EXPIRY: {_dte}d al vencimiento — theta acelerado"
+            elif _pnl_pct_op >= 100:
+                _opt_action = "CLOSE"
+                _opt_reason = f"TAKE PROFIT: +{_pnl_pct_op:.0f}% (2× prima)"
+
+            logger.info(
+                "%s OPT %s [%s %s K=%.0f exp=%s] | val=$%.0f pnl=%+.0f%% dte=%dd",
+                "⚠️" if _opt_action else "✅",
+                _sym, _meta["type"].upper(), _meta["underlying"],
+                _meta["strike"], _meta["expiry"],
+                _op.market_value, _pnl_pct_op, _dte,
+            )
+
+            if _opt_action:
+                alerts.append(
+                    f"🎯 *OPT {_meta['underlying']} {_meta['type'].upper()} "
+                    f"K${_meta['strike']:.0f}*: {_opt_reason} "
+                    f"| P&L ${_op.unrealized_pl:+.0f} ({_pnl_pct_op:+.0f}%)"
+                )
+                if args.live and not args.dry_run:
+                    try:
+                        from alpaca.trading.requests import MarketOrderRequest
+                        from alpaca.trading.enums import OrderSide, TimeInForce
+                        _opt_order = MarketOrderRequest(
+                            symbol=_sym,
+                            qty=_contracts,
+                            side=OrderSide.SELL,
+                            time_in_force=TimeInForce.DAY,
+                        )
+                        broker._trading.submit_order(_opt_order)
+                        closes.append(f"{_sym} ({_opt_reason[:20]})")
+                        alerts.append(f"  ✅ SELL {_contracts} contrato(s) enviado")
+                    except Exception as _oe:
+                        logger.error("Error cerrando opción %s: %s", _sym, _oe)
+                        alerts.append(f"  ❌ Error: {_oe}")
+                else:
+                    alerts.append("  _(dry-run: no enviado)_")
 
     # ── 7. EOD SUMMARY: último run del día (16:35 ART = 19:35 UTC)
     from datetime import timezone as _tz2
