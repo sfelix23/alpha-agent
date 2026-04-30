@@ -152,6 +152,50 @@ def _compute_chandelier_stop(ticker: str) -> float | None:
         return None
 
 
+def _check_vix_spike() -> tuple[bool, float, float]:
+    """
+    Devuelve (spike_detected, vix_now, vix_prev).
+    Spike = VIX intradía subió >20% vs el cierre anterior.
+    """
+    try:
+        import yfinance as yf
+        df = yf.download("^VIX", period="3d", interval="1d",
+                         progress=False, auto_adjust=True)
+        if df is None or len(df) < 2:
+            return False, 0.0, 0.0
+        close = df["Close"].squeeze()
+        vix_prev = float(close.iloc[-2])
+        vix_now  = float(close.iloc[-1])
+        spike = vix_now > vix_prev * 1.20
+        return spike, round(vix_now, 1), round(vix_prev, 1)
+    except Exception:
+        return False, 0.0, 0.0
+
+
+def _was_partially_exited_today(ticker: str) -> bool:
+    """Verifica si ya se hizo un partial TP exit hoy para evitar doble venta."""
+    try:
+        from alpha_agent.analytics.trade_db import get_trades
+        today  = datetime.now().strftime("%Y-%m-%d")
+        trades = get_trades(ticker=ticker, limit=20)
+        return any(
+            t.get("sleeve") == "PARTIAL_TP" and t.get("date") == today
+            for t in trades
+        )
+    except Exception:
+        return False
+
+
+def _log_partial_exit(ticker: str, qty: float, price: float, pnl_usd: float) -> None:
+    try:
+        from alpha_agent.analytics.trade_db import log_trade
+        log_trade(ticker=ticker, side="SELL", qty=qty, price=price,
+                  notional=qty * price, sleeve="PARTIAL_TP", status="filled",
+                  pnl_usd=pnl_usd)
+    except Exception:
+        pass
+
+
 def _read_cp_max_hold_days() -> int:
     """Lee cp_max_hold_days del último allocation.json (escrito por el analyst)."""
     try:
@@ -318,7 +362,42 @@ def main():
             alerts.append("_(dry-run: no se cerraron posiciones)_")
 
     else:
-        # ── 5b. EOD DT close: cerrar posiciones DT antes del cierre de mercado
+        # ── 5b. VIX SPIKE PROTOCOL: reducir CP al 50% si VIX sube >20% intradía
+        vix_spike, vix_now, vix_prev = _check_vix_spike()
+        if vix_spike:
+            logger.warning("⚡ VIX SPIKE: %.1f → %.1f (+%.0f%%) — reduciendo CP al 50%%",
+                           vix_prev, vix_now, (vix_now/vix_prev - 1)*100)
+            alerts.append(
+                f"⚡ *VIX SPIKE* {vix_prev} → {vix_now} (+{(vix_now/vix_prev-1)*100:.0f}%)\n"
+                f"  Reduciendo posiciones CP al 50%% como protección de capital."
+            )
+            for pos in positions:
+                sig = get_signal_for_ticker(signals_data, pos.ticker)
+                if not sig:
+                    continue
+                if (sig.get("horizon") or "").upper() not in ("CP", "MIX"):
+                    continue
+                sell_qty = round(abs(pos.qty) / 2, 4)
+                if sell_qty <= 0:
+                    continue
+                logger.info("VIX SPIKE REDUCE %s: vendiendo %.4f shares", pos.ticker, sell_qty)
+                alerts.append(f"  📉 REDUCE {pos.ticker}: vendiendo 50%% ({sell_qty:.4f} shares)")
+                if args.live and not args.dry_run:
+                    try:
+                        from alpaca.trading.requests import MarketOrderRequest
+                        from alpaca.trading.enums import OrderSide, TimeInForce
+                        order = MarketOrderRequest(
+                            symbol=pos.ticker, qty=sell_qty,
+                            side=OrderSide.SELL, time_in_force=TimeInForce.DAY,
+                        )
+                        broker._trading.submit_order(order)
+                        closes.append(f"{pos.ticker} (VIX spike 50%)")
+                    except Exception as _vix_e:
+                        logger.error("VIX spike reduce %s: %s", pos.ticker, _vix_e)
+                else:
+                    alerts.append("    (dry-run: no enviado)")
+
+        # ── 5c. EOD DT close: cerrar posiciones DT antes del cierre de mercado
         # NYSE cierra 16:00 EDT. Forzamos cierre DT a las 15:00 EDT = 19:00 UTC
         # para asegurarnos de no tener overnight en el sleeve de day trading.
         from datetime import timezone as _tz
@@ -391,6 +470,7 @@ def main():
             action = None
             reason = ""
             claude_override = False
+            near_tp = False
 
             # ── CP max hold days: rotación forzada por tiempo ────────────────
             horizon = (signal.get("horizon") or "").upper()
@@ -424,6 +504,19 @@ def main():
             elif take_profit and current >= take_profit:
                 action = "CLOSE"
                 reason = f"TAKE PROFIT alcanzado (${current:.2f} >= TP ${take_profit:.2f})"
+
+            # ── Partial TP: vende 50% al 93% del TP, deja correr el resto ───
+            elif (
+                take_profit is not None
+                and current >= take_profit * 0.93
+                and not _was_partially_exited_today(ticker)
+            ):
+                action = "REDUCE"
+                near_tp = True
+                reason = (
+                    f"PARTIAL TP (${current:.2f} ≈ ${take_profit:.2f}) "
+                    f"— vende 50%, resta corre libre de riesgo"
+                )
 
             # ── Breakeven stop: cuando sube +5%, mover stop a entrada ────────
             # Protege ganancias sin intervención manual. Solo avanza, nunca retrocede.
@@ -570,6 +663,13 @@ def main():
                             )
                         except Exception as _db_e:
                             logger.debug("trade_db close log error: %s", _db_e)
+
+                        # Partial TP: registrar la venta parcial como PARTIAL_TP
+                        # para que _was_partially_exited_today() la detecte y evite doble venta
+                        if near_tp:
+                            _log_partial_exit(
+                                ticker, sell_qty, current, round(unrealized_pnl / 2, 2)
+                            )
 
                         # Capital rotation: cuando cierra por TP buscar inmediatamente el próximo trade
                         if is_tp_close:
