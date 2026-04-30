@@ -78,13 +78,13 @@ def _score_ticker(close, high, low, volume) -> dict:
             vol_ratio = float(volume.iloc[-1]) / avg_vol
 
     # Filtros duros
-    if rsi > 72:           # sobrecompra fuerte
+    if rsi > 75:           # sobrecompra fuerte (era 72)
         return None
-    if rsi < 28:           # oversold extremo (caída libre)
+    if rsi < 25:           # oversold extremo (era 28 — permite rebotes desde 25-28)
         return None
-    if mom5 < -3.0:        # baja intradía fuerte: esperar
+    if mom5 < -5.0:        # baja semanal fuerte: esperar (era -3.0%)
         return None
-    if mom20 < -8.0:       # tendencia mensual muy negativa
+    if mom20 < -12.0:      # tendencia mensual muy negativa (era -8.0%)
         return None
 
     # Score compuesto (0-1)

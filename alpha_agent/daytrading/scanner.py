@@ -52,11 +52,11 @@ DT_UNIVERSE: list[str] = [
 MAX_PRICE_USD = 280.0   # $1400 / 5 shares = $280 máximo
 MIN_QTY_SHARES = 5      # minimo de shares para que valga operar
 
-MIN_GAP_PCT   = 0.010   # gap mínimo desde cierre anterior (+1.0%, era 1.5%)
-MIN_VOL_RATIO = 1.2     # volumen reciente vs media histórica (era 1.5x)
-RSI_MIN       = 38.0    # era 42 — acepta momentum naciente
-RSI_MAX       = 78.0    # era 74 — permite entrar en momentum fuerte
-MIN_DT_SCORE  = 0.15    # umbral mínimo de score combinado (era 0.20)
+MIN_GAP_PCT   = 0.005   # gap mínimo desde cierre anterior (+0.5%, era 1.0%)
+MIN_VOL_RATIO = 1.1     # volumen reciente vs media histórica (era 1.2x)
+RSI_MIN       = 35.0    # era 38 — acepta momentum naciente
+RSI_MAX       = 80.0    # era 78 — permite entrar en momentum fuerte
+MIN_DT_SCORE  = 0.12    # umbral mínimo de score combinado (era 0.15)
 
 # Bracket: TP2 extendido a 7% para capturar tendencias intraday largas.
 # La estrategia dual captura siempre algo (TP1) y deja correr la mitad (TP2).

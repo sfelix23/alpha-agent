@@ -33,7 +33,7 @@ SCALP_UNIVERSE = [
 # Parámetros del ORB
 ORB_MINUTES   = 15       # duración del rango de apertura
 MIN_RANGE_PCT = 0.002    # rango mínimo = 0.2% del precio (filtra días flatlines)
-MAX_RANGE_PCT = 0.025    # rango máximo = 2.5% (demasiado volátil = skip)
+MAX_RANGE_PCT = 0.035    # rango máximo = 3.5% (era 2.5% — días volátiles son los mejores)
 
 # Parámetros de la posición
 SCALP_BUDGET      = 400.0   # USD por trade
