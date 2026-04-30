@@ -32,9 +32,10 @@ class AllocationDecision:
 
 
 # Rule-based fallbacks (used when API unavailable)
-_BULL_DEFAULT    = AllocationDecision(0.0, 0.98, 0.0, 2, 3, "BULL: capital totalmente desplegado en CP momentum.")
-_NEUTRAL_DEFAULT = AllocationDecision(0.0, 0.80, 0.0, 2, 3, "NEUTRAL: CP alta exposición con buffer mínimo.")
-_BEAR_DEFAULT    = AllocationDecision(0.0, 0.45, 0.0, 1, 2, "BEAR: postura defensiva, CP mínimo.")
+# LP+CP cap = 0.88 (10% reservado para sleeve OPT + 2% buffer)
+_BULL_DEFAULT    = AllocationDecision(0.0, 0.88, 0.10, 2, 3, "BULL: CP alto, 10% reservado para opciones direccionales.")
+_NEUTRAL_DEFAULT = AllocationDecision(0.0, 0.75, 0.10, 2, 3, "NEUTRAL: CP moderado, 10% opciones como hedge.")
+_BEAR_DEFAULT    = AllocationDecision(0.0, 0.40, 0.10, 1, 2, "BEAR: postura defensiva, opciones como protección.")
 
 
 def _rule_default(regime: str, vix: float) -> AllocationDecision:
@@ -101,18 +102,19 @@ def decide_allocation(
         f"{json.dumps(ctx, indent=2)}\n\n"
         "Rules:\n"
         "- LP sleeve is OFF (capital too small for long-term holds)\n"
-        "- CP momentum trades (1-5 days): 35-90% of capital\n"
-        "- Options: always 0% (too costly for this capital)\n"
-        "- cash = 1 - cp_pct (protective buffer)\n"
+        "- CP momentum trades (1-5 days): 35-88% of capital\n"
+        "- Options sleeve: always 10% (long OTM calls/puts, fixed — do not change)\n"
+        "- cash = 1 - cp_pct - 0.10 (protective buffer; must be >= 0)\n"
         "- n_cp_positions: 1 (very concentrated) or 2 (two bets)\n"
         "- cp_max_hold_days: 2 (BEAR/high VIX) to 4 (strong BULL)\n"
-        "- In BULL + VIX<18: use cp_pct=0.98 (near-full deployment), 2 positions, 3 days max\n"
-        "- In BULL + VIX 18-25: use cp_pct=0.85-0.92, 2 positions, 3 days max\n"
-        "- In NEUTRAL or VIX>25: use cp_pct=0.70-0.80, 2 positions, 3 days max\n"
-        "- In BEAR or VIX>30: use cp_pct=0.40-0.50, 1 position, 2 days max\n"
-        "- recent_pnl_7d and win_rate should adjust cp_pct: losing streak → reduce 5-10%\n\n"
+        "- In BULL + VIX<18: use cp_pct=0.88 (near-full deployment), 2 positions, 3 days max\n"
+        "- In BULL + VIX 18-25: use cp_pct=0.75-0.82, 2 positions, 3 days max\n"
+        "- In NEUTRAL or VIX>25: use cp_pct=0.60-0.70, 2 positions, 3 days max\n"
+        "- In BEAR or VIX>30: use cp_pct=0.35-0.45, 1 position, 2 days max\n"
+        "- recent_pnl_7d and win_rate should adjust cp_pct: losing streak → reduce 5-10%\n"
+        "- IMPORTANT: cp_pct must never exceed 0.88 (10% always reserved for options)\n\n"
         "Respond ONLY with a JSON object (no markdown, no explanation):\n"
-        '{"lp_pct":0.0,"cp_pct":<0.40-0.98>,"opt_pct":0.0,'
+        '{"lp_pct":0.0,"cp_pct":<0.35-0.88>,"opt_pct":0.10,'
         '"n_cp_positions":<1 or 2>,"cp_max_hold_days":<2-4>,'
         '"reasoning":"<una frase en español>"}'
     )
@@ -137,8 +139,8 @@ def decide_allocation(
         data = json.loads(raw)
         dec = AllocationDecision(
             lp_pct=float(data.get("lp_pct", 0.0)),
-            cp_pct=min(0.98, max(0.40, float(data.get("cp_pct", 0.80)))),
-            opt_pct=0.0,
+            cp_pct=min(0.88, max(0.35, float(data.get("cp_pct", 0.75)))),
+            opt_pct=float(data.get("opt_pct", 0.10)),
             n_cp_positions=max(1, min(3, int(data.get("n_cp_positions", 2)))),
             cp_max_hold_days=max(2, min(5, int(data.get("cp_max_hold_days", 3)))),
             reasoning=str(data.get("reasoning", "AI allocation applied.")),

@@ -175,9 +175,34 @@ def main():
         cp_budget, cp_invested, cp_available, n_cp_open,
     )
 
-    # ── 4. Evaluar si hay slots y capital suficiente ────────────────────────────
+    # ── 4. Macro context: no operar si mercado es desfavorable ─────────────────
+    _regime = "unknown"
+    _vix_now = 0.0
+    try:
+        from alpha_agent.macro.macro_context import fetch_macro_snapshot
+        _macro = fetch_macro_snapshot()
+        _vix_now = float((_macro.prices or {}).get("vix", 18) or 18)
+        _regime  = (_macro.regime or "unknown").lower()
+
+        if _regime == "bear" or _vix_now > 27:
+            log.info(
+                "Macro DESFAVORABLE: régimen=%s VIX=%.1f — midday scan cancelado.",
+                _regime, _vix_now,
+            )
+            return
+        log.info("Macro OK: régimen=%s VIX=%.1f — procediendo.", _regime, _vix_now)
+    except Exception as _me:
+        log.warning("Macro context no disponible: %s — sin filtro macro.", _me)
+
+    # ── 5. Evaluar si hay slots y capital suficiente ────────────────────────────
     MAX_CP_SLOTS = 2
     open_slots = MAX_CP_SLOTS - n_cp_open
+
+    # VIX moderado: conservar a 1 slot
+    if _vix_now > 22:
+        open_slots = min(open_slots, 1)
+        log.info("VIX %.1f > 22 — limitando a 1 slot CP.", _vix_now)
+
     if open_slots <= 0:
         log.info("CP sleeve lleno (%d/%d slots). Sin acción.", n_cp_open, MAX_CP_SLOTS)
         return
@@ -242,6 +267,17 @@ def main():
         [(c["ticker"], c["score"], f"RSI={c['rsi']}", f"mom5={c['mom5d']:+.1f}%")
          for c in candidates[:5]],
     )
+
+    # ── Earnings filter: descartar candidatos que reportan en ≤ 2 días ────────
+    try:
+        from alpha_agent.analytics.earnings_calendar import has_earnings_soon
+        candidates = [c for c in candidates if not has_earnings_soon(c["ticker"], days_ahead=2)]
+        if not candidates:
+            log.info("Sin candidatos tras filtro de earnings. Sin acción.")
+            return
+        log.info("Post earnings filter: %d candidatos disponibles.", len(candidates))
+    except Exception as _ef:
+        log.debug("Earnings filter no disponible: %s", _ef)
 
     # ── 7. Selección y ejecución ────────────────────────────────────────────────
     top = candidates[:open_slots]

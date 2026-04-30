@@ -305,6 +305,24 @@ def main() -> None:
     log.info("Top LP post-guard: %s", scores["long_term"].head(PARAMS.top_n_long_term).index.tolist())
     log.info("Top CP: %s", scores["short_term"].head(PARAMS.top_n_short_term).index.tolist())
 
+    # Earnings filter: no entrar en CP que reporta resultados en los próximos 2 días.
+    # Un earnings sorpresa puede moverse ±15% overnight — el riesgo no es precio-able.
+    # Solo se aplica a CP (hold 1-5 días); LP puede sobrevivir un earnings.
+    try:
+        from alpha_agent.analytics.earnings_calendar import filter_earnings_risk
+        _cp_check = scores["short_term"].head(PARAMS.top_n_short_term + 4).index.tolist()
+        _cp_safe, _cp_risky = filter_earnings_risk(_cp_check, days_ahead=2)
+        if _cp_risky:
+            scores["short_term"] = scores["short_term"].drop(
+                [t for t in _cp_risky if t in scores["short_term"].index], errors="ignore"
+            )
+            log.info(
+                "Earnings filter CP: removidos %s → top CP ahora: %s",
+                _cp_risky, scores["short_term"].head(PARAMS.top_n_short_term).index.tolist(),
+            )
+    except Exception as _ef_exc:
+        log.debug("Earnings filter no disponible: %s", _ef_exc)
+
     # 6. Markowitz + Kelly (solo si LP tiene capital asignado)
     _lp_active = PARAMS.weight_long_term > 0
     lp_candidates = scores["long_term"].index.tolist() if _lp_active else []
