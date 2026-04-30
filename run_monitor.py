@@ -711,6 +711,16 @@ def main():
                     ticker, current, avg_entry, unrealized_pnl, pnl_pct,
                 )
 
+        # Persistir stop_loss actualizados por chandelier/breakeven de vuelta al JSON.
+        # Sin esto, el próximo run re-lee el stop original y re-envía la misma orden a Alpaca.
+        try:
+            SIGNALS_PATH.write_text(
+                __import__("json").dumps(signals_data, indent=2, ensure_ascii=False),
+                encoding="utf-8",
+            )
+        except Exception as _sp_err:
+            logger.debug("No se pudo persistir signals: %s", _sp_err)
+
         # ── 6b. OPTIONS MONITORING ────────────────────────────────────────────
         # Las opciones no tienen stop-loss ni TP en Alpaca; se gestionan acá.
         # Reglas: cerrar si (a) prima perdida ≥50%, (b) ≤5d al vencimiento, (c) +100% ganancia.
