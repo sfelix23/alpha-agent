@@ -197,6 +197,39 @@ def _check_vix_spike() -> tuple[bool, float, float]:
         return False, 0.0, 0.0
 
 
+_VETO_CACHE_PATH = BASE_DIR / "signals" / "monitor_veto_cache.json"
+_VETO_COOLDOWN_HOURS = 3  # después de un veto Claude, no re-evaluar por 3h
+
+
+def _is_in_veto_cooldown(ticker: str) -> bool:
+    """True si Claude vetó este ticker recientemente y el cooldown sigue activo."""
+    try:
+        if not _VETO_CACHE_PATH.exists():
+            return False
+        cache = json.loads(_VETO_CACHE_PATH.read_text(encoding="utf-8"))
+        entry = cache.get(ticker)
+        if not entry:
+            return False
+        until = datetime.fromisoformat(entry["until"])
+        return datetime.now() < until
+    except Exception:
+        return False
+
+
+def _register_veto(ticker: str, reason: str) -> None:
+    """Registra un veto de Claude con expiry de VETO_COOLDOWN_HOURS horas."""
+    from datetime import timedelta
+    try:
+        cache = {}
+        if _VETO_CACHE_PATH.exists():
+            cache = json.loads(_VETO_CACHE_PATH.read_text(encoding="utf-8"))
+        until = (datetime.now() + timedelta(hours=_VETO_COOLDOWN_HOURS)).isoformat()
+        cache[ticker] = {"until": until, "reason": reason[:120]}
+        _VETO_CACHE_PATH.write_text(json.dumps(cache, indent=2), encoding="utf-8")
+    except Exception:
+        pass
+
+
 def _was_partially_exited_today(ticker: str) -> bool:
     """Verifica si ya se hizo un partial TP exit hoy para evitar doble venta."""
     try:
@@ -583,69 +616,78 @@ def main():
             )
 
             if (action == "CLOSE" or near_stop) and not claude_override:
-                news_for_ticker: list[str] = []
-                try:
-                    thesis = signal.get("thesis", {})
-                    news_for_ticker = thesis.get("news", {}).get("headlines", [])
-                    if not news_for_ticker:
-                        news_for_ticker = []
-                except Exception:
-                    pass
-
-                claude_result = claude_assess(
-                    ticker=ticker,
-                    current_price=current,
-                    entry_price=avg_entry,
-                    pnl_pct=pnl_pct,
-                    stop_loss=stop_loss,
-                    news_headlines=news_for_ticker,
-                    macro_regime=macro_regime,
-                )
-
-                if claude_result:
-                    claude_action = claude_result["action"]
-                    claude_reason = claude_result["reason"]
-                    claude_conf = claude_result["confidence"]
+                # Si Claude ya vetó este ticker recientemente, no consultar de nuevo:
+                # ejecutar directamente para no quedar en loop de vetos cada 15 min.
+                if _is_in_veto_cooldown(ticker):
                     logger.info(
-                        "🤖 Claude sobre %s: %s (conf=%.0f%%) — %s",
-                        ticker, claude_action, claude_conf * 100, claude_reason,
+                        "🤖 %s en cooldown de veto Claude — ejecutando sin consulta", ticker
+                    )
+                else:
+                    news_for_ticker: list[str] = []
+                    try:
+                        thesis = signal.get("thesis", {})
+                        news_for_ticker = thesis.get("news", {}).get("headlines", [])
+                        if not news_for_ticker:
+                            news_for_ticker = []
+                    except Exception:
+                        pass
+
+                    claude_result = claude_assess(
+                        ticker=ticker,
+                        current_price=current,
+                        entry_price=avg_entry,
+                        pnl_pct=pnl_pct,
+                        stop_loss=stop_loss,
+                        news_headlines=news_for_ticker,
+                        macro_regime=macro_regime,
                     )
 
-                    if near_stop and action is None:
-                        # Stop no tocado pero cerca: Claude puede recomendar cerrar anticipadamente
-                        if claude_action == "CLOSE" and claude_conf >= 0.75:
-                            action = "CLOSE"
-                            reason = f"CIERRE ANTICIPADO por Claude: {claude_reason}"
-                            claude_override = True
-                        elif claude_action == "REDUCE" and claude_conf >= 0.70:
-                            action = "REDUCE"
-                            reason = f"REDUCCIÓN por Claude: {claude_reason}"
-                            claude_override = True
-                    elif action == "CLOSE":
-                        if stop_loss_hit:
-                            # Stop duro tocado: regla de riesgo inviolable — Claude NO puede vetar
-                            if claude_action == "HOLD":
-                                logger.info(
-                                    "🤖 Claude recomendaba HOLD para %s pero el stop duro es inviolable — cerrando",
-                                    ticker,
-                                )
-                                alerts.append(
-                                    f"🤖 *{ticker}*: stop alcanzado — cerrando "
-                                    f"(Claude sugería HOLD: {claude_reason})"
-                                )
-                            # action permanece "CLOSE" — sin veto posible
-                        else:
-                            # TP o trailing stop: Claude puede vetar (son profit-taking, más flexible)
-                            if claude_action == "HOLD" and claude_conf >= 0.80:
-                                logger.warning(
-                                    "🤖 Claude veta TP/trailing de %s (conf=%.0f%%) — %s",
-                                    ticker, claude_conf * 100, claude_reason,
-                                )
-                                alerts.append(
-                                    f"🤖 *{ticker}*: TP/trailing tocado, Claude recomienda HOLD "
-                                    f"(conf={claude_conf:.0%}) — {claude_reason}"
-                                )
-                                action = None  # Solo se veta TP/trailing, nunca el stop duro
+                    if claude_result:
+                        claude_action = claude_result["action"]
+                        claude_reason = claude_result["reason"]
+                        claude_conf = claude_result["confidence"]
+                        logger.info(
+                            "🤖 Claude sobre %s: %s (conf=%.0f%%) — %s",
+                            ticker, claude_action, claude_conf * 100, claude_reason,
+                        )
+
+                        if near_stop and action is None:
+                            # Stop no tocado pero cerca: Claude puede recomendar cerrar anticipadamente
+                            if claude_action == "CLOSE" and claude_conf >= 0.75:
+                                action = "CLOSE"
+                                reason = f"CIERRE ANTICIPADO por Claude: {claude_reason}"
+                                claude_override = True
+                            elif claude_action == "REDUCE" and claude_conf >= 0.70:
+                                action = "REDUCE"
+                                reason = f"REDUCCIÓN por Claude: {claude_reason}"
+                                claude_override = True
+                        elif action == "CLOSE":
+                            if stop_loss_hit:
+                                # Stop duro tocado: regla de riesgo inviolable — Claude NO puede vetar
+                                if claude_action == "HOLD":
+                                    logger.info(
+                                        "🤖 Claude recomendaba HOLD para %s pero el stop duro es inviolable — cerrando",
+                                        ticker,
+                                    )
+                                    alerts.append(
+                                        f"🤖 *{ticker}*: stop alcanzado — cerrando "
+                                        f"(Claude sugería HOLD: {claude_reason})"
+                                    )
+                                # action permanece "CLOSE" — sin veto posible
+                            else:
+                                # TP o trailing stop: Claude puede vetar UNA VEZ (3h cooldown)
+                                if claude_action == "HOLD" and claude_conf >= 0.80:
+                                    logger.warning(
+                                        "🤖 Claude veta TP/trailing de %s (conf=%.0f%%) — %s",
+                                        ticker, claude_conf * 100, claude_reason,
+                                    )
+                                    alerts.append(
+                                        f"🤖 *{ticker}*: TP/trailing tocado, Claude recomienda HOLD "
+                                        f"(conf={claude_conf:.0%}) — {claude_reason} "
+                                        f"[cooldown {_VETO_COOLDOWN_HOURS}h activo]"
+                                    )
+                                    _register_veto(ticker, claude_reason)
+                                    action = None  # veta solo TP/trailing, nunca el stop duro
 
             if action in ("CLOSE", "REDUCE"):
                 log_msg = f"⚠️ {ticker}: {reason} | P&L: ${unrealized_pnl:+.2f} ({pnl_pct:+.1f}%)"
@@ -743,9 +785,27 @@ def main():
             _opt_action = None
             _opt_reason = ""
 
+            # PDT guard: Alpaca bloquea ventas el mismo día de la compra en cuentas < $25k.
+            # Regla: solo intentar cerrar opciones compradas en días anteriores.
+            _opt_entry_date: str | None = None
+            try:
+                from alpha_agent.analytics.trade_db import get_trades
+                for _t in get_trades(ticker=_sym, limit=10):
+                    if _t.get("side") == "BUY" and _t.get("closed_at") is None:
+                        _opt_entry_date = _t.get("date")
+                        break
+            except Exception:
+                pass
+            _opened_today = (_opt_entry_date == _today.isoformat()) if _opt_entry_date else False
+
             if _pnl_pct_op <= -50:
-                _opt_action = "CLOSE"
-                _opt_reason = f"PRIMA -50% ({_pnl_pct_op:.0f}%) — stop-loss de opciones"
+                if _opened_today:
+                    logger.info(
+                        "OPT %s: -50%% pero abierta HOY — skip (PDT protection)", _sym
+                    )
+                else:
+                    _opt_action = "CLOSE"
+                    _opt_reason = f"PRIMA -50% ({_pnl_pct_op:.0f}%) — stop-loss de opciones"
             elif _dte <= 5:
                 _opt_action = "CLOSE"
                 _opt_reason = f"NEAR EXPIRY: {_dte}d al vencimiento — theta acelerado"
