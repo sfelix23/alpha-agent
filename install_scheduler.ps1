@@ -7,7 +7,7 @@
 param([switch]$Uninstall)
 
 $baseDir = "D:\Agente"
-$taskNames = @("Alpha Wake", "Alpha Dashboard", "Alpha Analyst", "Alpha Monitor", "Alpha DayTrader", "Alpha Rebalancer", "Alpha Health", "Alpha Portfolio Review", "Alpha Email Digest")
+$taskNames = @("Alpha Wake", "Alpha Dashboard", "Alpha PreMarket", "Alpha Analyst", "Alpha Monitor", "Alpha DayTrader", "Alpha Rebalancer", "Alpha Health", "Alpha Portfolio Review", "Alpha Email Digest")
 
 # 1. Verificar admin
 $me = New-Object Security.Principal.WindowsPrincipal([Security.Principal.WindowsIdentity]::GetCurrent())
@@ -84,6 +84,33 @@ if (Get-ScheduledTask -TaskName "Alpha Dashboard" -ErrorAction SilentlyContinue)
     Write-Host "  [OK] Alpha Dashboard  - 09:55 ART (Flask + ngrok)" -ForegroundColor Green
 } else {
     Write-Host "  [FAIL] Alpha Dashboard" -ForegroundColor Red
+}
+
+# =========================================================
+# TAREA 0b: Alpha PreMarket - 09:00 (gap scanner antes de la apertura)
+# =========================================================
+$aPM = New-ScheduledTaskAction `
+    -Execute "powershell.exe" `
+    -Argument ("-NoProfile -ExecutionPolicy Bypass -Command `"cd '$baseDir'; python '$baseDir\run_premarket.py' 2>&1`"") `
+    -WorkingDirectory $baseDir
+
+$tPM = New-ScheduledTaskTrigger -Weekly `
+    -DaysOfWeek Monday,Tuesday,Wednesday,Thursday,Friday `
+    -At "09:00"
+
+Register-ScheduledTask `
+    -TaskName "Alpha PreMarket" `
+    -Action $aPM `
+    -Trigger $tPM `
+    -Settings (New-BaseSettings 5) `
+    -Principal $principal `
+    -Description "Gap scanner pre-market: alerta WhatsApp+Telegram con gaps >2%" `
+    -Force | Out-Null
+
+if (Get-ScheduledTask -TaskName "Alpha PreMarket" -ErrorAction SilentlyContinue) {
+    Write-Host "  [OK] Alpha PreMarket  - 09:00 ART (gap scanner)" -ForegroundColor Green
+} else {
+    Write-Host "  [FAIL] Alpha PreMarket" -ForegroundColor Red
 }
 
 # =========================================================
@@ -335,6 +362,7 @@ Write-Host " SISTEMA INSTALADO Y OPERATIVO" -ForegroundColor Green
 Write-Host "==========================================" -ForegroundColor Green
 Write-Host ""
 Write-Host "HORARIO (lunes a viernes):" -ForegroundColor Cyan
+Write-Host "  09:00  Pre-market gap scanner (WhatsApp+Telegram)"
 Write-Host "  10:00  PC despierta de Sleep"
 Write-Host "  10:35  Analyst + Trader + WhatsApp"
 Write-Host "  11:30  DayTrader (ORB window, cuenta separada)"

@@ -314,6 +314,12 @@ def main() -> None:
     args = parser.parse_args()
     live = args.live and not args.dry_run
 
+    # Fix WinError 121 (semáforo timeout) en Windows con asyncio WebSocket.
+    # ProactorEventLoop (default) tiene bugs con conexiones WebSocket largas;
+    # SelectorEventLoop es más estable para I/O de red de larga duración.
+    if sys.platform == "win32":
+        asyncio.set_event_loop_policy(asyncio.SelectorEventLoopPolicy())
+
     _setup_logging()
     log.info("=== SCALPER INIT === live=%s", live)
 

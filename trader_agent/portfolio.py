@@ -193,33 +193,42 @@ def check_capital_headroom(
 ) -> list[TradeIntent]:
     """
     Filtra intents de BUY para no exceder el capital disponible.
-    Calcula el headroom = capital - lo ya invertido y recorta los BUYs si es necesario.
+    Acredita el producido de los SELLs pendientes al headroom para que
+    la rotación (sell viejo → buy nuevo) use todo el capital disponible.
     """
     invested = total_invested_notional(positions)
-    headroom = capital - invested
-    if headroom <= 0:
-        # Capital totalmente desplegado — solo dejar SELLs
-        return [i for i in intents if i.side == "SELL"]
+    # Los SELLs del mismo ciclo liberan capital: los acreditamos al headroom.
+    # Esto permite rotación completa: cierra PBR → abre TSM sin esperar T+1.
+    pending_sell_proceeds = sum(
+        i.notional for i in intents if i.side == "SELL"
+    )
+    headroom = capital - invested + pending_sell_proceeds
 
     filtered = []
     buy_total = 0.0
     for intent in intents:
         if intent.side == "SELL":
             filtered.append(intent)
+            continue
+
+        available = headroom - buy_total
+        if available <= 25:
+            break  # sin headroom restante
+
+        if intent.notional <= available + 50:  # +$50 tolerancia de redondeo
+            filtered.append(intent)
+            buy_total += intent.notional
         else:
-            if buy_total + intent.notional <= headroom + 50:  # +$50 tolerancia
-                filtered.append(intent)
-                buy_total += intent.notional
-            elif headroom - buy_total > 25:
-                # Recortar al headroom disponible
-                trimmed = TradeIntent(
-                    ticker=intent.ticker,
-                    side=intent.side,
-                    notional=headroom - buy_total,
-                    horizon=intent.horizon,
-                    stop_loss=intent.stop_loss,
-                    take_profit=intent.take_profit,
-                )
-                filtered.append(trimmed)
-                buy_total = headroom
+            # Recortar al headroom disponible si queda algo significativo
+            trimmed = TradeIntent(
+                ticker=intent.ticker,
+                side=intent.side,
+                notional=available,
+                horizon=intent.horizon,
+                stop_loss=intent.stop_loss,
+                take_profit=intent.take_profit,
+            )
+            filtered.append(trimmed)
+            buy_total = headroom
+
     return filtered

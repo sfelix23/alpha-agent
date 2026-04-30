@@ -32,9 +32,9 @@ class AllocationDecision:
 
 
 # Rule-based fallbacks (used when API unavailable)
-_BULL_DEFAULT    = AllocationDecision(0.0, 0.90, 0.0, 2, 3, "BULL: máxima exposición CP momentum.")
-_NEUTRAL_DEFAULT = AllocationDecision(0.0, 0.70, 0.0, 2, 3, "NEUTRAL: CP moderado con buffer de caja.")
-_BEAR_DEFAULT    = AllocationDecision(0.0, 0.35, 0.0, 1, 2, "BEAR: postura defensiva, CP mínimo.")
+_BULL_DEFAULT    = AllocationDecision(0.0, 0.98, 0.0, 2, 3, "BULL: capital totalmente desplegado en CP momentum.")
+_NEUTRAL_DEFAULT = AllocationDecision(0.0, 0.80, 0.0, 2, 3, "NEUTRAL: CP alta exposición con buffer mínimo.")
+_BEAR_DEFAULT    = AllocationDecision(0.0, 0.45, 0.0, 1, 2, "BEAR: postura defensiva, CP mínimo.")
 
 
 def _rule_default(regime: str, vix: float) -> AllocationDecision:
@@ -106,10 +106,13 @@ def decide_allocation(
         "- cash = 1 - cp_pct (protective buffer)\n"
         "- n_cp_positions: 1 (very concentrated) or 2 (two bets)\n"
         "- cp_max_hold_days: 2 (BEAR/high VIX) to 4 (strong BULL)\n"
-        "- In BULL + VIX<18: use cp_pct=0.90, 2 positions, 3 days max\n"
-        "- In BEAR or VIX>28: use cp_pct=0.35, 1 position, 2 days max\n\n"
+        "- In BULL + VIX<18: use cp_pct=0.98 (near-full deployment), 2 positions, 3 days max\n"
+        "- In BULL + VIX 18-25: use cp_pct=0.85-0.92, 2 positions, 3 days max\n"
+        "- In NEUTRAL or VIX>25: use cp_pct=0.70-0.80, 2 positions, 3 days max\n"
+        "- In BEAR or VIX>30: use cp_pct=0.40-0.50, 1 position, 2 days max\n"
+        "- recent_pnl_7d and win_rate should adjust cp_pct: losing streak → reduce 5-10%\n\n"
         "Respond ONLY with a JSON object (no markdown, no explanation):\n"
-        '{"lp_pct":0.0,"cp_pct":<0.35-0.90>,"opt_pct":0.0,'
+        '{"lp_pct":0.0,"cp_pct":<0.40-0.98>,"opt_pct":0.0,'
         '"n_cp_positions":<1 or 2>,"cp_max_hold_days":<2-4>,'
         '"reasoning":"<una frase en español>"}'
     )
@@ -134,7 +137,7 @@ def decide_allocation(
         data = json.loads(raw)
         dec = AllocationDecision(
             lp_pct=float(data.get("lp_pct", 0.0)),
-            cp_pct=min(0.90, max(0.35, float(data.get("cp_pct", 0.70)))),
+            cp_pct=min(0.98, max(0.40, float(data.get("cp_pct", 0.80)))),
             opt_pct=0.0,
             n_cp_positions=max(1, min(3, int(data.get("n_cp_positions", 2)))),
             cp_max_hold_days=max(2, min(5, int(data.get("cp_max_hold_days", 3)))),
