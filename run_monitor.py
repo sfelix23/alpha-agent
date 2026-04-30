@@ -805,13 +805,22 @@ def main():
                     logger.info(
                         "OPT %s: -50%% pero abierta HOY — skip (PDT protection)", _sym
                     )
+                elif _dte <= 1:
+                    # Prima casi cero + vence mañana: vender no recupera nada y puede
+                    # fallar por PDT. Dejar que expire sin alertar.
+                    logger.info(
+                        "OPT %s: -50%% + DTE=1 — dejando expirar mañana (prima residual ~$0)",
+                        _sym,
+                    )
                 else:
                     _opt_action = "CLOSE"
                     _opt_reason = f"PRIMA -50% ({_pnl_pct_op:.0f}%) — stop-loss de opciones"
             elif _dte <= 5:
-                if _opened_today:
+                if _opened_today or _dte <= 1:
                     logger.info(
-                        "OPT %s: DTE=%d pero abierta HOY — skip (PDT protection)", _sym, _dte
+                        "OPT %s: DTE=%d — %s — skip",
+                        _sym, _dte,
+                        "PDT (abierta hoy)" if _opened_today else "expira mañana, sin acción",
                     )
                 else:
                     _opt_action = "CLOSE"
