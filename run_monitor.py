@@ -285,30 +285,26 @@ def _build_eod_summary(broker, positions: list, equity: float, capital_base: flo
     return "\n".join(lines)
 
 
-def _scan_next_cp_opportunity(closed_ticker: str, pnl_pct: float) -> str | None:
+def _trigger_capital_rotation(closed_ticker: str, pnl_pct: float, live: bool) -> str:
     """
-    Después de un cierre por TP en CP, busca inmediatamente el próximo trade.
-    Corre el Discovery Agent rápido y devuelve el mejor candidato.
-    Capital rotation: el capital no duerme ni una hora.
+    Después de un TP en CP, lanza run_midday.py en background para reutilizar el capital.
+    No bloquea el monitor — el midday corre como proceso independiente.
     """
+    import subprocess
+    gain_str = f"+{pnl_pct:.1f}%" if pnl_pct > 0 else f"{pnl_pct:.1f}%"
     try:
-        from alpha_agent.discovery.screener import run_discovery
-        next_picks = run_discovery(max_new=3)
-        if not next_picks:
-            return None
-        best = next_picks[0]
-        logger.info("Capital rotation: %s cerró en TP → próxima oportunidad: %s", closed_ticker, best)
-        gain_str = f"+{pnl_pct:.1f}%" if pnl_pct > 0 else f"{pnl_pct:.1f}%"
+        cmd = [sys.executable, str(BASE_DIR / "run_midday.py")]
+        if live:
+            cmd.append("--live")
+        subprocess.Popen(cmd, cwd=str(BASE_DIR))
+        logger.info("Capital rotation: %s cerró con %s → run_midday lanzado", closed_ticker, gain_str)
         return (
-            f"\n🔄 *CAPITAL ROTATION*\n"
-            f"  {closed_ticker} cerró con {gain_str}\n"
-            f"  Próximo CP candidato: *{best}*"
-            + (f" | también: {', '.join(next_picks[1:])}" if len(next_picks) > 1 else "")
-            + "\n  Capital disponible para reutilizar hoy."
+            f"\n🔄 *CAPITAL ROTATION* | {closed_ticker} cerró {gain_str}\n"
+            f"  Midday scan lanzado — buscando reemplazo CP."
         )
     except Exception as e:
-        logger.debug("_scan_next_cp_opportunity: %s", e)
-        return None
+        logger.debug("Capital rotation spawn: %s", e)
+        return f"\n🔄 Capital liberado ({closed_ticker} {gain_str}) — midday scan pendiente."
 
 
 def main():
@@ -696,14 +692,12 @@ def main():
                                 ticker, sell_qty, current, round(unrealized_pnl / 2, 2)
                             )
 
-                        # Capital rotation: cuando cierra por TP buscar inmediatamente el próximo trade
+                        # Capital rotation: lanza midday scan en background para reutilizar capital
                         if is_tp_close:
-                            try:
-                                _rotation_alert = _scan_next_cp_opportunity(ticker, pnl_pct)
-                                if _rotation_alert:
-                                    alerts.append(_rotation_alert)
-                            except Exception as _re:
-                                logger.debug("Capital rotation scan: %s", _re)
+                            _rotation_alert = _trigger_capital_rotation(
+                                ticker, pnl_pct, args.live and not args.dry_run
+                            )
+                            alerts.append(_rotation_alert)
                     except Exception as e:
                         alerts.append(f"  ❌ Error cerrando {ticker}: {e}")
                         logger.error("Error cerrando %s: %s", ticker, e)
@@ -781,6 +775,59 @@ def main():
                         alerts.append(f"  ❌ Error: {_oe}")
                 else:
                     alerts.append("  _(dry-run: no enviado)_")
+
+        # ── 6c. DT SAFETY NET: si el bracket de Alpaca falló, el monitor cierra ──
+        # Alpaca bracket es muy confiable, pero ante un error de API o slippage extremo
+        # esta sección actúa como último recurso. Solo se activa si P&L < -2.5%
+        # (0.5% de margen sobre el SL del bracket de -1.5% → evita falsos positivos).
+        try:
+            from alpha_agent.analytics.trade_db import get_open_dt_tickers
+            _dt_open = get_open_dt_tickers()
+            if _dt_open:
+                _DT_SAFETY_THRESHOLD = -2.5  # % — margen sobre SL bracket (-1.5%)
+                for _dp in positions:
+                    if _dp.ticker not in _dt_open:
+                        continue
+                    if getattr(_dp, "asset_class", "equity") != "equity":
+                        continue
+                    _dt_pnl_pct = pnl_pct_from_position(_dp)
+                    if _dt_pnl_pct < _DT_SAFETY_THRESHOLD:
+                        _dt_reason = (
+                            f"DT SAFETY NET: P&L {_dt_pnl_pct:.1f}% "
+                            f"(bracket posiblemente falló — cerrando)"
+                        )
+                        logger.warning("⚠️ %s: %s", _dp.ticker, _dt_reason)
+                        alerts.append(
+                            f"🚨 *{_dp.ticker}* {_dt_reason} "
+                            f"| ${_dp.unrealized_pl:+.0f}"
+                        )
+                        if args.live and not args.dry_run:
+                            try:
+                                from alpaca.trading.requests import MarketOrderRequest
+                                from alpaca.trading.enums import OrderSide, TimeInForce
+                                _dt_close = MarketOrderRequest(
+                                    symbol=_dp.ticker,
+                                    qty=abs(_dp.qty),
+                                    side=OrderSide.SELL,
+                                    time_in_force=TimeInForce.DAY,
+                                )
+                                broker._trading.submit_order(_dt_close)
+                                closes.append(f"{_dp.ticker} (DT safety)")
+                                alerts.append(f"  ✅ SELL {abs(_dp.qty):.0f} enviado")
+                                from alpha_agent.analytics.trade_db import log_trade_close
+                                log_trade_close(
+                                    ticker=_dp.ticker,
+                                    exit_price=round(current_price_from_position(_dp), 2),
+                                    pnl_usd=round(_dp.unrealized_pl, 2),
+                                    pnl_pct=round(_dt_pnl_pct, 2),
+                                )
+                            except Exception as _dt_e:
+                                logger.error("DT safety close %s: %s", _dp.ticker, _dt_e)
+                                alerts.append(f"  ❌ Error: {_dt_e}")
+                        else:
+                            alerts.append("  _(dry-run: no enviado)_")
+        except Exception as _dt_err:
+            logger.debug("DT safety check: %s", _dt_err)
 
     # ── 7. EOD SUMMARY: último run del día (17:05 ART = 20:05 UTC)
     # ART = UTC-3. NYSE cierra 20:00 UTC. El monitor de las 17:05 ART = 20:05 UTC
