@@ -28,18 +28,32 @@ ACTIVOS: dict[str, str] = {
     # Growth / momentum — alto potencial de retorno asimétrico
     "Broadcom": "AVGO", "Netflix": "NFLX", "CrowdStrike": "CRWD", "Coinbase": "COIN",
     # Minería / Litio / Cobre / Oro / Uranio
-    "Arcadium_Lithium": "ALTM", "Lithium_Americas": "LAC", "SQM": "SQM",
+    "Lithium_Americas": "LAC", "SQM": "SQM",
     "Rio_Tinto": "RIO", "Vale": "VALE", "Barrick_Gold": "GOLD", "Newmont": "NEM",
     "Freeport_Cobre": "FCX", "Cameco_Uranium": "CCJ",
     # Tecnología e IA
     "Nvidia": "NVDA", "AMD": "AMD", "Microsoft": "MSFT", "Google": "GOOGL",
     "Apple": "AAPL", "Meta": "META", "Tesla": "TSLA", "TSM_Taiwan": "TSM", "ASML": "ASML",
     "Amazon": "AMZN",
-    # Healthcare / Consumer / Financials
-    "Eli_Lilly": "LLY",
-    "JPMorgan": "JPM",
+    # Semis adicionales — demanda HBM/AI
+    "Micron": "MU", "ARM_Holdings": "ARM",
+    # Healthcare
+    "Eli_Lilly": "LLY", "AbbVie": "ABBV", "Merck": "MRK",
+    # Financials
+    "JPMorgan": "JPM", "Goldman_Sachs": "GS", "Visa": "V",
+    # Industrials / Infraestructura
+    "Caterpillar": "CAT", "GE_Aerospace": "GE",
+    # Consumer defensivo
+    "Costco": "COST",
+    # Energía adicional
+    "Occidental": "OXY",
+    # AI infraestructura / Cloud
+    "Datadog": "DDOG", "Cloudflare": "NET", "Uber": "UBER",
+    # Crypto proxy
+    "MicroStrategy": "MSTR",
     # Benchmarks y refugio
-    "Bitcoin_ETF": "IBIT", "Ethereum_ETF": "ETHE", "Nasdaq_100": "QQQ", "S&P500": "SPY", "Gold_ETF": "GLD",
+    "Bitcoin_ETF": "IBIT", "Ethereum_ETF": "ETHE", "Nasdaq_100": "QQQ",
+    "S&P500": "SPY", "Gold_ETF": "GLD", "TLT_Bonds": "TLT",
 }
 
 # Benchmark de mercado para CAPM
@@ -47,7 +61,13 @@ BENCHMARK_TICKER: str = "SPY"
 
 # Lista de tickers que NO entran en optimización Markowitz
 # (son benchmarks o ETFs que solo usamos como referencia)
-EXCLUIR_DE_OPTIMIZACION: set[str] = {"SPY", "QQQ", "GLD", "IBIT", "ETHE"}
+EXCLUIR_DE_OPTIMIZACION: set[str] = {"SPY", "QQQ", "GLD", "IBIT", "ETHE", "TLT"}
+
+# Lista plana de tickers para scans CP/Midday — excluye ETFs benchmark y locales BA
+UNIVERSE: list[str] = sorted(
+    v for v in ACTIVOS.values()
+    if v not in {"SPY", "QQQ", "GLD", "IBIT", "ETHE", "TLT", "TGNO4.BA"}
+)
 
 # Mega-caps de alta eficiencia de mercado — excluir del sleeve CP.
 # En estos nombres el mercado es perfectamente eficiente (decenas de quant funds
@@ -55,7 +75,7 @@ EXCLUIR_DE_OPTIMIZACION: set[str] = {"SPY", "QQQ", "GLD", "IBIT", "ETHE"}
 # semanal es lo opuesto de tener ventaja: es comprar lo que ya compraron todos.
 QQQ_MEGA_CAPS: frozenset[str] = frozenset({
     "NVDA", "AAPL", "MSFT", "AMZN", "META", "GOOGL", "TSLA",
-    "AVGO", "COST", "AMD", "ASML", "NFLX",
+    "AVGO", "COST", "AMD", "ASML", "NFLX", "V", "JPM", "GS",
 })
 
 # Tickers donde el sistema tiene ventaja informacional estructural sobre el mercado:
@@ -65,11 +85,15 @@ ALPHA_PREMIUM_LP: frozenset[str] = frozenset({
     # Argentina ADRs — mercado ineficiente, pocos fondos los cubren
     "GGAL", "BMA", "TGS", "VIST", "IRS", "LOMA", "EDN", "TGNO4.BA", "YPF", "PAM",
     # Energía internacional no-SPY
-    "PBR", "SHEL", "TTE", "SLB", "XOM", "CVX",
+    "PBR", "SHEL", "TTE", "SLB", "XOM", "CVX", "OXY",
     # Minería / metales / uranio
     "RIO", "VALE", "NEM", "GOLD", "FCX", "SQM", "LAC", "CCJ",
     # Defensa — poco cubierta por quant retail, macro signals importan
-    "LMT", "RTX", "NOC", "GD", "AVAV",
+    "LMT", "RTX", "NOC", "GD", "AVAV", "GE",
+    # Healthcare pipeline — alpha en aprobaciones FDA / juicios patentes
+    "ABBV", "MRK",
+    # Financials ciclo earnings — menos cubiertos por quant retail que mega-caps
+    "GS",
 })
 
 # Mapeo ticker → sector, para el guard de concentración sectorial.
@@ -89,17 +113,30 @@ SECTOR_MAP: dict[str, str] = {
     # Tech / Semis / mega-cap
     "NVDA": "Tech", "AMD": "Tech", "MSFT": "Tech", "GOOGL": "Tech",
     "AAPL": "Tech", "META": "Tech", "TSLA": "Tech", "TSM": "Tech", "ASML": "Tech",
-    "AMZN": "Tech",
-    # Healthcare / Financials US
-    "LLY": "Healthcare", "JPM": "Financials",
-    # Financials Argentina + consumer
+    "AMZN": "Tech", "MU": "Tech", "ARM": "Tech",
+    # AI infra / Cloud / SaaS
+    "DDOG": "Tech", "NET": "Tech", "UBER": "Tech",
+    # Healthcare
+    "LLY": "Healthcare", "ABBV": "Healthcare", "MRK": "Healthcare",
+    # Financials US + Argentina
+    "JPM": "Financials", "GS": "Financials", "V": "Financials",
     "GGAL": "Financials", "BMA": "Financials",
-    "MELI": "Consumer", "DESP": "Consumer", "IRS": "RealEstate",
-    "LOMA": "Materials", "TGNO4.BA": "Energy",
+    # Consumer
+    "MELI": "Consumer", "DESP": "Consumer", "COST": "Consumer",
+    "NFLX": "Consumer",
+    # Industrials
+    "CAT": "Industrials", "GE": "Industrials",
+    # Energy adicional
+    "OXY": "Energy",
+    # Real Estate / Other
+    "IRS": "RealEstate", "LOMA": "Materials", "TGNO4.BA": "Energy",
     # Growth US
-    "AVGO": "Tech", "NFLX": "Consumer", "CRWD": "Tech", "COIN": "Crypto",
+    "AVGO": "Tech", "CRWD": "Tech", "COIN": "Crypto",
+    # Crypto proxy
+    "MSTR": "Crypto",
     # ETFs / refugio
     "SPY": "ETF", "QQQ": "ETF", "GLD": "ETF", "IBIT": "Crypto", "ETHE": "Crypto",
+    "TLT": "ETF",
 }
 
 # Máximo % del libro LP por sector (guard de diversificación)
@@ -167,7 +204,7 @@ class FinancialParams:
     max_hedge_allocation: float = 0.10    # hasta 10% del libro en puts SPY cuando bear
     enable_short_equity: bool = False     # OFF por default — preferimos puts (riesgo limitado)
     enable_options: bool = True           # ON — long calls/puts OTM, riesgo limitado a la prima
-    min_days_to_expiry: int = 14          # evita theta decay brutal
+    min_days_to_expiry: int = 30          # evita theta decay brutal y PDT en cuentas <$25k
     max_days_to_expiry: int = 45          # evita gamma muerta (bajé de 60 a 45)
     target_delta_directional: float = 0.35  # puts/calls direccionales delta 0.35 (más OTM = más barato)
     target_delta_hedge: float = 0.22      # puts de hedge SPY bien OTM (prima baja, es un seguro)
