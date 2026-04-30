@@ -158,7 +158,7 @@ async def _stream_and_trade(live: bool) -> None:
     vix = 20.0
     try:
         import yfinance as yf
-        vix = float(yf.download("^VIX", period="1d", interval="1m", progress=False)["Close"].iloc[-1])
+        vix = float(yf.download("^VIX", period="5d", interval="1d", progress=False)["Close"].iloc[-1])
         log.info("VIX actual: %.1f", vix)
     except Exception:
         pass

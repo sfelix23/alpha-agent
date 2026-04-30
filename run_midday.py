@@ -280,7 +280,11 @@ def main():
         log.debug("Earnings filter no disponible: %s", _ef)
 
     # ── 7. Selección y ejecución ────────────────────────────────────────────────
-    top = candidates[:open_slots]
+    MIN_MIDDAY_SCORE = 0.20  # piso de calidad: sin señal clara, no comprar
+    top = [c for c in candidates[:open_slots] if c["score"] >= MIN_MIDDAY_SCORE]
+    if not top:
+        log.info("Sin candidatos con score >= %.2f. Sin acción.", MIN_MIDDAY_SCORE)
+        return
     per_position = round(cp_available / len(top), 2)
 
     if per_position < 25:

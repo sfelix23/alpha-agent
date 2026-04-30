@@ -782,10 +782,12 @@ def main():
                 else:
                     alerts.append("  _(dry-run: no enviado)_")
 
-    # ── 7. EOD SUMMARY: último run del día (16:35 ART = 19:35 UTC)
+    # ── 7. EOD SUMMARY: último run del día (17:05 ART = 20:05 UTC)
+    # ART = UTC-3. NYSE cierra 20:00 UTC. El monitor de las 17:05 ART = 20:05 UTC
+    # es el único en el rango 20:00-20:14 → dispara exactamente 1 vez por día.
     from datetime import timezone as _tz2
     _now_utc2 = datetime.now(_tz2.utc)
-    if _now_utc2.hour == 19 and _now_utc2.minute >= 30:
+    if _now_utc2.hour == 20 and _now_utc2.minute < 15:
         try:
             eod_msg = _build_eod_summary(broker, positions, equity, capital_base)
             logger.info("Enviando EOD summary...")
