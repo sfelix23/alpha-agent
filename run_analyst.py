@@ -154,24 +154,8 @@ def main() -> None:
     macro = fetch_macro_snapshot()
     log.info("Régimen de mercado: %s — %s", macro.regime, macro.regime_reason)
 
-    # Sleeve CP dinámica: en BULL + VIX < 20 aumentar exposición CP para capturar momentum
-    # PARAMS es frozen dataclass → usar object.__setattr__ para overrides en runtime
-    vix_now = (macro.prices or {}).get("vix", 99) or 99
-    if macro.regime.upper() == "BULL" and vix_now < 20:
-        object.__setattr__(PARAMS, "weight_short_term", 0.25)
-        object.__setattr__(PARAMS, "weight_long_term",  0.65)
-        object.__setattr__(PARAMS, "top_n_short_term",  2)
-        log.info("📈 Régimen BULL + VIX %.1f < 20 → sleeve CP 25%% / LP 65%% / 2 slots CP (modo momentum)", vix_now)
-    else:
-        object.__setattr__(PARAMS, "weight_short_term", 0.20)
-        object.__setattr__(PARAMS, "weight_long_term",  0.70)
-        object.__setattr__(PARAMS, "top_n_short_term",  1)
-
-    # Viernes: sin nuevas posiciones CP (evitar gap de fin de semana)
-    from datetime import datetime as _dt
-    if _dt.now().weekday() == 4:
-        object.__setattr__(PARAMS, "top_n_short_term", 0)
-        log.info("📅 Viernes → CP desactivado (gap risk de fin de semana)")
+    # vix_now se usa en AI allocation y en fallback estático
+    vix_now = float((macro.prices or {}).get("vix", 99) or 99)
 
     # 2.5 Datos alternativos: Fear & Greed + Yield Curve + OpenInsider
     alt_data: dict = {}
@@ -197,6 +181,51 @@ def main() -> None:
     # 3. CAPM
     capm = compute_capm_metrics(closes, benchmark)
     log.info("Métricas CAPM calculadas para %d activos", len(capm))
+
+    # 3.5 AI Allocation — Claude Haiku decide sleeves dinámicamente
+    # Sector momentum: promedio ret 1M por sector, insumo para la decisión de allocation
+    try:
+        from alpha_agent.analytics.allocation_agent import decide_allocation
+        _sec_mom: dict[str, list[float]] = {}
+        for _t, _sector in SECTOR_MAP.items():
+            if _t in closes.columns:
+                _r1m = closes[_t].pct_change(21).iloc[-1]
+                if pd.notna(_r1m):
+                    _sec_mom.setdefault(_sector, []).append(float(_r1m))
+        sector_momentum = {k: sum(v) / len(v) for k, v in _sec_mom.items() if v}
+
+        alloc = decide_allocation(
+            regime=macro.regime,
+            vix=vix_now,
+            capital=capital,
+            sector_momentum=sector_momentum or None,
+        )
+        object.__setattr__(PARAMS, "weight_short_term", alloc.cp_pct)
+        object.__setattr__(PARAMS, "weight_long_term",  alloc.lp_pct)
+        object.__setattr__(PARAMS, "top_n_short_term",  alloc.n_cp_positions)
+        log.info(
+            "🤖 AI Allocation → LP=%.0f%% CP=%.0f%% cash=%.0f%% | %d CP | max %dd | %s",
+            alloc.lp_pct * 100, alloc.cp_pct * 100,
+            (1.0 - alloc.lp_pct - alloc.cp_pct) * 100,
+            alloc.n_cp_positions, alloc.cp_max_hold_days, alloc.reasoning,
+        )
+    except Exception as _alloc_exc:
+        log.warning("AI Allocation no disponible — reglas estáticas: %s", _alloc_exc)
+        if macro.regime.upper() == "BULL" and vix_now < 20:
+            object.__setattr__(PARAMS, "weight_short_term", 0.25)
+            object.__setattr__(PARAMS, "weight_long_term",  0.65)
+            object.__setattr__(PARAMS, "top_n_short_term",  2)
+            log.info("📈 BULL + VIX %.1f < 20 → LP 65%% CP 25%% 2 slots", vix_now)
+        else:
+            object.__setattr__(PARAMS, "weight_short_term", 0.20)
+            object.__setattr__(PARAMS, "weight_long_term",  0.70)
+            object.__setattr__(PARAMS, "top_n_short_term",  1)
+
+    # Viernes: sin nuevas posiciones CP (evitar gap de fin de semana)
+    from datetime import datetime as _dt
+    if _dt.now().weekday() == 4:
+        object.__setattr__(PARAMS, "top_n_short_term", 0)
+        log.info("📅 Viernes → CP desactivado (gap risk de fin de semana)")
 
     # 4. Técnicos
     technical = compute_technical_indicators(ohlc)
