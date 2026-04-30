@@ -7,7 +7,7 @@
 param([switch]$Uninstall)
 
 $baseDir = "D:\Agente"
-$taskNames = @("Alpha Wake", "Alpha Dashboard", "Alpha PreMarket", "Alpha Analyst", "Alpha Monitor", "Alpha DayTrader", "Alpha Rebalancer", "Alpha Health", "Alpha Portfolio Review", "Alpha Email Digest")
+$taskNames = @("Alpha Wake", "Alpha Dashboard", "Alpha PreMarket", "Alpha Analyst", "Alpha Monitor", "Alpha Midday", "Alpha DayTrader", "Alpha Rebalancer", "Alpha Health", "Alpha Portfolio Review", "Alpha Email Digest")
 
 # 1. Verificar admin
 $me = New-Object Security.Principal.WindowsPrincipal([Security.Principal.WindowsIdentity]::GetCurrent())
@@ -200,7 +200,9 @@ if (Get-ScheduledTask -TaskName "Alpha DayTrader" -ErrorAction SilentlyContinue)
 }
 
 # =========================================================
-# TAREA 3: Alpha Monitor - cada 30 min de 11:05 a 16:35
+# TAREA 3: Alpha Monitor - cada 15 min de 10:50 a 17:05
+# Cubre todo el horario NYSE (10:30-17:00 ART) con margen.
+# El monitor sale solo si el mercado está cerrado.
 # =========================================================
 $monitorArg = "-NoProfile -ExecutionPolicy Bypass -Command `"cd '$baseDir'; python '$baseDir\run_monitor.py' --live 2>&1`""
 
@@ -210,9 +212,9 @@ $a3 = New-ScheduledTaskAction `
     -WorkingDirectory $baseDir
 
 $triggers3 = @()
-$startTotalMin = 11 * 60 + 5
-for ($i = 0; $i -lt 13; $i++) {
-    $totalMin = $startTotalMin + ($i * 30)
+$startTotalMin = 10 * 60 + 50   # 10:50 ART
+for ($i = 0; $i -lt 26; $i++) { # 26 × 15 min = 375 min → hasta 17:05 ART
+    $totalMin = $startTotalMin + ($i * 15)
     $h = [int]($totalMin / 60)
     $m = [int]($totalMin % 60)
     $timeStr = $h.ToString("00") + ":" + $m.ToString("00")
@@ -227,13 +229,44 @@ Register-ScheduledTask `
     -Trigger $triggers3 `
     -Settings (New-BaseSettings 5) `
     -Principal $principal `
-    -Description "Monitor cada 30 min (stops, TPs, trailing, kill switch)" `
+    -Description "Monitor cada 15 min de 10:50 a 17:05 (stops, TPs, trailing, kill switch)" `
     -Force | Out-Null
 
 if (Get-ScheduledTask -TaskName "Alpha Monitor" -ErrorAction SilentlyContinue) {
-    Write-Host "  [OK] Alpha Monitor    - cada 30min de 11:05 a 16:35" -ForegroundColor Green
+    Write-Host "  [OK] Alpha Monitor    - cada 15min de 10:50 a 17:05" -ForegroundColor Green
 } else {
     Write-Host "  [FAIL] Alpha Monitor" -ForegroundColor Red
+}
+
+# =========================================================
+# TAREA 3b: Alpha Midday - 14:00 (segundo ciclo CP)
+# Escaneo técnico rápido (~3 min) sin CAPM/Markowitz.
+# Solo abre posiciones CP nuevas si hay capital disponible.
+# =========================================================
+$middayArg = "-NoProfile -ExecutionPolicy Bypass -Command `"cd '$baseDir'; python '$baseDir\run_midday.py' --live 2>&1`""
+
+$aMD = New-ScheduledTaskAction `
+    -Execute "powershell.exe" `
+    -Argument $middayArg `
+    -WorkingDirectory $baseDir
+
+$tMD = New-ScheduledTaskTrigger -Weekly `
+    -DaysOfWeek Monday,Tuesday,Wednesday,Thursday,Friday `
+    -At "14:00"
+
+Register-ScheduledTask `
+    -TaskName "Alpha Midday" `
+    -Action $aMD `
+    -Trigger $tMD `
+    -Settings (New-BaseSettings 10) `
+    -Principal $principal `
+    -Description "Midday CP scan: scoring técnico rápido, abre slots CP disponibles" `
+    -Force | Out-Null
+
+if (Get-ScheduledTask -TaskName "Alpha Midday" -ErrorAction SilentlyContinue) {
+    Write-Host "  [OK] Alpha Midday     - 14:00 ART (CP scan)" -ForegroundColor Green
+} else {
+    Write-Host "  [FAIL] Alpha Midday" -ForegroundColor Red
 }
 
 # =========================================================
@@ -363,11 +396,13 @@ Write-Host "==========================================" -ForegroundColor Green
 Write-Host ""
 Write-Host "HORARIO (lunes a viernes):" -ForegroundColor Cyan
 Write-Host "  09:00  Pre-market gap scanner (WhatsApp+Telegram)"
+Write-Host "  09:55  Dashboard Flask + ngrok"
 Write-Host "  10:00  PC despierta de Sleep"
 Write-Host "  10:35  Analyst + Trader + WhatsApp"
+Write-Host "  10:50  Monitor cada 15 min hasta 17:05 (cobertura completa)"
 Write-Host "  11:30  DayTrader (ORB window, cuenta separada)"
-Write-Host "  11:05  Monitor cada 30 min hasta 16:35"
 Write-Host "  12:30  Health check (alerta si bot no corrió)"
+Write-Host "  14:00  Midday scan CP (nuevo slot si hay capital)"
 Write-Host "  15:00  Rebalancer semanal (viernes)"
 Write-Host "  17:00  Email digest semanal (viernes)"
 Write-Host "  17:15  PC a dormir"
