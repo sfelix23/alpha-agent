@@ -165,6 +165,17 @@ class AlpacaBroker(BrokerBase):
             return None
 
         target_date = datetime.fromisoformat(target_expiry).date()
+        today = datetime.now().date()
+
+        # Excluir contratos que vencen en menos de 14 días — theta brutal y riesgo PDT.
+        # Si quedan señales válidas, el lookup elige la más cercana al target.
+        MIN_DTE_BROKER = 14
+        chain = [
+            c for c in chain
+            if (datetime.fromisoformat(c["expiry"]).date() - today).days >= MIN_DTE_BROKER
+        ]
+        if not chain:
+            return None
 
         def _score(c: dict) -> tuple[int, float]:
             try:

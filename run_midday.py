@@ -163,8 +163,24 @@ def main():
         cp_pct   = PARAMS.weight_short_term
         cp_max_h = 3
 
-    lp_tickers   = {s["ticker"] for s in signals_data.get("long_term", [])}
-    cp_positions  = [p for p in positions if p.ticker not in lp_tickers]
+    lp_tickers = {s["ticker"] for s in signals_data.get("long_term", [])}
+
+    # Si las señales LP están vacías (analyst aún no corrió hoy), intentar
+    # recuperar LP desde trade_db para no contar posiciones LP como CP slots.
+    if not lp_tickers:
+        try:
+            from alpha_agent.analytics.trade_db import get_trades
+            for _t in get_trades(limit=50):
+                if _t.get("sleeve") == "LP" and _t.get("closed_at") is None:
+                    lp_tickers.add(_t["ticker"])
+        except Exception:
+            pass
+
+    # Excluir opciones del conteo CP (tienen su propio sleeve)
+    _cp_positions_raw = [p for p in positions if p.ticker not in lp_tickers]
+    cp_positions  = [p for p in _cp_positions_raw if not any(
+        c in p.ticker for c in ["C000", "P000", "Call", "Put"]
+    ) and len(p.ticker) < 10]
     n_cp_open     = len(cp_positions)
     cp_invested   = sum(abs(p.market_value) for p in cp_positions)
     cp_budget     = equity * cp_pct
