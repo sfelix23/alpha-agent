@@ -90,16 +90,21 @@ if ($equityResult -match '^\d') {
 }
 
 # -- 1. Analyst con envio de WhatsApp (retry una vez si falla) ----------------
+# --force: evita el guard de idempotencia que hace salir en 0s si algo ya corrió parcial.
+# El analyst ahora escribe su propio logs/analyst_YYYY-MM-DD.log (stdout + file handler).
 Log "Paso 1/2: analyst + WhatsApp"
-$analystCmd = "python run_analyst.py --send --no-ai $capitalArg"
-Invoke-Expression "$analystCmd 2>&1" | Tee-Object -FilePath $logFile -Append -Encoding UTF8
+$analystLogFile = Join-Path $logDir ("analyst_{0}.log" -f (Get-Date -Format "yyyy-MM-dd"))
+$analystBaseArgs = @("run_analyst.py", "--send", "--no-ai", "--force")
+if ($capitalArg -ne "") {
+    $analystBaseArgs += $capitalArg.Split(" ", [System.StringSplitOptions]::RemoveEmptyEntries)
+}
+& python @analystBaseArgs 2>&1 | Tee-Object -FilePath $analystLogFile -Append -Encoding UTF8
 $analystExit = $LASTEXITCODE
 
 if ($analystExit -ne 0) {
-    Log "WARNING: analyst fallo (exit $analystExit). Reintentando con --no-ai..."
+    Log "WARNING: analyst fallo (exit $analystExit). Reintentando..."
     Start-Sleep -Seconds 15
-    $analystRetryCmd = "python run_analyst.py --send --no-ai $capitalArg"
-    Invoke-Expression "$analystRetryCmd 2>&1" | Tee-Object -FilePath $logFile -Append -Encoding UTF8
+    & python @analystBaseArgs 2>&1 | Tee-Object -FilePath $analystLogFile -Append -Encoding UTF8
     if ($LASTEXITCODE -ne 0) {
         Log "ERROR: analyst fallo en ambos intentos."
         python -c "from alpha_agent.notifications import send_whatsapp; send_whatsapp('ALPHA ERROR: analyst fallo 2 veces en run autonomo. Revisa logs urgente.')" 2>&1 | Out-Null
@@ -111,6 +116,7 @@ if ($analystExit -ne 0) {
     }
     Log "Analyst OK en segundo intento."
 }
+Log "Analyst completado. Ver $analystLogFile para detalles."
 
 # -- 2. Trader en modo LIVE ---------------------------------------------------
 Log "Paso 2/2: trader live (Alpaca paper)"

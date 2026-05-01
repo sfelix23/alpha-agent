@@ -64,10 +64,18 @@ from alpha_agent.reporting.ai_report import signals_to_compact_brief, signals_to
 
 
 def setup_logging() -> None:
+    today    = datetime.now().strftime("%Y-%m-%d")
+    log_dir  = Path(__file__).parent / "logs"
+    log_dir.mkdir(exist_ok=True)
+    log_file = log_dir / f"analyst_{today}.log"
     logging.basicConfig(
         level=logging.INFO,
         format="[%(asctime)s] %(levelname)s %(name)s — %(message)s",
         datefmt="%H:%M:%S",
+        handlers=[
+            logging.StreamHandler(sys.stdout),          # capturado por PS Tee-Object
+            logging.FileHandler(str(log_file), encoding="utf-8"),  # log propio siempre
+        ],
     )
 
 

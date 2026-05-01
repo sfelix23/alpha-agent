@@ -329,12 +329,25 @@ def main() -> None:
         log.error("%s", e)
         return
 
-    try:
-        if not broker.is_market_open():
-            log.info("Mercado cerrado. Scalper sale.")
-            return
-    except Exception:
-        pass
+    # Esperar hasta que el mercado abra (máx 20 min).
+    # El scheduler arranca a las 10:20 ART = 9:20 EDT (10 min antes de la apertura).
+    # En vez de salir, esperamos para capturar el ORB desde el primer minuto.
+    import time as _time
+    _waited = 0
+    _MAX_WAIT = 20 * 60  # 20 minutos
+    while _waited < _MAX_WAIT:
+        try:
+            if broker.is_market_open():
+                break
+        except Exception:
+            pass
+        if _waited == 0:
+            log.info("Mercado no abierto aún — esperando hasta apertura (máx 20 min)...")
+        _time.sleep(30)
+        _waited += 30
+    else:
+        log.info("Mercado cerrado después de %d min de espera. Scalper sale.", _MAX_WAIT // 60)
+        return
 
     async def _main_async():
         stream_task    = asyncio.create_task(_stream_and_trade(live))
