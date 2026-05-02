@@ -225,21 +225,24 @@ def _fetch_technicals(tickers: list[str]) -> pd.DataFrame:
     return result
 
 
-def _validate_with_claude(ticker: str, score: float, ret_1m: float, ret_3m: float) -> bool:
+def _validate_with_claude(
+    ticker: str, score: float, ret_1m: float, ret_3m: float
+) -> tuple[bool, str, str]:
     """
     Pregunta a Claude si el ticker tiene un catalizador real.
-    Devuelve True si Claude considera que vale incluirlo.
+    Retorna (include, razon, prioridad).
     Si Claude no está disponible, acepta cualquier score > 40.
     """
     api_key = os.getenv("ANTHROPIC_API_KEY")
     if not api_key:
-        return score > 40
+        include = score > 40
+        return include, "Score técnico alto" if include else "", "MEDIA"
 
     try:
-        import anthropic, json, re
+        import anthropic
+        import re as _re
         client = anthropic.Anthropic(api_key=api_key)
 
-        # Buscar noticias rápidas con yfinance
         try:
             news_items = yf.Ticker(ticker).news or []
             headlines = [n.get("title", "") for n in news_items[:4] if n.get("title")]
@@ -262,25 +265,30 @@ Should we add this to our portfolio watchlist?
 - YES if: real catalyst (earnings beat, new contract, sector tailwind, technical breakout with volume)
 - NO if: just noise, no clear catalyst, or fundamental deterioration
 
-Reply JSON only: {{"include": true/false, "reason": "≤10 words"}}"""
+Reply JSON only: {{"include": true/false, "reason": "one sentence in Spanish", "prioridad": "ALTA|MEDIA|BAJA", "riesgo": "brief risk note in Spanish or empty string"}}"""
 
         msg = client.messages.create(
             model="claude-haiku-4-5-20251001",
-            max_tokens=60,
+            max_tokens=120,
             messages=[{"role": "user", "content": prompt}],
         )
         text = msg.content[0].text
-        match = re.search(r"\{.*?\}", text, re.DOTALL)
+        match = _re.search(r"\{.*?\}", text, _re.DOTALL)
         if match:
-            result = json.loads(match.group())
+            import json as _json
+            result = _json.loads(match.group())
             include = bool(result.get("include", False))
+            razon   = str(result.get("reason", ""))
+            prior   = str(result.get("prioridad", "MEDIA")).upper()
+            riesgo  = str(result.get("riesgo", ""))
             logger.info("Claude sobre %s: %s — %s", ticker,
-                        "INCLUDE" if include else "SKIP", result.get("reason", ""))
-            return include
+                        "INCLUDE" if include else "SKIP", razon)
+            return include, razon, prior
     except Exception as exc:
         logger.debug("Claude discovery failed for %s: %s", ticker, exc)
 
-    return score > 40
+    include = score > 40
+    return include, f"Score técnico {score:.0f}/100", "MEDIA"
 
 
 def run_discovery(max_new: int = MAX_CANDIDATES_TO_RETURN) -> list[str]:
@@ -288,7 +296,11 @@ def run_discovery(max_new: int = MAX_CANDIDATES_TO_RETURN) -> list[str]:
     Punto de entrada principal.
 
     Retorna lista de tickers nuevos a agregar al universo del día.
+    También guarda signals/discovery.json para el dashboard.
     """
+    import json as _json
+    from datetime import datetime as _dt
+
     candidates = _flat_candidates()
     logger.info("Discovery: evaluando %d candidatos externos", len(candidates))
 
@@ -297,28 +309,65 @@ def run_discovery(max_new: int = MAX_CANDIDATES_TO_RETURN) -> list[str]:
         logger.warning("Discovery: sin datos técnicos, saltando")
         return []
 
-    # Score inicial
     technicals["score"] = technicals.apply(_score_candidate, axis=1)
     ranked = technicals.sort_values("score", ascending=False)
 
-    # Pre-filtro: top 15 técnicos antes de llamar a Claude
     top_tech = ranked.head(15)
     logger.info("Discovery top técnico: %s", top_tech.head(5).index.tolist())
 
-    selected = []
+    selected: list[str] = []
+    candidates_meta: list[dict] = []
+
     for ticker, row in top_tech.iterrows():
         if len(selected) >= max_new:
             break
-        score   = float(row["score"])
-        ret_1m  = float(row.get("ret_1m", 0) or 0)
-        ret_3m  = float(row.get("ret_3m", 0) or 0)
+        score  = float(row["score"])
+        ret_1m = float(row.get("ret_1m", 0) or 0)
+        ret_3m = float(row.get("ret_3m", 0) or 0)
 
-        if _validate_with_claude(str(ticker), score, ret_1m, ret_3m):
+        include, razon, prior = _validate_with_claude(str(ticker), score, ret_1m, ret_3m)
+        if include:
             selected.append(str(ticker))
+            candidates_meta.append({
+                "ticker": str(ticker),
+                "score": round(score, 1),
+                "ret_1m": round(ret_1m * 100, 1),
+                "ret_3m": round(ret_3m * 100, 1),
+                "prioridad": prior,
+                "razon": razon,
+                "riesgo": "",
+            })
             logger.info("  ✅ %s agregado al universo (score=%.0f ret1m=%+.1f%%)",
                         ticker, score, ret_1m * 100)
         else:
             logger.debug("  ⊘ %s descartado por Claude/filtro", ticker)
+
+    # Persist for dashboard
+    try:
+        from alpha_agent.config import PATHS
+        disc_path = PATHS.signals_dir / "discovery.json"
+
+        # Track repeated alerts (tickers that appeared last week too)
+        repeated: list[str] = []
+        if disc_path.exists():
+            try:
+                prev = _json.loads(disc_path.read_text(encoding="utf-8"))
+                prev_tickers = {c["ticker"] for c in prev.get("candidates", [])}
+                repeated = [t for t in selected if t in prev_tickers]
+            except Exception:
+                pass
+
+        disc_path.write_text(
+            _json.dumps({
+                "generated_at": _dt.now().isoformat(),
+                "n_scanned": len(candidates),
+                "candidates": candidates_meta,
+                "repeated_alerts": repeated,
+            }, indent=2, ensure_ascii=False),
+            encoding="utf-8",
+        )
+    except Exception as exc:
+        logger.debug("No se pudo guardar discovery.json: %s", exc)
 
     logger.info("Discovery: %d nuevos tickers para el analyst: %s", len(selected), selected)
     return selected
