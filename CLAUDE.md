@@ -70,10 +70,8 @@ Get-Content logs\autonomous_$(Get-Date -Format 'yyyy-MM-dd').log -Tail 50
 - Candle breakout detector en DT scanner (body>60%, close upper third)
 - Liquidity sweep signal en midday scan (HTF low sweep + recovery)
 - Universo expandido a 69 activos
-- MCPs: sequential-thinking · memory · fetch · context7 · stockflow · trade-db
-- GRAPHIFY skill instalado (`/graphify .` para knowledge graph)
+- MCPs activos: sequential-thinking · memory · fetch · context7 · tavily · duckduckgo · github · stockflow · trade-db
+- GRAPHIFY skill instalado (`/graphify .` para knowledge graph del codebase)
 
 **Pendiente:**
-- Brave Search MCP (necesita API key gratis de brave.com/search/api)
-- GitHub MCP (necesita GitHub Personal Access Token)
 - WhatsApp bidireccional · VPS migration
