@@ -87,18 +87,28 @@ def _score_ticker(close, high, low, volume) -> dict:
     if mom20 < -12.0:      # tendencia mensual muy negativa (era -8.0%)
         return None
 
+    # Liquidity sweep: barre mínimo reciente y cierra de vuelta encima (smart money trap)
+    sweep_score = 0.0
+    if len(low) >= 11 and len(close) >= 2:
+        recent_low = float(low.iloc[-11:-1].min())
+        swept      = float(low.iloc[-1]) < recent_low * 0.998
+        recovered  = float(close.iloc[-1]) > recent_low
+        if swept and recovered:
+            sweep_score = 1.0
+
     # Score compuesto (0-1)
     # RSI zona óptima: 45-65 → 1.0; fuera decrece
-    rsi_score = max(0.0, 1.0 - abs(rsi - 55) / 20)
-    mom_score = min(1.0, max(0.0, (mom5 + mom20 * 0.5) / 12))
+    rsi_score  = max(0.0, 1.0 - abs(rsi - 55) / 20)
+    mom_score  = min(1.0, max(0.0, (mom5 + mom20 * 0.5) / 12))
     tech_score = (macd_bull * 0.4 + above_ema20 * 0.3 + golden * 0.3)
     vol_score  = min(1.0, (vol_ratio - 0.8) / 1.2) if vol_ratio > 0.8 else 0.0
 
     composite = (
-        rsi_score  * 0.25
-        + mom_score  * 0.35
-        + tech_score * 0.25
-        + vol_score  * 0.15
+        rsi_score   * 0.25
+        + mom_score   * 0.25
+        + tech_score  * 0.25
+        + vol_score   * 0.15
+        + sweep_score * 0.10
     )
 
     return {
@@ -107,6 +117,7 @@ def _score_ticker(close, high, low, volume) -> dict:
         "mom5d":     round(mom5,  2),
         "mom20d":    round(mom20, 2),
         "vol_ratio": round(vol_ratio, 2),
+        "sweep":     int(sweep_score),
         "score":     round(composite, 3),
         "price":     round(float(close.iloc[-1]), 2),
     }
@@ -280,7 +291,8 @@ def main():
     candidates.sort(key=lambda x: x["score"], reverse=True)
     log.info(
         "Top 5 candidatos: %s",
-        [(c["ticker"], c["score"], f"RSI={c['rsi']}", f"mom5={c['mom5d']:+.1f}%")
+        [(c["ticker"], c["score"], f"RSI={c['rsi']}", f"mom5={c['mom5d']:+.1f}%",
+          "🧲sweep" if c.get("sweep") else "")
          for c in candidates[:5]],
     )
 

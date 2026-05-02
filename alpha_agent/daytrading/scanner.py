@@ -165,15 +165,34 @@ def _rsi(series: pd.Series, period: int = 14) -> float:
     return float(100 - (100 / (1 + avg_gain / avg_loss)))
 
 
+def _candle_strength(df: pd.DataFrame) -> float:
+    """
+    Score [0,1] de calidad de vela japonesa — metodología Stockcraft.
+    Body >60% del rango + cierre en tercio superior + break del máximo previo.
+    """
+    if len(df) < 6:
+        return 0.0
+    last = df.iloc[-1]
+    rng  = float(last["High"] - last["Low"])
+    if rng < 1e-9:
+        return 0.0
+    body      = abs(float(last["Close"]) - float(last["Open"])) / rng
+    close_pos = (float(last["Close"]) - float(last["Low"])) / rng
+    breaks_n  = int(float(last["Close"]) > float(df["High"].iloc[-6:-1].max()))
+    return float(np.clip(body * 0.45 + close_pos * 0.35 + breaks_n * 0.20, 0.0, 1.0))
+
+
 def _score_ticker(df: pd.DataFrame) -> tuple[float, dict]:
     """
     Score [0, 1] para un candidato DT. Retorna (score, metrics).
 
     Señales:
-      gap_score    0.35 — gap vs cierre anterior
-      vwap_score   0.30 — precio sobre VWAP
-      vol_score    0.25 — aceleración de volumen
-      rsi_score    0.10 — RSI en zona neutra-alcista
+      gap_score     0.25 — gap vs cierre anterior
+      orb_score     0.22 — Opening Range Breakout
+      vwap_score    0.18 — precio sobre VWAP
+      vol_score     0.20 — aceleración de volumen
+      rsi_score     0.05 — RSI en zona neutra-alcista
+      candle_score  0.10 — calidad de vela (body, close position, prev-high break)
     """
     metrics: dict = {}
 
@@ -229,13 +248,17 @@ def _score_ticker(df: pd.DataFrame) -> tuple[float, dict]:
     orb = _orb_score(today_df)
     metrics["orb_score"] = round(orb, 3)
 
-    # Pesos: gap lidera, ORB confirma tendencia, VWAP y volumen validan
+    # 6. Candle quality: body ratio + close position + breaks prev-N high
+    candle = _candle_strength(today_df)
+    metrics["candle_score"] = round(candle, 3)
+
     score = (
-        0.30 * gap_score
-        + 0.25 * orb
-        + 0.20 * vwap_score
+        0.25 * gap_score
+        + 0.22 * orb
+        + 0.18 * vwap_score
         + 0.20 * vol_score
         + 0.05 * rsi_score
+        + 0.10 * candle
     )
 
     metrics.update({
@@ -313,12 +336,28 @@ def _score_ticker_short(df: pd.DataFrame) -> tuple[float, dict]:
         orb = 0.0
     metrics["orb_score"] = round(orb, 3)
 
+    # Candle quality for short: body large + close in LOWER third + breaks prev-N low
+    if len(today_df) >= 6:
+        last = today_df.iloc[-1]
+        rng  = float(last["High"] - last["Low"])
+        if rng > 1e-9:
+            body_s     = abs(float(last["Close"]) - float(last["Open"])) / rng
+            close_pos_s = (float(last["High"]) - float(last["Close"])) / rng
+            breaks_low  = int(float(last["Close"]) < float(today_df["Low"].iloc[-6:-1].min()))
+            candle = float(np.clip(body_s * 0.45 + close_pos_s * 0.35 + breaks_low * 0.20, 0.0, 1.0))
+        else:
+            candle = 0.0
+    else:
+        candle = 0.0
+    metrics["candle_score"] = round(candle, 3)
+
     score = (
-        0.30 * gap_score
-        + 0.25 * orb
-        + 0.20 * vwap_score
+        0.25 * gap_score
+        + 0.22 * orb
+        + 0.18 * vwap_score
         + 0.20 * vol_score
         + 0.05 * rsi_score
+        + 0.10 * candle
     )
     metrics.update({
         "current_price": round(current, 2),

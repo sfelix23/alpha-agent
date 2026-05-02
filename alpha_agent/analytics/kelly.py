@@ -9,6 +9,9 @@ dentro del sleeve y se capea en PARAMS.max_weight_per_asset.
 
 blend_markowitz_kelly() combina Markowitz (covarianza) con Kelly (edge real)
 en proporción configurable (default 60/40).
+
+Volatilidad: blend 60% GARCH(1,1) forecast + 40% histórica realizada.
+GARCH captura persistencia de clusters de vol; histórica provee estabilidad.
 """
 
 from __future__ import annotations
@@ -25,10 +28,31 @@ _HALF_KELLY = 0.5
 _MIN_SIGMA  = 0.01
 
 
-def kelly_weights(capm: pd.DataFrame) -> pd.Series:
+def _sigma_for_ticker(ticker: str, capm: pd.DataFrame, returns: pd.DataFrame | None) -> float:
+    """
+    Blend 60% GARCH + 40% histórica para σ anualizado.
+    Cae back a histórico si GARCH falla o no hay returns disponibles.
+    """
+    sigma_hist = float(capm.loc[ticker, "sigma_anual"])
+    if returns is None or ticker not in returns.columns:
+        return sigma_hist
+
+    try:
+        from alpha_agent.analytics.garch import forecast_garch_vol
+        sigma_garch = forecast_garch_vol(returns[ticker].dropna())
+        blended = 0.60 * sigma_garch + 0.40 * sigma_hist
+        logger.debug("%s σ blend: GARCH=%.1f%% hist=%.1f%% → %.1f%%",
+                     ticker, sigma_garch * 100, sigma_hist * 100, blended * 100)
+        return blended
+    except Exception:
+        return sigma_hist
+
+
+def kelly_weights(capm: pd.DataFrame, returns: pd.DataFrame | None = None) -> pd.Series:
     """
     Half-Kelly normalizado para cada activo del DataFrame CAPM.
     Activos con edge negativo reciben peso 0.
+    Si se provee `returns`, usa σ blend GARCH+histórico para cada activo.
     """
     rf    = PARAMS.risk_free_rate
     w_max = PARAMS.max_weight_per_asset
@@ -36,7 +60,7 @@ def kelly_weights(capm: pd.DataFrame) -> pd.Series:
     fractions: dict[str, float] = {}
     for ticker in capm.index:
         mu    = float(capm.loc[ticker, "mu_anual"])
-        sigma = float(capm.loc[ticker, "sigma_anual"])
+        sigma = _sigma_for_ticker(ticker, capm, returns)
         if sigma < _MIN_SIGMA:
             fractions[ticker] = 0.0
             continue
