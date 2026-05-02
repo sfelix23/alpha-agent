@@ -181,16 +181,23 @@ def _check_vix_spike() -> tuple[bool, float, float]:
     """
     Devuelve (spike_detected, vix_now, vix_prev).
     Spike = VIX intradía subió >20% vs el cierre anterior.
+    Usa datos 5min para capturar el nivel real en tiempo de mercado,
+    y datos diarios para el cierre previo confirmado.
     """
     try:
         import yfinance as yf
-        df = yf.download("^VIX", period="3d", interval="1d",
-                         progress=False, auto_adjust=True)
-        if df is None or len(df) < 2:
+        # Nivel actual real: última barra de 5min intradía
+        df_intra = yf.download("^VIX", period="2d", interval="5m",
+                               progress=False, auto_adjust=True)
+        # Cierre previo confirmado: barra diaria anterior (no la del día en curso)
+        df_daily = yf.download("^VIX", period="5d", interval="1d",
+                               progress=False, auto_adjust=True)
+        if df_intra is None or len(df_intra) < 2:
             return False, 0.0, 0.0
-        close = df["Close"].squeeze()
-        vix_prev = float(close.iloc[-2])
-        vix_now  = float(close.iloc[-1])
+        if df_daily is None or len(df_daily) < 2:
+            return False, 0.0, 0.0
+        vix_now  = float(df_intra["Close"].squeeze().iloc[-1])
+        vix_prev = float(df_daily["Close"].squeeze().iloc[-2])
         spike = vix_now > vix_prev * 1.20
         return spike, round(vix_now, 1), round(vix_prev, 1)
     except Exception:

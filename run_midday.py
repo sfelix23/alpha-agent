@@ -123,6 +123,47 @@ def _score_ticker(close, high, low, volume) -> dict:
     }
 
 
+def _session_momentum(ticker: str) -> float:
+    """
+    Score de momentum intrasesión (0.0-1.0) basado en datos 15min del día actual.
+    1.0 = precio sobre VWAP + tendencia alcista + volumen creciente.
+    0.5 = neutral (datos insuficientes o error).
+    Evita comprar tickers con precio bajo el VWAP intradía aunque el chart diario luzca bien.
+    """
+    try:
+        import yfinance as yf
+        import numpy as np
+        df = yf.download(ticker, period="1d", interval="15m", progress=False, auto_adjust=True)
+        if df is None or len(df) < 4:
+            return 0.5
+        close  = df["Close"].squeeze()
+        volume = df["Volume"].squeeze()
+        high   = df["High"].squeeze()
+        low    = df["Low"].squeeze()
+
+        # VWAP = suma(precio_típico * vol) / suma(vol)
+        typical  = (high + low + close) / 3
+        vol_sum  = float(volume.sum())
+        vwap     = float((typical * volume).sum() / vol_sum) if vol_sum > 0 else float(close.mean())
+        current  = float(close.iloc[-1])
+
+        above_vwap = int(current > vwap)
+
+        # Tendencia última hora (≈4 barras de 15min)
+        n_back = min(4, len(close) - 1)
+        slope  = (float(close.iloc[-1]) - float(close.iloc[-n_back - 1])) / max(float(close.iloc[-n_back - 1]), 1e-9) * 100
+        uptrend = int(slope > 0.1)
+
+        # Volumen de las últimas 2 barras vs promedio del día
+        avg_vol    = float(volume.mean())
+        recent_vol = float(volume.iloc[-2:].mean()) if len(volume) >= 2 else avg_vol
+        vol_up     = int(avg_vol > 0 and recent_vol > avg_vol * 1.05)
+
+        return float(np.clip(above_vwap * 0.50 + uptrend * 0.30 + vol_up * 0.20, 0.0, 1.0))
+    except Exception:
+        return 0.5
+
+
 def main():
     parser = argparse.ArgumentParser(description="Midday CP scan.")
     parser.add_argument("--live", action="store_true", help="Ejecutar órdenes reales.")
@@ -313,6 +354,27 @@ def main():
     if not top:
         log.info("Sin candidatos con score >= %.2f. Sin acción.", MIN_MIDDAY_SCORE)
         return
+
+    # ── Validar momentum intrasesión 15min ─────────────────────────────────────
+    log.info("Validando momentum intrasesión (15min) para %d candidatos...", len(top))
+    confirmed: list[dict] = []
+    for cand in top:
+        sess = _session_momentum(cand["ticker"])
+        cand["session"] = round(sess, 2)
+        log.info(
+            "  %s session_score=%.2f (VWAP check) | score_diario=%.3f",
+            cand["ticker"], sess, cand["score"],
+        )
+        if sess < 0.25:
+            log.info("  → %s descartado: precio bajo VWAP intradía (session=%.2f)", cand["ticker"], sess)
+        else:
+            confirmed.append(cand)
+
+    if not confirmed:
+        log.info("Sin candidatos que pasen el filtro intrasesión (VWAP 15min). Sin acción.")
+        return
+    top = confirmed
+
     per_position = round(cp_available / len(top), 2)
 
     if per_position < 25:
@@ -337,7 +399,8 @@ def main():
 
         action_line = (
             f"{icon} *{ticker}* qty={qty:.4f} @ ${price:.2f} "
-            f"| score={cand['score']:.2f} | RSI {cand['rsi']} | 5d {cand['mom5d']:+.1f}%"
+            f"| score={cand['score']:.2f} | RSI {cand['rsi']} | 5d {cand['mom5d']:+.1f}% "
+            f"| VWAP {cand.get('session', 0.5):.2f}"
         )
 
         if args.live:

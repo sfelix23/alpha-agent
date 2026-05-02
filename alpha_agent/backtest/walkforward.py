@@ -59,9 +59,14 @@ class BacktestResult:
     benchmark_cagr: float = 0.0
     benchmark_sharpe: float = 0.0
     benchmark_max_dd: float = 0.0
+    sortino: float = 0.0
+    calmar: float = 0.0
+    win_rate: float = 0.0
+    profit_factor: float = 0.0
 
     def summary(self) -> str:
         alpha = self.cagr - self.benchmark_cagr
+        pf_str = f"{self.profit_factor:.2f}" if self.profit_factor < 99 else ">99"
         lines = [
             "═" * 52,
             "   BACKTEST WALK-FORWARD — Alpha Agent",
@@ -74,7 +79,11 @@ class BacktestResult:
             f"  Retorno total    {self.total_return*100:+.2f}%",
             f"  CAGR             {self.cagr*100:+.2f}%",
             f"  Sharpe OOS       {self.sharpe:.2f}",
+            f"  Sortino          {self.sortino:.2f}",
+            f"  Calmar           {self.calmar:.2f}",
             f"  Max Drawdown     {self.max_drawdown*100:.2f}%",
+            f"  Win Rate         {self.win_rate*100:.1f}%",
+            f"  Profit Factor    {pf_str}",
             "",
         ]
         if self.benchmark_cagr:
@@ -106,6 +115,47 @@ def _annualized_sharpe(returns: pd.Series) -> float:
     if returns.std() == 0 or len(returns) < 2:
         return 0.0
     return float((returns.mean() - PARAMS.risk_free_rate / PARAMS.trading_days) / returns.std() * np.sqrt(PARAMS.trading_days))
+
+
+def _annualized_sortino(returns: pd.Series) -> float:
+    """Sortino ratio: penaliza solo la desviación negativa (no la volatilidad total)."""
+    if len(returns) < 2:
+        return 0.0
+    rf_daily = PARAMS.risk_free_rate / PARAMS.trading_days
+    excess = returns - rf_daily
+    downside = excess[excess < 0]
+    if len(downside) < 2 or downside.std() == 0:
+        return 0.0
+    return float(excess.mean() / downside.std() * np.sqrt(PARAMS.trading_days))
+
+
+def _calmar(cagr: float, max_drawdown: float) -> float:
+    """Calmar ratio = CAGR / |max drawdown|. Benchmark: >0.5 aceptable, >1.0 bueno."""
+    return float(cagr / abs(max_drawdown)) if max_drawdown != 0 else 0.0
+
+
+def _win_rate_and_profit_factor(rebalance_log: list[dict]) -> tuple[float, float]:
+    """
+    Win rate y profit factor por período de rebalanceo.
+    Período = equity_after[i] → equity_before[i+1] (retorno real entre rebalanceos).
+    """
+    if len(rebalance_log) < 2:
+        return 0.0, 0.0
+    periods = []
+    for i in range(len(rebalance_log) - 1):
+        eq_start = rebalance_log[i]["equity_after"]
+        eq_end   = rebalance_log[i + 1]["equity_before"]
+        if eq_start > 0:
+            periods.append((eq_end - eq_start) / eq_start)
+    if not periods:
+        return 0.0, 0.0
+    wins   = [r for r in periods if r > 0]
+    losses = [r for r in periods if r <= 0]
+    win_rate     = len(wins) / len(periods)
+    gross_profit = sum(wins)
+    gross_loss   = abs(sum(losses))
+    profit_factor = gross_profit / gross_loss if gross_loss > 0 else 999.0
+    return float(win_rate), float(profit_factor)
 
 
 def _build_target_weights(
@@ -267,8 +317,11 @@ def run_backtest(
     total_return = eq_series.iloc[-1] / initial_capital - 1
     n_years = (eq_series.index[-1] - eq_series.index[0]).days / 365.25
     cagr = (1 + total_return) ** (1 / n_years) - 1 if n_years > 0 else 0
-    sharpe = _annualized_sharpe(daily_rets)
-    mdd = _max_drawdown(eq_series)
+    sharpe  = _annualized_sharpe(daily_rets)
+    sortino = _annualized_sortino(daily_rets)
+    mdd     = _max_drawdown(eq_series)
+    calmar  = _calmar(cagr, mdd)
+    win_rate, profit_factor = _win_rate_and_profit_factor(rebalance_log)
     avg_positions = np.mean([len(r["weights"]) for r in rebalance_log]) if rebalance_log else 0
     n_years_eff = max(n_years, 0.01)
     turnover_ann = total_turnover / n_years_eff
@@ -303,4 +356,8 @@ def run_backtest(
         benchmark_cagr=float(bench_cagr),
         benchmark_sharpe=float(bench_sharpe),
         benchmark_max_dd=float(bench_dd),
+        sortino=float(sortino),
+        calmar=float(calmar),
+        win_rate=float(win_rate),
+        profit_factor=float(profit_factor),
     )

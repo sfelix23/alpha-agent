@@ -489,11 +489,9 @@ def _pnl_calendar(history):
         pnl_pct = (pnl / pe * 100) if pe else 0
         daily[d] = {"pnl": pnl, "pct": pnl_pct}
 
-    if not daily:
-        return ""
-
-    last = max(daily.keys())
-    yr, mo = last.year, last.month
+    # Siempre mostrar el mes actual, aunque no haya datos aún para él
+    today = date.today()
+    yr, mo = today.year, today.month
     month_name = ["Enero","Febrero","Marzo","Abril","Mayo","Junio",
                   "Julio","Agosto","Septiembre","Octubre","Noviembre","Diciembre"][mo-1]
 
@@ -1508,6 +1506,49 @@ def _tab_historial(trades: list[dict]) -> str:
     </div>
   </div>"""
 
+    # ── Desglose P&L por sleeve ───────────────────────────────────────────
+    SLEEVE_META = {
+        "LP":  ("Largo Plazo",  "#58a6ff"),
+        "CP":  ("Corto Plazo",  "#d29922"),
+        "OPT": ("Opciones",     "#bc8cff"),
+        "MIX": ("LP+CP",        "#3fb950"),
+    }
+    sleeve_stats: dict[str, dict] = {}
+    for t in closed:
+        slv = (t.get("sleeve") or "—").upper()
+        if slv not in sleeve_stats:
+            sleeve_stats[slv] = {"n": 0, "wins": 0, "pnl": 0.0}
+        sleeve_stats[slv]["n"] += 1
+        if (t.get("pnl_usd") or 0) > 0:
+            sleeve_stats[slv]["wins"] += 1
+        sleeve_stats[slv]["pnl"] += t.get("pnl_usd") or 0
+
+    sleeve_cards = ""
+    for slv, st in sorted(sleeve_stats.items()):
+        label, color = SLEEVE_META.get(slv, (slv, "#7d8590"))
+        pnl = st["pnl"]
+        wr  = st["wins"] / st["n"] * 100 if st["n"] else 0
+        pc  = _c(pnl)
+        wr_c = "#3fb950" if wr > 55 else "#d29922" if wr > 45 else "#f85149"
+        sleeve_cards += f"""
+<div style="flex:1;min-width:120px;padding:12px 14px;border:1px solid {color}33;
+  border-left:3px solid {color};border-radius:8px;background:var(--bg)">
+  <div style="font-size:.7rem;font-weight:700;color:{color};text-transform:uppercase;
+    letter-spacing:.06em;margin-bottom:6px">{label}</div>
+  <div style="font-size:1rem;font-weight:700;color:{pc};margin-bottom:2px">
+    {"+" if pnl>=0 else ""}{_usd(pnl)}</div>
+  <div style="font-size:.72rem;color:var(--mt)">
+    WR <span style="color:{wr_c}">{wr:.0f}%</span> &nbsp;·&nbsp; {st["n"]} trades</div>
+</div>"""
+
+    if sleeve_cards and n_closed > 0:
+        kpi_html += f"""
+  <div style="margin-bottom:16px">
+    <div style="font-size:.75rem;color:var(--mt);margin-bottom:8px;font-weight:600;
+      text-transform:uppercase;letter-spacing:.05em">P&L por Sleeve</div>
+    <div style="display:flex;gap:10px;flex-wrap:wrap">{sleeve_cards}</div>
+  </div>"""
+
     # ── Filas de la tabla ─────────────────────────────────────────────────
     rows_html = ""
     for t in trades:
@@ -2460,6 +2501,48 @@ def generate() -> None:
         dt_trades    = [t for t in all_trades if t.get("sleeve") == "DT"]
         scalp_trades = [t for t in all_trades if t.get("sleeve") == "SCALP"]
         trades       = [t for t in all_trades if t.get("sleeve") not in ("DT", "SCALP")]
+
+        # ── Auto-reconcile: marcar como cerradas las posiciones que ya no están en Alpaca
+        # Compara BUYs sin closed_at contra las posiciones actuales en Alpaca.
+        # Si un ticker no está en Alpaca y tampoco tiene exit price → está cerrado pero sin registrar.
+        try:
+            current_tickers = {p.ticker for p in positions}
+            from alpha_agent.analytics.trade_db import log_trade_close
+            import sqlite3
+            from pathlib import Path as _P
+            _db = _P(__file__).parent / "signals" / "trades.db"
+            with sqlite3.connect(str(_db)) as _con:
+                _con.row_factory = sqlite3.Row
+                open_buys = _con.execute(
+                    "SELECT id, ticker, price, date, ts FROM trades "
+                    "WHERE side='BUY' AND closed_at IS NULL AND sleeve NOT IN ('DT','SCALP')"
+                ).fetchall()
+                reconciled = 0
+                for row in open_buys:
+                    if row["ticker"] not in current_tickers:
+                        # Posición ya no está en Alpaca → obtener precio de cierre aproximado
+                        try:
+                            import yfinance as yf
+                            _df = yf.download(row["ticker"], period="2d", progress=False, auto_adjust=True)
+                            exit_px = float(_df["Close"].squeeze().iloc[-1]) if _df is not None and len(_df) > 0 else (row["price"] or 0)
+                        except Exception:
+                            exit_px = row["price"] or 0
+                        entry_px = row["price"] or exit_px
+                        pnl_usd  = round((exit_px - entry_px), 2)
+                        pnl_pct  = round((exit_px - entry_px) / entry_px * 100, 2) if entry_px else 0
+                        _con.execute(
+                            "UPDATE trades SET closed_at=datetime('now'), exit_price=?, pnl_usd=?, pnl_pct=? WHERE id=?",
+                            (exit_px, pnl_usd, pnl_pct, row["id"]),
+                        )
+                        reconciled += 1
+                _con.commit()
+            if reconciled:
+                logger.info("Auto-reconcile: %d trades marcados como cerrados (no están en Alpaca)", reconciled)
+                all_trades = get_trades(limit=500)
+                trades     = [t for t in all_trades if t.get("sleeve") not in ("DT", "SCALP")]
+        except Exception as _re:
+            logger.debug("Auto-reconcile error: %s", _re)
+
         logger.info("Trades: %d LP/CP, %d DT, %d SCALP", len(trades), len(dt_trades), len(scalp_trades))
     except Exception as e:
         logger.debug("trade_db no disponible: %s", e)

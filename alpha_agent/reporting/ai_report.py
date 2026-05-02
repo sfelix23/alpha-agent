@@ -525,6 +525,17 @@ def signals_to_whatsapp_brief(signals: Signals) -> str:
     sector_hint = _detect_sector_bias(signals, macro)
     if sector_hint:
         out.append(f"  • {sector_hint}")
+    # Earnings próximos en posiciones actuales — alerta temprana
+    _all_pos_tickers = [asdict_compat(s).get("ticker", "") for s in signals.long_term + signals.short_term]
+    _all_pos_tickers = [t for t in _all_pos_tickers if t]
+    if _all_pos_tickers:
+        try:
+            from alpha_agent.analytics.earnings_calendar import filter_earnings_risk
+            _, _risky = filter_earnings_risk(_all_pos_tickers, days_ahead=5)
+            if _risky:
+                out.append(f"  • ⚠️ Earnings 5d: {', '.join(_risky)} — no ampliar posiciones")
+        except Exception:
+            pass
     out.append("")
 
     # ── Eventos clave ──
@@ -589,15 +600,15 @@ def signals_to_whatsapp_brief(signals: Signals) -> str:
     out.append(f"  Stop loss ATR por posicion (LP y CP)")
     out.append(f"  Opciones long-only (perdida acotada a prima)")
 
-    # Earnings warning — tickers con resultados inminentes
-    all_tickers = [s.ticker for s in signals.long_term + signals.short_term]
+    # Earnings warning — tickers con resultados inminentes (ya se muestra en HALLAZGOS si hay)
+    all_tickers = [asdict_compat(s).get("ticker", "") for s in signals.long_term + signals.short_term]
+    all_tickers = [t for t in all_tickers if t]
     if all_tickers:
         try:
-            from alpha_agent.analytics.earnings_guard import get_earnings_soon
-            upcoming = get_earnings_soon(all_tickers, days=5)
-            if upcoming:
-                pairs = ", ".join(f"{t} ({d.strftime('%d/%b')})" for t, d in upcoming.items())
-                out.append(f"  EARNINGS proximos: {pairs} — no abrir nuevas posiciones")
+            from alpha_agent.analytics.earnings_calendar import filter_earnings_risk
+            _, _earn_risky = filter_earnings_risk(all_tickers, days_ahead=5)
+            if _earn_risky:
+                out.append(f"  EARNINGS proximos (5d): {', '.join(_earn_risky)}")
         except Exception:
             pass
 
