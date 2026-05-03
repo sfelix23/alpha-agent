@@ -525,6 +525,19 @@ def signals_to_whatsapp_brief(signals: Signals) -> str:
     sector_hint = _detect_sector_bias(signals, macro)
     if sector_hint:
         out.append(f"  • {sector_hint}")
+    # Attribution: win rate histórico por régimen y sleeve
+    try:
+        from alpha_agent.analytics.trade_db import get_attribution
+        _attr = get_attribution()
+        _attr_lines = []
+        for _k, _v in _attr.items():
+            if _v["n"] >= 3:
+                _attr_lines.append(f"{_k}({_v['n']}): {_v['win_rate']:.0%} · ${_v['avg_pnl']:+.2f}")
+        if _attr_lines:
+            out.append(f"  • Attribution: {' | '.join(_attr_lines)}")
+    except Exception:
+        pass
+
     # Earnings próximos en posiciones actuales — alerta temprana
     _all_pos_tickers = [asdict_compat(s).get("ticker", "") for s in signals.long_term + signals.short_term]
     _all_pos_tickers = [t for t in _all_pos_tickers if t]

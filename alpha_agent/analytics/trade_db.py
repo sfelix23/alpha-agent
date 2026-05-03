@@ -61,13 +61,14 @@ def _ensure_schema() -> None:
         """)
         con.execute("CREATE INDEX IF NOT EXISTS idx_ticker ON trades(ticker)")
         con.execute("CREATE INDEX IF NOT EXISTS idx_date ON trades(date)")
-        # Migración: agregar columnas de cierre a DBs existentes sin recrear
+        # Migración: agregar columnas a DBs existentes sin recrear
         for col, typedef in [
-            ("closed_at",  "TEXT"),
-            ("exit_price", "REAL"),
-            ("pnl_usd",    "REAL"),
-            ("pnl_pct",    "REAL"),
-            ("hold_days",  "REAL"),
+            ("closed_at",    "TEXT"),
+            ("exit_price",   "REAL"),
+            ("pnl_usd",      "REAL"),
+            ("pnl_pct",      "REAL"),
+            ("hold_days",    "REAL"),
+            ("signals_json", "TEXT"),   # JSON con factores de scoring al momento de entrada
         ]:
             try:
                 con.execute(f"ALTER TABLE trades ADD COLUMN {col} {typedef}")
@@ -93,19 +94,20 @@ def log_trade(
     regime: str | None = None,
     vix: float | None = None,
     limit_price: float | None = None,
+    signals_json: str | None = None,
 ) -> int:
     now = datetime.now()
     with _conn() as con:
         cur = con.execute(
             """INSERT INTO trades
                (ts, date, ticker, side, qty, price, notional, sleeve, status,
-                order_id, stop_loss, take_profit, regime, vix, limit_price)
-               VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)""",
+                order_id, stop_loss, take_profit, regime, vix, limit_price, signals_json)
+               VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)""",
             (
                 now.isoformat(timespec="seconds"),
                 now.strftime("%Y-%m-%d"),
                 ticker, side, qty, price, notional, sleeve, status,
-                order_id, stop_loss, take_profit, regime, vix, limit_price,
+                order_id, stop_loss, take_profit, regime, vix, limit_price, signals_json,
             ),
         )
         row_id = cur.lastrowid
@@ -250,6 +252,44 @@ def reconcile_buy_sell_pairs() -> int:
     if closed_count:
         logger.info("reconcile_buy_sell_pairs: closed %d BUY rows", closed_count)
     return closed_count
+
+
+def get_attribution() -> dict:
+    """
+    Agrupa trades cerrados por régimen, sleeve y banda de VIX.
+    Usa datos ya almacenados — no requiere cambios al pipeline.
+    Retorna win_rate, avg_pnl y n por grupo para identificar qué contextos generan alfa.
+    """
+    from collections import defaultdict
+    with _conn() as con:
+        rows = con.execute(
+            "SELECT regime, sleeve, vix, pnl_usd FROM trades "
+            "WHERE side='BUY' AND pnl_usd IS NOT NULL"
+        ).fetchall()
+
+    groups: dict[str, list[float]] = defaultdict(list)
+    for r in rows:
+        pnl    = r["pnl_usd"] or 0.0
+        regime = (r["regime"] or "UNKNOWN").upper()
+        sleeve = r["sleeve"] or "?"
+        vix    = float(r["vix"] or 0.0)
+
+        groups[f"regime:{regime}"].append(pnl)
+        groups[f"sleeve:{sleeve}"].append(pnl)
+        vix_band = "vix:alto(>22)" if vix > 22 else ("vix:bajo(<15)" if vix < 15 else "vix:medio(15-22)")
+        groups[vix_band].append(pnl)
+
+    result = {}
+    for key, pnls in sorted(groups.items()):
+        n    = len(pnls)
+        wins = sum(1 for p in pnls if p > 0)
+        result[key] = {
+            "n":         n,
+            "win_rate":  round(wins / n, 2) if n else 0.0,
+            "avg_pnl":   round(sum(pnls) / n, 2) if n else 0.0,
+            "total_pnl": round(sum(pnls), 2),
+        }
+    return result
 
 
 def get_summary() -> dict:
