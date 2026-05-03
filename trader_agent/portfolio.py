@@ -173,18 +173,29 @@ def diff_against_current(
     except Exception:
         pass
 
+    # Guard LP: no abrir segunda posición en un ticker que ya está en cartera LP
+    _lp_held: set[str] = set()
+    for p in positions:
+        if getattr(p, "asset_class", "equity") == "equity":
+            _lp_held.add(p.ticker)
+
     # Tickers en target que necesitan BUY (delta positivo)
+    MIN_NOTIONAL = 150.0  # posiciones menores a $150 no mueven la aguja
     for t, info in target.items():
         if t in _bought_today:
             continue  # ya compramos hoy, no duplicar
+        horizon = info["horizon"]
+        # LP: si ya hay posición abierta en este ticker, no acumular
+        if horizon == "LP" and t in _lp_held:
+            continue
         already_invested = current.get(t, 0.0)
         delta = info["notional"] - already_invested
-        if delta > threshold:
+        if delta > max(threshold, MIN_NOTIONAL):
             intents.append(TradeIntent(
                 ticker=t,
                 side=info.get("side", "BUY"),
-                notional=delta,           # solo la diferencia, nunca el total
-                horizon=info["horizon"],
+                notional=delta,
+                horizon=horizon,
                 stop_loss=info.get("stop_loss"),
                 take_profit=info.get("take_profit"),
             ))
