@@ -191,6 +191,67 @@ def get_open_dt_tickers() -> set[str]:
     return {r["ticker"] for r in rows}
 
 
+def reconcile_buy_sell_pairs() -> int:
+    """
+    Matches unprocessed SELL rows to open BUY rows (FIFO per ticker).
+    Updates BUY rows with closed_at, exit_price, pnl_usd, pnl_pct, hold_days.
+    Returns number of BUY rows closed.
+    """
+    closed_count = 0
+    with _conn() as con:
+        # Find all SELL rows that have no corresponding BUY close yet
+        sells = con.execute(
+            "SELECT id, ticker, qty, price, ts FROM trades WHERE side='SELL' ORDER BY id ASC"
+        ).fetchall()
+
+        for sell in sells:
+            ticker = sell["ticker"]
+            sell_qty = sell["qty"] or 0.0
+            sell_price = sell["price"] or 0.0
+            sell_ts = sell["ts"]
+
+            if sell_qty <= 0:
+                continue
+
+            # Find oldest open BUY(s) for this ticker (FIFO)
+            buys = con.execute(
+                "SELECT id, qty, price, ts FROM trades WHERE ticker=? AND side='BUY' AND closed_at IS NULL ORDER BY id ASC",
+                (ticker,),
+            ).fetchall()
+
+            remaining_sell_qty = sell_qty
+            for buy in buys:
+                if remaining_sell_qty <= 0:
+                    break
+                buy_qty = buy["qty"] or 0.0
+                buy_price = buy["price"] or 0.0
+                buy_ts = buy["ts"]
+
+                if buy_qty <= 0:
+                    continue
+
+                closed_qty = min(buy_qty, remaining_sell_qty)
+                pnl_usd = round((sell_price - buy_price) * closed_qty, 2)
+                pnl_pct = round((sell_price / buy_price - 1) * 100, 2) if buy_price > 0 else 0.0
+                try:
+                    buy_dt = datetime.fromisoformat(buy_ts)
+                    sell_dt = datetime.fromisoformat(sell_ts)
+                    hold_days = round((sell_dt - buy_dt).total_seconds() / 86400, 2)
+                except Exception:
+                    hold_days = 0.0
+
+                con.execute(
+                    "UPDATE trades SET closed_at=?, exit_price=?, pnl_usd=?, pnl_pct=?, hold_days=? WHERE id=?",
+                    (sell_ts, sell_price, pnl_usd, pnl_pct, hold_days, buy["id"]),
+                )
+                closed_count += 1
+                remaining_sell_qty -= closed_qty
+
+    if closed_count:
+        logger.info("reconcile_buy_sell_pairs: closed %d BUY rows", closed_count)
+    return closed_count
+
+
 def get_summary() -> dict:
     """Win-rate, P&L promedio y estadísticas de trades cerrados."""
     with _conn() as con:

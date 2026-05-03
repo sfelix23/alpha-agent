@@ -781,8 +781,6 @@ def _perf_chart(perf_data: dict | None) -> str:
     weeks = (perf_data or {}).get("weeks", [])
     if not weeks:
         return '<div class="card"><div class="card-head"><div><div class="card-title">Performance Semanal vs SPY</div><div class="card-sub">Disponible tras el primer rebalanceo del viernes</div></div></div><p class="muted" style="padding:8px 0 12px">Sin historial de performance semanal todavia.</p></div>'
-    if not weeks:
-        return '<div class="card"><p class="muted" style="padding:20px">Sin historial de performance semanal todavia. Disponible tras el primer rebalanceo del viernes.</p></div>'
 
     labels      = [w.get("date", "")[-5:].replace("-", "/") for w in weeks]
     port_vals   = [w.get("portfolio_pct") for w in weeks]
@@ -2496,7 +2494,8 @@ def generate() -> None:
     dt_trades: list[dict]    = []
     scalp_trades: list[dict] = []
     try:
-        from alpha_agent.analytics.trade_db import get_trades
+        from alpha_agent.analytics.trade_db import get_trades, reconcile_buy_sell_pairs
+        reconcile_buy_sell_pairs()   # match SELL rows → close open BUYs (FIFO)
         all_trades   = get_trades(limit=500)
         dt_trades    = [t for t in all_trades if t.get("sleeve") == "DT"]
         scalp_trades = [t for t in all_trades if t.get("sleeve") == "SCALP"]

@@ -471,7 +471,7 @@ def _submit_equity_intents(
                     "limit_price": lp,
                 })
                 try:
-                    from alpha_agent.analytics.trade_db import log_trade
+                    from alpha_agent.analytics.trade_db import log_trade, log_trade_close, get_trades as _gt
                     log_trade(
                         ticker=intent.ticker,
                         side=intent.side,
@@ -487,6 +487,16 @@ def _submit_equity_intents(
                         vix=vix,
                         limit_price=lp,
                     )
+                    # For SELLs: also close the matching open BUY so P&L is tracked immediately
+                    if intent.side.upper() == "SELL":
+                        open_buys = [t for t in _gt(ticker=intent.ticker, limit=5)
+                                     if t["side"] == "BUY" and not t.get("closed_at")]
+                        if open_buys:
+                            buy_p = open_buys[0]["price"] or price
+                            pnl_usd = round((price - buy_p) * qty, 2)
+                            pnl_pct = round((price / buy_p - 1) * 100, 2) if buy_p else 0.0
+                            log_trade_close(ticker=intent.ticker, exit_price=price,
+                                            pnl_usd=pnl_usd, pnl_pct=pnl_pct)
                 except Exception as _db_exc:
                     logger.debug("trade_db log error: %s", _db_exc)
         except Exception as e:
