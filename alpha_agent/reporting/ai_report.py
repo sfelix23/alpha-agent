@@ -536,6 +536,21 @@ def signals_to_whatsapp_brief(signals: Signals) -> str:
                 out.append(f"  • ⚠️ Earnings 5d: {', '.join(_risky)} — no ampliar posiciones")
         except Exception:
             pass
+    # Discovery — candidatos fuera del universo fijo
+    try:
+        import json as _json
+        from pathlib import Path as _Path
+        _disc_path = _Path(__file__).parent.parent.parent / "signals" / "discovery.json"
+        if _disc_path.exists():
+            _disc = _json.loads(_disc_path.read_text(encoding="utf-8"))
+            _cands = _disc.get("candidates", [])[:3]
+            if _cands:
+                _disc_str = ", ".join(
+                    f"{c['ticker']}({c.get('ret_1m', 0):+.0f}%)" for c in _cands
+                )
+                out.append(f"  • 🔭 Discovery: {_disc_str}")
+    except Exception:
+        pass
     out.append("")
 
     # ── Eventos clave ──
