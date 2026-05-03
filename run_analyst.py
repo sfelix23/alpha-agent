@@ -190,7 +190,25 @@ def main() -> None:
     capm = compute_capm_metrics(closes, benchmark)
     log.info("Métricas CAPM calculadas para %d activos", len(capm))
 
-    # 3.5 AI Allocation — Claude Haiku decide sleeves dinámicamente
+    # 3.5a Market Predictor — debe correr antes de allocation para influir en sleeves
+    market_prediction = None
+    try:
+        from alpha_agent.analytics.market_predictor import predict as _predict
+        market_prediction = _predict(list(capm.index), vix=vix_now, regime=macro.regime)
+        log.info("Market Predictor → %s (conv=%.0f%%, boost=%+.2f)",
+                 market_prediction.direction, market_prediction.conviction * 100, market_prediction.cp_boost)
+    except Exception as _pe:
+        log.warning("Market Predictor falló, sin boost: %s", _pe)
+
+    # 3.5b Leer allocation anterior para detectar cambios
+    _prev_alloc: dict = {}
+    try:
+        import json as _json2
+        _prev_alloc = _json2.loads((Path("signals") / "allocation.json").read_text(encoding="utf-8"))
+    except Exception:
+        pass
+
+    # 3.5c AI Allocation — Claude Haiku decide sleeves dinámicamente
     # Sector momentum: promedio ret 1M por sector, insumo para la decisión de allocation
     try:
         from alpha_agent.analytics.allocation_agent import decide_allocation
@@ -207,26 +225,52 @@ def main() -> None:
             vix=vix_now,
             capital=capital,
             sector_momentum=sector_momentum or None,
+            prediction=market_prediction,
         )
         object.__setattr__(PARAMS, "weight_short_term", alloc.cp_pct)
         object.__setattr__(PARAMS, "weight_long_term",  alloc.lp_pct)
         object.__setattr__(PARAMS, "top_n_short_term",  alloc.n_cp_positions)
         log.info(
-            "🤖 AI Allocation → LP=%.0f%% CP=%.0f%% cash=%.0f%% | %d CP | max %dd | %s",
+            "🤖 AI Allocation → LP=%.0f%% CP=%.0f%% cash=%.0f%% | %d CP | max %dd | nivel=%d | %s",
             alloc.lp_pct * 100, alloc.cp_pct * 100,
             (1.0 - alloc.lp_pct - alloc.cp_pct) * 100,
-            alloc.n_cp_positions, alloc.cp_max_hold_days, alloc.reasoning,
+            alloc.n_cp_positions, alloc.cp_max_hold_days, alloc.level, alloc.reasoning,
         )
-        # Persistir para que el monitor pueda leer cp_max_hold_days
+
+        # Detectar cambio significativo de estrategia → WhatsApp inmediato
+        _prev_level = _prev_alloc.get("level", 2)
+        _prev_cp    = float(_prev_alloc.get("cp_pct", 0.0))
+        if _prev_alloc and (alloc.level != _prev_level or abs(alloc.cp_pct - _prev_cp) >= 0.08):
+            _nivel_names = {1: "AGRESIVO", 2: "BASE", 3: "DEFENSIVO"}
+            _alert = (
+                f"⚡ *ALPHA — CAMBIO DE ESTRATEGIA*\n\n"
+                f"NIVEL {_prev_level} ({_nivel_names.get(_prev_level,'?')}) "
+                f"→ NIVEL {alloc.level} ({_nivel_names.get(alloc.level,'?')})\n"
+                f"CP: {_prev_cp:.0%} → {alloc.cp_pct:.0%} | "
+                f"Posiciones: {_prev_alloc.get('n_cp_positions','?')} → {alloc.n_cp_positions}\n\n"
+                f"Razón: {alloc.reasoning}"
+            )
+            try:
+                from alpha_agent.notifications.whatsapp import send_whatsapp as _wa
+                _wa(_alert, header="ALPHA ESTRATEGIA")
+                log.info("📲 Alerta cambio de estrategia enviada")
+            except Exception as _we:
+                log.warning("allocation alert: %s", _we)
+
+        # Persistir allocation completo para monitor y dashboard
         try:
             import json as _json
             (Path("signals") / "allocation.json").write_text(
                 _json.dumps({
+                    "lp_pct":           alloc.lp_pct,
+                    "cp_pct":           alloc.cp_pct,
+                    "opt_pct":          alloc.opt_pct,
+                    "n_cp_positions":   alloc.n_cp_positions,
                     "cp_max_hold_days": alloc.cp_max_hold_days,
-                    "lp_pct": alloc.lp_pct,
-                    "cp_pct": alloc.cp_pct,
-                    "generated_at": datetime.now().isoformat(),
-                }), encoding="utf-8"
+                    "level":            alloc.level,
+                    "reasoning":        alloc.reasoning,
+                    "generated_at":     datetime.now().isoformat(),
+                }, ensure_ascii=False), encoding="utf-8"
             )
         except Exception:
             pass
@@ -297,15 +341,6 @@ def main() -> None:
             log.info("Posiciones LP abiertas (stickiness): %s", sorted(held_lp))
     except Exception as exc:
         log.debug("No se pudo leer posiciones abiertas LP: %s", exc)
-
-    market_prediction = None
-    try:
-        from alpha_agent.analytics.market_predictor import predict as _predict
-        _all_t = list(capm.index)
-        market_prediction = _predict(_all_t, vix=vix_now, regime=macro.regime)
-        log.info("Market Predictor → %s (conv=%.0f%%, boost=%+.2f)", market_prediction.direction, market_prediction.conviction * 100, market_prediction.cp_boost)
-    except Exception as _pe:
-        log.warning("Market Predictor falló, sin boost: %s", _pe)
 
     scores = build_scores(
         capm, technical,

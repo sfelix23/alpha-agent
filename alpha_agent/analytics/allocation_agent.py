@@ -30,6 +30,7 @@ class AllocationDecision:
     n_cp_positions: int    # cuántas posiciones CP concentradas (1-3)
     cp_max_hold_days: int  # días máximos en CP antes de salida forzada
     reasoning: str         # una frase de justificación
+    level: int = 2         # 1=agresivo, 2=base, 3=defensivo
 
 
 # ── Niveles de convicción ─────────────────────────────────────────────────────
@@ -52,29 +53,29 @@ def _rule_default(regime: str, vix: float, win_rate: float | None, recent_pnl: f
             if vix > 30 or reg == "BEAR"
             else f"Racha perdedora (win_rate {win_rate:.0%}): reduciendo exposición."
         )
-        return AllocationDecision(0.0, 0.45, 0.05, 1, 2, reason)
+        return AllocationDecision(0.0, 0.45, 0.05, 1, 2, reason, level=3)
 
     # NEUTRAL: posición base conservadora
     if vix > 22 or reg == "NEUTRAL":
         cp = 0.80 if winning_streak else 0.65
         n  = 2
         reason = f"NEUTRAL/VIX {vix:.0f}: CP {cp:.0%}, {'racha ganadora → más exposición.' if winning_streak else 'posición moderada.'}"
-        return AllocationDecision(0.0, cp, 0.10, n, 3, reason)
+        return AllocationDecision(0.0, cp, 0.10, n, 3, reason, level=2)
 
     # BULL — el caso principal
     if winning_streak:
         # NIVEL 1: BULL + ganando → presionar al máximo
         return AllocationDecision(0.0, 0.88, 0.07, 2, 3,
-            f"BULL + racha ganadora ({win_rate:.0%} win rate): CP al máximo, cash mínimo.")
+            f"BULL + racha ganadora ({win_rate:.0%} win rate): CP al máximo, cash mínimo.", level=1)
     elif losing_streak:
         # ya cubierto arriba pero por si acá
         return AllocationDecision(0.0, 0.50, 0.05, 1, 2,
-            f"BULL pero racha perdedora: reduciendo CP al 50%.")
+            f"BULL pero racha perdedora: reduciendo CP al 50%.", level=3)
     else:
         # NIVEL 2: BULL sin historial suficiente → base sólida
         cp = 0.83 if vix < 18 else 0.75
         return AllocationDecision(0.0, cp, 0.10, 2, 3,
-            f"BULL + VIX {vix:.1f}: CP {cp:.0%}, 2 posiciones, opciones activas.")
+            f"BULL + VIX {vix:.1f}: CP {cp:.0%}, 2 posiciones, opciones activas.", level=2)
 
 
 def _get_recent_performance() -> tuple[float | None, float | None]:
@@ -100,6 +101,7 @@ def decide_allocation(
     vix: float,
     capital: float = 1600.0,
     sector_momentum: dict[str, float] | None = None,
+    prediction: Any | None = None,
 ) -> AllocationDecision:
     """
     Claude Haiku decide la asignación óptima según contexto macro + historial.
@@ -130,6 +132,12 @@ def decide_allocation(
     if sector_momentum:
         top = sorted(sector_momentum.items(), key=lambda x: x[1], reverse=True)[:3]
         ctx["top_sectors_momentum"] = {k: round(v, 3) for k, v in top}
+    if prediction is not None:
+        ctx["market_prediction"] = {
+            "direction": prediction.direction,
+            "conviction": round(prediction.conviction, 2),
+            "score": prediction.score,
+        }
 
     prompt = (
         "You are the allocation AI for a $1600 concentrated momentum trading account.\n"
@@ -177,6 +185,15 @@ def decide_allocation(
         if cp + opt > 0.95:
             cp = 0.95 - opt
 
+        # Override por market predictor (post-AI, hard constraint)
+        if prediction is not None and prediction.conviction >= 0.65:
+            if prediction.direction == "BEARISH":
+                cp = min(cp, 0.55)
+            elif prediction.direction == "BULLISH":
+                cp = min(cp + 0.05, 0.88)
+
+        level = 1 if cp >= 0.80 else (3 if cp <= 0.55 else 2)
+
         dec = AllocationDecision(
             lp_pct=0.0,
             cp_pct=round(cp, 2),
@@ -184,6 +201,7 @@ def decide_allocation(
             n_cp_positions=max(1, min(3, int(data.get("n_cp_positions", 2)))),
             cp_max_hold_days=max(2, min(4, int(data.get("cp_max_hold_days", 3)))),
             reasoning=str(data.get("reasoning", "AI allocation.")),
+            level=level,
         )
         log.info(
             "AI Allocation → CP=%.0f%% OPT=%.0f%% cash=%.0f%% | %d pos | max %dd | streak=%s | %s",

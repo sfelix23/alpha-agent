@@ -161,8 +161,22 @@ def diff_against_current(
                 stop_loss=None, take_profit=None,
             ))
 
+    # Guard: tickers ya comprados hoy → no comprar de nuevo
+    _bought_today: set[str] = set()
+    try:
+        from alpha_agent.analytics.trade_db import get_trades
+        from datetime import date
+        _today = date.today().isoformat()
+        for _t in get_trades(limit=50):
+            if _t.get("side") == "BUY" and (_t.get("date") or "")[:10] == _today:
+                _bought_today.add(_t.get("ticker", ""))
+    except Exception:
+        pass
+
     # Tickers en target que necesitan BUY (delta positivo)
     for t, info in target.items():
+        if t in _bought_today:
+            continue  # ya compramos hoy, no duplicar
         already_invested = current.get(t, 0.0)
         delta = info["notional"] - already_invested
         if delta > threshold:
