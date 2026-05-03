@@ -251,7 +251,7 @@ async def _stream_and_trade(live: bool) -> None:
         if not go:
             log.info("SCALP VETADO %s — %s", ticker, reason)
             try:
-                from alpha_agent.notifications import send_whatsapp
+                from alpha_agent.notifications import send_notification as send_whatsapp
                 send_whatsapp(f"SCALP VETO {ticker} [{direction}]\n{reason[:200]}")
             except Exception:
                 pass
@@ -286,7 +286,7 @@ async def _stream_and_trade(live: bool) -> None:
                 log.warning("trade_db scalp: %s", e_db)
 
             try:
-                from alpha_agent.notifications import send_whatsapp
+                from alpha_agent.notifications import send_notification as send_whatsapp
                 now_str = datetime.now().strftime("%H:%M")
                 send_whatsapp(
                     f"SCALP | {now_str} | VIX {vix:.1f}\n"

@@ -57,7 +57,7 @@ from alpha_agent.derivatives import (
 )
 from alpha_agent.macro import fetch_macro_snapshot
 from alpha_agent.config import SECTOR_MAP
-from alpha_agent.notifications import send_whatsapp
+from alpha_agent.notifications import send_notification as send_whatsapp
 from alpha_agent.radar import build_market_radar
 from alpha_agent.reporting import build_signals, generate_executive_report
 from alpha_agent.reporting.ai_report import signals_to_compact_brief, signals_to_whatsapp_brief
@@ -251,7 +251,7 @@ def main() -> None:
                 f"Razón: {alloc.reasoning}"
             )
             try:
-                from alpha_agent.notifications.whatsapp import send_whatsapp as _wa
+                from alpha_agent.notifications import send_notification as _wa
                 _wa(_alert, header="ALPHA ESTRATEGIA")
                 log.info("📲 Alerta cambio de estrategia enviada")
             except Exception as _we:

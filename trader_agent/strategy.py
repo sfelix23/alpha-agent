@@ -24,7 +24,7 @@ from datetime import date, datetime
 from pathlib import Path
 
 from alpha_agent.config import PARAMS, PATHS
-from alpha_agent.notifications import send_whatsapp
+from alpha_agent.notifications import send_notification as send_whatsapp
 from alpha_agent.reporting.signals import Signal, Signals
 
 from .brokers.base import BrokerBase, OptionOrder, Order

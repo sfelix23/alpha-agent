@@ -275,7 +275,7 @@ def main() -> None:
         )
         logger.info("Market Predictor VETÓ entrada LONG en mercado BEARISH. Abortando.")
         try:
-            from alpha_agent.notifications import send_whatsapp
+            from alpha_agent.notifications import send_notification as send_whatsapp
             send_whatsapp(msg_abort)
         except Exception:
             pass
@@ -329,7 +329,7 @@ def main() -> None:
             if not decision.go:
                 logger.info("Swarm VETÓ el trade. Saliendo.")
                 try:
-                    from alpha_agent.notifications import send_whatsapp
+                    from alpha_agent.notifications import send_notification as send_whatsapp
                     send_whatsapp(
                         f"DT SWARM VETO {ticker} [{direction}]\n"
                         f"Score cuant: {cand['dt_score']:.3f} — aprobado por reglas\n"
@@ -380,7 +380,7 @@ def main() -> None:
         except Exception as e_db:
             logger.warning("trade_db DT: %s", e_db)
 
-    from alpha_agent.notifications import send_whatsapp
+    from alpha_agent.notifications import send_notification as send_whatsapp
     ts      = datetime.now().strftime("%H:%M")
     gap_pct = cand["gap_pct"]
     orb_s   = cand.get("orb_score", 0.0)
