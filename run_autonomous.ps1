@@ -59,7 +59,7 @@ if ($dow -eq "Saturday" -or $dow -eq "Sunday") {
 $healthFile = "D:\Agente\signals\last_run.json"
 try {
     $healthData = @{ last_run = (Get-Date -Format "yyyy-MM-ddTHH:mm:ss"); status = "started" } | ConvertTo-Json
-    $healthData | Out-File -FilePath $healthFile -Encoding utf8 -Force
+    [System.IO.File]::WriteAllText($healthFile, $healthData, [System.Text.UTF8Encoding]::new($false))
 } catch {
     Log "Health check write error: $_"
 }
@@ -110,7 +110,7 @@ if ($analystExit -ne 0) {
         python -c "from alpha_agent.notifications import send_whatsapp; send_whatsapp('ALPHA ERROR: analyst fallo 2 veces en run autonomo. Revisa logs urgente.')" 2>&1 | Out-Null
         # Actualizar health file como fallido
         try {
-            @{ last_run = (Get-Date -Format "yyyy-MM-ddTHH:mm:ss"); status = "analyst_failed" } | ConvertTo-Json | Out-File -FilePath $healthFile -Encoding utf8 -Force
+            [System.IO.File]::WriteAllText($healthFile, (@{ last_run = (Get-Date -Format "yyyy-MM-ddTHH:mm:ss"); status = "analyst_failed" } | ConvertTo-Json), [System.Text.UTF8Encoding]::new($false))
         } catch {}
         exit 1
     }
@@ -141,7 +141,7 @@ if ($LASTEXITCODE -ne 0) {
 
 # ── Actualizar health file como OK ────────────────────────────────────────────
 try {
-    @{ last_run = (Get-Date -Format "yyyy-MM-ddTHH:mm:ss"); status = "ok"; equity = $equityResult } | ConvertTo-Json | Out-File -FilePath $healthFile -Encoding utf8 -Force
+    [System.IO.File]::WriteAllText($healthFile, (@{ last_run = (Get-Date -Format "yyyy-MM-ddTHH:mm:ss"); status = "ok"; equity = $equityResult } | ConvertTo-Json), [System.Text.UTF8Encoding]::new($false))
 } catch {}
 
 Log "==============================================="

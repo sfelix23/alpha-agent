@@ -53,7 +53,7 @@ def main() -> None:
         return
 
     try:
-        data = json.loads(HEALTH_FILE.read_text(encoding="utf-8"))
+        data = json.loads(HEALTH_FILE.read_text(encoding="utf-8-sig"))  # utf-8-sig strips BOM (PowerShell 5.1)
         last_run_str = data.get("last_run", "")
         status = data.get("status", "unknown")
         last_run = datetime.fromisoformat(last_run_str)
