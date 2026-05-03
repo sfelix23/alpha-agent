@@ -241,6 +241,46 @@ def main() -> None:
     except Exception:
         pass
 
+    # ── Market Predictor — pre-filtro direccional ──────────────────────────
+    # Corre ANTES del swarm para ahorrar API calls en setups contra el mercado.
+    market_pred = None
+    try:
+        from alpha_agent.analytics.market_predictor import predict as _mp
+        market_pred = _mp([ticker], vix=vix, regime=regime)
+        logger.info(
+            "Market Predictor → %s (conv=%.0f%% score=%+.2f)",
+            market_pred.direction, market_pred.conviction * 100, market_pred.score,
+        )
+        # Enriquecer macro_ctx para que el Swarm Strategist lo vea
+        macro_ctx["market_prediction"] = {
+            "direction":  market_pred.direction,
+            "conviction": round(market_pred.conviction, 2),
+            "score":      market_pred.score,
+        }
+    except Exception as _mpe:
+        logger.debug("Market Predictor DT no disponible: %s", _mpe)
+
+    # Veto preventivo: predictor BEARISH fuerte + setup LONG → abortar
+    if (
+        market_pred is not None
+        and market_pred.direction == "BEARISH"
+        and market_pred.conviction >= 0.70
+        and direction == "LONG"
+    ):
+        msg_abort = (
+            f"DT ABORT {ticker} [{direction}]\n"
+            f"Predictor: BEARISH {market_pred.conviction:.0%} — entrar LONG contra "
+            f"mercado bajista tiene EV negativo.\n"
+            f"Score predictor: {market_pred.score:+.2f} | {market_pred.reasoning}"
+        )
+        logger.info("Market Predictor VETÓ entrada LONG en mercado BEARISH. Abortando.")
+        try:
+            from alpha_agent.notifications import send_whatsapp
+            send_whatsapp(msg_abort)
+        except Exception:
+            pass
+        return
+
     # ── Polymarket ─────────────────────────────────────────────────────────
     polymarket = {}
     try:
