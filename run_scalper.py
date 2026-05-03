@@ -163,7 +163,21 @@ async def _stream_and_trade(live: bool) -> None:
     except Exception:
         pass
 
-    log.info("=== SCALPER START === tickers=%d live=%s VIX=%.1f", len(SCALP_UNIVERSE), live, vix)
+    # Market predictor — corre una vez al inicio para informar al swarm
+    market_bias       = "NEUTRAL"
+    market_conviction = 0.0
+    try:
+        from alpha_agent.macro.macro_context import fetch_macro_snapshot
+        from alpha_agent.analytics.market_predictor import predict as _mp
+        _macro = fetch_macro_snapshot()
+        _pred  = _mp(list(SCALP_UNIVERSE), vix=vix, regime=_macro.regime)
+        market_bias       = _pred.direction
+        market_conviction = _pred.conviction
+        log.info("Market Predictor → %s (conv=%.0f%%)", market_bias, market_conviction * 100)
+    except Exception as _mpe:
+        log.debug("Market Predictor SCALP: %s", _mpe)
+
+    log.info("=== SCALPER START === tickers=%d live=%s VIX=%.1f bias=%s", len(SCALP_UNIVERSE), live, vix, market_bias)
 
     wss = StockDataStream(api_key, secret)
 
@@ -230,6 +244,8 @@ async def _stream_and_trade(live: bool) -> None:
             ticker=ticker, direction=direction, bracket=bracket,
             orb_range_pct=state.range_pct * 100,
             trades_today=trades_today, vix=vix,
+            market_bias=market_bias,
+            market_conviction=market_conviction,
         )
 
         if not go:

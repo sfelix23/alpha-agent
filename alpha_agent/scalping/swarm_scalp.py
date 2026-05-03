@@ -48,6 +48,8 @@ def validate_scalp(
     orb_range_pct: float,
     trades_today: int,
     vix: float,
+    market_bias: str = "NEUTRAL",
+    market_conviction: float = 0.0,
 ) -> tuple[bool, str]:
     """
     Validación rápida de un setup de scalping. Solo 2 agentes en paralelo.
@@ -66,6 +68,14 @@ def validate_scalp(
         f"Notional: ${bracket['notional']:.0f} | Qty: {bracket['qty']} acciones"
     )
 
+    bias_line = ""
+    if market_conviction >= 0.55:
+        bias_line = f"\nPredictor de mercado: {market_bias} (conv={market_conviction:.0%})"
+        if market_bias == "BEARISH" and direction == "LONG":
+            bias_line += " — mercado bajista, setup LONG va contra el flujo"
+        elif market_bias == "BULLISH" and direction == "SHORT":
+            bias_line += " — mercado alcista, setup SHORT va contra el flujo"
+
     sys_risk = (
         "Sos el Risk Manager de un scalper. Evaluás si el contexto permite abrir una posición adicional. "
         "Respondé EXACTAMENTE: GO|REASONING o NO-GO|REASONING (1 oración). Sin texto extra."
@@ -74,6 +84,7 @@ def validate_scalp(
         f"Trades hoy: {trades_today}/4 | VIX: {vix:.1f}\n"
         f"R/R del trade: {bracket['rr']:.2f}:1 | SL: {bracket['sl_pct']:.2f}%\n"
         f"VIX > 30 = NO-GO siempre | trades >= 4 = NO-GO"
+        f"{bias_line}"
     )
 
     go_tech = go_risk = True
