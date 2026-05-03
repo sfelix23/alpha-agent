@@ -240,6 +240,7 @@ def build_scores(
     insider_signal: dict[str, float] | None = None,
     fear_greed: int | None = None,
     held_lp: set[str] | None = None,
+    market_prediction=None,  # PredictionResult | None
 ) -> dict[str, pd.DataFrame]:
     """
     Devuelve {'long_term': df, 'short_term': df} con rankings mejorados.
@@ -567,6 +568,16 @@ def build_scores(
             lp.loc[lp.index.isin(stopout_tickers), "score_lp"] -= 1.5
     except Exception as exc:
         logger.debug("Stop-out cooldown no disponible: %s", exc)
+
+    # ── Market Predictor boost ────────────────────────────────────────────────
+    if market_prediction is not None:
+        boost = market_prediction.cp_boost
+        if boost != 0.0:
+            st["score_st"] += boost
+            logger.info(
+                "Market Predictor %s (conv=%.0f%%) → CP boost %+.2f",
+                market_prediction.direction, market_prediction.conviction * 100, boost,
+            )
 
     st = st.sort_values("score_st", ascending=False)
     lp = lp.sort_values("score_lp", ascending=False)

@@ -553,6 +553,23 @@ def signals_to_whatsapp_brief(signals: Signals) -> str:
         pass
     out.append("")
 
+    # ── Predicción de mercado ──
+    try:
+        from alpha_agent.analytics.market_predictor import predict
+        _all_tickers = [asdict_compat(s).get("ticker", "") for s in signals.long_term + signals.short_term]
+        _all_tickers = [t for t in _all_tickers if t] or ["SPY", "QQQ", "NVDA", "AAPL"]
+        _vix  = macro.get("prices", {}).get("vix", 20.0)
+        _reg  = macro.get("regime", "NEUTRAL")
+        _pred = predict(_all_tickers, vix=_vix, regime=_reg)
+        _dir_emoji = {"BULLISH": "📈", "BEARISH": "📉", "NEUTRAL": "➡️"}.get(_pred.direction, "➡️")
+        out.append("🔮 *PREDICCIÓN 1-5d*")
+        out.append(f"  {_dir_emoji} {_pred.direction} · convicción {_pred.conviction:.0%} · score {_pred.score:+.2f}")
+        if _pred.reasoning:
+            out.append(f"  {_pred.reasoning}")
+        out.append("")
+    except Exception as _e:
+        logger.debug("market_predictor error: %s", _e)
+
     # ── Eventos clave ──
     headlines = _top_headlines(signals, max_headlines=3)
     if headlines:

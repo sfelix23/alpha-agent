@@ -298,6 +298,15 @@ def main() -> None:
     except Exception as exc:
         log.debug("No se pudo leer posiciones abiertas LP: %s", exc)
 
+    market_prediction = None
+    try:
+        from alpha_agent.analytics.market_predictor import predict as _predict
+        _all_t = list(capm.index)
+        market_prediction = _predict(_all_t, vix=vix_now, regime=macro.regime)
+        log.info("Market Predictor → %s (conv=%.0f%%, boost=%+.2f)", market_prediction.direction, market_prediction.conviction * 100, market_prediction.cp_boost)
+    except Exception as _pe:
+        log.warning("Market Predictor falló, sin boost: %s", _pe)
+
     scores = build_scores(
         capm, technical,
         closes=closes,
@@ -307,6 +316,7 @@ def main() -> None:
         insider_signal=insider_signal if insider_signal else None,
         fear_greed=fg_value,
         held_lp=held_lp if held_lp else None,
+        market_prediction=market_prediction,
     )
     log.info("Top LP post-guard: %s", scores["long_term"].head(PARAMS.top_n_long_term).index.tolist())
     log.info("Top CP: %s", scores["short_term"].head(PARAMS.top_n_short_term).index.tolist())
