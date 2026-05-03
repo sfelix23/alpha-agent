@@ -2370,6 +2370,20 @@ def generate() -> None:
     except Exception as e:
         logger.warning("Portfolio history no disponible: %s", e)
 
+    # Fallback: equity snapshots guardados por el monitor (si Alpaca falla)
+    if not history:
+        try:
+            _snap_path = BASE_DIR / "signals" / "equity_snapshots.json"
+            if _snap_path.exists():
+                _snaps = json.loads(_snap_path.read_text(encoding="utf-8"))
+                if _snaps:
+                    import time as _time
+                    history = [{"ts": int(_time.mktime(__import__("datetime").date.fromisoformat(s["date"]).timetuple())),
+                                "equity": s["equity"]} for s in _snaps]
+                    logger.info("Portfolio history (desde snapshots): %d entradas", len(history))
+        except Exception as _ef:
+            logger.debug("equity_snapshots fallback error: %s", _ef)
+
     # SPY + QQQ benchmarks (con cache de 1h para no re-descargar en cada refresh)
     spy_history: list[dict] = []
     qqq_history: list[dict] = []

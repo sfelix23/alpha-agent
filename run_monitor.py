@@ -383,6 +383,26 @@ def main():
         logger.error("Error conectando a Alpaca: %s", e)
         return
 
+    # Escalar equity al espacio virtual ($1600 base)
+    try:
+        from alpha_agent.analytics.capital_tracker import get_virtual_equity
+        equity = get_virtual_equity(equity)
+    except Exception:
+        pass
+
+    # Guardar snapshot diario de equity para el gráfico del dashboard
+    try:
+        import json as _j
+        _snap_path = BASE_DIR / "signals" / "equity_snapshots.json"
+        _snaps = _j.loads(_snap_path.read_text(encoding="utf-8")) if _snap_path.exists() else []
+        _today = datetime.now().strftime("%Y-%m-%d")
+        _snaps = [s for s in _snaps if s.get("date") != _today]
+        _snaps.append({"date": _today, "equity": round(equity, 2)})
+        _snaps = _snaps[-252:]  # keep last trading year
+        _snap_path.write_text(_j.dumps(_snaps, indent=2), encoding="utf-8")
+    except Exception as _se:
+        logger.debug("equity snapshot error: %s", _se)
+
     logger.info("💰 Equity: $%.2f | Posiciones: %d", equity, len(positions))
 
     if not positions:
