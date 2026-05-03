@@ -231,23 +231,14 @@ def main() -> None:
         except Exception:
             pass
     except Exception as _alloc_exc:
-        log.warning("AI Allocation no disponible — reglas estáticas: %s", _alloc_exc)
-        # LP desactivado: capital insuficiente para holds largos ($1600)
-        if macro.regime.upper() == "BULL" and vix_now < 20:
-            object.__setattr__(PARAMS, "weight_short_term", 0.78)
-            object.__setattr__(PARAMS, "weight_long_term",  0.0)
-            object.__setattr__(PARAMS, "top_n_short_term",  2)
-            log.info("📈 BULL + VIX %.1f < 20 → LP 0%% CP 78%% 2 slots", vix_now)
-        elif macro.regime.upper() == "BEAR" or vix_now > 30:
-            object.__setattr__(PARAMS, "weight_short_term", 0.40)
-            object.__setattr__(PARAMS, "weight_long_term",  0.0)
-            object.__setattr__(PARAMS, "top_n_short_term",  1)
-            log.info("🐻 BEAR/VIX %.1f → LP 0%% CP 40%% 1 slot", vix_now)
-        else:
-            object.__setattr__(PARAMS, "weight_short_term", 0.60)
-            object.__setattr__(PARAMS, "weight_long_term",  0.0)
-            object.__setattr__(PARAMS, "top_n_short_term",  2)
-            log.info("⚖️ NEUTRAL → LP 0%% CP 60%% 2 slots")
+        log.warning("AI Allocation no disponible — reglas dinámicas: %s", _alloc_exc)
+        from alpha_agent.analytics.allocation_agent import _rule_default, _get_recent_performance
+        _wr, _pnl = _get_recent_performance()
+        _fb = _rule_default(macro.regime, vix_now, _wr, _pnl)
+        object.__setattr__(PARAMS, "weight_short_term", _fb.cp_pct)
+        object.__setattr__(PARAMS, "weight_long_term",  0.0)
+        object.__setattr__(PARAMS, "top_n_short_term",  _fb.n_cp_positions)
+        log.info("📊 Fallback → CP %.0f%% %d slots | %s", _fb.cp_pct * 100, _fb.n_cp_positions, _fb.reasoning)
 
     # Viernes: sin nuevas posiciones CP (evitar gap de fin de semana)
     from datetime import datetime as _dt
