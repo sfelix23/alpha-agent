@@ -64,14 +64,26 @@ Get-Content logs\autonomous_$(Get-Date -Format 'yyyy-MM-dd').log -Tail 50
 
 ## Estado actual
 
-**Operativo:** Pipeline completo · Backtest CAGR 11.18% Sharpe 0.74 DD -7.57%
-**Implementado recientemente:**
-- GARCH(1,1) + CVaR para position sizing (kelly.py + garch.py)
-- Candle breakout detector en DT scanner (body>60%, close upper third)
-- Liquidity sweep signal en midday scan (HTF low sweep + recovery)
-- Universo expandido a 69 activos
-- MCPs activos: sequential-thinking · memory · fetch · context7 · tavily · duckduckgo · github · stockflow · trade-db
-- GRAPHIFY skill instalado (`/graphify .` para knowledge graph del codebase)
+**Operativo:** Pipeline completo · Equity $1606 · Trade DB 7 cerrados (win rate 43%)
+
+**Archivos de señales importantes:**
+- `signals/trades.db` ← SQLite (no `trade_db.sqlite` — ese nombre está desactualizado en docs)
+- `signals/discovery.json` ← candidatos fuera del universo (se escribe cada vez que corre el analyst)
+- `signals/equity_snapshots.json` ← historial diario de equity escrito por el monitor
+- `signals/allocation.json` ← LP/CP/OPT pcts del último allocation agent
+
+**Implementado recientemente (mayo 2026):**
+- LP sleeve re-habilitado: allocation_agent tenía `lp_pct=0.0` hardcodeado → corregido (BULL=45% LP)
+- Trade reconciliation: SELLs en trade_db se matchean con BUYs → P&L real calculado
+- Discovery.json: el analyst guarda candidatos con prioridad/razon para el dashboard
+- Discovery en WhatsApp HALLAZGOS: top 3 tickers con momentum
+- Equity snapshots diarios: monitor guarda equity cada 30min → dashboard tiene historial persistente
+- VIX spike detection: usa datos intraday 5min (no cierre diario)
+- VWAP filter en midday scan: descarta tickers bajo VWAP intradía
+- Dashboard: mes actual en calendario P&L (corregido), auto-reconcile trades
+- BOM fix: run_autonomous.ps1 ahora escribe last_run.json sin BOM (Python lo parsea correctamente)
+- Backtest: Sortino, Calmar, Win Rate, Profit Factor añadidos
+- MCPs activos: sequential-thinking · memory · fetch · context7 · tavily · github · stockflow · trade-db · time · filesystem
 
 **Pendiente:**
-- WhatsApp bidireccional · VPS migration
+- WhatsApp bidireccional · VPS migration (Oracle Cloud)
