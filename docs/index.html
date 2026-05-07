@@ -258,7 +258,7 @@ tr:hover td{background:var(--s2)}
 <div class="topbar">
   <div class="logo">ALPHA<span>&nbsp;/&nbsp;TERMINAL</span></div>
   <div class="topbar-meta">
-    <span><span class="live"></span>&nbsp;07 de May de 2026 — 15:54</span>
+    <span><span class="live"></span>&nbsp;07 de May de 2026 — 16:09</span>
     <span style="color:var(--bd)">|</span>
     <span>Paper</span>
     <span style="color:var(--bd)">|</span>
@@ -298,16 +298,16 @@ tr:hover td{background:var(--s2)}
   <p class="ts">Senales actualizadas: 2026-05-07 13:45 &nbsp;|&nbsp; Paper Trading</p>
   
 <div class="kpi-row">
-  <div class="kpi kpi-hero" data-countup="1654.08">
+  <div class="kpi kpi-hero" data-countup="1653.37">
     <div class="kpi-lbl">Patrimonio Total</div>
-    <div class="kpi-val kpi-hero-val" style="color:#3fb950" id="kpi-equity">$1,654.08</div>
-    <div class="kpi-tag" style="background:rgba(63,185,80,.15);color:#3fb950">$54.08 &nbsp; +3.38% total&nbsp;&middot;&nbsp;<span style="color:#7d8590">SPY +11.48%</span></div>
+    <div class="kpi-val kpi-hero-val" style="color:#3fb950" id="kpi-equity">$1,653.37</div>
+    <div class="kpi-tag" style="background:rgba(63,185,80,.15);color:#3fb950">$53.37 &nbsp; +3.34% total&nbsp;&middot;&nbsp;<span style="color:#7d8590">SPY +11.22%</span></div>
   </div>
   
   <div class="kpi" style="border-left:3px solid #f85149;padding-left:12px">
     <div class="kpi-lbl">Alpha vs SPY (1M)</div>
-    <div class="kpi-val" style="color:#f85149">-8.38%</div>
-    <div class="kpi-sub">Port +3.10% · SPY +11.48%</div>
+    <div class="kpi-val" style="color:#f85149">-8.12%</div>
+    <div class="kpi-sub">Port +3.10% · SPY +11.22%</div>
   </div>
   <div class="kpi">
     <div class="kpi-lbl">Regimen de Mercado</div>
@@ -352,8 +352,8 @@ tr:hover td{background:var(--s2)}
     <div class="kpi-val" style="color:#3fb950">-0.45%</div>
     <div class="kpi-sub">Caida maxima desde pico</div>
   </div>
-  <div class="kpi"><div class="kpi-lbl">Alpha vs SPY (1M)</div><div class="kpi-val" style="color:#f85149">-8.38%</div><div class="kpi-sub">Portfolio +3.10% · SPY +11.48%</div></div>
-  <div class="kpi"><div class="kpi-lbl">Alpha vs QQQ (1M)</div><div class="kpi-val" style="color:#f85149">-15.60%</div><div class="kpi-sub">QQQ +18.70%</div></div>
+  <div class="kpi"><div class="kpi-lbl">Alpha vs SPY (1M)</div><div class="kpi-val" style="color:#f85149">-8.12%</div><div class="kpi-sub">Portfolio +3.10% · SPY +11.22%</div></div>
+  <div class="kpi"><div class="kpi-lbl">Alpha vs QQQ (1M)</div><div class="kpi-val" style="color:#f85149">-15.18%</div><div class="kpi-sub">QQQ +18.28%</div></div>
 </div>
   <div class="section-gap"></div>
   <div class="card">
@@ -407,38 +407,107 @@ tr:hover td{background:var(--s2)}
   <div class="section-gap"></div>
   <div class="card" style="min-width:260px">
   <div class="card-head" style="margin-bottom:8px">
-    <div class="card-title">GitHub Actions</div>
-    <div class="card-sub">Estado de los workflows automáticos</div>
+    <div class="card-title">Google Cloud Run &mdash; Estado</div>
+    <div class="card-sub">
+      <a href="https://console.cloud.google.com/run/jobs?project=alpha-agent-2025" target="_blank"
+         style="color:#58a6ff;text-decoration:none">alpha-agent-2025</a>
+    </div>
   </div>
   <div style="display:flex;align-items:center;gap:10px;padding:8px 0;
-  border-bottom:1px solid var(--bd)">
-  <span style="font-size:1rem;color:#3fb950;width:16px;text-align:center;flex-shrink:0">✓</span>
+  border-bottom:1px solid var(--bd)" id="wf-row-alpha_daily">
+  <span style="font-size:1rem;color:#3fb950;width:16px;text-align:center;flex-shrink:0"
+        id="wf-icon-alpha_daily">✓</span>
   <div style="flex:1;min-width:0">
     <div style="font-size:.82rem;font-weight:700;color:var(--tx)">Alpha Daily</div>
-    <div style="font-size:.72rem;color:var(--mt);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">Analyst + Trader + DayTrader · 10:40 ART</div>
+    <div style="font-size:.72rem;color:var(--mt);white-space:nowrap;overflow:hidden;
+                text-overflow:ellipsis" id="wf-desc-alpha_daily">Analyst + Trader LP/CP · 10:40 ART</div>
   </div>
-  <div style="font-size:.72rem;color:#3fb950;flex-shrink:0">hace 24h</div>
+  <div style="font-size:.72rem;flex-shrink:0" id="wf-age-alpha_daily"
+       style="color:#3fb950">hace 15min</div>
 </div><div style="display:flex;align-items:center;gap:10px;padding:8px 0;
-  border-bottom:1px solid var(--bd)">
-  <span style="font-size:1rem;color:#3fb950;width:16px;text-align:center;flex-shrink:0">✓</span>
+  border-bottom:1px solid var(--bd)" id="wf-row-alpha_daytrader">
+  <span style="font-size:1rem;color:#6e7681;width:16px;text-align:center;flex-shrink:0"
+        id="wf-icon-alpha_daytrader">○</span>
+  <div style="flex:1;min-width:0">
+    <div style="font-size:.82rem;font-weight:700;color:var(--tx)">Alpha DayTrader</div>
+    <div style="font-size:.72rem;color:var(--mt);white-space:nowrap;overflow:hidden;
+                text-overflow:ellipsis" id="wf-desc-alpha_daytrader">Day Trader ORB · 11:15 ART · cuenta DT</div>
+  </div>
+  <div style="font-size:.72rem;flex-shrink:0" id="wf-age-alpha_daytrader"
+       style="color:#6e7681">nunca corrió</div>
+</div><div style="display:flex;align-items:center;gap:10px;padding:8px 0;
+  border-bottom:1px solid var(--bd)" id="wf-row-alpha_monitor">
+  <span style="font-size:1rem;color:#3fb950;width:16px;text-align:center;flex-shrink:0"
+        id="wf-icon-alpha_monitor">✓</span>
   <div style="flex:1;min-width:0">
     <div style="font-size:.82rem;font-weight:700;color:var(--tx)">Alpha Monitor</div>
-    <div style="font-size:.72rem;color:var(--mt);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">Stops/TPs cada 30 min · 11:00-16:00 ART</div>
+    <div style="font-size:.72rem;color:var(--mt);white-space:nowrap;overflow:hidden;
+                text-overflow:ellipsis" id="wf-desc-alpha_monitor">Stops/TPs cada 30 min · 11:00-16:00 ART</div>
   </div>
-  <div style="font-size:.72rem;color:#3fb950;flex-shrink:0">hace 20h</div>
+  <div style="font-size:.72rem;flex-shrink:0" id="wf-age-alpha_monitor"
+       style="color:#3fb950">hace 20h</div>
 </div><div style="display:flex;align-items:center;gap:10px;padding:8px 0;
-  border-bottom:1px solid var(--bd)">
-  <span style="font-size:1rem;color:#6e7681;width:16px;text-align:center;flex-shrink:0">○</span>
+  border-bottom:1px solid var(--bd)" id="wf-row-alpha_weekly">
+  <span style="font-size:1rem;color:#6e7681;width:16px;text-align:center;flex-shrink:0"
+        id="wf-icon-alpha_weekly">○</span>
   <div style="flex:1;min-width:0">
     <div style="font-size:.82rem;font-weight:700;color:var(--tx)">Alpha Weekly</div>
-    <div style="font-size:.72rem;color:var(--mt);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">Rebalancer semanal · viernes 15:00 ART</div>
+    <div style="font-size:.72rem;color:var(--mt);white-space:nowrap;overflow:hidden;
+                text-overflow:ellipsis" id="wf-desc-alpha_weekly">Rebalancer semanal · viernes 15:00 ART</div>
   </div>
-  <div style="font-size:.72rem;color:#6e7681;flex-shrink:0">nunca corrió</div>
+  <div style="font-size:.72rem;flex-shrink:0" id="wf-age-alpha_weekly"
+       style="color:#6e7681">nunca corrió</div>
 </div>
-  <div style="font-size:.68rem;color:var(--mt);margin-top:8px">
-    El scalper corre localmente en tu PC — no aparece aquí.
+  <div style="font-size:.68rem;color:var(--mt);margin-top:8px" id="wf-source">
+    · datos en caché (actualizando...)
+  </div>
+  <div style="font-size:.68rem;color:var(--mt);margin-top:2px">
+    El scalper corre localmente &mdash; no en la nube.
   </div>
 </div>
+<script>
+(async function() {
+  try {
+    const r = await fetch(
+      'https://raw.githubusercontent.com/sfelix23/alpha-agent/master/signals/workflow_status.json',
+      { cache: 'no-cache' }
+    );
+    if (!r.ok) return;
+    const data = await r.json();
+    const now = Date.now();
+    const keys = ['alpha_daily', 'alpha_daytrader', 'alpha_monitor', 'alpha_weekly'];
+    for (const key of keys) {
+      const entry = data[key];
+      if (!entry) continue;
+      const iconEl = document.getElementById('wf-icon-' + key);
+      const ageEl  = document.getElementById('wf-age-'  + key);
+      if (!iconEl || !ageEl) continue;
+      const ok    = entry.ok === true;
+      const failed = entry.ok === false;
+      const color = ok ? '#3fb950' : failed ? '#f85149' : '#d29922';
+      const icon  = ok ? '✓' : failed ? '✗' : '?';
+      let ageStr = entry.ts || '?';
+      try {
+        const ageMs = now - new Date(entry.ts + 'Z').getTime();
+        const ageH  = ageMs / 3600000;
+        ageStr = ageH < 1 ? `hace ${Math.round(ageH * 60)}min` : `hace ${ageH.toFixed(0)}h`;
+      } catch(e) {}
+      iconEl.textContent = icon;
+      iconEl.style.color = color;
+      ageEl.textContent  = ageStr;
+      ageEl.style.color  = color;
+    }
+    const srcEl = document.getElementById('wf-source');
+    if (srcEl) {
+      srcEl.textContent = '· Live desde Cloud Run ✓';
+      srcEl.style.color = '#3fb950';
+    }
+  } catch(e) {
+    const srcEl = document.getElementById('wf-source');
+    if (srcEl) srcEl.textContent = '· (datos en caché — sin acceso a repo)';
+  }
+})();
+</script>
   <div class="section-gap"></div>
   
 <div class="card">
@@ -447,8 +516,8 @@ tr:hover td{background:var(--s2)}
       <div class="card-title">Retorno Acumulado — % vs benchmarks</div>
       <div class="card-sub" style="display:flex;gap:16px;align-items:center;flex-wrap:wrap">
         <span><span style="color:#3fb950;font-weight:700;font-size:.9rem">+3.10%</span> Portfolio</span>
-        <span style="font-size:.78rem;color:#58a6ff">&#9135;&#9135; SPY +11.48%</span>
-        <span style="font-size:.78rem;color:#e3b341">&#9135;&#9135; QQQ +18.70%</span>
+        <span style="font-size:.78rem;color:#58a6ff">&#9135;&#9135; SPY +11.22%</span>
+        <span style="font-size:.78rem;color:#e3b341">&#9135;&#9135; QQQ +18.28%</span>
       </div>
     </div>
     <div class="pill" style="color:#3fb950">$1,649.60</div>
@@ -470,11 +539,11 @@ tr:hover td{background:var(--s2)}
           borderColor:'#3fb950',backgroundColor:g,fill:true,tension:.4,
           pointRadius:2,pointHoverRadius:7,pointBackgroundColor:'#3fb950',borderWidth:2.5}
         ,
-    {data:[0.0, 2.547, 3.139, 3.07, 4.078, 5.346, 6.177, 6.438, 7.724, 7.509, 6.805, 7.887, 7.468, 8.301, 8.487, 7.959, 7.943, 9.017, 9.319, 8.918, 9.792, 11.318, 11.476],label:'SPY',
+    {data:[0.0, 2.547, 3.139, 3.07, 4.078, 5.346, 6.177, 6.438, 7.724, 7.509, 6.805, 7.887, 7.468, 8.301, 8.487, 7.959, 7.943, 9.017, 9.319, 8.918, 9.792, 11.318, 11.224],label:'SPY',
       borderColor:'#58a6ff',backgroundColor:'transparent',fill:false,
       tension:.4,pointRadius:0,borderWidth:1.5,borderDash:[5,3]}
         ,
-    {data:[0.0, 2.973, 3.67, 3.819, 4.893, 6.798, 8.293, 8.814, 10.238, 9.888, 9.47, 11.302, 10.675, 12.792, 12.851, 11.716, 12.399, 13.447, 14.536, 14.321, 15.804, 18.21, 18.702],label:'QQQ',
+    {data:[0.0, 2.973, 3.67, 3.819, 4.893, 6.798, 8.293, 8.814, 10.238, 9.888, 9.47, 11.302, 10.675, 12.792, 12.851, 11.716, 12.399, 13.447, 14.536, 14.321, 15.804, 18.21, 18.277],label:'QQQ',
       borderColor:'#e3b341',backgroundColor:'transparent',fill:false,
       tension:.4,pointRadius:0,borderWidth:1.5,borderDash:[3,3]}
       ]
@@ -591,7 +660,7 @@ tr:hover td{background:var(--s2)}
       <div class="card-sub">10,000 simulaciones · horizonte 252 días · basado en historial real</div>
     </div>
   </div>
-  <div class="mc-grid"><div class="mc-cell"><div class="mc-label">Retorno Mediano</div><div class="mc-val" style="color:#22c55e">+0.0%</div></div><div class="mc-cell"><div class="mc-label">P10 (pesimista)</div><div class="mc-val" style="color:#ef4444">+0.0%</div></div><div class="mc-cell"><div class="mc-label">P90 (optimista)</div><div class="mc-val" style="color:#22c55e">+0.0%</div></div><div class="mc-cell"><div class="mc-label">DD Máx Esperado</div><div class="mc-val" style="color:#f59e0b">0.0%</div></div><div class="mc-cell"><div class="mc-label">DD Máx Worst 95%</div><div class="mc-val" style="color:#ef4444">0.0%</div></div><div class="mc-cell"><div class="mc-label">VaR 95% Diario</div><div class="mc-val" style="color:#ef4444">0.00%</div></div><div class="mc-cell"><div class="mc-label">Prob. Positivo</div><div class="mc-val" style="color:#22c55e">50%</div></div><div class="mc-cell"><div class="mc-label">Prob. Vencer SPY</div><div class="mc-val" style="color:#22c55e">50%</div></div><div class="mc-cell"><div class="mc-label">Capital Mediano</div><div class="mc-val" style="color:#e6edf3">$1,654</div></div><div class="mc-cell"><div class="mc-label">Peor caso (5%)</div><div class="mc-val" style="color:#ef4444">$1,654</div></div></div>
+  <div class="mc-grid"><div class="mc-cell"><div class="mc-label">Retorno Mediano</div><div class="mc-val" style="color:#22c55e">+0.0%</div></div><div class="mc-cell"><div class="mc-label">P10 (pesimista)</div><div class="mc-val" style="color:#ef4444">+0.0%</div></div><div class="mc-cell"><div class="mc-label">P90 (optimista)</div><div class="mc-val" style="color:#22c55e">+0.0%</div></div><div class="mc-cell"><div class="mc-label">DD Máx Esperado</div><div class="mc-val" style="color:#f59e0b">0.0%</div></div><div class="mc-cell"><div class="mc-label">DD Máx Worst 95%</div><div class="mc-val" style="color:#ef4444">0.0%</div></div><div class="mc-cell"><div class="mc-label">VaR 95% Diario</div><div class="mc-val" style="color:#ef4444">0.00%</div></div><div class="mc-cell"><div class="mc-label">Prob. Positivo</div><div class="mc-val" style="color:#22c55e">50%</div></div><div class="mc-cell"><div class="mc-label">Prob. Vencer SPY</div><div class="mc-val" style="color:#22c55e">50%</div></div><div class="mc-cell"><div class="mc-label">Capital Mediano</div><div class="mc-val" style="color:#e6edf3">$1,653</div></div><div class="mc-cell"><div class="mc-label">Peor caso (5%)</div><div class="mc-val" style="color:#ef4444">$1,653</div></div></div>
 </div>
 </div>
 
@@ -603,11 +672,11 @@ tr:hover td{background:var(--s2)}
     </div>
     <div class="kpi">
       <div class="kpi-lbl">Valor de mercado total</div>
-      <div class="kpi-val">$66.88</div>
+      <div class="kpi-val">$66.18</div>
     </div>
     <div class="kpi">
       <div class="kpi-lbl">P&amp;L no realizado</div>
-      <div class="kpi-val" style="color:#f85149">$-0.08</div>
+      <div class="kpi-val" style="color:#f85149">$-0.78</div>
     </div>
   </div>
   <div class="pos-layout">
@@ -622,18 +691,18 @@ tr:hover td{background:var(--s2)}
   <div class="pos-top">
     <div>
       <div class="pos-ticker" style="color:#58a6ff">ARM</div>
-      <div class="pos-sub">88.9% del portfolio &middot; 0.2753 acc.</div>
+      <div class="pos-sub">89.0% del portfolio &middot; 0.2753 acc.</div>
     </div>
     <div style="text-align:right">
-      <div class="pos-pnl" style="color:#f85149">▼ $0.75</div>
-      <div class="pos-pnl-pct" style="color:#f85149">-1.2%</div>
+      <div class="pos-pnl" style="color:#f85149">▼ $1.32</div>
+      <div class="pos-pnl-pct" style="color:#f85149">-2.2%</div>
     </div>
   </div>
-  <div class="pos-bar-track"><div style="width:6%;height:100%;background:#f85149;border-radius:2px;opacity:.8"></div></div>
+  <div class="pos-bar-track"><div style="width:11%;height:100%;background:#f85149;border-radius:2px;opacity:.8"></div></div>
   <div class="pos-meta">
     <span>Entrada <b>$218.75</b></span>
-    <span>Valor actual <b>$59.47</b></span>
-    <span>P&L <b style="color:#f85149">$-0.75</b></span>
+    <span>Valor actual <b>$58.90</b></span>
+    <span>P&L <b style="color:#f85149">$-1.32</b></span>
   </div>
 </div>
 <div class="pos-card" style="border-top:3px solid #3fb950">
@@ -644,13 +713,13 @@ tr:hover td{background:var(--s2)}
     </div>
     <div style="text-align:right">
       <div class="pos-pnl" style="color:#3fb950">▲ $0.00</div>
-      <div class="pos-pnl-pct" style="color:#3fb950">+0.2%</div>
+      <div class="pos-pnl-pct" style="color:#3fb950">+0.1%</div>
     </div>
   </div>
-  <div class="pos-bar-track"><div style="width:1%;height:100%;background:#3fb950;border-radius:2px;opacity:.8"></div></div>
+  <div class="pos-bar-track"><div style="width:0%;height:100%;background:#3fb950;border-radius:2px;opacity:.8"></div></div>
   <div class="pos-meta">
     <span>Entrada <b>$345.84</b></span>
-    <span>Valor actual <b>$1.03</b></span>
+    <span>Valor actual <b>$1.02</b></span>
     <span>P&L <b style="color:#3fb950">+$0.00</b></span>
   </div>
 </div>
@@ -658,36 +727,36 @@ tr:hover td{background:var(--s2)}
   <div class="pos-top">
     <div>
       <div class="pos-ticker" style="color:#d29922">LLY</div>
-      <div class="pos-sub">4.2% del portfolio &middot; 0.0029 acc.</div>
+      <div class="pos-sub">4.3% del portfolio &middot; 0.0029 acc.</div>
     </div>
     <div style="text-align:right">
-      <div class="pos-pnl" style="color:#3fb950">▲ $0.03</div>
-      <div class="pos-pnl-pct" style="color:#3fb950">+1.2%</div>
+      <div class="pos-pnl" style="color:#3fb950">▲ $0.02</div>
+      <div class="pos-pnl-pct" style="color:#3fb950">+0.8%</div>
     </div>
   </div>
-  <div class="pos-bar-track"><div style="width:6%;height:100%;background:#3fb950;border-radius:2px;opacity:.8"></div></div>
+  <div class="pos-bar-track"><div style="width:4%;height:100%;background:#3fb950;border-radius:2px;opacity:.8"></div></div>
   <div class="pos-meta">
     <span>Entrada <b>$961.68</b></span>
-    <span>Valor actual <b>$2.83</b></span>
-    <span>P&L <b style="color:#3fb950">+$0.03</b></span>
+    <span>Valor actual <b>$2.82</b></span>
+    <span>P&L <b style="color:#3fb950">+$0.02</b></span>
   </div>
 </div>
 <div class="pos-card" style="border-top:3px solid #f85149">
   <div class="pos-top">
     <div>
       <div class="pos-ticker" style="color:#f85149">WOLF</div>
-      <div class="pos-sub">5.3% del portfolio &middot; 0.0758 acc.</div>
+      <div class="pos-sub">5.2% del portfolio &middot; 0.0758 acc.</div>
     </div>
     <div style="text-align:right">
-      <div class="pos-pnl" style="color:#3fb950">▲ $0.63</div>
-      <div class="pos-pnl-pct" style="color:#3fb950">+21.8%</div>
+      <div class="pos-pnl" style="color:#3fb950">▲ $0.52</div>
+      <div class="pos-pnl-pct" style="color:#3fb950">+17.9%</div>
     </div>
   </div>
-  <div class="pos-bar-track"><div style="width:100%;height:100%;background:#3fb950;border-radius:2px;opacity:.8"></div></div>
+  <div class="pos-bar-track"><div style="width:90%;height:100%;background:#3fb950;border-radius:2px;opacity:.8"></div></div>
   <div class="pos-meta">
     <span>Entrada <b>$38.50</b></span>
-    <span>Valor actual <b>$3.55</b></span>
-    <span>P&L <b style="color:#3fb950">+$0.63</b></span>
+    <span>Valor actual <b>$3.44</b></span>
+    <span>P&L <b style="color:#3fb950">+$0.52</b></span>
   </div>
 </div>
     </div>
@@ -720,7 +789,7 @@ tr:hover td{background:var(--s2)}
   <td><span style="color:#8b949e;font-weight:600">TSM</span></td>
   <td class="muted">$403.79</td>
   <td><span style="color:#f85149">$0.00</span></td>
-  <td><span style="color:#3fb950;font-weight:600">+$0.02</span></td>
+  <td><span style="color:#3fb950;font-weight:600">+$0.01</span></td>
   <td><span style="font-size:.72rem;background:#21262d;color:#8b949e;padding:2px 8px;border-radius:10px">Expirada</span></td>
 </tr></tbody>
     </table>
@@ -730,7 +799,7 @@ tr:hover td{background:var(--s2)}
 <script>
 (function(){
   const labels=["ARM", "GD", "LLY", "WOLF"];
-  const values=[59.47, 1.03, 2.83, 3.55];
+  const values=[58.9, 1.02, 2.82, 3.44];
   const colors=["#58a6ff", "#3fb950", "#d29922", "#f85149"];
   window._charts = window._charts||{};
   window._charts.alloc = new Chart(document.getElementById('allocChart'),{
@@ -922,7 +991,7 @@ El EV es positivo (+441.41) pero los 4 especialistas emitieron NO-GO con confian
   window._charts=window._charts||{};
   window._charts.sector=new Chart(document.getElementById('sectorChart'),{
     type:'bar',
-    data:{labels:["Tech", "ETF", "Comm", "Energy", "Industrials", "Materials", "Financials", "GoldMiners", "Defense", "Healthcare"],datasets:[{data:[21.02, 5.78, 2.78, 1.8, 1.7, 0.95, -2.14, -2.69, -3.8, -6.14],
+    data:{labels:["Tech", "ETF", "Comm", "Energy", "Industrials", "Materials", "Financials", "GoldMiners", "Defense", "Healthcare"],datasets:[{data:[20.33, 5.42, 2.51, 2.11, 1.43, 0.86, -2.11, -3.63, -4.13, -6.12],
       backgroundColor:["#3fb950", "#3fb950", "#3fb950", "#3fb950", "#3fb950", "#3fb950", "#f85149", "#f85149", "#f85149", "#f85149"],borderRadius:6,borderSkipped:false}]},
     options:{
       animation:{duration:700},
@@ -958,61 +1027,61 @@ El EV es positivo (+441.41) pero los 4 especialistas emitieron NO-GO con confian
       <tbody>
 <tr>
   <td><span class="rt-ticker" style="color:#e6edf3">MU</span></td>
-  <td><span style="color:#f85149;font-weight:700">▼ 2.0%</span></td>
+  <td><span style="color:#f85149;font-weight:700">▼ 2.9%</span></td>
   <td class="muted" style="font-size:.8rem;max-width:320px">The stock market's semi-charmed life: Morning Brief</td>
   <td><span class="muted" style="font-size:.75rem">BUY_CP</span></td>
 </tr>
 <tr>
   <td><span class="rt-ticker" style="color:#e6edf3">ARM</span></td>
-  <td><span style="color:#f85149;font-weight:700">▼ 9.0%</span></td>
+  <td><span style="color:#f85149;font-weight:700">▼ 9.8%</span></td>
   <td class="muted" style="font-size:.8rem;max-width:320px">Why Arm Holdings stock is sinking</td>
   <td><span class="muted" style="font-size:.75rem">BUY_CP</span></td>
 </tr>
 <tr>
   <td><span class="rt-ticker" style="color:#e6edf3">DDOG</span></td>
-  <td><span style="color:#3fb950;font-weight:700">▲ 30.3%</span></td>
+  <td><span style="color:#3fb950;font-weight:700">▲ 29.1%</span></td>
   <td class="muted" style="font-size:.8rem;max-width:320px">S&amp;P 500 Gains Unleashed on Chip Stock Strength, Falling Oil and Return t...</td>
   <td><span class="muted" style="font-size:.75rem">—</span></td>
 </tr>
 <tr>
   <td><span class="rt-ticker" style="color:#e6edf3">GOOGL</span></td>
-  <td><span style="color:#f85149;font-weight:700">▼ 0.4%</span></td>
+  <td><span style="color:#f85149;font-weight:700">▼ 0.8%</span></td>
   <td class="muted" style="font-size:.8rem;max-width:320px">AMD stock surges as the chipmaker forecasts continued AI growth</td>
   <td><span class="muted" style="font-size:.75rem">CALL</span></td>
 </tr>
 <tr>
   <td><span class="rt-ticker" style="color:#e6edf3">VIST</span></td>
-  <td><span style="color:#f85149;font-weight:700">▼ 6.4%</span></td>
+  <td><span style="color:#f85149;font-weight:700">▼ 6.5%</span></td>
   <td class="muted" style="font-size:.8rem;max-width:320px">Vista Energy Q1 Earnings Call Highlights</td>
   <td><span class="muted" style="font-size:.75rem">—</span></td>
 </tr>
 <tr>
   <td><span class="rt-ticker" style="color:#e6edf3">AMD</span></td>
-  <td><span style="color:#f85149;font-weight:700">▼ 2.9%</span></td>
+  <td><span style="color:#f85149;font-weight:700">▼ 3.6%</span></td>
   <td class="muted" style="font-size:.8rem;max-width:320px">The stock market's semi-charmed life: Morning Brief</td>
   <td><span class="muted" style="font-size:.75rem">—</span></td>
 </tr>
 <tr>
   <td><span class="rt-ticker" style="color:#e6edf3">TSLA</span></td>
-  <td><span style="color:#3fb950;font-weight:700">▲ 2.7%</span></td>
+  <td><span style="color:#3fb950;font-weight:700">▲ 2.0%</span></td>
   <td class="muted" style="font-size:.8rem;max-width:320px">'Uber won': Why Instacart might not stand a chance</td>
   <td><span class="muted" style="font-size:.75rem">—</span></td>
 </tr>
 <tr>
   <td><span class="rt-ticker" style="color:#e6edf3">CRWD</span></td>
-  <td><span style="color:#3fb950;font-weight:700">▲ 7.9%</span></td>
+  <td><span style="color:#3fb950;font-weight:700">▲ 6.8%</span></td>
   <td class="muted" style="font-size:.8rem;max-width:320px">Is the Fortinet Stock Rally Sustainable?</td>
   <td><span class="muted" style="font-size:.75rem">—</span></td>
 </tr>
 <tr>
   <td><span class="rt-ticker" style="color:#e6edf3">SLB</span></td>
-  <td><span style="color:#f85149;font-weight:700">▼ 3.2%</span></td>
+  <td><span style="color:#f85149;font-weight:700">▼ 3.0%</span></td>
   <td class="muted" style="font-size:.8rem;max-width:320px">Here is why AerCap (AER) is Among the 10 Best European Stocks That Beat ...</td>
   <td><span class="muted" style="font-size:.75rem">—</span></td>
 </tr>
 <tr>
   <td><span class="rt-ticker" style="color:#e6edf3">NET</span></td>
-  <td><span style="color:#3fb950;font-weight:700">▲ 2.7%</span></td>
+  <td><span style="color:#3fb950;font-weight:700">▲ 2.1%</span></td>
   <td class="muted" style="font-size:.8rem;max-width:320px">Stocks Rise Pre-Bell as Traders Monitor Developments on Potential US-Ira...</td>
   <td><span class="muted" style="font-size:.75rem">—</span></td>
 </tr></tbody>
@@ -1093,7 +1162,7 @@ El EV es positivo (+441.41) pero los 4 especialistas emitieron NO-GO con confian
   </div>
 </div>
 </div>
-<div class="tab-content" id="tab-daytrader"><div class="card"><p class="muted" style="padding:60px;text-align:center;font-size:1rem">Sin operaciones DT todavia. El Day Trader corre a las 11:30 ART durante la ventana de mercado (10:00-14:00 EDT).<br><span style="font-size:.82rem;color:var(--mt)">Cuenta separada: ALPACA_DT_API_KEY &mdash; estrategia gap+ORB+VWAP, 1 posicion concentrada de $1400</span></p></div></div>
+<div class="tab-content" id="tab-daytrader"><div class="card"><p class="muted" style="padding:40px 60px 24px;text-align:center;font-size:1rem">Sin operaciones DT todavia.<br><span style="font-size:.82rem;color:var(--mt)">Cuenta separada: ALPACA_DT_API_KEY &mdash; estrategia gap+ORB+VWAP, 1 posicion de $1400<br>Corre via GitHub Actions a las <b>11:15 ART</b> (14:15 UTC), lun-vie</span></p></div></div>
 <div class="tab-content" id="tab-scalper"><div class="card"><p class="muted" style="padding:60px;text-align:center;font-size:1rem">Sin operaciones SCALP todavia. El Scalper corre manualmente durante horario de mercado (9:30-15:45 EDT).<br><span style="font-size:.82rem;color:var(--mt)">Cuenta separada: ALPACA_SCALP_API_KEY &mdash; estrategia ORB 15-min, $400/trade, max 4 trades/dia</span></p></div></div>
 
 <script>
