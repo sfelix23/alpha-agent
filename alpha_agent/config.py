@@ -83,6 +83,23 @@ TECH_BULL_CP_BOOST: frozenset[str] = frozenset({
     "NVDA", "AMD", "MSFT", "META", "GOOGL", "AMZN", "AAPL", "ASML",
 })
 
+# Sub-sectores del CP_UNIVERSE para el guard de diversificación interna.
+# Impide que ambos slots CP vayan al mismo clúster (ej: NVDA + AMD = doble-semis).
+CP_SUB_SECTORS: dict[str, str] = {
+    "NVDA": "Semis", "AMD": "Semis", "ARM": "Semis",
+    "MU": "Semis", "ASML": "Semis", "TSM": "Semis",
+    "META": "MegaTech", "TSLA": "MegaTech",
+    "AMZN": "MegaTech", "GOOGL": "MegaTech",
+    "CRWD": "AIInfra", "PLTR": "AIInfra",
+    "NET": "AIInfra", "DDOG": "AIInfra",
+    "COIN": "Crypto", "MSTR": "Crypto",
+    "NFLX": "Growth", "AVGO": "Growth",
+    "GGAL": "Argentina", "BMA": "Argentina",
+    "MELI": "Argentina", "VIST": "Argentina",
+    "LMT": "Defense", "GD": "Defense",
+    "OXY": "Energy",
+}
+
 # Universo focalizado para sleeve CP — 25 tickers de alta beta/momentum.
 # Solo estos entran al scoring CP; el resto del universo aplica solo a LP/options.
 # Lógica: z-scores relativos entre 25 nombres concentrados > z-scores entre 49 heterogéneos.

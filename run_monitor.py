@@ -287,6 +287,52 @@ def _get_cp_entry_date(ticker: str) -> str | None:
     return None
 
 
+_SCALEIN_FILE = BASE_DIR / "signals" / "scale_ins.json"
+
+
+def _was_scaled_in_today(ticker: str) -> bool:
+    """True si ya se ejecutó un scale-in hoy para este ticker."""
+    from datetime import date
+    try:
+        data = json.loads(_SCALEIN_FILE.read_text()) if _SCALEIN_FILE.exists() else {}
+        return data.get(ticker) == str(date.today())
+    except Exception:
+        return False
+
+
+def _register_scalein(ticker: str) -> None:
+    """Registra el scale-in de hoy para evitar duplicados."""
+    from datetime import date
+    try:
+        data = json.loads(_SCALEIN_FILE.read_text()) if _SCALEIN_FILE.exists() else {}
+        data[ticker] = str(date.today())
+        _SCALEIN_FILE.write_text(json.dumps(data, indent=2))
+    except Exception:
+        pass
+
+
+def _check_scalein_momentum(ticker: str) -> bool:
+    """True si MACD bullish y RSI < 73 — el momentum del winner continúa."""
+    try:
+        import yfinance as yf
+        df = yf.download(ticker, period="3mo", interval="1d", progress=False, auto_adjust=True)
+        if df is None or len(df) < 30:
+            return True  # fail open: sin datos suficientes, asumir ok
+        close = df["Close"].squeeze()
+        ema12 = close.ewm(span=12).mean()
+        ema26 = close.ewm(span=26).mean()
+        macd_val   = float(ema12.iloc[-1] - ema26.iloc[-1])
+        signal_val = float((ema12 - ema26).ewm(span=9).mean().iloc[-1])
+        macd_ok = macd_val > signal_val
+        delta = close.diff()
+        gain  = delta.clip(lower=0).rolling(14).mean().iloc[-1]
+        loss  = (-delta.clip(upper=0)).rolling(14).mean().iloc[-1]
+        rsi   = 100 - (100 / (1 + gain / loss)) if loss != 0 else 50.0
+        return bool(macd_ok and rsi < 73)
+    except Exception:
+        return True  # fail open
+
+
 def _build_eod_summary(broker, positions: list, equity: float, capital_base: float) -> str:
     """
     Resumen diario del portfolio enviado al último run del monitor (16:35 ART).
@@ -807,6 +853,50 @@ def main():
                     "✅ %s: $%.2f (entry $%.2f) | P&L $%+.2f (%+.1f%%) — OK",
                     ticker, current, avg_entry, unrealized_pnl, pnl_pct,
                 )
+
+                # ── Scale-in: agregar capital cuando el winner sigue con momentum ──
+                # Condiciones: CP/MIX, PnL >= 12%, no escalado hoy, MACD+RSI ok
+                if (
+                    horizon in ("CP", "MIX")
+                    and pnl_pct >= 12.0
+                    and avg_entry > 0
+                    and not _was_scaled_in_today(ticker)
+                ):
+                    if _check_scalein_momentum(ticker):
+                        _si_notional = round(min(abs(qty) * avg_entry * 0.15, 250.0), 2)
+                        try:
+                            _bp = broker.get_buying_power()
+                        except Exception:
+                            _bp = 0.0
+                        if _si_notional >= 50.0 and _bp >= _si_notional * 1.2:
+                            _si_qty = round(_si_notional / current, 4)
+                            if args.live and not args.dry_run:
+                                try:
+                                    from alpaca.trading.requests import MarketOrderRequest
+                                    from alpaca.trading.enums import OrderSide, TimeInForce
+                                    _si_order = MarketOrderRequest(
+                                        symbol=ticker,
+                                        qty=_si_qty,
+                                        side=OrderSide.BUY,
+                                        time_in_force=TimeInForce.DAY,
+                                    )
+                                    broker._trading.submit_order(_si_order)
+                                    _register_scalein(ticker)
+                                    alerts.append(
+                                        f"📈 *SCALE-IN {ticker}*: +${_si_notional:.0f} "
+                                        f"({_si_qty:.4f} sh) | P&L +{pnl_pct:.1f}% | MACD+RSI ok"
+                                    )
+                                    logger.info(
+                                        "SCALE-IN %s: +$%.0f (%.4f sh, PnL=+%.1f%%)",
+                                        ticker, _si_notional, _si_qty, pnl_pct,
+                                    )
+                                except Exception as _sie:
+                                    logger.warning("scale-in %s fallido: %s", ticker, _sie)
+                            else:
+                                alerts.append(
+                                    f"📈 _(dry-run)_ SCALE-IN {ticker}: +${_si_notional:.0f} "
+                                    f"| P&L +{pnl_pct:.1f}%"
+                                )
 
         # Persistir stop_loss actualizados por chandelier/breakeven de vuelta al JSON.
         # Sin esto, el próximo run re-lee el stop original y re-envía la misma orden a Alpaca.

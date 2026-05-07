@@ -369,6 +369,26 @@ def main() -> None:
             )
             object.__setattr__(PARAMS, "top_n_short_term", 0)
 
+    # Sub-sector diversification: evitar ambos slots CP en el mismo clúster
+    # (NVDA + AMD = doble-semis, alta correlación, sin beneficio real de tener 2 posiciones)
+    if PARAMS.top_n_short_term >= 2:
+        from alpha_agent.config import CP_SUB_SECTORS
+        _st_ordered = scores["short_term"]
+        _div_idx: list[str] = []
+        _used_subs: set[str] = set()
+        for _t in _st_ordered.index:
+            _sub = CP_SUB_SECTORS.get(_t, _t)  # sin sub-sector → su propio bucket único
+            if _sub not in _used_subs:
+                _div_idx.append(_t)
+                _used_subs.add(_sub)
+            if len(_div_idx) >= PARAMS.top_n_short_term:
+                break
+        _orig = _st_ordered.index[:len(_div_idx)].tolist()
+        if _div_idx and _div_idx != _orig:
+            _rest = [t for t in _st_ordered.index if t not in _div_idx]
+            scores["short_term"] = _st_ordered.reindex(_div_idx + _rest)
+            log.info("CP sub-sector guard: %s → %s (diversificación inter-clúster)", _orig, _div_idx)
+
     # Earnings filter: no entrar en CP que reporta resultados en los próximos 2 días.
     # Un earnings sorpresa puede moverse ±15% overnight — el riesgo no es precio-able.
     # Solo se aplica a CP (hold 1-5 días); LP puede sobrevivir un earnings.
