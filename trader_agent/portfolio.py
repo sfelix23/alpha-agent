@@ -49,8 +49,9 @@ def build_target_portfolio(signals: Signals, capital: float) -> dict[str, dict]:
     solo para la parte equity (LP + CP).
     """
     target: dict[str, dict] = {}
-    cap_lp = capital * PARAMS.weight_long_term
-    cap_st = capital * PARAMS.weight_short_term
+    _sp = (signals.params or {}) if hasattr(signals, "params") else {}
+    cap_lp = capital * _sp.get("weight_long_term", PARAMS.weight_long_term)
+    cap_st = capital * _sp.get("weight_short_term", PARAMS.weight_short_term)
 
     for s in signals.long_term:
         target[s.ticker] = {

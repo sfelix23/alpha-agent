@@ -31,6 +31,7 @@ from alpha_agent.config import (
     PARAMS,
     QQQ_MEGA_CAPS,
     SECTOR_MAP,
+    TECH_BULL_CP_BOOST,
 )
 
 logger = logging.getLogger(__name__)
@@ -382,8 +383,8 @@ def build_scores(
     ret_6m_adj = st["ret_6m"].fillna(0) - st["ret_1m"].fillna(0) if "ret_6m" in st.columns else pd.Series(0.0, index=st.index)
 
     score_st = (
-        0.30 * _zscore(st["ret_1m"].fillna(0))
-        + 0.25 * _zscore(ret_6m_adj)               # momentum 2-6m (factor probado)
+        0.38 * _zscore(st["ret_1m"].fillna(0))
+        + 0.22 * _zscore(ret_6m_adj)               # momentum 2-6m (factor probado)
         + 0.15 * _zscore(st["ret_3m"].fillna(0))
         + 0.12 * _zscore(rsi_signal)
         + 0.10 * _zscore(st["alpha_jensen"].clip(lower=0))
@@ -434,8 +435,16 @@ def build_scores(
     # El sistema tiene ventaja en sectores menos eficientes (Argentina, energía, materiales).
     mega_in_cp = [t for t in st.index if t in QQQ_MEGA_CAPS]
     if mega_in_cp:
-        score_st.loc[score_st.index.isin(QQQ_MEGA_CAPS)] -= 2.0
-        logger.info("QQQ mega-cap penalty (-2.0 CP): %s", mega_in_cp)
+        pen = 0.4 if regime == "BULL" else (0.8 if regime == "NEUTRAL" else 2.0)
+        score_st.loc[score_st.index.isin(QQQ_MEGA_CAPS)] -= pen
+        logger.info("QQQ mega-cap penalty (%.1f CP, regime=%s): %s", pen, regime, mega_in_cp)
+
+    # Bonus momentum para tech en BULL — lideran el mercado, merece recuperar score
+    if regime == "BULL":
+        for _tkr in TECH_BULL_CP_BOOST:
+            if _tkr in score_st.index and "ret_1m" in st.columns and _tkr in st.index:
+                if float(st.loc[_tkr, "ret_1m"]) >= 0.02:
+                    score_st.loc[_tkr] = score_st.loc[_tkr] + 0.30
 
     # Momentum confluence: penalizar señales contradictorias entre timeframes
     # 5d vs 1m: si el ultra-corto y el mensual se contradicen → -0.15

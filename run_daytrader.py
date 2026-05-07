@@ -37,12 +37,14 @@ logger = logging.getLogger("daytrader")
 # Desplegamos 87.5% del capital DT en la mejor idea del dia.
 # Con $1600 en la cuenta => $1400 por trade.
 # Ej: AMD $120 => 11 shares; GOOGL $165 => 8 shares; COIN $220 => 6 shares.
-DT_BUDGET  = 1400.0
+DT_BUDGET  = 1500.0
 DT_MAX_POS = 1       # 1 sola posicion concentrada por dia
 
 # Ventana de entrada: 10:00-14:00 EDT = 14:00-18:00 UTC (verano)
-ENTRY_OPEN_UTC  = 14
-ENTRY_CLOSE_UTC = 18
+# GH Actions llega a este paso ~14:15 UTC, por eso usamos minutos precisos.
+ENTRY_OPEN_UTC_H  = 13   # NYSE abre 13:30 UTC, ORB 15min → 13:45; daily llega ~13:52
+ENTRY_OPEN_UTC_M  = 45
+ENTRY_CLOSE_UTC_H = 18
 
 
 def _setup_logging() -> None:
@@ -61,8 +63,11 @@ def _setup_logging() -> None:
 
 
 def _in_entry_window() -> bool:
-    hour = datetime.now(tz=timezone.utc).hour
-    return ENTRY_OPEN_UTC <= hour < ENTRY_CLOSE_UTC
+    now    = datetime.now(tz=timezone.utc)
+    t      = now.hour * 60 + now.minute
+    open_t = ENTRY_OPEN_UTC_H * 60 + ENTRY_OPEN_UTC_M
+    close_t = ENTRY_CLOSE_UTC_H * 60
+    return open_t <= t < close_t
 
 
 def _build_dt_broker():
@@ -169,6 +174,29 @@ def _get_macro_ctx(macro) -> dict:
         return {}
 
 
+def _write_dt_scan(ts: str, direction: str, candidates_found: int,
+                   best_ticker: str = "", best_score: float = 0.0,
+                   reason: str = "", traded: bool = False,
+                   traded_ticker: str = "", notional: float = 0.0) -> None:
+    """Escribe signals/dt_last_scan.json — leído por el dashboard."""
+    try:
+        import json as _json
+        scan_path = BASE_DIR / "signals" / "dt_last_scan.json"
+        scan_path.write_text(_json.dumps({
+            "ts": ts,
+            "direction": direction,
+            "candidates_found": candidates_found,
+            "best_ticker": best_ticker,
+            "best_score": round(best_score, 3),
+            "reason": reason,
+            "traded": traded,
+            "traded_ticker": traded_ticker,
+            "notional": round(notional, 2),
+        }, indent=2), encoding="utf-8")
+    except Exception as _e:
+        logger.debug("_write_dt_scan: %s", _e)
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description="Day Trader -- cuenta DT separada.")
     parser.add_argument("--live",       action="store_true", help="Ordenes reales en Alpaca DT.")
@@ -181,8 +209,6 @@ def main() -> None:
     load_dotenv(BASE_DIR / ".env")
     _setup_logging()
 
-    logger.info("=== DAYTRADER START === live=%s budget=$%.0f", live, DT_BUDGET)
-
     if not _in_entry_window():
         logger.info("Fuera de ventana DT (10:00-14:00 EDT). Saliendo.")
         return
@@ -192,6 +218,15 @@ def main() -> None:
     except RuntimeError as e:
         logger.warning("DT no configurado: %s", e)
         return
+
+    # Budget dinámico: 93.75% del equity real de la cuenta DT (compoundea automáticamente)
+    try:
+        dt_equity = broker.get_equity()
+        budget = round(max(100.0, dt_equity * 0.9375), 2)
+    except Exception:
+        dt_equity = DT_BUDGET
+        budget = DT_BUDGET
+    logger.info("=== DAYTRADER START === live=%s equity=$%.0f budget=$%.0f", live, dt_equity, budget)
 
     try:
         if not broker.is_market_open():
@@ -207,15 +242,18 @@ def main() -> None:
     held = _held_tickers(broker)
 
     from alpha_agent.daytrading.scanner import scan_dt_candidates
-    logger.info("Escaneando universo DT (budget=$%.0f)...", DT_BUDGET)
+    logger.info("Escaneando universo DT (budget=$%.0f)...", budget)
     candidates = scan_dt_candidates(
         exclude_tickers=held,
-        budget_per_pos=DT_BUDGET,
+        budget_per_pos=budget,
         limit=1,
     )
 
     if not candidates:
         logger.info("Sin setup DT valido hoy. Saliendo.")
+        _write_dt_scan(ts=datetime.now(tz=timezone.utc).isoformat(),
+                       direction="NONE", candidates_found=0,
+                       reason="Sin candidatos sobre umbral de score")
         return
 
     cand      = candidates[0]
@@ -328,6 +366,13 @@ def main() -> None:
 
             if not decision.go:
                 logger.info("Swarm VETÓ el trade. Saliendo.")
+                _write_dt_scan(
+                    ts=datetime.now(tz=timezone.utc).isoformat(),
+                    direction=direction, candidates_found=1,
+                    best_ticker=ticker, best_score=cand["dt_score"],
+                    reason=f"Swarm VETO [{swarm_go_cnt}/4 GO | EV ${swarm_ev:+.1f}] {decision.reasoning[:150]}",
+                    traded=False,
+                )
                 try:
                     from alpha_agent.notifications import send_notification as send_whatsapp
                     send_whatsapp(
@@ -363,7 +408,19 @@ def main() -> None:
     oid1, oid2 = _dual_bracket(broker, ticker, qty1, qty2, sl, tp1, tp2, live, direction)
     if oid1 is None and oid2 is None:
         logger.error("DT: fallaron ambos bracket orders para %s. Saliendo.", ticker)
+        _write_dt_scan(ts=datetime.now(tz=timezone.utc).isoformat(),
+                       direction=direction, candidates_found=1,
+                       best_ticker=ticker, best_score=cand["dt_score"],
+                       reason="Bracket order fallido en Alpaca", traded=False)
         return
+
+    _write_dt_scan(
+        ts=datetime.now(tz=timezone.utc).isoformat(),
+        direction=direction, candidates_found=1,
+        best_ticker=ticker, best_score=cand["dt_score"],
+        reason=swarm_msg[:200] if swarm_msg else "Reglas OK",
+        traded=True, traded_ticker=ticker, notional=notional,
+    )
 
     if live:
         try:

@@ -30,6 +30,7 @@ if sys.platform == "win32" and hasattr(sys.stderr, "reconfigure"):
 import argparse
 import json
 import logging
+import os
 import sys
 from datetime import datetime
 from pathlib import Path
@@ -146,7 +147,7 @@ def _compute_chandelier_stop(ticker: str) -> float | None:
         highest_close_22 = float(close.tail(22).max())
         if np.isnan(atr22) or np.isnan(highest_close_22):
             return None
-        return round(highest_close_22 - 3.0 * atr22, 2)
+        return round(highest_close_22 - 3.5 * atr22, 2)
     except Exception as e:
         logger.debug("chandelier_stop %s: %s", ticker, e)
         return None
@@ -327,20 +328,21 @@ def _build_eod_summary(broker, positions: list, equity: float, capital_base: flo
 
 def _trigger_capital_rotation(closed_ticker: str, pnl_pct: float, live: bool) -> str:
     """
-    Después de un TP en CP, lanza run_midday.py en background para reutilizar el capital.
-    No bloquea el monitor — el midday corre como proceso independiente.
+    Después de un TP en CP, corre run_trader.py para re-deployar el capital liberado el mismo día.
+    Usa subprocess.run (bloqueante con timeout) para que en Cloud Run el proceso complete antes de salir.
     """
     import subprocess
     gain_str = f"+{pnl_pct:.1f}%" if pnl_pct > 0 else f"{pnl_pct:.1f}%"
     try:
-        cmd = [sys.executable, str(BASE_DIR / "run_midday.py")]
+        cmd = [sys.executable, str(BASE_DIR / "run_trader.py")]
         if live:
             cmd.append("--live")
-        subprocess.Popen(cmd, cwd=str(BASE_DIR))
-        logger.info("Capital rotation: %s cerró con %s → run_midday lanzado", closed_ticker, gain_str)
+        result = subprocess.run(cmd, cwd=str(BASE_DIR), timeout=240, capture_output=False)
+        status = "OK" if result.returncode == 0 else f"rc={result.returncode}"
+        logger.info("Capital rotation: %s cerró con %s → trader ejecutado (%s)", closed_ticker, gain_str, status)
         return (
             f"\n🔄 *CAPITAL ROTATION* | {closed_ticker} cerró {gain_str}\n"
-            f"  Midday scan lanzado — buscando reemplazo CP."
+            f"  Trader re-ejecutado — capital re-deployed ({status})."
         )
     except Exception as e:
         logger.debug("Capital rotation spawn: %s", e)
@@ -489,20 +491,36 @@ def main():
                 dt_open = get_open_dt_tickers()
                 if dt_open:
                     logger.info("EOD DT close: cerrando %d posicion(es) DT %s", len(dt_open), sorted(dt_open))
-                    for pos in positions:
-                        if pos.ticker not in dt_open:
-                            continue
-                        current_dt = current_price_from_position(pos)
-                        pnl_dt = pos.unrealized_pl
-                        pnl_pct_dt = pnl_pct_from_position(pos)
-                        logger.info(
-                            "EOD DT: cerrando %s | P&L $%+.2f (%+.1f%%)",
-                            pos.ticker, pnl_dt, pnl_pct_dt,
-                        )
+                    # Usar el broker DT separado — no el broker LP/CP del monitor
+                    _dt_key = os.getenv("ALPACA_DT_API_KEY")
+                    _dt_sec = os.getenv("ALPACA_DT_SECRET_KEY")
+                    dt_positions_to_close: list = []
+                    dt_broker = None
+                    if _dt_key and _dt_sec:
+                        _prev_key = os.environ.get("ALPACA_API_KEY", "")
+                        _prev_sec = os.environ.get("ALPACA_SECRET_KEY", "")
+                        os.environ["ALPACA_API_KEY"]    = _dt_key
+                        os.environ["ALPACA_SECRET_KEY"] = _dt_sec
+                        try:
+                            from trader_agent.brokers.alpaca_broker import AlpacaBroker as _ABroker
+                            dt_broker = _ABroker(paper=True)
+                            dt_positions_to_close = [p for p in dt_broker.get_positions()
+                                                     if p.ticker in dt_open]
+                        except Exception as _be:
+                            logger.warning("DT broker EOD: %s", _be)
+                        finally:
+                            os.environ["ALPACA_API_KEY"]    = _prev_key
+                            os.environ["ALPACA_SECRET_KEY"] = _prev_sec
+                    for pos in dt_positions_to_close:
+                        current_dt  = current_price_from_position(pos)
+                        pnl_dt      = pos.unrealized_pl
+                        pnl_pct_dt  = pnl_pct_from_position(pos)
+                        logger.info("EOD DT: cerrando %s | P&L $%+.2f (%+.1f%%)",
+                                    pos.ticker, pnl_dt, pnl_pct_dt)
                         alerts.append(
                             f"EOD DT CLOSE *{pos.ticker}* | P&L ${pnl_dt:+.2f} ({pnl_pct_dt:+.1f}%)"
                         )
-                        if args.live and not args.dry_run:
+                        if args.live and not args.dry_run and dt_broker:
                             try:
                                 from alpaca.trading.requests import MarketOrderRequest
                                 from alpaca.trading.enums import OrderSide, TimeInForce
@@ -512,9 +530,9 @@ def main():
                                     side=OrderSide.SELL,
                                     time_in_force=TimeInForce.DAY,
                                 )
-                                broker._trading.submit_order(order)
+                                dt_broker._trading.submit_order(order)
                                 closes.append(f"{pos.ticker} (EOD-DT)")
-                                alerts.append(f"  SELL {abs(pos.qty):.0f} {pos.ticker} enviado")
+                                alerts.append(f"  SELL {abs(pos.qty):.4f} {pos.ticker} enviado (DT)")
                                 from alpha_agent.analytics.trade_db import log_trade_close
                                 log_trade_close(
                                     ticker=pos.ticker,
@@ -601,10 +619,10 @@ def main():
                     f"— vende 50%, resta corre libre de riesgo"
                 )
 
-            # ── Breakeven stop: cuando sube +5%, mover stop a entrada ────────
+            # ── Breakeven stop: cuando sube +8%, mover stop a entrada ────────
             # Protege ganancias sin intervención manual. Solo avanza, nunca retrocede.
-            if action is None and avg_entry > 0 and pnl_pct >= 5.0:
-                breakeven_sl = round(avg_entry * 1.002, 2)  # +0.2% sobre entrada
+            if action is None and avg_entry > 0 and pnl_pct >= 8.0:
+                breakeven_sl = round(avg_entry * 1.005, 2)  # +0.5% sobre entrada
                 current_sl   = signal.get("stop_loss") or 0.0
                 if breakeven_sl > current_sl + 0.01:
                     _update_trailing_stop(
@@ -728,6 +746,14 @@ def main():
 
                 if args.live and not args.dry_run:
                     try:
+                        # Cancelar stop orders activos para liberar held_for_orders
+                        try:
+                            for _o in broker.get_open_orders(ticker):
+                                if "stop" in str(getattr(_o, "order_type", "")).lower():
+                                    broker._trading.cancel_order_by_id(str(_o.id))
+                                    alerts.append(f"  🗑️ Stop cancelado ({ticker})")
+                        except Exception as _ce:
+                            alerts.append(f"  ⚠️ cancel stop {ticker}: {_ce}")
                         from alpaca.trading.requests import MarketOrderRequest
                         from alpaca.trading.enums import OrderSide, TimeInForce
                         sell_qty = abs(qty) if action == "CLOSE" else abs(qty) / 2

@@ -121,13 +121,15 @@ def _get_vix(signals: Signals) -> float:
 
 
 def _vix_multiplier(vix: float) -> float:
-    """Reduce capital en alta volatilidad, permite leve agresividad en calma."""
+    """Reduce capital en alta volatilidad, agresivo en calma (growth mode)."""
     if vix > 30:
         return 0.60
     if vix > 25:
         return 0.75
     if vix < 15:
-        return 1.10
+        return 1.15  # calma extrema → aprovechar al máximo
+    if vix < 20:
+        return 1.05  # calma moderada → leve bonus
     return 1.0
 
 
@@ -135,9 +137,9 @@ def _regime_multiplier(regime: str) -> float:
     """Más capital en bull (capturar upside), menos en bear (proteger capital)."""
     r = regime.lower()
     if r == "bull":
-        return 1.10
+        return 1.15  # bull: presionar al máximo
     if r in ("sideways", "lateral", "neutral"):
-        return 0.85
+        return 0.95  # neutral: casi normal, no cortar demasiado
     if r == "bear":
         return 0.65
     return 1.0

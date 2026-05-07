@@ -78,6 +78,11 @@ QQQ_MEGA_CAPS: frozenset[str] = frozenset({
     "AVGO", "COST", "AMD", "ASML", "NFLX", "V", "JPM", "GS",
 })
 
+# Tech stocks que reciben bonus CP en régimen BULL — momentum genuino líder del mercado
+TECH_BULL_CP_BOOST: frozenset[str] = frozenset({
+    "NVDA", "AMD", "MSFT", "META", "GOOGL", "AMZN", "AAPL", "ASML",
+})
+
 # Tickers donde el sistema tiene ventaja informacional estructural sobre el mercado:
 # Argentina (cobertura institucional muy baja), energía internacional, minerales,
 # defensa. En estos sectores el CAPM + macro + noticias locales agrega alpha real.
@@ -170,8 +175,8 @@ class FinancialParams:
     # Objetivo: multiplicar capital en plazo medio-largo con riesgo productivo.
     # Más CP (momentum, 1-5 días) que LP (hold semanas) para capitalizar tendencias.
     # Sleeves: 55% LP (2 pos × $440) + 35% CP (2 pos × $280) + 10% cash reserva
-    weight_long_term: float = 0.55
-    weight_short_term: float = 0.35
+    weight_long_term: float = 0.0    # LP siempre desactivado — CP momentum es superior para $1600
+    weight_short_term: float = 0.85  # CP: 85% (fallback; build_target_portfolio lee signals.params)
     weight_options: float = 0.10          # 10% = ~$160 → 1 contrato long call/put por ciclo
 
     # Filtros LP — menos estrictos para que haya más candidatos

@@ -65,7 +65,7 @@ def _rule_default(regime: str, vix: float, win_rate: float | None, recent_pnl: f
     # BULL — el caso principal
     if winning_streak:
         # NIVEL 1: BULL + ganando → presionar al máximo
-        return AllocationDecision(0.0, 0.88, 0.07, 2, 3,
+        return AllocationDecision(0.0, 0.88, 0.07, 2, 5,
             f"BULL + racha ganadora ({win_rate:.0%} win rate): CP al máximo, cash mínimo.", level=1)
     elif losing_streak:
         # ya cubierto arriba pero por si acá
@@ -74,7 +74,7 @@ def _rule_default(regime: str, vix: float, win_rate: float | None, recent_pnl: f
     else:
         # NIVEL 2: BULL sin historial suficiente → base sólida
         cp = 0.83 if vix < 18 else 0.75
-        return AllocationDecision(0.0, cp, 0.10, 2, 3,
+        return AllocationDecision(0.0, cp, 0.10, 2, 4,
             f"BULL + VIX {vix:.1f}: CP {cp:.0%}, 2 posiciones, opciones activas.", level=2)
 
 
@@ -149,14 +149,14 @@ def decide_allocation(
         "- cp_pct + opt_pct <= 0.95 (keep min 5% cash for operational margin)\n"
         "- cp_pct range: 0.40 (defensive) to 0.88 (max aggression)\n\n"
         "CONVICTION LEVELS:\n"
-        "- BULL + streak=WINNING: cp_pct=0.88, n_cp_positions=2, cp_max_hold_days=3 — press the edge\n"
-        "- BULL + streak=NEUTRAL (no clear edge): cp_pct=0.78-0.83, 2 positions, 3 days\n"
+        "- BULL + streak=WINNING: cp_pct=0.88, n_cp_positions=2, cp_max_hold_days=5 — press the edge\n"
+        "- BULL + streak=NEUTRAL (no clear edge): cp_pct=0.78-0.83, 2 positions, 4 days\n"
         "- BULL + streak=LOSING: cp_pct=0.55, 1 position, 2 days — wait for better setup\n"
         "- NEUTRAL or VIX 22-30: cp_pct=0.65-0.75, 2 positions, 3 days\n"
         "- BEAR or VIX>30 or streak=LOSING: cp_pct=0.40-0.50, 1 position, 2 days\n\n"
         "Respond ONLY with JSON (no markdown):\n"
         '{"lp_pct":0.0,"cp_pct":<float>,"opt_pct":<0.05 or 0.10>,'
-        '"n_cp_positions":<1,2,or 3>,"cp_max_hold_days":<2,3,or 4>,'
+        '"n_cp_positions":<1,2,or 3>,"cp_max_hold_days":<2,3,4,or 5>,'
         '"reasoning":"<una frase en español>"}'
     )
 
@@ -199,7 +199,7 @@ def decide_allocation(
             cp_pct=round(cp, 2),
             opt_pct=round(opt, 2),
             n_cp_positions=max(1, min(3, int(data.get("n_cp_positions", 2)))),
-            cp_max_hold_days=max(2, min(4, int(data.get("cp_max_hold_days", 3)))),
+            cp_max_hold_days=max(2, min(5, int(data.get("cp_max_hold_days", 4)))),
             reasoning=str(data.get("reasoning", "AI allocation.")),
             level=level,
         )

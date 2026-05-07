@@ -125,13 +125,14 @@ def _calc_metrics(history: list[dict], spy_history: list[dict], qqq_history: lis
 # ─── WORKFLOW HEALTH PANEL ────────────────────────────────────────────────────
 
 def _workflow_health_panel(status: dict) -> str:
-    """Mini-panel con estado de los 3 workflows de GitHub Actions."""
+    """Mini-panel con estado de los workflows de GitHub Actions — con fetch live vía JS."""
     from datetime import datetime, timezone
 
     workflows = [
-        ("alpha_daily",   "Alpha Daily",   "Analyst + Trader + DayTrader · 10:40 ART"),
-        ("alpha_monitor", "Alpha Monitor", "Stops/TPs cada 30 min · 11:00-16:00 ART"),
-        ("alpha_weekly",  "Alpha Weekly",  "Rebalancer semanal · viernes 15:00 ART"),
+        ("alpha_daily",      "Alpha Daily",      "Analyst + Trader LP/CP · 10:40 ART"),
+        ("alpha_daytrader",  "Alpha DayTrader",  "Day Trader ORB · 11:15 ART · cuenta DT"),
+        ("alpha_monitor",    "Alpha Monitor",    "Stops/TPs cada 30 min · 11:00-16:00 ART"),
+        ("alpha_weekly",     "Alpha Weekly",     "Rebalancer semanal · viernes 15:00 ART"),
     ]
 
     now_utc = datetime.now(timezone.utc)
@@ -157,26 +158,82 @@ def _workflow_health_panel(status: dict) -> str:
                 color, icon = "#d29922", "?"
 
         return f"""<div style="display:flex;align-items:center;gap:10px;padding:8px 0;
-  border-bottom:1px solid var(--bd)">
-  <span style="font-size:1rem;color:{color};width:16px;text-align:center;flex-shrink:0">{icon}</span>
+  border-bottom:1px solid var(--bd)" id="wf-row-{key}">
+  <span style="font-size:1rem;color:{color};width:16px;text-align:center;flex-shrink:0"
+        id="wf-icon-{key}">{icon}</span>
   <div style="flex:1;min-width:0">
     <div style="font-size:.82rem;font-weight:700;color:var(--tx)">{label}</div>
-    <div style="font-size:.72rem;color:var(--mt);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{desc}</div>
+    <div style="font-size:.72rem;color:var(--mt);white-space:nowrap;overflow:hidden;
+                text-overflow:ellipsis" id="wf-desc-{key}">{desc}</div>
   </div>
-  <div style="font-size:.72rem;color:{color};flex-shrink:0">{age_str}</div>
+  <div style="font-size:.72rem;flex-shrink:0" id="wf-age-{key}"
+       style="color:{color}">{age_str}</div>
 </div>"""
 
     pills = "".join(_pill(k, l, d) for k, l, d in workflows)
+
+    # JavaScript que actualiza el panel con datos live de Cloud Run (via workflow_status.json)
+    live_js = """<script>
+(async function() {
+  try {
+    const r = await fetch(
+      'https://raw.githubusercontent.com/sfelix23/alpha-agent/master/signals/workflow_status.json',
+      { cache: 'no-cache' }
+    );
+    if (!r.ok) return;
+    const data = await r.json();
+    const now = Date.now();
+    const keys = ['alpha_daily', 'alpha_daytrader', 'alpha_monitor', 'alpha_weekly'];
+    for (const key of keys) {
+      const entry = data[key];
+      if (!entry) continue;
+      const iconEl = document.getElementById('wf-icon-' + key);
+      const ageEl  = document.getElementById('wf-age-'  + key);
+      if (!iconEl || !ageEl) continue;
+      const ok    = entry.ok === true;
+      const failed = entry.ok === false;
+      const color = ok ? '#3fb950' : failed ? '#f85149' : '#d29922';
+      const icon  = ok ? '✓' : failed ? '✗' : '?';
+      let ageStr = entry.ts || '?';
+      try {
+        const ageMs = now - new Date(entry.ts + 'Z').getTime();
+        const ageH  = ageMs / 3600000;
+        ageStr = ageH < 1 ? `hace ${Math.round(ageH * 60)}min` : `hace ${ageH.toFixed(0)}h`;
+      } catch(e) {}
+      iconEl.textContent = icon;
+      iconEl.style.color = color;
+      ageEl.textContent  = ageStr;
+      ageEl.style.color  = color;
+    }
+    const srcEl = document.getElementById('wf-source');
+    if (srcEl) {
+      srcEl.textContent = '· Live desde Cloud Run ✓';
+      srcEl.style.color = '#3fb950';
+    }
+  } catch(e) {
+    const srcEl = document.getElementById('wf-source');
+    if (srcEl) srcEl.textContent = '· (datos en caché — sin acceso a repo)';
+  }
+})();
+</script>"""
+
     return f"""<div class="card" style="min-width:260px">
   <div class="card-head" style="margin-bottom:8px">
-    <div class="card-title">GitHub Actions</div>
-    <div class="card-sub">Estado de los workflows automáticos</div>
+    <div class="card-title">Google Cloud Run &mdash; Estado</div>
+    <div class="card-sub">
+      <a href="https://console.cloud.google.com/run/jobs?project=alpha-agent-2025" target="_blank"
+         style="color:#58a6ff;text-decoration:none">alpha-agent-2025</a>
+    </div>
   </div>
   {pills}
-  <div style="font-size:.68rem;color:var(--mt);margin-top:8px">
-    El scalper corre localmente en tu PC — no aparece aquí.
+  <div style="font-size:.68rem;color:var(--mt);margin-top:8px" id="wf-source">
+    · datos en caché (actualizando...)
   </div>
-</div>"""
+  <div style="font-size:.68rem;color:var(--mt);margin-top:2px">
+    El scalper corre localmente &mdash; no en la nube.
+  </div>
+</div>
+{live_js}"""
 
 
 # ─── TAB: RESUMEN ─────────────────────────────────────────────────────────────
@@ -1629,7 +1686,7 @@ def _tab_historial(trades: list[dict]) -> str:
 </div>"""
 
 
-def _tab_daytrader(dt_trades: list[dict]) -> str:
+def _tab_daytrader(dt_trades: list[dict], dt_scan: dict | None = None) -> str:
     """Day Trading tab — sleeve DT, cuenta Alpaca separada."""
     buys        = [t for t in dt_trades if t.get("side", "").upper() == "BUY"]
     closed      = [t for t in buys if t.get("closed_at")]
@@ -1642,11 +1699,40 @@ def _tab_daytrader(dt_trades: list[dict]) -> str:
     worst_t     = min(closed, key=lambda t: t.get("pnl_usd") or 0, default=None)
 
     if not buys:
+        scan_html = ""
+        if dt_scan:
+            scan_ts      = dt_scan.get("ts", "")[:16].replace("T", " ") + " UTC"
+            scan_dir     = dt_scan.get("direction", "?")
+            scan_found   = dt_scan.get("candidates_found", 0)
+            scan_reason  = dt_scan.get("reason", "")
+            scan_ticker  = dt_scan.get("best_ticker", "")
+            scan_score   = dt_scan.get("best_score", 0.0)
+            scan_traded  = dt_scan.get("traded", False)
+            traded_label = (
+                f'<span style="color:#3fb950;font-weight:700">OPERÓ {dt_scan.get("traded_ticker","")} '
+                f'${dt_scan.get("notional",0):.0f}</span>'
+            ) if scan_traded else '<span style="color:#f85149">Sin trade</span>'
+            score_str    = f" | Mejor: {scan_ticker} score={scan_score:.3f}" if scan_ticker else ""
+            scan_html = (
+                f'<div style="margin-top:16px;padding:12px 16px;border:1px solid #30363d;'
+                f'border-radius:6px;background:var(--bg);text-align:left;max-width:600px;margin-inline:auto">'
+                f'<div style="font-size:.78rem;color:var(--mt);margin-bottom:4px">Último scan — {scan_ts}</div>'
+                f'<div style="font-size:.85rem;margin-bottom:4px">'
+                f'Mercado: <b style="color:#58a6ff">{scan_dir}</b> | '
+                f'Candidatos: <b>{scan_found}</b>{score_str}</div>'
+                f'<div style="font-size:.82rem">{traded_label}'
+                f'<span style="color:var(--mt);margin-left:8px">{_esc(scan_reason[:180])}</span></div>'
+                f'</div>'
+            )
         return (
             '<div class="tab-content" id="tab-daytrader">'
-            '<div class="card"><p class="muted" style="padding:60px;text-align:center;font-size:1rem">'
-            'Sin operaciones DT todavia. El Day Trader corre a las 11:30 ART durante la ventana de mercado (10:00-14:00 EDT).<br>'
-            '<span style="font-size:.82rem;color:var(--mt)">Cuenta separada: ALPACA_DT_API_KEY &mdash; estrategia gap+ORB+VWAP, 1 posicion concentrada de $1400</span>'
+            '<div class="card"><p class="muted" style="padding:40px 60px 24px;text-align:center;font-size:1rem">'
+            'Sin operaciones DT todavia.<br>'
+            '<span style="font-size:.82rem;color:var(--mt)">'
+            'Cuenta separada: ALPACA_DT_API_KEY &mdash; estrategia gap+ORB+VWAP, 1 posicion de $1400<br>'
+            'Corre via GitHub Actions a las <b>11:15 ART</b> (14:15 UTC), lun-vie'
+            '</span>'
+            f'{scan_html}'
             '</p></div></div>'
         )
 
@@ -2179,7 +2265,7 @@ def _tab_scalper(scalp_trades: list[dict]) -> str:
 def build_html(equity, initial, history, positions, signals_data,
                spy_history=None, qqq_history=None, metrics=None, perf_data=None, discovery_data=None,
                trades=None, mc_result=None, dt_trades=None, scalp_trades=None,
-               workflow_status=None):
+               workflow_status=None, dt_scan=None):
     if spy_history is None:
         spy_history = []
     if qqq_history is None:
@@ -2218,7 +2304,7 @@ def build_html(equity, initial, history, positions, signals_data,
     t_senales    = _tab_senales(signals_data)
     t_mercado    = _tab_mercado(signals_data, discovery_data=discovery_data)
     t_historial  = _tab_historial(trades or [])
-    t_daytrader  = _tab_daytrader(dt_trades or [])
+    t_daytrader  = _tab_daytrader(dt_trades or [], dt_scan=dt_scan)
     t_scalper    = _tab_scalper(scalp_trades or [])
 
     return f"""<!DOCTYPE html>
@@ -2503,6 +2589,15 @@ def generate() -> None:
         except Exception:
             pass
 
+    # DayTrader last scan (escrito por run_daytrader.py aunque no opere)
+    dt_scan_data: dict | None = None
+    dt_scan_path = BASE_DIR / "signals" / "dt_last_scan.json"
+    if dt_scan_path.exists():
+        try:
+            dt_scan_data = json.loads(dt_scan_path.read_text(encoding="utf-8"))
+        except Exception:
+            pass
+
     # Trade history from SQLite — separado por cuenta
     trades: list[dict]       = []
     dt_trades: list[dict]    = []
@@ -2579,7 +2674,7 @@ def generate() -> None:
                          metrics=metrics, perf_data=perf_data, discovery_data=discovery_data,
                          trades=trades, mc_result=mc_result,
                          dt_trades=dt_trades, scalp_trades=scalp_trades,
-                         workflow_status=workflow_status)
+                         workflow_status=workflow_status, dt_scan=dt_scan_data)
     OUT_PATH.write_text(html, encoding="utf-8")
     logger.info("Dashboard generado -> %s (%d bytes)", OUT_PATH, len(html))
 
