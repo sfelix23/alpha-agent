@@ -356,6 +356,19 @@ def main() -> None:
     log.info("Top LP post-guard: %s", scores["long_term"].head(PARAMS.top_n_long_term).index.tolist())
     log.info("Top CP: %s", scores["short_term"].head(PARAMS.top_n_short_term).index.tolist())
 
+    # Score threshold: solo entrar si el mejor candidato CP tiene convicción real de momentum.
+    # Un score_st < 0.30 significa que nada en el CP_UNIVERSE está mostrando señal clara.
+    _MIN_CP_SCORE = 0.30
+    _cp_df = scores["short_term"]
+    if not _cp_df.empty and "score_st" in _cp_df.columns and PARAMS.top_n_short_term > 0:
+        _best_score = float(_cp_df["score_st"].iloc[0])
+        if _best_score < _MIN_CP_SCORE:
+            log.info(
+                "CP score threshold no alcanzado (%.2f < %.2f) — no trade CP este ciclo",
+                _best_score, _MIN_CP_SCORE,
+            )
+            object.__setattr__(PARAMS, "top_n_short_term", 0)
+
     # Earnings filter: no entrar en CP que reporta resultados en los próximos 2 días.
     # Un earnings sorpresa puede moverse ±15% overnight — el riesgo no es precio-able.
     # Solo se aplica a CP (hold 1-5 días); LP puede sobrevivir un earnings.

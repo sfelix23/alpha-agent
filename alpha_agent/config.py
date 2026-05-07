@@ -83,6 +83,28 @@ TECH_BULL_CP_BOOST: frozenset[str] = frozenset({
     "NVDA", "AMD", "MSFT", "META", "GOOGL", "AMZN", "AAPL", "ASML",
 })
 
+# Universo focalizado para sleeve CP — 25 tickers de alta beta/momentum.
+# Solo estos entran al scoring CP; el resto del universo aplica solo a LP/options.
+# Lógica: z-scores relativos entre 25 nombres concentrados > z-scores entre 49 heterogéneos.
+CP_UNIVERSE: frozenset[str] = frozenset({
+    # Tech AI / Semis — lideran cada rally (alta beta, FOMO institucional)
+    "NVDA", "AMD", "ARM", "MU", "ASML", "TSM",
+    # Mega-cap tech con momentum extendido
+    "META", "TSLA", "AMZN", "GOOGL",
+    # AI infra / Cloud / SaaS growth
+    "CRWD", "PLTR", "NET", "DDOG",
+    # Crypto proxy — máxima beta en risk-on
+    "COIN", "MSTR",
+    # Growth de alta convicción
+    "NFLX", "AVGO",
+    # Argentina (alpha genuino: baja cobertura institucional)
+    "GGAL", "BMA", "MELI", "VIST",
+    # Defensa (momentum ciclo geopolítico)
+    "LMT", "GD",
+    # Energía selectiva alta beta
+    "OXY",
+})
+
 # Tickers donde el sistema tiene ventaja informacional estructural sobre el mercado:
 # Argentina (cobertura institucional muy baja), energía internacional, minerales,
 # defensa. En estos sectores el CAPM + macro + noticias locales agrega alpha real.

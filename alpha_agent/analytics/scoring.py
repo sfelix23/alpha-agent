@@ -26,6 +26,7 @@ import pandas as pd
 
 from alpha_agent.config import (
     ALPHA_PREMIUM_LP,
+    CP_UNIVERSE,
     MAX_PAIR_CORRELATION,
     MAX_SECTOR_WEIGHT_LP,
     PARAMS,
@@ -373,6 +374,12 @@ def build_scores(
     # ── SHORT TERM ────────────────────────────────────────────────────────────
     st = df.copy()
 
+    # Filtrar al universo CP focalizado — z-scores entre 25 tickers concentrados
+    # son más informativos que z-scores entre los 49 heterogéneos del universo completo
+    if CP_UNIVERSE:
+        st = st[st.index.isin(CP_UNIVERSE)]
+        logger.info("CP_UNIVERSE filter: %d tickers activos para scoring CP", len(st))
+
     # Score base: momentum multi-timeframe ponderado
     # 6-month momentum (ret_6m) es el factor más documentado en la literatura quant
     # (Jegadeesh & Titman 1993) — excluimos el último mes para evitar reversal de CT
@@ -435,16 +442,20 @@ def build_scores(
     # El sistema tiene ventaja en sectores menos eficientes (Argentina, energía, materiales).
     mega_in_cp = [t for t in st.index if t in QQQ_MEGA_CAPS]
     if mega_in_cp:
-        pen = 0.4 if regime == "BULL" else (0.8 if regime == "NEUTRAL" else 2.0)
-        score_st.loc[score_st.index.isin(QQQ_MEGA_CAPS)] -= pen
-        logger.info("QQQ mega-cap penalty (%.1f CP, regime=%s): %s", pen, regime, mega_in_cp)
+        # En BULL estos nombres SON el rally — penalizarlos es apostar contra el mercado
+        pen = 0.0 if regime == "BULL" else (0.8 if regime == "NEUTRAL" else 2.0)
+        if pen > 0:
+            score_st.loc[score_st.index.isin(QQQ_MEGA_CAPS)] -= pen
+            logger.info("QQQ mega-cap penalty (%.1f CP, regime=%s): %s", pen, regime, mega_in_cp)
+        else:
+            logger.info("QQQ mega-cap penalty omitida en BULL — son los líderes del rally")
 
     # Bonus momentum para tech en BULL — lideran el mercado, merece recuperar score
     if regime == "BULL":
         for _tkr in TECH_BULL_CP_BOOST:
             if _tkr in score_st.index and "ret_1m" in st.columns and _tkr in st.index:
                 if float(st.loc[_tkr, "ret_1m"]) >= 0.02:
-                    score_st.loc[_tkr] = score_st.loc[_tkr] + 0.30
+                    score_st.loc[_tkr] = score_st.loc[_tkr] + 0.50
 
     # Momentum confluence: penalizar señales contradictorias entre timeframes
     # 5d vs 1m: si el ultra-corto y el mensual se contradicen → -0.15

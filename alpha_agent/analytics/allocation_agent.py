@@ -53,29 +53,29 @@ def _rule_default(regime: str, vix: float, win_rate: float | None, recent_pnl: f
             if vix > 30 or reg == "BEAR"
             else f"Racha perdedora (win_rate {win_rate:.0%}): reduciendo exposición."
         )
-        return AllocationDecision(0.0, 0.45, 0.05, 1, 2, reason, level=3)
+        return AllocationDecision(0.0, 0.45, 0.05, 1, 4, reason, level=3)
 
     # NEUTRAL: posición base conservadora
     if vix > 22 or reg == "NEUTRAL":
         cp = 0.80 if winning_streak else 0.65
         n  = 2
         reason = f"NEUTRAL/VIX {vix:.0f}: CP {cp:.0%}, {'racha ganadora → más exposición.' if winning_streak else 'posición moderada.'}"
-        return AllocationDecision(0.0, cp, 0.10, n, 3, reason, level=2)
+        return AllocationDecision(0.0, cp, 0.10, n, 8, reason, level=2)
 
     # BULL — el caso principal
     if winning_streak:
-        # NIVEL 1: BULL + ganando → presionar al máximo
-        return AllocationDecision(0.0, 0.88, 0.07, 2, 5,
-            f"BULL + racha ganadora ({win_rate:.0%} win rate): CP al máximo, cash mínimo.", level=1)
+        # NIVEL 1: BULL + ganando → presionar al máximo; chandelier es el exit primario
+        return AllocationDecision(0.0, 0.88, 0.07, 2, 18,
+            f"BULL + racha ganadora ({win_rate:.0%} win rate): CP al máximo, hold hasta 18d.", level=1)
     elif losing_streak:
         # ya cubierto arriba pero por si acá
-        return AllocationDecision(0.0, 0.50, 0.05, 1, 2,
+        return AllocationDecision(0.0, 0.50, 0.05, 1, 4,
             f"BULL pero racha perdedora: reduciendo CP al 50%.", level=3)
     else:
         # NIVEL 2: BULL sin historial suficiente → base sólida
         cp = 0.83 if vix < 18 else 0.75
-        return AllocationDecision(0.0, cp, 0.10, 2, 4,
-            f"BULL + VIX {vix:.1f}: CP {cp:.0%}, 2 posiciones, opciones activas.", level=2)
+        return AllocationDecision(0.0, cp, 0.10, 2, 14,
+            f"BULL + VIX {vix:.1f}: CP {cp:.0%}, hold hasta 14d.", level=2)
 
 
 def _get_recent_performance() -> tuple[float | None, float | None]:
@@ -149,14 +149,14 @@ def decide_allocation(
         "- cp_pct + opt_pct <= 0.95 (keep min 5% cash for operational margin)\n"
         "- cp_pct range: 0.40 (defensive) to 0.88 (max aggression)\n\n"
         "CONVICTION LEVELS:\n"
-        "- BULL + streak=WINNING: cp_pct=0.88, n_cp_positions=2, cp_max_hold_days=5 — press the edge\n"
-        "- BULL + streak=NEUTRAL (no clear edge): cp_pct=0.78-0.83, 2 positions, 4 days\n"
-        "- BULL + streak=LOSING: cp_pct=0.55, 1 position, 2 days — wait for better setup\n"
-        "- NEUTRAL or VIX 22-30: cp_pct=0.65-0.75, 2 positions, 3 days\n"
-        "- BEAR or VIX>30 or streak=LOSING: cp_pct=0.40-0.50, 1 position, 2 days\n\n"
+        "- BULL + streak=WINNING: cp_pct=0.88, n_cp_positions=2, cp_max_hold_days=18 — press the edge\n"
+        "- BULL + streak=NEUTRAL (no clear edge): cp_pct=0.78-0.83, 2 positions, cp_max_hold_days=14\n"
+        "- BULL + streak=LOSING: cp_pct=0.55, 1 position, cp_max_hold_days=4\n"
+        "- NEUTRAL or VIX 22-30: cp_pct=0.65-0.75, 2 positions, cp_max_hold_days=8\n"
+        "- BEAR or VIX>30 or streak=LOSING: cp_pct=0.40-0.50, 1 position, cp_max_hold_days=4\n\n"
         "Respond ONLY with JSON (no markdown):\n"
         '{"lp_pct":0.0,"cp_pct":<float>,"opt_pct":<0.05 or 0.10>,'
-        '"n_cp_positions":<1,2,or 3>,"cp_max_hold_days":<2,3,4,or 5>,'
+        '"n_cp_positions":<1,2,or 3>,"cp_max_hold_days":<4,8,14,or 18>,'
         '"reasoning":"<una frase en español>"}'
     )
 
@@ -199,7 +199,7 @@ def decide_allocation(
             cp_pct=round(cp, 2),
             opt_pct=round(opt, 2),
             n_cp_positions=max(1, min(3, int(data.get("n_cp_positions", 2)))),
-            cp_max_hold_days=max(2, min(5, int(data.get("cp_max_hold_days", 4)))),
+            cp_max_hold_days=max(2, min(20, int(data.get("cp_max_hold_days", 14)))),
             reasoning=str(data.get("reasoning", "AI allocation.")),
             level=level,
         )

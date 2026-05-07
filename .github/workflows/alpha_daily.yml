@@ -87,10 +87,6 @@ jobs:
       - name: Run Trader LP/CP
         run: python run_trader.py --live --capital ${{ steps.equity.outputs.capital }}
 
-      - name: Run Day Trader
-        run: python run_daytrader.py --live
-        continue-on-error: true
-
       - name: Generate Dashboard
         run: python run_dashboard.py --no-open
 
