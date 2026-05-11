@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-05-08T13:44:17",
+  "generated_at": "2026-05-11T13:44:53",
   "horizon": "medium_long_70_30_high_conviction",
   "capital_usd": 1600.0,
   "params": {
@@ -10,7 +10,7 @@
     "max_beta_lp": 2.0,
     "min_sharpe_lp": 0.3,
     "top_n_long_term": 2,
-    "top_n_short_term": 0,
+    "top_n_short_term": 2,
     "top_n_bearish": 1,
     "max_weight_per_asset": 0.5,
     "enable_short_equity": false,
@@ -18,41 +18,244 @@
   },
   "macro": {
     "regime": "bull",
-    "regime_reason": "SPY +9.7% sobre SMA200 con pendiente positiva",
+    "regime_reason": "SPY +10.0% sobre SMA200 con pendiente positiva",
     "prices": {
-      "oil_wti": 94.19,
-      "oil_brent": 99.85,
-      "gold": 4746.9,
-      "dxy": 97.872,
-      "vix": 17.12,
-      "us10y": 4.354
+      "oil_wti": 96.92,
+      "oil_brent": 103.33,
+      "gold": 4744.6,
+      "dxy": 97.925,
+      "vix": 18.23,
+      "us10y": 4.38
     },
     "changes_1d": {
-      "oil_wti": -0.0065,
-      "oil_brent": -0.0021,
-      "gold": 0.01,
-      "dxy": -0.0038,
-      "vix": 0.0023,
-      "us10y": -0.0087
+      "oil_wti": 0.0157,
+      "oil_brent": 0.0201,
+      "gold": 0.0051,
+      "dxy": 0.0009,
+      "vix": 0.0605,
+      "us10y": 0.0037
     },
     "changes_1m": {
-      "oil_wti": -0.0376,
-      "oil_brent": 0.041,
-      "gold": -0.0095,
-      "dxy": -0.0096,
-      "vix": -0.1216,
-      "us10y": 0.0142
+      "oil_wti": 0.0036,
+      "oil_brent": 0.0854,
+      "gold": -0.0036,
+      "dxy": -0.0073,
+      "vix": -0.052,
+      "us10y": 0.0146
     },
-    "spy_vs_sma200": 0.0965
+    "spy_vs_sma200": 0.0998
   },
   "long_term": [],
-  "short_term": [],
+  "short_term": [
+    {
+      "ticker": "MU",
+      "side": "BUY",
+      "horizon": "CP",
+      "price": 794.0,
+      "stop_loss": 730.48,
+      "take_profit": 952.8,
+      "weight_target": 0.9206,
+      "thesis": {
+        "ticker": "MU",
+        "horizon": "CP",
+        "conviction": "ALTA",
+        "quant": {
+          "mu_anual": 2.6906531666158466,
+          "sigma_anual": 0.6336217865218083,
+          "beta": 2.3034798799104426,
+          "alpha_jensen": 2.106474772433257,
+          "sharpe": 4.175445388547711,
+          "expected_return_capm": 0.5841783941825897
+        },
+        "technical": {
+          "price": 794.0,
+          "rsi": 89.23,
+          "atr": 45.8636,
+          "stop_loss_atr": 702.27,
+          "ret_1m": 0.8614025751925343,
+          "ret_3m": 1.1281538944764722,
+          "dist_52w_high": 0.0
+        },
+        "fundamental": {
+          "sentiment_score": 0.5,
+          "n_headlines": 6,
+          "positive": 4,
+          "negative": 1,
+          "sample_titles": [
+            "Why Trump’s China Summit Could End the Chip Stocks Rally",
+            "Micron stock surges 6% on Samsung strike concerns, $1000 target",
+            "Why These 3 High-Flying Memory & Storage Stocks Will Rise Further"
+          ]
+        },
+        "macro": {
+          "regime": "bull",
+          "regime_reason": "SPY +10.0% sobre SMA200 con pendiente positiva",
+          "vix": 18.23,
+          "oil_wti": 96.92,
+          "dxy_1m": -0.0073,
+          "gold_1m": -0.0036
+        },
+        "risk": {
+          "dollars_allocated": 921.44,
+          "weight_of_total_portfolio": 0.5759,
+          "max_loss_usd_if_stop_hit": 106.45,
+          "max_loss_pct_of_capital": 0.0665,
+          "stop_loss": 702.27
+        },
+        "thesis_text": "MU — horizonte CORTO PLAZO. Convicción ALTA. Setup técnico: RSI 89, momentum 1m +86.1%, momentum 3m +112.8%. ⚠️ RSI en sobrecompra → riesgo de reversión a la media. Stop loss ATR en $702.27 (riesgo ≈ 11.6% desde entrada). Sentiment de noticias refuerza el setup.",
+        "key_risks": [
+          "Sin riesgos macro mayores detectados; el riesgo principal es idiosincrático del activo."
+        ],
+        "swarm": {
+          "go": false,
+          "size_factor": 0.0,
+          "reasoning": "SIZE_FACTOR|Los cuatro especialistas emitieron NO-GO con confianza promedio de solo 42%, señalando RSI 89 en sobrecompra extrema, riesgos geopolíticos reales por aranceles China, y métricas de Sharpe/alfa teóricamente infladas que no reflejan el riesgo real de colas gruesas. El RiskAuditor emitió NO-GO con argumento sólido sobre inconsistencia del modelo cuantitativo, lo que activa la regla dura de veto independientemente del EV positivo. Con 0 votos GO y señales técnicas de reversión inminente, la posición no cumple los criterios mínimos de entrada.",
+          "go_count": 0,
+          "ev": 1095.66,
+          "ev_positive": true,
+          "opinions": [
+            {
+              "agent": "TechnicalCP",
+              "stance": "NO-GO",
+              "confidence": 40,
+              "reasoning": "**PASO 1: RSI y señal**\nRSI 89 = sobrecompra extrema. Estamos en zona de **reversión**, no de continuación. Aunque el régimen sea BULL, un RSI por encima de 80 históricamente precede correcciones de 3",
+              "cot": "**PASO 1: RSI y señal**\nRSI 89 = sobrecompra extrema. Estamos en zona de **reversión**, no de continuación. Aunque el régimen sea BULL, un RSI por encima de 80 históricamente precede correcciones de 3-7 días en el corto plazo. No es un rebote desde sobreventa ni un breakout limpio.\n\n**PASO 2: Moment"
+            },
+            {
+              "agent": "MacroLP",
+              "stance": "NO-GO",
+              "confidence": 50,
+              "reasoning": "- ⚠️ **Sobrecapacidad en 2026** = si capex no se ralentiza, mar",
+              "cot": "# MU | BULL Régimen Analysis\n\n**[Paso 1: Consistencia Régimen Macro - Sector]**\n- BULL regime + VIX 18.2 (neutral-to-low volatility) = favorable para risk-on assets\n- Tech sector típicamente beneficiado en entorno alcista con tasas estables\n- DXY 97.9 (moderado) no presiona márgenes de exportación d"
+            },
+            {
+              "agent": "SentimentLP",
+              "stance": "NO-GO",
+              "confidence": 40,
+              "reasoning": "**ANÁLISIS MU | Sentiment + Fundamental**\n\n**[Paso 1: Calidad y dirección del flujo de noticias]**\nMixto con sesgo alcista débil. Hay bullish drivers (Samsung strike = supply constraint positivo para ",
+              "cot": "**ANÁLISIS MU | Sentiment + Fundamental**\n\n**[Paso 1: Calidad y dirección del flujo de noticias]**\nMixto con sesgo alcista débil. Hay bullish drivers (Samsung strike = supply constraint positivo para MU, target price $1000), pero riesgo geopolítico real (Trump-China summit amenaza aranceles/restricc"
+            },
+            {
+              "agent": "RiskAuditorLP",
+              "stance": "NO-GO",
+              "confidence": 40,
+              "reasoning": "**[PASO 1: INCONSISTENCIA SHARPE/ALFA vs TAMAÑO]**\nSharpe 4.18 y alfa +210.6% son números teóricos que NO se sostienen en mercados reales. CAPM asume distribuciones normales; MU tiene RSI 89 (extremo)",
+              "cot": "**[PASO 1: INCONSISTENCIA SHARPE/ALFA vs TAMAÑO]**\nSharpe 4.18 y alfa +210.6% son números teóricos que NO se sostienen en mercados reales. CAPM asume distribuciones normales; MU tiene RSI 89 (extremo) → colas gruesas ignoradas. El modelo sobrestima retornos esperados. Riesgo real > $152.\n\n**[PASO 2:"
+            }
+          ],
+          "debate_id": "MU-CP-1778507096"
+        }
+      },
+      "option": null
+    },
+    {
+      "ticker": "MSTR",
+      "side": "BUY",
+      "horizon": "CP",
+      "price": 185.99,
+      "stop_loss": 171.11,
+      "take_profit": 223.19,
+      "weight_target": 0.0794,
+      "thesis": {
+        "ticker": "MSTR",
+        "horizon": "CP",
+        "conviction": "BAJA",
+        "quant": {
+          "mu_anual": 0.11279652180347718,
+          "sigma_anual": 0.8578882726534018,
+          "beta": 2.463933987030753,
+          "alpha_jensen": -0.5089395643614247,
+          "sharpe": 0.07902721597275858,
+          "expected_return_capm": 0.621736086164902
+        },
+        "technical": {
+          "price": 185.99,
+          "rsi": 63.48,
+          "atr": 10.1079,
+          "stop_loss_atr": 165.78,
+          "ret_1m": 0.40522056708604515,
+          "ret_3m": 0.39845860990366533,
+          "dist_52w_high": -0.5920267655028328
+        },
+        "fundamental": {
+          "sentiment_score": 0.667,
+          "n_headlines": 6,
+          "positive": 5,
+          "negative": 1,
+          "sample_titles": [
+            "Strategy Resumes Bitcoin Buys as Saylor Shifts Focus to 'Never Be a Net Seller'",
+            "Strategy’s Software Arm Hits Best Quarter in a Decade as Saylor Signals Another Bitcoin Buy",
+            "Michael Saylor Reveals Bitcoin's Magic Number: Here's How Much Yield He Needs For Strategy's Model To Work Forever"
+          ]
+        },
+        "macro": {
+          "regime": "bull",
+          "regime_reason": "SPY +10.0% sobre SMA200 con pendiente positiva",
+          "vix": 18.23,
+          "oil_wti": 96.92,
+          "dxy_1m": -0.0073,
+          "gold_1m": -0.0036
+        },
+        "risk": {
+          "dollars_allocated": 198.56,
+          "weight_of_total_portfolio": 0.1241,
+          "max_loss_usd_if_stop_hit": 21.58,
+          "max_loss_pct_of_capital": 0.0135,
+          "stop_loss": 165.78
+        },
+        "thesis_text": "MSTR — horizonte CORTO PLAZO. Convicción BAJA. Setup técnico: RSI 63, momentum 1m +40.5%, momentum 3m +39.8%. Stop loss ATR en $165.78 (riesgo ≈ 10.9% desde entrada). Sentiment de noticias refuerza el setup.",
+        "key_risks": [
+          "Sin riesgos macro mayores detectados; el riesgo principal es idiosincrático del activo."
+        ],
+        "swarm": {
+          "go": false,
+          "size_factor": 0.0,
+          "reasoning": "EV negativo — posición matemáticamente inválida. REASONING: El RiskAuditor emite NO-GO con 95% de confianza basado en EV negativo (-101.84), Sharpe de 0.08 (prácticamente nulo) y Alfa de -50.9% indicando underperformance severa vs benchmark. La regla dura de EV negativo activa veto automático independientemente de los argumentos técnicos o macro favorables. La posición no cumple el umbral mínimo de retorno ajustado por riesgo para justificar entrada CP.",
+          "go_count": 1,
+          "ev": -101.84,
+          "ev_positive": false,
+          "opinions": [
+            {
+              "agent": "TechnicalCP",
+              "stance": "NO-GO",
+              "confidence": 72,
+              "reasoning": "RSI neutral-alcista + momentum 1m/3m coherentes y sostenidos en régimen BULL; distancia a máx 52w ofrece estructura; stop ajustado permite entrada CP con R/R válido; VIX bajo respalda continuidad.**",
+              "cot": "**PASO 1: POSICIÓN RSI Y SEÑAL**\nRSI 63 está en zona neutral-alcista (50-70), NO en sobrecompra extrema (>70). Señala momentum positivo sostenido pero sin agotamiento inmediato. Es compatible con continuación en régimen alcista, no con reversión.\n\n**PASO 2: MOMENTUM 1M/3M Y COHERENCIA**\nMomentum 1m "
+            },
+            {
+              "agent": "MacroLP",
+              "stance": "GO",
+              "confidence": 72,
+              "reasoning": "Bull macro + low VIX supports crypto/leverage thesis, but DXY/rate momentum is the tripwire—watch 98.5 on DXY as a break-level for re-entry risk. MSTR ideal for 8-16 week hold in current window, not structural.",
+              "cot": "# MSTR Macro Strategic Assessment\n\n## Paso 1: Régimen Macro vs. Sector\n**Bull regime confirmed** (VIX 18.2 = low volatility, risk-on environment)\n- Crypto typically thrives in low-rate, high liquidity regimes\n- Current macro backdrop: DXY 97.9 (moderate USD strength, not crushing), WTI $96.9 (stable"
+            },
+            {
+              "agent": "SentimentLP",
+              "stance": "NO-GO",
+              "confidence": 40,
+              "reasoning": "**[PASO 1: CALIDAD Y DIRECCIÓN DEL FLUJO DE NOTICIAS]**\nTres noticias convergentes en 30 días: reinicio de compras BTC, reconfirmación de \"nunca ser vendedor neto\", y disclosure de modelo de rendimien",
+              "cot": "**[PASO 1: CALIDAD Y DIRECCIÓN DEL FLUJO DE NOTICIAS]**\nTres noticias convergentes en 30 días: reinicio de compras BTC, reconfirmación de \"nunca ser vendedor neto\", y disclosure de modelo de rendimiento. Esto es *narrative reinforcement* de alta calidad — no es ruido, es repositioning estratégico co"
+            },
+            {
+              "agent": "RiskAuditorLP",
+              "stance": "NO-GO",
+              "confidence": 95,
+              "reasoning": "EV negativo",
+              "cot": "# MSTR Risk Audit — LP Position Review\n\n## Paso 1: Inconsistencia Sharpe/Alfa vs Tamaño\n- **Sharpe 0.08** = retorno ajustado por riesgo **prácticamente nulo** (threshold mínimo aceptable: >0.5 para posiciones core)\n- **Alfa -50.9%** = **underperformance severa vs benchmark** — posición perdedora por"
+            }
+          ],
+          "debate_id": "MSTR-CP-1778507114"
+        }
+      },
+      "option": null
+    }
+  ],
   "options_book": [
     {
       "ticker": "GOOGL",
       "side": "BUY_CALL",
       "horizon": "DERIV",
-      "price": 398.71,
+      "price": 396.73,
       "stop_loss": null,
       "take_profit": null,
       "weight_target": 1.0,
@@ -61,64 +264,64 @@
         "horizon": "DERIV",
         "conviction": "ALTA",
         "quant": {
-          "mu_anual": 0.969060684155278,
-          "sigma_anual": 0.29828705290836494,
-          "beta": 1.083905298633221,
-          "alpha_jensen": 0.6784896997486372,
-          "sharpe": 3.0978906900097787,
-          "expected_return_capm": 0.2905709844066409
+          "mu_anual": 0.9450281530819395,
+          "sigma_anual": 0.2989676484195618,
+          "beta": 1.0845023453654763,
+          "alpha_jensen": 0.6461773432002644,
+          "sharpe": 3.010453331120524,
+          "expected_return_capm": 0.2988508098816752
         },
         "technical": {
-          "price": 398.71,
-          "rsi": 89.03,
-          "atr": 10.1079,
-          "stop_loss_atr": 378.49,
-          "ret_1m": 0.256808737008577,
-          "ret_3m": 0.23023760617154188,
-          "dist_52w_high": 0.0
+          "price": 396.73,
+          "rsi": 90.51,
+          "atr": 10.4221,
+          "stop_loss_atr": 375.89,
+          "ret_1m": 0.2347421131183891,
+          "ret_3m": 0.24619970408032676,
+          "dist_52w_high": -0.010142221969093534
         },
         "fundamental": {
-          "sentiment_score": 0.333,
+          "sentiment_score": 0.833,
           "n_headlines": 6,
-          "positive": 3,
-          "negative": 1,
+          "positive": 5,
+          "negative": 0,
           "sample_titles": [
-            "Why Nvidia stock looks cheap ahead of its high-stakes earnings report this month",
-            "Mark Zuckerberg Just Told 8,000 Employees Their Layoffs Are a Line Item in His $145 Billion AI Bill",
-            "Why Removing Screens From Fitness Trackers Made Them 88% More Popular: ‘If It Has a Screen, It’s a Watch’"
+            "The $1 trillion club's new members are powering the AI boom: Chart of the Day",
+            "Alphabet Could Pass Nvidia As World’s Most Valuable Company",
+            "There aren’t enough rockets for space data centers. Cowboy Space raised $275 million to build them."
           ]
         },
         "macro": {
           "regime": "bull",
-          "regime_reason": "SPY +9.7% sobre SMA200 con pendiente positiva",
-          "vix": 17.12,
-          "oil_wti": 94.19,
-          "dxy_1m": -0.0096,
-          "gold_1m": -0.0095
+          "regime_reason": "SPY +10.0% sobre SMA200 con pendiente positiva",
+          "vix": 18.23,
+          "oil_wti": 96.92,
+          "dxy_1m": -0.0073,
+          "gold_1m": -0.0036
         },
         "risk": {
           "dollars_allocated": 40.0,
           "weight_of_total_portfolio": 0.175,
-          "max_loss_usd_if_stop_hit": 2.03,
+          "max_loss_usd_if_stop_hit": 2.1,
           "max_loss_pct_of_capital": 0.0013,
-          "stop_loss": 378.49
+          "stop_loss": 375.89
         },
-        "thesis_text": "GOOGL — apuesta alcista vía CALL (riesgo limitado a la prima). Strike $462.5, expiry 2026-06-14 (~37d), prima estimada $1.15/share = $115/contrato. Breakeven $463.65. Delta objetivo 0.35. Backup: GOOGL — horizonte CORTO PLAZO. Convicción ALTA. Setup técnico: RSI 89, momentum 1m +25.7%, momentum 3m +23.0%. ⚠️ RSI en sobrecompra → riesgo de reversión a la media. Stop loss ATR en $378.49 (riesgo ≈ 5.1% desde entrada). Sentiment de noticias refuerza el setup.",
+        "thesis_text": "GOOGL — apuesta alcista vía CALL (riesgo limitado a la prima). Strike $460.21, expiry 2026-06-17 (~37d), prima estimada $1.16/share = $116/contrato. Breakeven $461.37. Delta objetivo 0.35. Backup: GOOGL — horizonte CORTO PLAZO. Convicción ALTA. Setup técnico: RSI 91, momentum 1m +23.5%, momentum 3m +24.6%. ⚠️ RSI en sobrecompra → riesgo de reversión a la media. Stop loss ATR en $375.89 (riesgo ≈ 5.3% desde entrada). Sentiment de noticias refuerza el setup.",
         "key_risks": [
           "Sin riesgos macro mayores detectados; el riesgo principal es idiosincrático del activo."
         ]
       },
       "option": {
         "type": "call",
-        "strike": 462.5,
-        "expiry": "2026-06-14",
+        "strike": 460.21,
+        "expiry": "2026-06-17",
         "days_to_expiry": 37,
-        "premium_per_share_est": 1.15,
-        "contract_cost_est": 115.22,
-        "breakeven": 463.65,
+        "premium_per_share_est": 1.16,
+        "contract_cost_est": 115.78,
+        "breakeven": 461.37,
         "delta_est": 0.35,
-        "sigma_used": 0.298,
-        "max_loss_usd": 115.22
+        "sigma_used": 0.299,
+        "max_loss_usd": 115.78
       }
     }
   ],
@@ -127,130 +330,130 @@
   "radar": {
     "entries": [
       {
-        "ticker": "GOOGL",
-        "sector": "Tech",
-        "price": 398.69,
-        "pct_1d": 0.0018,
-        "pct_1w": 0.0337,
-        "pct_1m": 0.2518,
-        "action": "CALL",
-        "headline": "Why Nvidia stock looks cheap ahead of its high-stakes earnings report th...",
-        "sentiment": 0.333,
-        "n_headlines": 6
-      },
-      {
-        "ticker": "NET",
-        "sector": "Tech",
-        "price": 204.07,
-        "pct_1d": -0.2053,
-        "pct_1w": -0.0618,
-        "pct_1m": 0.0571,
-        "action": "—",
-        "headline": "Cloudflare stock sinks as company slashes 20% of its workforce, citing AI",
-        "sentiment": -0.5,
-        "n_headlines": 6
-      },
-      {
         "ticker": "MU",
         "sector": "Tech",
-        "price": 696.24,
-        "pct_1d": 0.0767,
-        "pct_1w": 0.2841,
-        "pct_1m": 0.6518,
-        "action": "—",
-        "headline": "Tech-led stealth rally pushes markets to record highs",
+        "price": 791.17,
+        "pct_1d": 0.0594,
+        "pct_1w": 0.3725,
+        "pct_1m": 0.8811,
+        "action": "BUY_CP",
+        "headline": "Stock Market Today: Dow Jones Falls, Oil Rises; Intel, Lumentum, Moderna...",
         "sentiment": 0.5,
         "n_headlines": 6
       },
       {
-        "ticker": "AMD",
+        "ticker": "GOOGL",
         "sector": "Tech",
-        "price": 431.33,
-        "pct_1d": 0.056,
-        "pct_1w": 0.1963,
-        "pct_1m": 0.8227,
-        "action": "—",
-        "headline": "Earnings live updates: Airbnb raises revenue forecast, even as Iran war ...",
-        "sentiment": 0.5,
+        "price": 396.77,
+        "pct_1d": -0.0101,
+        "pct_1w": 0.0353,
+        "pct_1m": 0.2507,
+        "action": "CALL",
+        "headline": "The $1 trillion club's new members are powering the AI boom: Chart of th...",
+        "sentiment": 0.833,
+        "n_headlines": 6
+      },
+      {
+        "ticker": "MSTR",
+        "sector": "Crypto",
+        "price": 185.28,
+        "pct_1d": -0.0123,
+        "pct_1w": 0.0081,
+        "pct_1m": 0.4403,
+        "action": "BUY_CP",
+        "headline": "Strategy Resumes Bitcoin Buys as Saylor Shifts Focus to 'Never Be a Net ...",
+        "sentiment": 0.667,
         "n_headlines": 6
       },
       {
         "ticker": "DDOG",
         "sector": "Tech",
-        "price": 188.6,
-        "pct_1d": -0.0007,
-        "pct_1w": 0.3421,
-        "pct_1m": 0.7306,
+        "price": 201.48,
+        "pct_1d": 0.0066,
+        "pct_1w": 0.3735,
+        "pct_1m": 0.9121,
         "action": "—",
-        "headline": "DDOG Stock To $400?",
-        "sentiment": 0.5,
-        "n_headlines": 6
-      },
-      {
-        "ticker": "MELI",
-        "sector": "Consumer",
-        "price": 1694.02,
-        "pct_1d": -0.0941,
-        "pct_1w": -0.0843,
-        "pct_1m": -0.0553,
-        "action": "—",
-        "headline": "MercadoLibre Q1 Earnings Call Highlights",
-        "sentiment": -0.167,
-        "n_headlines": 6
-      },
-      {
-        "ticker": "UBER",
-        "sector": "Tech",
-        "price": 74.72,
-        "pct_1d": -0.0261,
-        "pct_1w": -0.0053,
-        "pct_1m": 0.0406,
-        "action": "—",
-        "headline": "Earnings live updates: Airbnb raises revenue forecast, even as Iran war ...",
+        "headline": "Jim Cramer Says “You Can’t Really Teach an Old Dog New Tricks Unless It’...",
         "sentiment": 1.0,
         "n_headlines": 6
       },
       {
-        "ticker": "ASML",
-        "sector": "Tech",
-        "price": 1554.2,
-        "pct_1d": 0.0248,
-        "pct_1w": 0.0891,
-        "pct_1m": 0.0752,
-        "action": "—",
-        "headline": "Google, Broadcom Drive Delirious Demand. So Do 16 More Stocks.",
-        "sentiment": 0.667,
-        "n_headlines": 6
-      },
-      {
-        "ticker": "NEM",
+        "ticker": "FCX",
         "sector": "Materials",
-        "price": 116.1,
-        "pct_1d": 0.023,
-        "pct_1w": 0.0689,
-        "pct_1m": -0.0245,
+        "price": 64.52,
+        "pct_1d": 0.0466,
+        "pct_1w": 0.1611,
+        "pct_1m": -0.0463,
         "action": "—",
-        "headline": "Assessing Newmont (NEM) Valuation After Record Free Cash Flow And Expand...",
+        "headline": "Freeport-McMoRan (FCX) Beats Q1 Estimates With $881M Net Income on Robus...",
         "sentiment": 0.667,
         "n_headlines": 6
       },
       {
-        "ticker": "COIN",
-        "sector": "Crypto",
-        "price": 183.66,
-        "pct_1d": -0.0482,
-        "pct_1w": -0.0397,
-        "pct_1m": 0.0866,
+        "ticker": "AMD",
+        "sector": "Tech",
+        "price": 458.56,
+        "pct_1d": 0.0074,
+        "pct_1w": 0.3426,
+        "pct_1m": 0.8714,
         "action": "—",
-        "headline": "Coinbase CEO Brian Armstrong compares AI agents to self-driving cars, sa...",
-        "sentiment": -0.5,
+        "headline": "AI chip stocks surge as investors refocus on growth",
+        "sentiment": 0.167,
+        "n_headlines": 6
+      },
+      {
+        "ticker": "GOLD",
+        "sector": "Materials",
+        "price": 47.85,
+        "pct_1d": 0.0542,
+        "pct_1w": 0.1222,
+        "pct_1m": 0.088,
+        "action": "—",
+        "headline": "A Look At Gold.com (GOLD) Valuation After Strong Q3 Results And New Digi...",
+        "sentiment": 0.333,
+        "n_headlines": 6
+      },
+      {
+        "ticker": "AVAV",
+        "sector": "Defense",
+        "price": 158.6,
+        "pct_1d": -0.0576,
+        "pct_1w": -0.1202,
+        "pct_1m": -0.1175,
+        "action": "—",
+        "headline": "AeroVironment (AVAV) Is Down 13.8% After Expanding Its Integrated Counte...",
+        "sentiment": -0.167,
+        "n_headlines": 6
+      },
+      {
+        "ticker": "CRWD",
+        "sector": "Tech",
+        "price": 524.55,
+        "pct_1d": -0.0061,
+        "pct_1w": 0.1179,
+        "pct_1m": 0.384,
+        "action": "—",
+        "headline": "CrowdStrike Expands AI Security Reach Through QuiltWorks And Microsoft D...",
+        "sentiment": 0.667,
+        "n_headlines": 6
+      },
+      {
+        "ticker": "OXY",
+        "sector": "Energy",
+        "price": 54.5,
+        "pct_1d": 0.0277,
+        "pct_1w": -0.0957,
+        "pct_1m": -0.0599,
+        "action": "—",
+        "headline": "Peace Will Bring Lower Oil: Warren Buffett’s Top Energy Picks for Berksh...",
+        "sentiment": 0.5,
         "n_headlines": 6
       }
     ],
-    "n_up": 28,
-    "n_down": 38,
-    "biggest_winner": "MU +7.7%",
-    "biggest_loser": "NET -20.5%"
+    "n_up": 38,
+    "n_down": 28,
+    "biggest_winner": "MU +5.9%",
+    "biggest_loser": "AVAV -5.8%"
   },
   "edgar_alerts": []
 }
