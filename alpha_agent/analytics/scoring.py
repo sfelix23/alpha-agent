@@ -404,6 +404,14 @@ def build_scores(
         - 0.05 * _zscore(-high_penalty)
     )
 
+    # 5-day momentum: captura el impulso muy reciente (más relevante que 1m para hold 4-18d)
+    if "ret_5d" in st.columns:
+        score_st += 0.10 * _zscore(st["ret_5d"].fillna(0))
+
+    # OBV divergence: acumulación silenciosa (dinero entrando sin mover precio) = señal CP fuerte
+    if "obv_divergence" in st.columns:
+        score_st += 0.15 * st["obv_divergence"].fillna(0)
+
     # Bonus MACD: tendencia con momentum (alto impacto en CP)
     if "macd_bullish" in st.columns:
         score_st += 0.15 * st["macd_bullish"].fillna(0)

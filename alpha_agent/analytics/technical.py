@@ -53,6 +53,12 @@ def _ema(series: pd.Series, span: int) -> pd.Series:
     return series.ewm(span=span, adjust=False).mean()
 
 
+def _obv(close: pd.Series, volume: pd.Series) -> pd.Series:
+    """On-Balance Volume: acumula/descuenta volumen según dirección del precio."""
+    direction = np.sign(close.diff()).fillna(0)
+    return (direction * volume).cumsum()
+
+
 def _macd_native(close: pd.Series, fast: int = 12, slow: int = 26, signal: int = 9):
     """Retorna (macd_line, signal_line, histogram)."""
     ema_fast = _ema(close, fast)
@@ -145,11 +151,24 @@ def compute_technical_indicators(ohlc: dict[str, pd.DataFrame]) -> pd.DataFrame:
 
         # ── Volume ──────────────────────────────────────────────────────────
         vol_ratio = np.nan
+        obv_divergence = 0  # +1=bullish (OBV rising while price falls), -1=bearish
         if len(volume.dropna()) >= 21:
             avg_vol_20 = float(volume.rolling(20).mean().iloc[-1])
             last_vol   = float(volume.iloc[-1])
             if avg_vol_20 > 0:
                 vol_ratio = last_vol / avg_vol_20
+
+            # OBV divergence: compara tendencia de precio vs tendencia de OBV (20 días)
+            if len(volume.dropna()) >= 25:
+                obv = _obv(close, volume.fillna(0))
+                price_trend = close.iloc[-1] - close.iloc[-20]
+                obv_trend   = obv.iloc[-1]  - obv.iloc[-20]
+                # Bullish: precio baja pero OBV sube (dinero entrando silencioso)
+                if price_trend < -0.02 * close.iloc[-20] and obv_trend > 0:
+                    obv_divergence = 1
+                # Bearish: precio sube pero OBV baja (distribución silenciosa)
+                elif price_trend > 0.02 * close.iloc[-20] and obv_trend < 0:
+                    obv_divergence = -1
 
         # ── Precios / Momentum ───────────────────────────────────────────────
         last_price = float(close.iloc[-1])
@@ -207,6 +226,7 @@ def compute_technical_indicators(ohlc: dict[str, pd.DataFrame]) -> pd.DataFrame:
             "bb_squeeze":    bb_squeeze,
             # Nuevos — Volumen
             "vol_ratio":     round(vol_ratio, 2) if not np.isnan(vol_ratio) else 1.0,
+            "obv_divergence": obv_divergence,
             # Nuevos — Breakout
             "breakout":      breakout,
         })
