@@ -262,6 +262,18 @@ class AlpacaBroker(BrokerBase):
             logger.debug("get_open_orders(%s): %s", ticker, e)
             return []
 
+    def list_filled_orders(self, limit: int = 100) -> list:
+        """Órdenes filled recientes — usado por sync_fills_from_alpaca."""
+        try:
+            from alpaca.trading.requests import GetOrdersRequest
+            from alpaca.trading.enums import QueryOrderStatus
+            req = GetOrdersRequest(status=QueryOrderStatus.CLOSED, limit=limit)
+            orders = self._trading.get_orders(req) or []
+            return [o for o in orders if str(getattr(o, "status", "")).lower() == "filled"]
+        except Exception as e:
+            logger.debug("list_filled_orders: %s", e)
+            return []
+
     def update_stop_loss(self, ticker: str, new_stop: float, qty: float) -> str | None:
         """
         Cancela órdenes stop abiertas para el ticker y envía una nueva stop-sell.
