@@ -89,9 +89,19 @@ def _quick_score(ticker: str) -> dict | None:
 
 def _claude_synthesize(candidates: list[dict], macro_context: dict) -> list[dict]:
     """
-    Pasa los candidatos a Claude (Haiku) para síntesis y priorización.
-    Claude decide cuáles merecen atención y por qué.
+    Síntesis de candidatos vía Gemini Flash (gratuito) con fallback a Claude Haiku.
     """
+    google_key = os.getenv("GOOGLE_API_KEY")
+    try:
+        if google_key:
+            import google.generativeai as genai  # type: ignore
+            genai.configure(api_key=google_key)
+            _gemini_model = genai.GenerativeModel("gemini-2.0-flash-exp")
+        else:
+            _gemini_model = None
+    except Exception:
+        _gemini_model = None
+
     try:
         import anthropic
         from alpha_agent.config import CLAUDE_MODEL
@@ -134,27 +144,41 @@ Respondé con JSON válido (solo el JSON, sin explicación):
 
 Incluí máximo {N_FINAL} picks. Solo los que genuinamente merezcan atención."""
 
+        def _parse_picks(text: str) -> list | None:
+            if "```" in text:
+                text = text.split("```")[1]
+                if text.startswith("json"):
+                    text = text[4:]
+            try:
+                return json.loads(text).get("top_picks", [])
+            except Exception:
+                return None
+
+        # Gemini Flash primero
+        if _gemini_model:
+            try:
+                resp_g = _gemini_model.generate_content(prompt)
+                picks = _parse_picks(resp_g.text.strip())
+                if picks is not None:
+                    return picks
+            except Exception as exc_g:
+                logger.debug("Gemini scanner synthesis failed: %s", exc_g)
+
+        # Fallback: Claude Haiku
         resp = client.messages.create(
             model=CLAUDE_MODEL,
             max_tokens=800,
             messages=[{"role": "user", "content": prompt}],
         )
-        text = resp.content[0].text.strip()
-
-        # Extraer JSON
-        if "```" in text:
-            text = text.split("```")[1]
-            if text.startswith("json"):
-                text = text[4:]
-        result = json.loads(text)
-        return result.get("top_picks", [])
+        picks = _parse_picks(resp.content[0].text.strip())
+        return picks if picks is not None else []
 
     except Exception as e:
-        logger.warning("Claude synthesis falló: %s — usando ranking por Sharpe", e)
+        logger.warning("AI synthesis falló: %s — usando ranking por Sharpe", e)
         return [
             {"ticker": c["ticker"], "prioridad": "MEDIA",
              "razon": f"Sharpe 3M: {c['sharpe_3m']:.2f}, momentum 1M: {c['mom_1m_pct']:+.1f}%",
-             "riesgo": "Sin análisis Claude disponible"}
+             "riesgo": "Sin análisis AI disponible"}
             for c in candidates[:N_FINAL]
         ]
 
