@@ -1,0 +1,95 @@
+name: "Alpha DayTrader"
+# Day Trader: entra a los 45 min de apertura cuando el ORB ya formó.
+# 14:15 UTC = 10:15 EDT = 11:15 ART, lun-vie
+
+on:
+  schedule:
+    - cron: "15 14 * * 1-5"
+  workflow_dispatch: {}
+
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
+permissions:
+  contents: write
+
+jobs:
+  daytrader:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Setup Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: "pip"
+
+      - name: Install dependencies
+        run: pip install --prefer-binary -r requirements.txt
+
+      - name: Create .env
+        run: |
+          printf 'ALPACA_API_KEY=%s\n'        "${{ secrets.ALPACA_API_KEY }}"        >  .env
+          printf 'ALPACA_SECRET_KEY=%s\n'     "${{ secrets.ALPACA_SECRET_KEY }}"     >> .env
+          printf 'ALPACA_DT_API_KEY=%s\n'     "${{ secrets.ALPACA_DT_API_KEY }}"     >> .env
+          printf 'ALPACA_DT_SECRET_KEY=%s\n'  "${{ secrets.ALPACA_DT_SECRET_KEY }}"  >> .env
+          printf 'TWILIO_SID=%s\n'            "${{ secrets.TWILIO_SID }}"            >> .env
+          printf 'TWILIO_TOKEN=%s\n'          "${{ secrets.TWILIO_TOKEN }}"          >> .env
+          printf 'MY_PHONE_NUMBER=%s\n'       "${{ secrets.MY_PHONE_NUMBER }}"       >> .env
+          printf 'ANTHROPIC_API_KEY=%s\n'     "${{ secrets.ANTHROPIC_API_KEY }}"     >> .env
+          echo ".env creado OK"
+
+      - name: Run Day Trader
+        run: python run_daytrader.py --live
+
+      - name: Generate Dashboard
+        run: python run_dashboard.py --no-open
+        continue-on-error: true
+
+      - name: Commit resultados
+        run: |
+          git config user.name  "alpha-bot"
+          git config user.email "alpha-bot@users.noreply.github.com"
+          git pull --rebase origin master || true
+          git add signals/trades.db signals/dt_last_scan.json docs/index.html || true
+          git diff --staged --quiet || git commit -m "chore: daytrader $(date -u +%Y-%m-%dT%H:%M) [skip ci]"
+          git push
+        continue-on-error: true
+
+      - name: Escribir estado del workflow
+        if: always()
+        run: |
+          python -c '
+          import json, sys
+          from pathlib import Path
+          from datetime import datetime, timezone
+          f = Path("signals/workflow_status.json")
+          data = json.loads(f.read_text()) if f.exists() else {}
+          data["alpha_daytrader"] = {
+              "ts": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M"),
+              "ok": sys.argv[1] == "true"
+          }
+          f.write_text(json.dumps(data, indent=2))
+          ' "${{ job.status == 'success' }}"
+          git config user.name "alpha-bot" 2>/dev/null || true
+          git config user.email "alpha-bot@users.noreply.github.com" 2>/dev/null || true
+          git add signals/workflow_status.json 2>/dev/null || true
+          git diff --staged --quiet || git commit -m "chore: workflow status [skip ci]" 2>/dev/null || true
+          git push 2>/dev/null || true
+        continue-on-error: true
+
+      - name: WhatsApp - notificar fallo
+        if: failure()
+        run: |
+          curl -s -X POST \
+            "https://api.twilio.com/2010-04-01/Accounts/${{ secrets.TWILIO_SID }}/Messages.json" \
+            -u "${{ secrets.TWILIO_SID }}:${{ secrets.TWILIO_TOKEN }}" \
+            --data-urlencode "From=whatsapp:+14155238886" \
+            --data-urlencode "To=whatsapp:${{ secrets.MY_PHONE_NUMBER }}" \
+            --data-urlencode "Body=ALPHA DAYTRADER FALLO en GitHub Actions. Ver: https://github.com/sfelix23/alpha-agent/actions"
