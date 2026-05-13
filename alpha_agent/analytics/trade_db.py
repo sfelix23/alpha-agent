@@ -193,6 +193,51 @@ def get_open_dt_tickers() -> set[str]:
     return {r["ticker"] for r in rows}
 
 
+def sync_fills_from_alpaca(broker) -> int:
+    """
+    Consulta Alpaca por órdenes recientes y actualiza status 'submitted' → 'filled'
+    en trade_db cuando el broker confirma ejecución.
+    Retorna número de registros actualizados.
+    """
+    updated = 0
+    try:
+        orders = broker.list_filled_orders(limit=100)
+    except Exception as e:
+        logger.debug("sync_fills_from_alpaca: broker error %s", e)
+        return 0
+
+    alpaca_filled = {}  # order_id → avg_fill_price
+    for o in orders:
+        oid = getattr(o, "id", None)
+        fill_price = getattr(o, "filled_avg_price", None)
+        if oid and fill_price:
+            try:
+                alpaca_filled[str(oid)] = float(fill_price)
+            except (TypeError, ValueError):
+                pass
+
+    if not alpaca_filled:
+        return 0
+
+    with _conn() as con:
+        rows = con.execute(
+            "SELECT id, order_id FROM trades WHERE status='submitted' AND order_id IS NOT NULL"
+        ).fetchall()
+        for row in rows:
+            oid = row["order_id"]
+            if oid in alpaca_filled:
+                fill_px = alpaca_filled[oid]
+                con.execute(
+                    "UPDATE trades SET status='filled', price=? WHERE id=?",
+                    (fill_px, row["id"]),
+                )
+                updated += 1
+
+    if updated:
+        logger.info("sync_fills_from_alpaca: %d trades actualizados a 'filled'", updated)
+    return updated
+
+
 def reconcile_buy_sell_pairs() -> int:
     """
     Matches unprocessed SELL rows to open BUY rows (FIFO per ticker).

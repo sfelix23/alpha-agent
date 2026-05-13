@@ -72,8 +72,9 @@ def kelly_weights(capm: pd.DataFrame, returns: pd.DataFrame | None = None) -> pd
     series = pd.Series(fractions)
     total  = series.sum()
     if total <= 0:
-        n = max(len(series), 1)
-        return pd.Series(1.0 / n, index=series.index)
+        # Todos con edge negativo → no forzar posiciones; el caller decide si usa equal-weight
+        logger.warning("kelly_weights: edge negativo en todos los activos — retornando pesos cero")
+        return pd.Series(0.0, index=series.index)
 
     series = series / total
 

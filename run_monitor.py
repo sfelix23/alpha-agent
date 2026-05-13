@@ -312,7 +312,7 @@ def _was_scaled_in_today(ticker: str) -> bool:
     """True si ya se ejecutó un scale-in hoy para este ticker."""
     from datetime import date
     try:
-        data = json.loads(_SCALEIN_FILE.read_text()) if _SCALEIN_FILE.exists() else {}
+        data = json.loads(_SCALEIN_FILE.read_text(encoding="utf-8")) if _SCALEIN_FILE.exists() else {}
         return data.get(ticker) == str(date.today())
     except Exception:
         return False
@@ -324,7 +324,7 @@ def _register_scalein(ticker: str) -> None:
     from datetime import date
     try:
         today_str = str(date.today())
-        data = json.loads(_SCALEIN_FILE.read_text()) if _SCALEIN_FILE.exists() else {}
+        data = json.loads(_SCALEIN_FILE.read_text(encoding="utf-8")) if _SCALEIN_FILE.exists() else {}
         # Limpiar entradas de días anteriores
         data = {k: v for k, v in data.items() if v == today_str}
         data[ticker] = today_str
@@ -368,7 +368,7 @@ def _is_pdt_blocked(ticker: str) -> bool:
     """True si este ticker ya recibió un error PDT hoy — no reintentar hasta mañana."""
     from datetime import date
     try:
-        data = json.loads(_PDT_BLOCK_FILE.read_text()) if _PDT_BLOCK_FILE.exists() else {}
+        data = json.loads(_PDT_BLOCK_FILE.read_text(encoding="utf-8")) if _PDT_BLOCK_FILE.exists() else {}
         return data.get(ticker) == str(date.today())
     except Exception:
         return False
@@ -379,11 +379,11 @@ def _register_pdt_block(ticker: str) -> None:
     from datetime import date
     try:
         today_str = str(date.today())
-        data = json.loads(_PDT_BLOCK_FILE.read_text()) if _PDT_BLOCK_FILE.exists() else {}
+        data = json.loads(_PDT_BLOCK_FILE.read_text(encoding="utf-8")) if _PDT_BLOCK_FILE.exists() else {}
         # Mantener solo los bloqueos de hoy — los de días anteriores no aplican
         data = {k: v for k, v in data.items() if v == today_str}
         data[ticker] = today_str
-        _PDT_BLOCK_FILE.write_text(json.dumps(data, indent=2))
+        _PDT_BLOCK_FILE.write_text(json.dumps(data, indent=2), encoding="utf-8")
         logger.info("PDT block registrado para %s — se cerrará mañana", ticker)
     except Exception:
         pass
@@ -493,6 +493,16 @@ def main():
         equity = get_virtual_equity(equity)
     except Exception:
         pass
+
+    # Sync fills + reconcile DB con Alpaca — mantiene P&L real actualizado
+    try:
+        from alpha_agent.analytics.trade_db import sync_fills_from_alpaca, reconcile_buy_sell_pairs
+        sync_fills_from_alpaca(broker)
+        _closed = reconcile_buy_sell_pairs()
+        if _closed:
+            logger.info("reconcile: %d pares BUY/SELL cerrados automáticamente", _closed)
+    except Exception as _re:
+        logger.debug("trade_db sync error: %s", _re)
 
     # Guardar snapshot diario de equity para el gráfico del dashboard
     try:
