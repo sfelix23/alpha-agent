@@ -16,6 +16,8 @@ from __future__ import annotations
 
 import json
 import logging
+import os
+import tempfile
 from datetime import datetime
 from pathlib import Path
 
@@ -23,6 +25,22 @@ logger = logging.getLogger(__name__)
 
 _BASELINE_PATH = Path("signals/capital_baseline.json")
 OUR_START = 1600.0   # capital real del usuario
+
+
+def _atomic_write(path: Path, data: dict) -> None:
+    """Escribe JSON atómicamente (temp + rename) para evitar corrupción en escrituras concurrentes."""
+    path.parent.mkdir(exist_ok=True)
+    tmp_fd, tmp_path = tempfile.mkstemp(dir=path.parent, prefix=".tmp_", suffix=".json")
+    try:
+        with os.fdopen(tmp_fd, "w", encoding="utf-8") as f:
+            json.dump(data, f, indent=2)
+        os.replace(tmp_path, path)   # atómico en POSIX y Windows (misma partición)
+    except Exception:
+        try:
+            os.unlink(tmp_path)
+        except OSError:
+            pass
+        raise
 
 
 def get_virtual_equity(alpaca_equity: float) -> float:
@@ -61,7 +79,7 @@ def get_virtual_equity(alpaca_equity: float) -> float:
         "created_at": datetime.now().isoformat(timespec="seconds"),
         "note": "No tocar manualmente. Reset via reset_capital_baseline().",
     }
-    _BASELINE_PATH.write_text(json.dumps(data, indent=2), encoding="utf-8")
+    _atomic_write(_BASELINE_PATH, data)
     logger.info(
         "Capital baseline registrado: Alpaca $%.2f → virtual $%.2f (primer run)",
         alpaca_equity, OUR_START,
@@ -81,8 +99,7 @@ def reset_capital_baseline(alpaca_equity: float, new_start: float = OUR_START) -
         "created_at": datetime.now().isoformat(timespec="seconds"),
         "note": f"Reset manual el {datetime.now().strftime('%Y-%m-%d')}",
     }
-    _BASELINE_PATH.parent.mkdir(exist_ok=True)
-    _BASELINE_PATH.write_text(json.dumps(data, indent=2), encoding="utf-8")
+    _atomic_write(_BASELINE_PATH, data)
     logger.info("Capital baseline reseteado: start=$%.2f sobre Alpaca $%.2f", new_start, alpaca_equity)
 
 

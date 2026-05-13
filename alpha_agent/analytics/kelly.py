@@ -24,8 +24,9 @@ from alpha_agent.config import PARAMS
 
 logger = logging.getLogger(__name__)
 
-_HALF_KELLY = 0.5
-_MIN_SIGMA  = 0.01
+_HALF_KELLY  = 0.5
+_MIN_SIGMA   = 0.01
+_MAX_F_STAR  = 2.0   # cap pre-half-Kelly: evita fracciones patológicas con sigma bajo
 
 
 def _sigma_for_ticker(ticker: str, capm: pd.DataFrame, returns: pd.DataFrame | None) -> float:
@@ -65,6 +66,7 @@ def kelly_weights(capm: pd.DataFrame, returns: pd.DataFrame | None = None) -> pd
             fractions[ticker] = 0.0
             continue
         f_star = (mu - rf) / (sigma ** 2)
+        f_star = min(f_star, _MAX_F_STAR)   # cap antes de half-Kelly: evita over-sizing con sigma < 0.05
         fractions[ticker] = max(0.0, f_star * _HALF_KELLY)
 
     series = pd.Series(fractions)

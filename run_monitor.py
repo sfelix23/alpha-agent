@@ -130,7 +130,7 @@ def _compute_chandelier_stop(ticker: str) -> float | None:
     try:
         import numpy as np
         import yfinance as yf
-        df = yf.download(ticker, period="35d", progress=False, auto_adjust=True)
+        df = yf.download(ticker, period="35d", progress=False, auto_adjust=True, timeout=10)
         if df is None or len(df) < 23:
             return None
         close = df["Close"].squeeze()
@@ -189,10 +189,10 @@ def _check_vix_spike() -> tuple[bool, float, float]:
         import yfinance as yf
         # Nivel actual real: última barra de 5min intradía
         df_intra = yf.download("^VIX", period="2d", interval="5m",
-                               progress=False, auto_adjust=True)
+                               progress=False, auto_adjust=True, timeout=10)
         # Cierre previo confirmado: barra diaria anterior (no la del día en curso)
         df_daily = yf.download("^VIX", period="5d", interval="1d",
-                               progress=False, auto_adjust=True)
+                               progress=False, auto_adjust=True, timeout=10)
         if df_intra is None or len(df_intra) < 2:
             return False, 0.0, 0.0
         if df_daily is None or len(df_daily) < 2:
@@ -315,7 +315,7 @@ def _check_scalein_momentum(ticker: str) -> bool:
     """True si MACD bullish y RSI < 73 — el momentum del winner continúa."""
     try:
         import yfinance as yf
-        df = yf.download(ticker, period="3mo", interval="1d", progress=False, auto_adjust=True)
+        df = yf.download(ticker, period="3mo", interval="1d", progress=False, auto_adjust=True, timeout=10)
         if df is None or len(df) < 30:
             return True  # fail open: sin datos suficientes, asumir ok
         close = df["Close"].squeeze()
@@ -381,7 +381,7 @@ def _build_eod_summary(broker, positions: list, equity: float, capital_base: flo
     # SPY daily change
     try:
         import yfinance as yf
-        spy = yf.download("SPY", period="2d", interval="1d", progress=False, auto_adjust=True)
+        spy = yf.download("SPY", period="2d", interval="1d", progress=False, auto_adjust=True, timeout=10)
         if spy is not None and len(spy) >= 2:
             spy_close = spy["Close"].squeeze()
             spy_chg = float((spy_close.iloc[-1] - spy_close.iloc[-2]) / spy_close.iloc[-2] * 100)

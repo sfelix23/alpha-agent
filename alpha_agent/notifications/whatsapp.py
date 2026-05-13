@@ -96,7 +96,15 @@ def send_whatsapp(mensaje: str, *, header: str = "REPORTE QUANT ALPHA") -> bool:
                 )
                 ok = False
         except Exception as e:
+            err_str = str(e).lower()
             logger.error("Error enviando chunk %d: %s", i, e)
+            # Detectar errores típicos de sesión sandbox expirada y loguear instrucción específica
+            if any(k in err_str for k in ("63016", "sandbox", "not opted", "not in session", "permission")):
+                logger.error(
+                    "🔒 Sesión Twilio sandbox expirada — enviá 'join <palabra>' "
+                    "al +14155238886 desde el número %s para renovarla (cada 72h)",
+                    to,
+                )
             ok = False
 
     return ok

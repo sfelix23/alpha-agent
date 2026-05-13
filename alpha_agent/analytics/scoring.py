@@ -378,7 +378,13 @@ def build_scores(
     # son más informativos que z-scores entre los 49 heterogéneos del universo completo
     if CP_UNIVERSE:
         st = st[st.index.isin(CP_UNIVERSE)]
-        logger.info("CP_UNIVERSE filter: %d tickers activos para scoring CP", len(st))
+        if st.empty:
+            logger.warning(
+                "CP_UNIVERSE filter: ningún ticker del universo CP tiene datos de mercado hoy "
+                "— el sleeve CP no generará señales este ciclo"
+            )
+        else:
+            logger.info("CP_UNIVERSE filter: %d tickers activos para scoring CP", len(st))
 
     # Score base: momentum multi-timeframe ponderado
     # 6-month momentum (ret_6m) es el factor más documentado en la literatura quant
