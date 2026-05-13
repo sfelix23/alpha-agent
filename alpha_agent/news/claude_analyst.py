@@ -295,19 +295,13 @@ def risk_debate(
         dict con: bull_case, bear_case, verdict (PROCEED|REDUCE_SIZE|SKIP),
                   confidence, size_adjustment (multiplicador 0.5-1.0)
     """
-    client = _client()
-
-    # Default: si Claude no está disponible, siempre proceder
     default = {
-        "bull_case": "Claude no disponible — usando señal original",
+        "bull_case": "AI no disponible — usando señal original",
         "bear_case": "Sin análisis",
         "verdict": "PROCEED",
         "confidence": 0.5,
         "size_adjustment": 1.0,
     }
-
-    if client is None:
-        return default
 
     regime    = portfolio_context.get("regime", "unknown")
     vix       = portfolio_context.get("vix", 20)
@@ -321,46 +315,57 @@ def risk_debate(
     price     = signal.get("price", 0)
     r_r       = ((tp - price) / (price - stop)) if (tp and stop and price and price > stop) else None
 
-    prompt = f"""Sos un risk arbitrage committee evaluando si ejecutar esta señal.
+    prompt = (
+        f"Sos un risk arbitrage committee evaluando si ejecutar esta señal.\n\n"
+        f"SEÑAL: {ticker}\n"
+        f"- Conviction: {conv} | Sharpe: {sharpe:.2f} | Alpha Jensen: {alpha:+.1f}%\n"
+        f"- Precio: ${price:.2f} | Stop: ${f'{stop:.2f}' if stop else 'N/D'} | TP: ${f'{tp:.2f}' if tp else 'N/D'}\n"
+        f"- R/R implícito: {f'{r_r:.1f}x' if r_r else 'N/D'}\n\n"
+        f"CONTEXTO: Régimen {regime.upper()} | VIX {vix:.1f} | Capital ${capital:.0f}\n"
+        f"Posiciones actuales: {', '.join(positions) if positions else 'ninguna'}\n\n"
+        'Respondé JSON únicamente: {"bull_case":"...","bear_case":"...","verdict":"PROCEED|REDUCE_SIZE|SKIP","confidence":0.0-1.0,"size_adjustment":1.0}'
+    )
 
-SEÑAL: {ticker}
-- Conviction: {conv} | Sharpe: {sharpe:.2f} | Alpha Jensen: {alpha:+.1f}%
-- Precio: ${price:.2f} | Stop: ${f'${stop:.2f}' if stop else 'N/D'} | TP: ${f'${tp:.2f}' if tp else 'N/D'}
-- R/R implícito: {f'{r_r:.1f}x' if r_r else 'N/D'}
+    def _parse_debate(text: str) -> dict | None:
+        match = re.search(r"\{.*\}", text, re.DOTALL)
+        if not match:
+            return None
+        try:
+            result = json.loads(match.group())
+            if result.get("verdict") not in ("PROCEED", "REDUCE_SIZE", "SKIP"):
+                result["verdict"] = "PROCEED"
+            result["size_adjustment"] = max(0.0, min(1.0, float(result.get("size_adjustment", 1.0))))
+            return result
+        except Exception:
+            return None
 
-CONTEXTO: Régimen {regime.upper()} | VIX {vix:.1f} | Capital ${capital:.0f}
-Posiciones actuales: {', '.join(positions) if positions else 'ninguna'}
+    # Gemini Flash primero (costo ~$0)
+    google_key = os.getenv("GOOGLE_API_KEY")
+    if google_key:
+        try:
+            import google.generativeai as genai  # type: ignore
+            genai.configure(api_key=google_key)
+            model = genai.GenerativeModel("gemini-2.0-flash-exp")
+            resp = model.generate_content(prompt)
+            parsed = _parse_debate(resp.text.strip())
+            if parsed:
+                logger.debug("Gemini risk_debate %s → %s", ticker, parsed["verdict"])
+                return parsed
+        except Exception as exc:
+            logger.debug("Gemini risk_debate failed (%s) — trying Claude", exc)
 
-Generá el debate y el veredicto en JSON (solo JSON):
-{{
-  "bull_case": "argumento más fuerte A FAVOR en 1-2 líneas",
-  "bear_case": "argumento más fuerte EN CONTRA en 1-2 líneas",
-  "verdict": "PROCEED|REDUCE_SIZE|SKIP",
-  "confidence": 0.0-1.0,
-  "size_adjustment": 1.0
-}}
-
-Guías:
-- PROCEED: señal válida, ejecutar con tamaño normal (size_adjustment=1.0)
-- REDUCE_SIZE: señal válida pero contexto adverso (size_adjustment=0.5-0.75)
-- SKIP: señal inválida o riesgo asimétrico (size_adjustment=0.0)
-- VIX > 25 con régimen BEAR → size_adjustment máximo 0.75"""
-
+    # Fallback: Claude Haiku
+    client = _client()
+    if client is None:
+        return default
     try:
         msg = client.messages.create(
             model=_MODEL,
             max_tokens=200,
             messages=[{"role": "user", "content": prompt}],
         )
-        text = msg.content[0].text.strip()
-        match = re.search(r"\{.*\}", text, re.DOTALL)
-        if not match:
-            return default
-        result = json.loads(match.group())
-        if result.get("verdict") not in ("PROCEED", "REDUCE_SIZE", "SKIP"):
-            result["verdict"] = "PROCEED"
-        result["size_adjustment"] = max(0.0, min(1.0, float(result.get("size_adjustment", 1.0))))
-        return result
+        parsed = _parse_debate(msg.content[0].text.strip())
+        return parsed if parsed else default
     except Exception as exc:
         logger.debug("Claude risk_debate failed (%s)", exc)
         return default

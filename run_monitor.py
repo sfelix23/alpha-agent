@@ -670,7 +670,26 @@ def main():
 
             signal = get_signal_for_ticker(signals_data, ticker)
             if not signal:
-                logger.debug("Sin señal guardada para %s — skip", ticker)
+                # Sin señal en latest.json: posición huérfana (LP o DT abierta sin signal activo).
+                # Aplicar stop de emergencia: -12% LP / -8% DT para evitar pérdidas ilimitadas.
+                _orphan_stop_pct = 0.08 if pos.ticker in getattr(pos, "sleeve", "") else 0.12
+                _orphan_threshold = avg_entry * (1 - _orphan_stop_pct) if avg_entry else 0
+                if _orphan_threshold and current <= _orphan_threshold:
+                    logger.warning(
+                        "⚠️ ORPHAN STOP %s: sin señal + caída -%.0f%% ($%.2f <= $%.2f)",
+                        ticker, _orphan_stop_pct * 100, current, _orphan_threshold,
+                    )
+                    alerts.append(
+                        f"⚠️ *{ticker}*: posición sin señal activa — stop de emergencia "
+                        f"(-{_orphan_stop_pct*100:.0f}%) disparado (${current:.2f})"
+                    )
+                    if args.live and not args.dry_run:
+                        try:
+                            broker.close_position(ticker)
+                        except Exception as _oe:
+                            logger.error("Error cerrando posición huérfana %s: %s", ticker, _oe)
+                else:
+                    logger.warning("Posición huérfana %s (sin señal en latest.json) — P&L %.1f%%", ticker, pnl_pct)
                 continue
 
             stop_loss = signal.get("stop_loss")
