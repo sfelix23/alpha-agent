@@ -167,6 +167,23 @@ def execute(broker: BrokerBase, *, dry_run: bool = True, max_capital: float | No
 
     signals = load_latest_signals()
 
+    # Signal freshness guard: señales > 4h no deben usarse para BUYs nuevos.
+    # El analyst y trader corren juntos en el daily task (misma hora), así que
+    # señales viejas solo aparecen si el analyst falló o el trader corrió suelto.
+    _MAX_SIG_AGE_H = 4.0
+    try:
+        _sig_age_h = (datetime.now() - datetime.fromisoformat(signals.generated_at)).total_seconds() / 3600
+    except Exception:
+        _sig_age_h = 0.0
+    if _sig_age_h > _MAX_SIG_AGE_H:
+        logger.warning(
+            "⚠️ Señales STALE (%.0fh antiguas, generadas %s) — bloqueando BUYs nuevos",
+            _sig_age_h, signals.generated_at,
+        )
+        _stale_signals = True
+    else:
+        _stale_signals = False
+
     # Capital seguro: usamos min(equity, buying_power) para no operar con margen.
     # Alpaca paper habilita margen 2x → buying_power puede ser 2× equity.
     # Además respetamos max_capital (pasado por run_autonomous.ps1 como el equity
@@ -237,6 +254,36 @@ def execute(broker: BrokerBase, *, dry_run: bool = True, max_capital: float | No
     # ── Scale-in: nuevas posiciones entran al 60% ─────────────────────────────
     held_tickers = {p.ticker for p in positions}
     equity_intents = _apply_scale_in(equity_intents, held_tickers)
+
+    # ── Stale signal guard: señales viejas → bloquear BUYs nuevos ──────────────
+    if _stale_signals:
+        held_set = {p.ticker for p in positions}
+        equity_intents = [
+            i for i in equity_intents
+            if i.side.upper() != "BUY" or i.ticker in held_set
+        ]
+        logger.warning("Stale signal guard: BUYs en tickers no holding filtrados")
+
+    # ── TP sanity: no BUY si el TP ya quedó por debajo del precio de señal ────
+    # Señal stale → precio de mercado puede haber superado el TP ya calculado.
+    # Un TP < signal.price indica corrupción; TP < mercado actual = trade inútil.
+    sane_intents = []
+    for intent in equity_intents:
+        if intent.side.upper() == "BUY" and intent.take_profit:
+            sig_match = next(
+                (s for s in signals.long_term + signals.short_term if s.ticker == intent.ticker),
+                None,
+            )
+            sig_price = float(sig_match.price) if sig_match else 0.0
+            if sig_price > 0 and intent.take_profit <= sig_price * 1.01:
+                logger.warning(
+                    "TP sanity SKIP %s: take_profit $%.2f <= signal_price $%.2f "
+                    "(señal stale — TP ya superado por el mercado)",
+                    intent.ticker, intent.take_profit, sig_price,
+                )
+                continue
+        sane_intents.append(intent)
+    equity_intents = sane_intents
 
     # ── Risk Arbiter: debate bull/bear antes de BUY ──────────────────────────
     equity_intents = _apply_risk_debate(signals, equity_intents, positions, capital_adj)
