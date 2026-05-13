@@ -12,8 +12,12 @@ sent / delivered / failed) así podés ver si el mensaje salió pero no llegó.
 
 from __future__ import annotations
 
+import json
 import logging
 import os
+import tempfile
+from datetime import datetime, timedelta
+from pathlib import Path
 from typing import List
 
 from alpha_agent.config import WHATSAPP_FROM
@@ -21,6 +25,63 @@ from alpha_agent.config import WHATSAPP_FROM
 logger = logging.getLogger(__name__)
 
 MAX_CHARS = 1400  # margen sobre el límite de 1600
+
+_CIRCUIT_PATH = Path("signals/whatsapp_circuit.json")
+_CIRCUIT_MAX_FAILURES = 3   # fallos consecutivos antes de abrir el circuito
+_CIRCUIT_RESET_HOURS  = 6   # horas hasta reintentar después de abrir
+
+
+def _circuit_open() -> bool:
+    """True si el circuito está abierto (demasiados fallos recientes)."""
+    try:
+        if not _CIRCUIT_PATH.exists():
+            return False
+        data = json.loads(_CIRCUIT_PATH.read_text(encoding="utf-8"))
+        if not data.get("tripped"):
+            return False
+        tripped_at = datetime.fromisoformat(data["tripped_at"])
+        if datetime.now() - tripped_at > timedelta(hours=_CIRCUIT_RESET_HOURS):
+            # Auto-reset después del período de espera
+            _circuit_record(success=True)
+            logger.info("WhatsApp circuit breaker auto-reset (%.0fh transcurridas)", _CIRCUIT_RESET_HOURS)
+            return False
+        return True
+    except Exception:
+        return False
+
+
+def _circuit_record(success: bool) -> None:
+    """Actualiza el estado del circuito; escrita atómica."""
+    try:
+        _CIRCUIT_PATH.parent.mkdir(exist_ok=True)
+        current: dict = {}
+        if _CIRCUIT_PATH.exists():
+            try:
+                current = json.loads(_CIRCUIT_PATH.read_text(encoding="utf-8"))
+            except Exception:
+                pass
+        if success:
+            current = {"consecutive_failures": 0, "tripped": False}
+        else:
+            fails = current.get("consecutive_failures", 0) + 1
+            tripped = fails >= _CIRCUIT_MAX_FAILURES
+            current = {
+                "consecutive_failures": fails,
+                "tripped": tripped,
+                "tripped_at": current.get("tripped_at") if current.get("tripped") else datetime.now().isoformat(),
+            }
+            if tripped and fails == _CIRCUIT_MAX_FAILURES:
+                logger.error(
+                    "WhatsApp circuit breaker ABIERTO tras %d fallos consecutivos — "
+                    "sin intentos por %dh. Renovar sesión Twilio sandbox.",
+                    fails, _CIRCUIT_RESET_HOURS,
+                )
+        tmp_fd, tmp_path = tempfile.mkstemp(dir=_CIRCUIT_PATH.parent, prefix=".tmp_wa_", suffix=".json")
+        with os.fdopen(tmp_fd, "w", encoding="utf-8") as f:
+            json.dump(current, f)
+        os.replace(tmp_path, _CIRCUIT_PATH)
+    except Exception as exc:
+        logger.debug("Error actualizando WhatsApp circuit state: %s", exc)
 
 
 def _chunk(body: str, max_chars: int = MAX_CHARS) -> List[str]:
@@ -56,6 +117,14 @@ def send_whatsapp(mensaje: str, *, header: str = "REPORTE QUANT ALPHA") -> bool:
     Envía un mensaje (potencialmente multi-parte) a `MY_PHONE_NUMBER` vía Twilio.
     Devuelve True si TODOS los chunks salieron sin excepción, False si alguno falló.
     """
+    if _circuit_open():
+        logger.warning(
+            "WhatsApp circuit breaker abierto — skip envío. "
+            "Renovar sesión Twilio sandbox y esperar auto-reset (%.0fh).",
+            _CIRCUIT_RESET_HOURS,
+        )
+        return False
+
     sid = os.getenv("TWILIO_SID")
     token = os.getenv("TWILIO_TOKEN")
     to = os.getenv("MY_PHONE_NUMBER")
@@ -107,4 +176,5 @@ def send_whatsapp(mensaje: str, *, header: str = "REPORTE QUANT ALPHA") -> bool:
                 )
             ok = False
 
+    _circuit_record(success=ok)
     return ok

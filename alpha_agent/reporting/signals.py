@@ -157,6 +157,13 @@ def _make_signal(
         beta = float(quant_row.get("beta", 1.0) or 1.0)
         tp_pct = 0.22 if beta >= 1.5 else (0.18 if beta >= 1.0 else 0.14)
         tp = round(price * (1 + tp_pct), 2) if price else None
+        # Sanidad: stop debe ser < precio para posición long
+        if price and stop_val and stop_val >= price:
+            logger.warning(
+                "LP %s: stop_loss_atr (%.2f) >= price (%.2f) — dato corrupto, usando default -12%%",
+                ticker, stop_val, price,
+            )
+            stop_val = round(price * 0.88, 2)
     else:
         # CP: stop ATR-adaptivo con rango [-3%, -8%]
         # Piso -3%: no más apretado (evita whipsaw en stocks volátiles)
