@@ -164,6 +164,10 @@ def _make_signal(
                 ticker, stop_val, price,
             )
             stop_val = round(price * 0.88, 2)
+        # LP requiere mínimo 8% de margen para no ser sacado por ruido intradía
+        # (hold de 14-18 días necesita más espacio que el 2×ATR14 del analyst)
+        elif price and stop_val and stop_val > price * 0.92:
+            stop_val = round(price * 0.92, 2)  # fuerza al menos -8% de distancia
     else:
         # CP: stop ATR-adaptivo con rango [-3%, -8%]
         # Piso -3%: no más apretado (evita whipsaw en stocks volátiles)
