@@ -677,6 +677,16 @@ def main():
             take_profit = signal.get("take_profit")
             macro_regime = signals_data.get("macro", {}).get("regime", "unknown")
 
+            # Sanidad: para long, TP debe estar SOBRE la entrada. Si TP < avg_entry,
+            # la señal es stale (fue generada cuando el precio era más bajo).
+            # En ese caso nulificamos el TP y dejamos solo stop/chandelier.
+            if take_profit and avg_entry and float(take_profit) < float(avg_entry) * 0.99:
+                logger.warning(
+                    "%s: TP stale (${:.2f}) < avg_entry (${:.2f}) — usando solo stop/chandelier".format(take_profit, avg_entry),
+                    ticker,
+                )
+                take_profit = None
+
             action = None
             reason = ""
             claude_override = False
