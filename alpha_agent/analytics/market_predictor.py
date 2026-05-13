@@ -212,15 +212,7 @@ def predict(
 
     log.info("Signals: %s", signals)
 
-    api_key = os.getenv("ANTHROPIC_API_KEY")
-    if api_key:
-        try:
-            direction, conviction, reasoning = _ai_synthesis(signals, api_key)
-        except Exception as e:
-            log.warning("AI synthesis failed (%s) — rule-based fallback", e)
-            direction, conviction, reasoning = _rule_fallback(composite)
-    else:
-        direction, conviction, reasoning = _rule_fallback(composite)
+    direction, conviction, reasoning = _rule_fallback(composite)
 
     result = PredictionResult(
         direction=direction,

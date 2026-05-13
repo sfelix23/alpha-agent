@@ -225,67 +225,63 @@ def _fetch_technicals(tickers: list[str]) -> pd.DataFrame:
     return result
 
 
-def _validate_with_claude(
+def _validate_with_ai(
     ticker: str, score: float, ret_1m: float, ret_3m: float
 ) -> tuple[bool, str, str]:
     """
-    Pregunta a Claude si el ticker tiene un catalizador real.
+    Valida el ticker con Gemini Flash (gratuito). Fallback reglas si no disponible.
     Retorna (include, razon, prioridad).
-    Si Claude no está disponible, acepta cualquier score > 40.
     """
-    api_key = os.getenv("ANTHROPIC_API_KEY")
-    if not api_key:
-        include = score > 40
-        return include, "Score técnico alto" if include else "", "MEDIA"
+    import re as _re
+    import json as _json
 
     try:
-        import anthropic
-        import re as _re
-        client = anthropic.Anthropic(api_key=api_key)
+        news_items = yf.Ticker(ticker).news or []
+        headlines = [n.get("title", "") for n in news_items[:4] if n.get("title")]
+    except Exception:
+        headlines = []
 
-        try:
-            news_items = yf.Ticker(ticker).news or []
-            headlines = [n.get("title", "") for n in news_items[:4] if n.get("title")]
-        except Exception:
-            headlines = []
+    news_text = "\n".join(f"- {h}" for h in headlines) if headlines else "Sin noticias disponibles."
 
-        news_text = "\n".join(f"- {h}" for h in headlines) if headlines else "Sin noticias disponibles."
+    prompt = (
+        f"Evaluate this stock as a SHORT-TERM trade candidate (1-4 weeks).\n"
+        f"Ticker: {ticker}\n"
+        f"Momentum 1 month: {ret_1m*100:+.1f}%\n"
+        f"Momentum 3 months: {ret_3m*100:+.1f}%\n"
+        f"Technical score: {score:.0f}/100\n\n"
+        f"Recent news:\n{news_text}\n\n"
+        "Reply JSON only: "
+        '{"include": true/false, "reason": "one sentence in Spanish", '
+        '"prioridad": "ALTA|MEDIA|BAJA", "riesgo": "brief risk note or empty string"}'
+    )
 
-        prompt = f"""Evaluate this stock as a SHORT-TERM trade candidate (1-4 weeks).
-
-Ticker: {ticker}
-Momentum 1 month: {ret_1m*100:+.1f}%
-Momentum 3 months: {ret_3m*100:+.1f}%
-Technical score: {score:.0f}/100
-
-Recent news:
-{news_text}
-
-Should we add this to our portfolio watchlist?
-- YES if: real catalyst (earnings beat, new contract, sector tailwind, technical breakout with volume)
-- NO if: just noise, no clear catalyst, or fundamental deterioration
-
-Reply JSON only: {{"include": true/false, "reason": "one sentence in Spanish", "prioridad": "ALTA|MEDIA|BAJA", "riesgo": "brief risk note in Spanish or empty string"}}"""
-
-        msg = client.messages.create(
-            model="claude-haiku-4-5-20251001",
-            max_tokens=120,
-            messages=[{"role": "user", "content": prompt}],
-        )
-        text = msg.content[0].text
+    def _parse(text: str) -> tuple[bool, str, str] | None:
         match = _re.search(r"\{.*?\}", text, _re.DOTALL)
-        if match:
-            import json as _json
+        if not match:
+            return None
+        try:
             result = _json.loads(match.group())
-            include = bool(result.get("include", False))
-            razon   = str(result.get("reason", ""))
-            prior   = str(result.get("prioridad", "MEDIA")).upper()
-            riesgo  = str(result.get("riesgo", ""))
-            logger.info("Claude sobre %s: %s — %s", ticker,
-                        "INCLUDE" if include else "SKIP", razon)
-            return include, razon, prior
-    except Exception as exc:
-        logger.debug("Claude discovery failed for %s: %s", ticker, exc)
+            return (
+                bool(result.get("include", False)),
+                str(result.get("reason", "")),
+                str(result.get("prioridad", "MEDIA")).upper(),
+            )
+        except Exception:
+            return None
+
+    google_key = os.getenv("GOOGLE_API_KEY")
+    if google_key:
+        try:
+            import google.generativeai as genai  # type: ignore
+            genai.configure(api_key=google_key)
+            model = genai.GenerativeModel("gemini-2.0-flash-exp")
+            resp = model.generate_content(prompt)
+            parsed = _parse(resp.text.strip())
+            if parsed:
+                logger.info("Gemini discovery %s: %s — %s", ticker, "INCLUDE" if parsed[0] else "SKIP", parsed[1])
+                return parsed
+        except Exception as exc:
+            logger.debug("Gemini discovery failed for %s: %s", ticker, exc)
 
     include = score > 40
     return include, f"Score técnico {score:.0f}/100", "MEDIA"
@@ -325,7 +321,7 @@ def run_discovery(max_new: int = MAX_CANDIDATES_TO_RETURN) -> list[str]:
         ret_1m = float(row.get("ret_1m", 0) or 0)
         ret_3m = float(row.get("ret_3m", 0) or 0)
 
-        include, razon, prior = _validate_with_claude(str(ticker), score, ret_1m, ret_3m)
+        include, razon, prior = _validate_with_ai(str(ticker), score, ret_1m, ret_3m)
         if include:
             selected.append(str(ticker))
             candidates_meta.append({
