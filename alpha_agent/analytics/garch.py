@@ -27,9 +27,12 @@ def forecast_garch_vol(returns: pd.Series, horizon: int = 1) -> float:
     Returns:
         Annualized volatility as a decimal (e.g., 0.28 = 28%).
     """
+    _MIN_VOL = 0.05   # 5% anualizado — floor para activos con historial de precios planos
+
     clean = returns.dropna()
     if len(clean) < 60:
-        return float(clean.std() * np.sqrt(252))
+        vol = float(clean.std() * np.sqrt(252))
+        return max(vol, _MIN_VOL)
 
     try:
         from arch import arch_model  # type: ignore
@@ -39,10 +42,13 @@ def forecast_garch_vol(returns: pd.Series, horizon: int = 1) -> float:
         sigma_daily = float(np.sqrt(fc.variance.iloc[-1, 0])) / 100
         vol_annual  = sigma_daily * np.sqrt(252)
         logger.debug("GARCH(1,1) σ forecast: %.1f%% (horizon=%d)", vol_annual * 100, horizon)
-        return vol_annual
+        return max(vol_annual, _MIN_VOL)
     except Exception as e:
         logger.debug("GARCH fallback to realized vol: %s", e)
-        return float(clean.std() * np.sqrt(252))
+        vol = float(clean.std() * np.sqrt(252))
+        if vol == 0.0:
+            logger.warning("GARCH: volatilidad realizada = 0 (datos planos o error) — usando floor %.0f%%", _MIN_VOL * 100)
+        return max(vol, _MIN_VOL)
 
 
 def compute_cvar(returns: pd.Series, confidence: float = 0.95) -> float:

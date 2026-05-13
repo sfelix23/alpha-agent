@@ -535,16 +535,29 @@ def _pnl_calendar(history):
     if len(history) < 2:
         return ""
     import calendar as cm
+    from collections import defaultdict
     from datetime import date
 
+    # Agrupar por fecha y usar el último equity del día (el monitor corre cada 30 min,
+    # así que hay múltiples entradas por día). Comparar cierre-a-cierre entre días.
+    by_date: dict = defaultdict(list)
+    for entry in history:
+        try:
+            d = datetime.fromtimestamp(entry["ts"]).date()
+            eq = float(entry["equity"])
+            if eq > 0:
+                by_date[d].append(eq)
+        except Exception:
+            continue
+
+    sorted_dates = sorted(by_date.keys())
     daily = {}
-    for i in range(1, len(history)):
-        pe = history[i-1]["equity"]
-        ce = history[i]["equity"]
-        d  = datetime.fromtimestamp(history[i]["ts"]).date()
-        pnl = ce - pe
-        pnl_pct = (pnl / pe * 100) if pe else 0
-        daily[d] = {"pnl": pnl, "pct": pnl_pct}
+    for i in range(1, len(sorted_dates)):
+        prev_eq = by_date[sorted_dates[i - 1]][-1]   # último equity del día anterior
+        curr_eq = by_date[sorted_dates[i]][-1]        # último equity del día actual
+        pnl = curr_eq - prev_eq
+        pnl_pct = (pnl / prev_eq * 100) if prev_eq else 0
+        daily[sorted_dates[i]] = {"pnl": pnl, "pct": pnl_pct}
 
     # Siempre mostrar el mes actual, aunque no haya datos aún para él
     today = date.today()
@@ -2461,14 +2474,26 @@ def generate() -> None:
         try:
             _snap_path = BASE_DIR / "signals" / "equity_snapshots.json"
             if _snap_path.exists():
-                _snaps = json.loads(_snap_path.read_text(encoding="utf-8"))
-                if _snaps:
-                    import time as _time
-                    history = [{"ts": int(_time.mktime(__import__("datetime").date.fromisoformat(s["date"]).timetuple())),
-                                "equity": s["equity"]} for s in _snaps]
-                    logger.info("Portfolio history (desde snapshots): %d entradas", len(history))
+                import time as _time
+                from datetime import date as _date
+                _raw = json.loads(_snap_path.read_text(encoding="utf-8"))
+                _valid: list[dict] = []
+                for s in (_raw if isinstance(_raw, list) else []):
+                    try:
+                        _d = _date.fromisoformat(s["date"])    # valida formato fecha
+                        _eq = float(s["equity"])
+                        if _eq > 0:
+                            _valid.append({"ts": int(_time.mktime(_d.timetuple())), "equity": _eq})
+                    except Exception:
+                        continue   # skip entradas corruptas, no abortar
+                if _valid:
+                    history = sorted(_valid, key=lambda x: x["ts"])
+                    logger.info("Portfolio history (desde snapshots): %d entradas válidas de %d totales",
+                                len(history), len(_raw))
+                elif _raw:
+                    logger.warning("equity_snapshots.json: %d entradas, ninguna válida", len(_raw))
         except Exception as _ef:
-            logger.debug("equity_snapshots fallback error: %s", _ef)
+            logger.warning("equity_snapshots fallback error: %s", _ef)
 
     # SPY + QQQ benchmarks (con cache de 1h para no re-descargar en cada refresh)
     spy_history: list[dict] = []

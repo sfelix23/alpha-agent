@@ -319,12 +319,19 @@ def _was_scaled_in_today(ticker: str) -> bool:
 
 
 def _register_scalein(ticker: str) -> None:
-    """Registra el scale-in de hoy para evitar duplicados."""
+    """Registra el scale-in de hoy. Escritura atómica para evitar race condition."""
+    import os, tempfile
     from datetime import date
     try:
+        today_str = str(date.today())
         data = json.loads(_SCALEIN_FILE.read_text()) if _SCALEIN_FILE.exists() else {}
-        data[ticker] = str(date.today())
-        _SCALEIN_FILE.write_text(json.dumps(data, indent=2))
+        # Limpiar entradas de días anteriores
+        data = {k: v for k, v in data.items() if v == today_str}
+        data[ticker] = today_str
+        tmp_fd, tmp_path = tempfile.mkstemp(dir=_SCALEIN_FILE.parent, prefix=".tmp_", suffix=".json")
+        with os.fdopen(tmp_fd, "w") as f:
+            json.dump(data, f, indent=2)
+        os.replace(tmp_path, _SCALEIN_FILE)
     except Exception:
         pass
 
