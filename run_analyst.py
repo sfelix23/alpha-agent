@@ -359,6 +359,8 @@ def main() -> None:
     # Score threshold: solo entrar si el mejor candidato CP tiene convicción real de momentum.
     # Un score_st < 0.30 significa que nada en el CP_UNIVERSE está mostrando señal clara.
     _MIN_CP_SCORE = 0.30
+    if PARAMS.top_n_short_term == 0:
+        log.warning("top_n_short_term=0 — sleeve CP completamente deshabilitado; sin trades momentum este ciclo")
     _cp_df = scores["short_term"]
     if not _cp_df.empty and "score_st" in _cp_df.columns and PARAMS.top_n_short_term > 0:
         _best_score = float(_cp_df["score_st"].iloc[0])
@@ -629,7 +631,7 @@ def main() -> None:
         if sc is not None:
             current_sentiment[sig.ticker] = float(sc)
 
-    # Calcular deltas del run actual para que el PRÓXIMO run los use como señal
+    # Calcular deltas del run actual y aplicarlos al instante (zero-lag) a los CP signals
     new_deltas: dict[str, float] = {}
     if current_sentiment and prev_sentiment:
         for t, curr in current_sentiment.items():
@@ -638,9 +640,27 @@ def main() -> None:
         improving = {t: d for t, d in new_deltas.items() if d > 0.20}
         deteriorating = {t: d for t, d in new_deltas.items() if d < -0.20}
         if improving:
-            log.info("Sentiment mejoró hoy (se usará mañana): %s", {t: f"{d:+.2f}" for t, d in improving.items()})
+            log.info("Sentiment mejoró hoy (aplicando ahora): %s", {t: f"{d:+.2f}" for t, d in improving.items()})
         if deteriorating:
             log.info("Sentiment empeoró hoy: %s", {t: f"{d:+.2f}" for t, d in deteriorating.items()})
+
+        # Aplicar delta a los weight_target de CP inmediatamente (el scoring los usará el próximo run)
+        if signals.short_term and any(abs(d) > 0.05 for d in new_deltas.values()):
+            _BOOST = 0.18
+            for s in signals.short_term:
+                d = float(new_deltas.get(s.ticker, 0.0))
+                s.weight_target = round(s.weight_target * (1.0 + _BOOST * d), 4)
+            _tw = sum(s.weight_target for s in signals.short_term) or 1.0
+            for s in signals.short_term:
+                s.weight_target = round(s.weight_target / _tw, 4)
+            # Mantener floor 30% tras el ajuste
+            if len(signals.short_term) >= 2:
+                _wl = [max(s.weight_target, 0.30) for s in signals.short_term]
+                _tw2 = sum(_wl) or 1.0
+                for s, w in zip(signals.short_term, _wl):
+                    s.weight_target = round(w / _tw2, 4)
+            path = signals.save()
+            log.info("CP weights actualizados con sentiment delta in-run: %d posiciones", len(signals.short_term))
 
     if current_sentiment:
         try:

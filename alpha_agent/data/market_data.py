@@ -34,12 +34,9 @@ for noisy in ("yfinance", "yfinance.cache"):
 @contextlib.contextmanager
 def _silence_stderr():
     """Contexto para atrapar stderr — yfinance imprime directo al fd, no al logger."""
-    devnull = open(os.devnull, "w")
-    try:
+    with open(os.devnull, "w") as devnull:
         with contextlib.redirect_stderr(devnull):
             yield
-    finally:
-        devnull.close()
 
 
 def _cache_path(kind: str) -> Path:

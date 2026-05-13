@@ -459,7 +459,7 @@ def build_scores(
     # Bonus momentum para tech en BULL — lideran el mercado, merece recuperar score
     if regime == "BULL":
         for _tkr in TECH_BULL_CP_BOOST:
-            if _tkr in score_st.index and "ret_1m" in st.columns and _tkr in st.index:
+            if _tkr in score_st.index and "ret_1m" in st.columns:
                 if float(st.loc[_tkr, "ret_1m"]) >= 0.02:
                     score_st.loc[_tkr] = score_st.loc[_tkr] + 0.50
 
