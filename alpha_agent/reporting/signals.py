@@ -280,6 +280,13 @@ def build_signals(
     else:
         weights_st = pd.Series(1.0 / max(len(top_st), 1), index=top_st.index)
 
+    # Floor: cada posición CP recibe al menos 30% del sleeve para evitar "token positions"
+    # donde el segundo slot recibe $200 mientras el primero recibe $1100.
+    if len(weights_st) >= 2:
+        _MIN_W = 0.30
+        weights_st = weights_st.clip(lower=_MIN_W)
+        weights_st = weights_st / weights_st.sum()
+
     for ticker, row in top_st.iterrows():
         sig.short_term.append(_make_signal(
             ticker=ticker, horizon="CP",

@@ -333,6 +333,34 @@ def _check_scalein_momentum(ticker: str) -> bool:
         return True  # fail open
 
 
+# PDT guard: Alpaca código 40310100 bloquea el cierre de posiciones equity abiertas
+# el mismo día en cuentas < $25k. Registrar el bloqueo para evitar reintentos cada
+# 30 min que drenan tokens de Claude y generan órdenes fallidas repetidas.
+_PDT_BLOCK_FILE = BASE_DIR / "signals" / "pdt_blocks.json"
+
+
+def _is_pdt_blocked(ticker: str) -> bool:
+    """True si este ticker ya recibió un error PDT hoy — no reintentar hasta mañana."""
+    from datetime import date
+    try:
+        data = json.loads(_PDT_BLOCK_FILE.read_text()) if _PDT_BLOCK_FILE.exists() else {}
+        return data.get(ticker) == str(date.today())
+    except Exception:
+        return False
+
+
+def _register_pdt_block(ticker: str) -> None:
+    """Registra el bloqueo PDT de hoy para que los próximos ciclos lo salten."""
+    from datetime import date
+    try:
+        data = json.loads(_PDT_BLOCK_FILE.read_text()) if _PDT_BLOCK_FILE.exists() else {}
+        data[ticker] = str(date.today())
+        _PDT_BLOCK_FILE.write_text(json.dumps(data, indent=2))
+        logger.info("PDT block registrado para %s — se cerrará mañana", ticker)
+    except Exception:
+        pass
+
+
 def _build_eod_summary(broker, positions: list, equity: float, capital_base: float) -> str:
     """
     Resumen diario del portfolio enviado al último run del monitor (16:35 ART).
@@ -708,6 +736,15 @@ def main():
                 and (current - stop_loss) / stop_loss < 0.015
             )
 
+            # PDT guard: si el ticker está bloqueado hoy, no intentar cerrar ni llamar a Claude
+            if action in ("CLOSE", "REDUCE") and _is_pdt_blocked(ticker):
+                logger.info("PDT block activo para %s — saltando cierre hasta mañana", ticker)
+                alerts.append(
+                    f"  🔒 *{ticker}*: PDT protection activa — posición abierta hoy, "
+                    f"se cerrará mañana (P&L actual ${unrealized_pnl:+.2f})"
+                )
+                action = None
+
             if (action == "CLOSE" or near_stop) and not claude_override and not is_cp_expire:
                 # Si Claude ya vetó este ticker recientemente, no consultar de nuevo:
                 # ejecutar directamente para no quedar en loop de vetos cada 15 min.
@@ -842,8 +879,15 @@ def main():
                             )
                             alerts.append(_rotation_alert)
                     except Exception as e:
+                        err_str = str(e)
                         alerts.append(f"  ❌ Error cerrando {ticker}: {e}")
                         logger.error("Error cerrando %s: %s", ticker, e)
+                        if "40310100" in err_str or "pattern day" in err_str.lower():
+                            _register_pdt_block(ticker)
+                            alerts.append(
+                                f"  🔒 PDT protection — {ticker} abierta hoy, "
+                                f"se cerrará en el próximo ciclo mañana"
+                            )
                 else:
                     alerts.append("  _(dry-run: orden no enviada)_")
 

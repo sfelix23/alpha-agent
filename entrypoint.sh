@@ -26,13 +26,14 @@ _push_results() {
   cp /app/signals/latest.json          _push/signals/ 2>/dev/null || true
   cp /app/signals/trades.db            _push/signals/ 2>/dev/null || true
   cp /app/signals/allocation.json      _push/signals/ 2>/dev/null || true
-  cp /app/signals/equity_snapshots.json _push/signals/ 2>/dev/null || true
-  cp /app/docs/index.html              _push/docs/    2>/dev/null || true
+  cp /app/signals/equity_snapshots.json  _push/signals/ 2>/dev/null || true
+  cp /app/signals/workflow_status.json   _push/signals/ 2>/dev/null || true
+  cp /app/docs/index.html               _push/docs/    2>/dev/null || true
   cd _push
   git config user.name  "alpha-bot"
   git config user.email "alpha-bot@users.noreply.github.com"
   git add signals/ docs/ 2>/dev/null || true
-  git diff --staged --quiet || git commit -m "chore: daily $(date -u +%Y-%m-%dT%H:%M) [skip ci]"
+  git diff --staged --quiet || git commit -m "chore: ${TASK:-run} $(date -u +%Y-%m-%dT%H:%M) [skip ci]"
   git push 2>/dev/null || true
   cd /app
 }
@@ -47,6 +48,8 @@ case "$TASK" in
     ;;
   monitor)
     python run_monitor.py --live
+    python run_dashboard.py --no-open || true
+    _push_results
     ;;
   weekly)
     python run_rebalancer.py --live
