@@ -280,13 +280,6 @@ def build_signals(
     else:
         weights_st = pd.Series(1.0 / max(len(top_st), 1), index=top_st.index)
 
-    # Floor: cada posición CP recibe al menos 30% del sleeve para evitar "token positions"
-    # donde el segundo slot recibe $200 mientras el primero recibe $1100.
-    if len(weights_st) >= 2:
-        _MIN_W = 0.30
-        weights_st = weights_st.clip(lower=_MIN_W)
-        weights_st = weights_st / weights_st.sum()
-
     for ticker, row in top_st.iterrows():
         sig.short_term.append(_make_signal(
             ticker=ticker, horizon="CP",
@@ -297,8 +290,18 @@ def build_signals(
             capital=cap,
         ))
 
-    # Ajuste por convicción CP
+    # Ajuste por convicción CP (antes del floor para no perder la calibración)
     sig.short_term = _apply_conviction_weights(sig.short_term)
+
+    # Floor DESPUÉS del conviction reweighting: cada posición CP recibe al menos 30%
+    # del sleeve. Aplicarlo aquí garantiza que el floor no sea violado por _apply_conviction_weights.
+    if len(sig.short_term) >= 2:
+        _MIN_W = 0.30
+        ws = [s.weight_target for s in sig.short_term]
+        ws = [max(w, _MIN_W) for w in ws]
+        _total = sum(ws) or 1.0
+        for s, w in zip(sig.short_term, ws):
+            s.weight_target = round(w / _total, 4)
 
     return sig
 

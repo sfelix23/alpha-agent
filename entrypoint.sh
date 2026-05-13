@@ -17,25 +17,27 @@ set -e
 echo "=== TASK=$TASK | $(date) ==="
 
 _push_results() {
-  # Clona el repo en /tmp, copia los resultados y pushea
+  # Clona el repo en /tmp, copia los resultados y pushea.
+  # Usa directorio único por TASK+PID para evitar race condition entre daily y monitor.
   [ -z "$GH_TOKEN" ] && return 0
   local REPO_URL="https://alpha-bot:${GH_TOKEN}@github.com/sfelix23/alpha-agent.git"
-  cd /tmp
-  rm -rf _push
-  git clone --depth=1 "$REPO_URL" _push 2>/dev/null || { echo "git clone failed, skip push"; cd /app; return 0; }
-  cp /app/signals/latest.json          _push/signals/ 2>/dev/null || true
-  cp /app/signals/trades.db            _push/signals/ 2>/dev/null || true
-  cp /app/signals/allocation.json      _push/signals/ 2>/dev/null || true
-  cp /app/signals/equity_snapshots.json  _push/signals/ 2>/dev/null || true
-  cp /app/signals/workflow_status.json   _push/signals/ 2>/dev/null || true
-  cp /app/docs/index.html               _push/docs/    2>/dev/null || true
-  cd _push
+  local PUSH_DIR="/tmp/_push_${TASK:-run}_$$"
+  rm -rf "$PUSH_DIR"
+  git clone --depth=1 "$REPO_URL" "$PUSH_DIR" 2>/dev/null || { echo "git clone failed, skip push"; return 0; }
+  cp /app/signals/latest.json           "$PUSH_DIR/signals/" 2>/dev/null || true
+  cp /app/signals/trades.db             "$PUSH_DIR/signals/" 2>/dev/null || true
+  cp /app/signals/allocation.json       "$PUSH_DIR/signals/" 2>/dev/null || true
+  cp /app/signals/equity_snapshots.json "$PUSH_DIR/signals/" 2>/dev/null || true
+  cp /app/signals/workflow_status.json  "$PUSH_DIR/signals/" 2>/dev/null || true
+  cp /app/docs/index.html               "$PUSH_DIR/docs/"    2>/dev/null || true
+  cd "$PUSH_DIR"
   git config user.name  "alpha-bot"
   git config user.email "alpha-bot@users.noreply.github.com"
   git add signals/ docs/ 2>/dev/null || true
   git diff --staged --quiet || git commit -m "chore: ${TASK:-run} $(date -u +%Y-%m-%dT%H:%M) [skip ci]"
   git push 2>/dev/null || true
   cd /app
+  rm -rf "$PUSH_DIR"
 }
 
 case "$TASK" in
@@ -47,7 +49,7 @@ case "$TASK" in
     _push_results
     ;;
   monitor)
-    python run_monitor.py --live
+    python run_monitor.py --live || true   # no abortar el push si el monitor falla
     python run_dashboard.py --no-open || true
     _push_results
     ;;

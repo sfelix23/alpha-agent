@@ -5,6 +5,12 @@
       "portfolio_pct": -1.28,
       "spy_pct": null,
       "alpha_pct": null
+    },
+    {
+      "date": "2026-05-08",
+      "portfolio_pct": 0.94,
+      "spy_pct": 2.67,
+      "alpha_pct": -1.73
     }
   ]
 }

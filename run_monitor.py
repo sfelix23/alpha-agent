@@ -350,11 +350,14 @@ def _is_pdt_blocked(ticker: str) -> bool:
 
 
 def _register_pdt_block(ticker: str) -> None:
-    """Registra el bloqueo PDT de hoy para que los próximos ciclos lo salten."""
+    """Registra el bloqueo PDT de hoy. Purga entradas de días anteriores para evitar acumulación."""
     from datetime import date
     try:
+        today_str = str(date.today())
         data = json.loads(_PDT_BLOCK_FILE.read_text()) if _PDT_BLOCK_FILE.exists() else {}
-        data[ticker] = str(date.today())
+        # Mantener solo los bloqueos de hoy — los de días anteriores no aplican
+        data = {k: v for k, v in data.items() if v == today_str}
+        data[ticker] = today_str
         _PDT_BLOCK_FILE.write_text(json.dumps(data, indent=2))
         logger.info("PDT block registrado para %s — se cerrará mañana", ticker)
     except Exception:
@@ -650,10 +653,20 @@ def main():
             horizon = (signal.get("horizon") or "").upper()
             if horizon in ("CP", "MIX"):
                 entry_date_str = _get_cp_entry_date(ticker)
+                if not entry_date_str:
+                    # Fallback: intentar fecha de apertura del broker (Alpaca position.created_at)
+                    try:
+                        _ap = broker._trading.get_open_position(ticker)
+                        _ca = getattr(_ap, "created_at", None) or getattr(_ap, "asset_change_at", None)
+                        if _ca:
+                            entry_date_str = str(_ca)[:10]
+                            logger.debug("CP %s: usando created_at del broker como fecha de entrada (%s)", ticker, entry_date_str)
+                    except Exception:
+                        pass
                 if entry_date_str:
                     try:
                         from datetime import date as _date
-                        entry_date = _date.fromisoformat(entry_date_str)
+                        entry_date = _date.fromisoformat(entry_date_str[:10])
                         held_days  = (_date.today() - entry_date).days
                         if held_days >= cp_max_hold_days:
                             action = "CLOSE"
@@ -668,6 +681,8 @@ def main():
                             )
                     except Exception:
                         pass
+                else:
+                    logger.warning("CP %s: sin fecha de entrada en trade_db ni broker — max hold no verificado", ticker)
 
             # Check stop loss
             stop_loss_hit = bool(stop_loss and current <= stop_loss)

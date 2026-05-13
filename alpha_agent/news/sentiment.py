@@ -142,11 +142,8 @@ def _score_with_gemini(headlines: list[Headline]) -> list[int] | None:
 # ── API pública ───────────────────────────────────────────────────────────────
 
 def _best_scores(headlines: list[Headline]) -> tuple[list[int], str]:
-    """Try Claude → Gemini → keywords. Returns (scores, method_name)."""
-    result = _score_with_claude(headlines)
-    if result is not None and len(result) == len(headlines):
-        return result, "claude"
-
+    """Try Gemini → keywords (Claude removed to eliminate API cost for sentiment scoring).
+    Gemini Flash free tier is equivalent quality for headline classification."""
     result = _score_with_gemini(headlines)
     if result is not None and len(result) == len(headlines):
         return result, "gemini"

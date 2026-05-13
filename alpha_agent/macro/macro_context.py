@@ -87,29 +87,53 @@ def fetch_macro_snapshot() -> MacroSnapshot:
         snapshot.changes_1m[name] = round(last / month_ago - 1, 4)
 
     # 2) Régimen de mercado basado en SPY
+    # Nota: si los datos son de más de 3 días (fin de semana/feriado), usamos el régimen
+    # del último signals/latest.json para evitar cálculos erróneos con datos stale.
     try:
         spy_raw = yf.download("SPY", period="2y", interval="1d", auto_adjust=True, progress=False)
         if spy_raw is not None and not spy_raw.empty:
             if isinstance(spy_raw.columns, pd.MultiIndex):
                 spy_raw.columns = spy_raw.columns.get_level_values(0)
             spy = spy_raw["Close"].dropna()
-            sma200 = spy.rolling(200).mean()
-            last_spy = float(spy.iloc[-1])
-            last_sma = float(sma200.iloc[-1]) if not sma200.empty else float("nan")
-            slope_30d = float(sma200.iloc[-1] / sma200.iloc[-31] - 1) if len(sma200.dropna()) >= 31 else 0.0
 
-            dist = (last_spy / last_sma - 1) if last_sma and last_sma > 0 else 0.0
-            snapshot.spy_vs_sma200 = round(dist, 4)
-
-            if dist > 0.02 and slope_30d > 0:
-                snapshot.regime = "bull"
-                snapshot.regime_reason = f"SPY {dist*100:+.1f}% sobre SMA200 con pendiente positiva"
-            elif dist < -0.02 and slope_30d < 0:
-                snapshot.regime = "bear"
-                snapshot.regime_reason = f"SPY {dist*100:+.1f}% bajo SMA200 con pendiente negativa"
+            # Verificar frescura: el último dato no debe ser de más de 3 días atrás
+            last_data_date = spy.index[-1]
+            days_stale = (pd.Timestamp.now(tz=None) - last_data_date.tz_localize(None)).days
+            if days_stale > 3:
+                logger.warning(
+                    "SPY data stale (%s, %dd atrás) — usando régimen cacheado del último run",
+                    str(last_data_date)[:10], days_stale,
+                )
+                # Intentar leer régimen del último signals/latest.json
+                try:
+                    import json as _json
+                    _sig_path = PATHS.signals_dir / "latest.json"
+                    if _sig_path.exists():
+                        _sig = _json.loads(_sig_path.read_text(encoding="utf-8"))
+                        _cached_regime = _sig.get("macro", {}).get("regime", "")
+                        if _cached_regime:
+                            snapshot.regime = _cached_regime
+                            snapshot.regime_reason = f"Régimen cacheado ({str(last_data_date)[:10]})"
+                except Exception:
+                    pass
             else:
-                snapshot.regime = "sideways"
-                snapshot.regime_reason = f"SPY {dist*100:+.1f}% de la SMA200, pendiente {slope_30d*100:+.1f}%"
+                sma200 = spy.rolling(200).mean()
+                last_spy = float(spy.iloc[-1])
+                last_sma = float(sma200.iloc[-1]) if not sma200.empty else float("nan")
+                slope_30d = float(sma200.iloc[-1] / sma200.iloc[-31] - 1) if len(sma200.dropna()) >= 31 else 0.0
+
+                dist = (last_spy / last_sma - 1) if last_sma and last_sma > 0 else 0.0
+                snapshot.spy_vs_sma200 = round(dist, 4)
+
+                if dist > 0.02 and slope_30d > 0:
+                    snapshot.regime = "bull"
+                    snapshot.regime_reason = f"SPY {dist*100:+.1f}% sobre SMA200 con pendiente positiva"
+                elif dist < -0.02 and slope_30d < 0:
+                    snapshot.regime = "bear"
+                    snapshot.regime_reason = f"SPY {dist*100:+.1f}% bajo SMA200 con pendiente negativa"
+                else:
+                    snapshot.regime = "sideways"
+                    snapshot.regime_reason = f"SPY {dist*100:+.1f}% de la SMA200, pendiente {slope_30d*100:+.1f}%"
     except Exception as e:
         logger.debug("Régimen fallback: %s", e)
 

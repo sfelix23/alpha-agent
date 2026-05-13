@@ -61,10 +61,6 @@ def assess_position(
     Only called when a position is within 1.5% of its stop — so the cost
     is essentially zero on normal days.
     """
-    client = _client()
-    if client is None:
-        return None
-
     news_block = (
         "\n".join(f"- {h}" for h in news_headlines[:6])
         if news_headlines
@@ -95,13 +91,7 @@ Rules:
 Respond with JSON only, no prose:
 {{"action": "CLOSE"|"HOLD"|"REDUCE", "confidence": 0.0-1.0, "reason": "≤15 words"}}"""
 
-    try:
-        msg = client.messages.create(
-            model=_MODEL,
-            max_tokens=80,
-            messages=[{"role": "user", "content": prompt}],
-        )
-        text = msg.content[0].text.strip()
+    def _parse_result(text: str) -> dict | None:
         match = re.search(r"\{.*?\}", text, re.DOTALL)
         if not match:
             return None
@@ -114,9 +104,39 @@ Respond with JSON only, no prose:
             "confidence": float(result.get("confidence", 0.5)),
             "reason": str(result.get("reason", "")),
         }
-    except Exception as exc:
-        logger.debug("Claude position assess failed (%s)", exc)
-        return None
+
+    # ── Intentar Gemini Flash primero (costo ~$0 en free tier) ────────────────
+    google_key = os.getenv("GOOGLE_API_KEY")
+    if google_key:
+        try:
+            import google.generativeai as genai
+            genai.configure(api_key=google_key)
+            model = genai.GenerativeModel("gemini-2.0-flash-exp")
+            resp = model.generate_content(prompt)
+            parsed = _parse_result(resp.text.strip())
+            if parsed:
+                logger.debug("Gemini assess %s → %s (conf=%.0f%%)", ticker, parsed["action"], parsed["confidence"] * 100)
+                return parsed
+        except Exception as exc:
+            logger.debug("Gemini position assess failed (%s) — trying Claude", exc)
+
+    # ── Fallback: Claude Haiku si Gemini falla ────────────────────────────────
+    client = _client()
+    if client is not None:
+        try:
+            msg = client.messages.create(
+                model=_MODEL,
+                max_tokens=80,
+                messages=[{"role": "user", "content": prompt}],
+            )
+            parsed = _parse_result(msg.content[0].text.strip())
+            if parsed:
+                logger.debug("Claude assess %s → %s", ticker, parsed["action"])
+                return parsed
+        except Exception as exc:
+            logger.debug("Claude position assess failed (%s)", exc)
+
+    return None
 
 
 # ── 2. Market Context Narrative ───────────────────────────────────────────────

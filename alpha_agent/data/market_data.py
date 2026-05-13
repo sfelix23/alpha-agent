@@ -82,7 +82,17 @@ def _download_close(tickers: list[str], label: str) -> pd.DataFrame:
         close = raw[["Close"]].rename(columns={"Close": tickers[0]})
 
     close = close.dropna(how="all")
-    close.to_pickle(cache)
+    # Guardar cache solo si la cobertura es suficiente — evitar cachear datos parciales
+    # (yfinance puede retornar menos tickers si algunos fallan temporalmente)
+    expected_n = len(tickers)
+    actual_n = close.shape[1]
+    if actual_n < max(1, expected_n * 0.75):
+        logger.warning(
+            "Cache skip: solo %d/%d tickers descargados (<75%%) — datos parciales, no cachear",
+            actual_n, expected_n,
+        )
+    else:
+        close.to_pickle(cache)
     logger.info("Guardado en cache: %s (%d filas, %d activos válidos)", cache.name, len(close), close.shape[1])
     return close
 
