@@ -224,6 +224,24 @@ def _is_in_veto_cooldown(ticker: str) -> bool:
         return False
 
 
+def _is_post_veto_today(ticker: str) -> bool:
+    """True si ya se vetó este ticker hoy pero el cooldown expiró.
+    Permite un solo veto por posición por día — después ejecuta directamente
+    sin re-consultar Claude, evitando el loop veto → 3h → veto → 3h."""
+    try:
+        if not _VETO_CACHE_PATH.exists():
+            return False
+        cache = json.loads(_VETO_CACHE_PATH.read_text(encoding="utf-8"))
+        entry = cache.get(ticker)
+        if not entry:
+            return False
+        until = datetime.fromisoformat(entry["until"])
+        # Cooldown ya expiró Y fue registrado hoy
+        return datetime.now() >= until and until.date() == datetime.now().date()
+    except Exception:
+        return False
+
+
 def _register_veto(ticker: str, reason: str) -> None:
     """Registra un veto de Claude con expiry de VETO_COOLDOWN_HOURS horas."""
     from datetime import timedelta
@@ -512,12 +530,21 @@ def main():
         if args.live and not args.dry_run:
             logger.warning("Cerrando TODAS las posiciones...")
             try:
+                # close_all_positions cierra equity + opciones en Alpaca REST API
                 broker._trading.close_all_positions(cancel_orders=True)
                 closes.append("ALL (kill switch)")
-                alerts.append("✅ Todas las posiciones cerradas.")
+                alerts.append("✅ Todas las posiciones cerradas (equity + opciones).")
             except Exception as e:
-                alerts.append(f"❌ Error cerrando posiciones: {e}")
+                alerts.append(f"❌ Error en close_all_positions: {e}")
                 logger.error("Error en kill switch: %s", e)
+                # Fallback: intentar cerrar posición a posición si el bulk falla
+                logger.warning("Fallback: cerrando posiciones individualmente...")
+                for _ks_pos in positions:
+                    try:
+                        broker._trading.close_position(_ks_pos.ticker, cancel_orders=True)
+                        logger.info("Kill switch: %s cerrado OK", _ks_pos.ticker)
+                    except Exception as _ks_e:
+                        logger.error("Kill switch fallback %s: %s", _ks_pos.ticker, _ks_e)
         else:
             alerts.append("_(dry-run: no se cerraron posiciones)_")
 
@@ -761,11 +788,16 @@ def main():
                 action = None
 
             if (action == "CLOSE" or near_stop) and not claude_override and not is_cp_expire:
-                # Si Claude ya vetó este ticker recientemente, no consultar de nuevo:
-                # ejecutar directamente para no quedar en loop de vetos cada 15 min.
+                # Cooldown activo: el veto sigue vigente → ejecutar sin re-consultar.
+                # Post-veto (cooldown expirado pero fue hoy): un veto por día por posición
+                # → ejecutar directamente para cortar el loop veto→3h→veto→3h.
                 if _is_in_veto_cooldown(ticker):
                     logger.info(
                         "🤖 %s en cooldown de veto Claude — ejecutando sin consulta", ticker
+                    )
+                elif _is_post_veto_today(ticker):
+                    logger.info(
+                        "🤖 %s ya vetado hoy — ejecutando directamente (1 veto/día por posición)", ticker
                     )
                 else:
                     news_for_ticker: list[str] = []
