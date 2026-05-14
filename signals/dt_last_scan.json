@@ -1,0 +1,11 @@
+{
+  "ts": "2026-05-14T16:20:46.711818+00:00",
+  "direction": "NONE",
+  "candidates_found": 0,
+  "best_ticker": "",
+  "best_score": 0.0,
+  "reason": "Sin candidatos sobre umbral de score",
+  "traded": false,
+  "traded_ticker": "",
+  "notional": 0.0
+}
