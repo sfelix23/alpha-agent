@@ -2,8 +2,8 @@ name: "Alpha Monitor"
 # Vigila stops/TPs cada 30 min durante horario de mercado.
 
 on:
-  schedule:
-    - cron: "5,35 14-19 * * 1-5"   # 11:05-16:35 ART, lun-vie
+  # Cron deshabilitado — la ejecución real corre en Google Cloud Run Jobs (alpha-monitor).
+  # Este workflow queda como backup manual desde la UI de Actions.
   workflow_dispatch: {}
 
 env:

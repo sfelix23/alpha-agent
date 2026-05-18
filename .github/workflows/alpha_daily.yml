@@ -3,8 +3,8 @@ name: "Alpha Daily"
 # Disparo manual: Actions → Alpha Daily → Run workflow.
 
 on:
-  schedule:
-    - cron: "40 13 * * 1-5"   # 10:40 ART (UTC-3), lun-vie
+  # Cron deshabilitado — la ejecución real corre en Google Cloud Run Jobs (alpha-daily).
+  # Este workflow queda como backup manual desde la UI de Actions.
   workflow_dispatch:
     inputs:
       force:
