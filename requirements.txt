@@ -6,8 +6,12 @@ scipy>=1.11
 python-dotenv>=1.0
 google-genai>=0.8
 anthropic>=0.44
+groq>=0.11
+openai>=1.50
 twilio>=9.0
 alpaca-py>=0.20
 feedparser>=6.0
 requests>=2.31
+filelock>=3.13
 lxml
+pytest>=7.4
