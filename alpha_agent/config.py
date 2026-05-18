@@ -327,11 +327,113 @@ NEGATIVE_KEYWORDS: set[str] = {
 # ────────────────────────────────────────────────────────────────────────────
 # IA / NOTIFICACIONES
 # ────────────────────────────────────────────────────────────────────────────
-# AI Ensemble — cada modelo para lo que hace mejor:
-#   Haiku:  decisiones en tiempo real, clasificaciones rápidas ($0.25/M)
-#   Sonnet: análisis profundo, SEC filings, tesis de inversión ($3/M)
-#   Gemini: sentiment masivo, scan de 51 tickers, macro context (gratis/barato)
+# AI Ensemble multi-provider — gestionado por alpha_agent/llm/gateway.py
+#
+# Política Anthropic: default OFF para evitar abuse-flag por uso sin créditos.
+# El sistema funciona con Groq/Gemini/DeepSeek/OpenRouter (todos free tier).
+# Activar Anthropic sólo cuando haya créditos cargados.
 GEMINI_MODEL: str = "models/gemini-2.0-flash"
 CLAUDE_MODEL: str = "claude-haiku-4-5-20251001"        # fast + cheap — risk debate, monitor
 CLAUDE_MODEL_DEEP: str = "claude-sonnet-4-6"           # deep analysis — Wall St thesis, SEC
 WHATSAPP_FROM: str = "whatsapp:+14155238886"  # Twilio sandbox
+
+
+# ────────────────────────────────────────────────────────────────────────────
+# LLM GATEWAY — multi-provider con budget + cache + fallback
+# ────────────────────────────────────────────────────────────────────────────
+@dataclass
+class LLMConfig:
+    """Configuración del gateway LLM multi-provider.
+
+    Cascada por defecto: Groq → Gemini → DeepSeek → OpenRouter → heurística.
+    Anthropic queda detrás de un flag manual (default OFF) y se enciende sólo
+    cuando hay créditos cargados en la cuenta para evitar abuse-flag.
+
+    NO frozen: el bot Telegram cambia `enable_anthropic`/`enable_sonnet` en
+    runtime via comandos /anthropic_on /anthropic_off.
+    """
+
+    # ── Kill switches y budget ──────────────────────────────────────────────
+    enable_anthropic: bool = False               # default OFF — encender manual cuando haya créditos
+    enable_sonnet: bool = False                  # Sonnet 4.6 detrás de flag separado (más caro)
+    daily_anthropic_budget_usd: float = 0.10     # límite duro Anthropic/día
+    daily_total_budget_usd: float = 0.50         # límite duro suma de todos los providers/día
+
+    # ── Rate limits locales (requests/min por provider) ────────────────────
+    rate_limit_anthropic_per_min: int = 5
+    rate_limit_groq_per_min: int = 30
+    rate_limit_gemini_per_min: int = 60
+    rate_limit_deepseek_per_min: int = 20
+    rate_limit_openrouter_per_min: int = 20
+
+    # ── TTL del cache por purpose (horas) ──────────────────────────────────
+    cache_ttl_sentiment_h: float = 24.0
+    cache_ttl_event_score_h: float = 12.0
+    cache_ttl_assess_position_h: float = 0.5
+    cache_ttl_narrative_h: float = 4.0
+    cache_ttl_wall_street_h: float = 12.0
+    cache_ttl_risk_debate_h: float = 6.0
+
+    # ── Modelos por provider ───────────────────────────────────────────────
+    anthropic_fast_model: str = "claude-haiku-4-5-20251001"
+    anthropic_deep_model: str = "claude-sonnet-4-6"
+    groq_fast_model: str = "llama-3.3-70b-versatile"
+    groq_reasoning_model: str = "deepseek-r1-distill-llama-70b"
+    gemini_model: str = "gemini-2.0-flash"
+    deepseek_chat_model: str = "deepseek-chat"
+    deepseek_reasoning_model: str = "deepseek-reasoner"
+    openrouter_fast_model: str = "meta-llama/llama-3.3-70b-instruct:free"
+    openrouter_reasoning_model: str = "qwen/qwen-2.5-72b-instruct:free"
+
+    # ── Backoff ────────────────────────────────────────────────────────────
+    retry_max_attempts: int = 2                  # tras la 1ª falla, hasta 2 retries
+    retry_backoff_seconds: tuple[float, ...] = (5.0, 20.0)
+    disable_provider_on_4xx_hours: float = 24.0  # 400/401/403 desactiva 24h sin retry
+
+    # ── Costos estimados (USD por 1M tokens, ballpark) ─────────────────────
+    # Sólo se usa para budget tracking. Inputs y outputs se promedian para simplificar.
+    cost_per_mtok_anthropic_haiku: float = 1.0   # avg input+output haiku-4.5
+    cost_per_mtok_anthropic_sonnet: float = 6.0  # avg input+output sonnet-4.6
+    cost_per_mtok_groq: float = 0.0              # free tier
+    cost_per_mtok_gemini: float = 0.0            # free tier
+    cost_per_mtok_deepseek: float = 0.0          # free tier hasta cuota
+    cost_per_mtok_openrouter: float = 0.0        # modelos :free
+
+
+LLM = LLMConfig()
+
+
+# Cascada preferida por purpose: el gateway intenta en este orden.
+# Cada elemento es ("provider_id", "model_alias"). El gateway resuelve el alias
+# contra LLMConfig (ej: "fast" → groq_fast_model).
+LLM_CASCADE_BY_PURPOSE: dict[str, list[tuple[str, str]]] = {
+    "sentiment": [
+        ("groq", "fast"),
+        ("gemini", "default"),
+        # keywords es el fallback final, gestionado en sentiment.py
+    ],
+    "event_score": [
+        ("groq", "fast"),
+        ("gemini", "default"),
+    ],
+    "assess_position": [
+        ("groq", "fast"),
+        ("gemini", "default"),
+        ("anthropic", "fast"),  # sólo si enable_anthropic=True
+    ],
+    "narrative": [
+        ("groq", "fast"),
+        ("gemini", "default"),
+    ],
+    "wall_street": [
+        ("groq", "reasoning"),
+        ("deepseek", "reasoning"),
+        ("openrouter", "reasoning"),
+        ("anthropic", "deep"),  # sólo si enable_anthropic=True y enable_sonnet=True
+    ],
+    "risk_debate": [
+        ("groq", "reasoning"),
+        ("gemini", "default"),
+        ("anthropic", "fast"),  # sólo si enable_anthropic=True
+    ],
+}
