@@ -1,40 +1,36 @@
-"""Fixtures compartidos para los tests."""
+"""Fixtures compartidos — redirigen los JSONs/SQLites del LLM a tmp_path."""
 
 from __future__ import annotations
 
+from types import SimpleNamespace
+
 import pytest
 
-from alpha_agent.llm import budget, cache, rate_limit
+from alpha_agent.news import claude_analyst as ca
 
 
 @pytest.fixture(autouse=True)
 def isolated_llm_state(tmp_path, monkeypatch):
-    """Redirige budget, cache y state JSONs a tmp_path para cada test.
-
-    Sin esto los tests pisan el `signals/llm_budget.json` real del repo.
-    """
+    """Redirige budget, cache, state a tmp_path para cada test."""
     signals_dir = tmp_path / "signals"
     logs_dir = tmp_path / "logs"
     signals_dir.mkdir()
     logs_dir.mkdir()
 
-    monkeypatch.setattr(budget, "_BUDGET_PATH", signals_dir / "llm_budget.json")
-    monkeypatch.setattr(budget, "_STATE_PATH", signals_dir / "llm_provider_state.json")
-    monkeypatch.setattr(cache, "_DB_PATH", signals_dir / "llm_cache.sqlite")
-    monkeypatch.setattr(cache, "_initialized", False)
+    monkeypatch.setattr(ca, "_BUDGET_PATH", signals_dir / "llm_budget.json")
+    monkeypatch.setattr(ca, "_STATE_PATH", signals_dir / "llm_provider_state.json")
+    monkeypatch.setattr(ca, "_CACHE_DB_PATH", signals_dir / "llm_cache.sqlite")
+    monkeypatch.setattr(ca, "_cache_initialized", False)
 
-    # PATHS es un dataclass frozen — reemplazamos con un stub para los módulos
-    # que lo usan (budget.py archiva en PATHS.logs_dir).
-    from types import SimpleNamespace
-    cache_dir_test = tmp_path / "cache"
-    cache_dir_test.mkdir(parents=True, exist_ok=True)
+    # PATHS frozen — stub para budget archive.
     stub = SimpleNamespace(
         logs_dir=logs_dir,
         signals_dir=signals_dir,
-        cache_dir=cache_dir_test,
+        cache_dir=tmp_path / "cache",
     )
-    monkeypatch.setattr("alpha_agent.llm.budget.PATHS", stub)
+    stub.cache_dir.mkdir(parents=True, exist_ok=True)
+    monkeypatch.setattr(ca, "PATHS", stub)
 
-    rate_limit.reset()
+    ca.rate_reset()
     yield
-    rate_limit.reset()
+    ca.rate_reset()

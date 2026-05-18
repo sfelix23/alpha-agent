@@ -1,23 +1,22 @@
-"""
-Sentiment scoring — tres capas en cascada:
+"""Sentiment scoring de headlines financieros.
 
-  1. Claude claude-haiku-4-5  (primario — si ANTHROPIC_API_KEY está disponible)
-  2. Gemini Flash       (secundario — si GOOGLE_API_KEY está disponible)
-  3. Keywords           (fallback siempre disponible)
+Dos capas:
+  1. LLM via claude_analyst.call_llm (cascada Groq → Gemini → fallback)
+  2. Keywords (fallback determinista, siempre disponible)
 
-Claude da mejor comprensión contextual de noticias financieras y soporta
-sarcasmo, dobles negaciones y jerga de mercado mejor que keywords simples.
+El LLM gateway maneja toda la complejidad de provider selection, cache y
+budget. Este archivo sólo arma el prompt batched y parsea la respuesta.
 """
 
 from __future__ import annotations
 
 import json
 import logging
-import os
 import re
 from dataclasses import dataclass
 
-from alpha_agent.config import GEMINI_MODEL, NEGATIVE_KEYWORDS, POSITIVE_KEYWORDS
+from alpha_agent.config import NEGATIVE_KEYWORDS, POSITIVE_KEYWORDS
+from alpha_agent.news.claude_analyst import call_llm
 from .news_fetcher import Headline
 
 logger = logging.getLogger(__name__)
@@ -31,10 +30,11 @@ class SentimentSummary:
     negative_count: int
     neutral_count: int
     sample_titles: list[str]
-    method: str = "keywords"    # "claude" | "gemini" | "keywords"
+    method: str = "keywords"    # "llm" | "keywords"
 
 
-# ── Keyword fallback ──────────────────────────────────────────────────────────
+# ── Keyword fallback ─────────────────────────────────────────────────────────
+
 
 def _score_one_keyword(text: str) -> int:
     if not text:
@@ -49,105 +49,57 @@ def score_headlines_keywords(headlines: list[Headline]) -> list[int]:
     return [_score_one_keyword(h.title) for h in headlines]
 
 
-# ── Claude claude-haiku-4-5 (primary AI scorer) ─────────────────────────────────────
+# ── LLM batch scoring ────────────────────────────────────────────────────────
 
-_CLAUDE_PROMPT = """\
-You are a financial news sentiment classifier.
-For each headline, return EXACTLY a JSON array of integers: 1 (bullish for the stock price), 0 (neutral), -1 (bearish).
-One integer per headline, same order, nothing else outside the JSON array.
+
+_LLM_PROMPT = """\
+Financial news sentiment classifier. For each headline return ONLY a JSON array
+of integers: 1 (bullish for the stock), 0 (neutral), -1 (bearish).
+Exactly one integer per headline, same order, nothing else outside the array.
 
 Headlines (JSON array of strings):
 {headlines_json}"""
 
-_CLAUDE_MODEL = "claude-haiku-4-5-20251001"
 
-
-def _score_with_claude(headlines: list[Headline]) -> list[int] | None:
-    api_key = os.getenv("ANTHROPIC_API_KEY")
-    if not api_key:
-        return None
+def _score_with_llm(headlines: list[Headline]) -> list[int] | None:
+    """Llama al gateway con purpose='sentiment'. None si todos los providers fallaron."""
     titles = [h.title for h in headlines if h.title]
     if not titles:
         return [0] * len(headlines)
+
+    prompt = _LLM_PROMPT.format(headlines_json=json.dumps(titles))
+    # cache_key_extra incluye el hash de los headlines así que prompts idénticos
+    # comparten cache; pero si cambia un solo headline la key cambia.
+    text = call_llm(prompt, purpose="sentiment", max_tokens=len(titles) * 5 + 20)
+    if not text:
+        return None
+
+    match = re.search(r"\[.*?\]", text, re.DOTALL)
+    if not match:
+        return None
     try:
-        import anthropic
-        client = anthropic.Anthropic(api_key=api_key)
-        msg = client.messages.create(
-            model=_CLAUDE_MODEL,
-            max_tokens=len(titles) * 5 + 20,
-            messages=[{
-                "role": "user",
-                "content": _CLAUDE_PROMPT.format(headlines_json=json.dumps(titles)),
-            }],
-        )
-        text = msg.content[0].text.strip()
-        match = re.search(r"\[.*?\]", text, re.DOTALL)
-        if not match:
-            return None
         parsed = json.loads(match.group())
-        if not isinstance(parsed, list):
-            return None
-        scores = [max(-1, min(1, int(v))) for v in parsed]
-        # Re-align with original list (may have empty titles)
-        result, it = [], iter(scores)
-        for h in headlines:
-            result.append(next(it, 0) if h.title else 0)
-        return result
-    except Exception as exc:
-        logger.debug("Claude sentiment failed (%s) — trying Gemini.", exc)
+    except json.JSONDecodeError:
+        return None
+    if not isinstance(parsed, list):
         return None
 
-
-# ── Gemini Flash (secondary AI scorer) ───────────────────────────────────────
-
-_GEMINI_PROMPT = """\
-Financial news sentiment classifier. For each headline return ONLY a JSON array
-of integers: 1 (positive for the stock), 0 (neutral), -1 (negative).
-Exactly one integer per headline, nothing else.
-
-Headlines:
-{headlines_json}
-"""
+    scores = [max(-1, min(1, int(v))) for v in parsed]
+    # Re-align con la lista original (puede tener entradas con title vacío).
+    result, it = [], iter(scores)
+    for h in headlines:
+        result.append(next(it, 0) if h.title else 0)
+    return result
 
 
-def _score_with_gemini(headlines: list[Headline]) -> list[int] | None:
-    if not os.getenv("GOOGLE_API_KEY"):
-        return None
-    titles = [h.title for h in headlines if h.title]
-    if not titles:
-        return [0] * len(headlines)
-    try:
-        from google import genai
-        client = genai.Client(api_key=os.getenv("GOOGLE_API_KEY"))
-        resp = client.models.generate_content(
-            model=GEMINI_MODEL,
-            contents=_GEMINI_PROMPT.format(headlines_json=json.dumps(titles)),
-        )
-        match = re.search(r"\[.*?\]", resp.text, re.DOTALL)
-        if not match:
-            return None
-        parsed = json.loads(match.group())
-        if not isinstance(parsed, list):
-            return None
-        scores = [max(-1, min(1, int(v))) for v in parsed]
-        result, it = [], iter(scores)
-        for h in headlines:
-            result.append(next(it, 0) if h.title else 0)
-        return result
-    except Exception as exc:
-        logger.debug("Gemini sentiment failed (%s) — fallback keywords.", exc)
-        return None
+# ── API pública ──────────────────────────────────────────────────────────────
 
-
-# ── API pública ───────────────────────────────────────────────────────────────
 
 def _best_scores(headlines: list[Headline]) -> tuple[list[int], str]:
-    """Try Gemini → keywords (Claude removed to eliminate API cost for sentiment scoring).
-    Gemini Flash free tier is equivalent quality for headline classification."""
-    result = _score_with_gemini(headlines)
-    if result is not None and len(result) == len(headlines):
-        return result, "gemini"
-
+    """Intenta LLM primero, cae a keywords si LLM no responde."""
+    llm_scores = _score_with_llm(headlines)
+    if llm_scores is not None and len(llm_scores) == len(headlines):
+        return llm_scores, "llm"
     return score_headlines_keywords(headlines), "keywords"
 
 
