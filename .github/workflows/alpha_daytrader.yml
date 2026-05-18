@@ -3,8 +3,8 @@ name: "Alpha DayTrader"
 # 14:15 UTC = 10:15 EDT = 11:15 ART, lun-vie
 
 on:
-  schedule:
-    - cron: "15 14 * * 1-5"
+  # Cron deshabilitado — la ejecución real corre en Google Cloud Run Jobs.
+  # Este workflow queda como backup manual desde la UI de Actions.
   workflow_dispatch: {}
 
 env:

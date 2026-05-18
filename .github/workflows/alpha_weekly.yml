@@ -2,8 +2,8 @@ name: "Alpha Weekly"
 # Rebalancer semanal — viernes antes del cierre.
 
 on:
-  schedule:
-    - cron: "0 18 * * 5"   # Viernes 15:00 ART
+  # Cron deshabilitado — la ejecución real corre en Google Cloud Run Jobs (alpha-weekly).
+  # Este workflow queda como backup manual desde la UI de Actions.
   workflow_dispatch: {}
 
 env:
