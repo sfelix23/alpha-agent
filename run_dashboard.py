@@ -2704,13 +2704,119 @@ def generate() -> None:
     logger.info("Dashboard generado -> %s (%d bytes)", OUT_PATH, len(html))
 
 
+def _print_health_snapshot() -> int:
+    """Snapshot rápido del sistema en texto plain — para CLI / SSH / Cloud Run check.
+
+    Lee:
+      - signals/workflow_status.json (last runs Cloud Run)
+      - LLM gateway status (calls, costo, providers, cache hit)
+      - trade_db (capital reservations, sharpe rolling 30d, open positions)
+      - signals/equity_snapshots.json (equity actual + retorno desde baseline)
+
+    Returns: 0 si todo OK, 1 si algún componente crítico está caído.
+    """
+    import json
+    from datetime import datetime, timezone
+
+    print(f"\n=== ALPHA HEALTH — {datetime.now().strftime('%Y-%m-%d %H:%M:%S')} ===")
+    exit_code = 0
+
+    # 1. Cloud Run workflow status
+    try:
+        wf_path = BASE_DIR / "signals" / "workflow_status.json"
+        if wf_path.exists():
+            wf = json.loads(wf_path.read_text(encoding="utf-8"))
+            print("\nCloud Run:")
+            for job, info in wf.items():
+                ts = info.get("ts", "n/a")
+                ok = info.get("ok", False)
+                marker = "🟢" if ok else "🔴"
+                if not ok:
+                    exit_code = 1
+                print(f"  {marker} {job}: {ts}  ok={ok}")
+        else:
+            print("\nCloud Run: signals/workflow_status.json no existe")
+    except Exception as e:
+        print(f"\nCloud Run: error leyendo workflow_status ({e})")
+
+    # 2. LLM gateway
+    try:
+        from alpha_agent.news.claude_analyst import get_gateway_status
+        s = get_gateway_status()
+        total_cost = s.get("total_cost_usd", 0.0)
+        total_calls = s.get("total_calls", 0)
+        anth_pct = s.get("anthropic_budget_used_pct", 0)
+        total_pct = s.get("total_budget_used_pct", 0)
+        marker = "🟡" if total_pct > 80 else "🟢"
+        print(f"\nLLM {marker}: {total_calls} calls / ${total_cost:.4f}  "
+              f"(anthropic {anth_pct}%, total {total_pct}% del budget)")
+        for pid, info in s.get("providers", {}).items():
+            calls = info.get("calls", 0)
+            cost = info.get("cost_usd", 0.0)
+            hits = info.get("cache_hits", 0)
+            print(f"  {pid}: {calls} calls (cache hits {hits}), ${cost:.4f}")
+        disabled = s.get("disabled_providers", {})
+        if disabled:
+            print(f"  ⚠️  Disabled: {list(disabled.keys())}")
+    except Exception as e:
+        print(f"\nLLM: error ({e})")
+        exit_code = 1
+
+    # 3. Capital + sleeve performance
+    try:
+        from alpha_agent.analytics.trade_db import get_combined_state
+        st = get_combined_state(brokers=None)
+        res = st.get("capital_reservations", {})
+        sleeves = st.get("by_sleeve", {})
+        summ = st.get("summary", {})
+        print(f"\nCapital reservas: {res if res else '{}'}")
+        print(f"Open positions: {summ.get('open_positions', 'n/a')}, "
+              f"closed trades: {summ.get('closed_trades', 0)}, "
+              f"win rate: {summ.get('win_rate', 'n/a')}")
+        if sleeves:
+            print("Sharpe rolling 30d por sleeve:")
+            for sleeve, stats in sleeves.items():
+                print(f"  {sleeve}: n={stats.get('n_trades', 0)} "
+                      f"sharpe={stats.get('sharpe', 0):+.2f} "
+                      f"avg_pnl={stats.get('avg_pnl', 0):+.2f}% "
+                      f"win_rate={stats.get('win_rate', 0):.0%}")
+    except Exception as e:
+        print(f"\nCapital/sleeves: error ({e})")
+
+    # 4. Equity curve
+    try:
+        eq_path = BASE_DIR / "signals" / "equity_snapshots.json"
+        if eq_path.exists():
+            data = json.loads(eq_path.read_text(encoding="utf-8"))
+            if isinstance(data, list) and data:
+                last = data[-1]
+                current = last.get("equity", last.get("v", 0))
+                baseline = 1600.0
+                pct = (current - baseline) / baseline * 100
+                marker = "🟢" if pct >= 0 else "🔴"
+                print(f"\nEquity {marker}: ${current:,.2f} (baseline ${baseline:.0f}, "
+                      f"{pct:+.1f}% desde inicio, {len(data)} snapshots)")
+    except Exception as e:
+        print(f"\nEquity: error ({e})")
+
+    print()  # newline final
+    return exit_code
+
+
 def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--no-open", action="store_true")
     parser.add_argument("--watch",   action="store_true")
+    parser.add_argument("--health",  action="store_true",
+                        help="Imprime snapshot de salud del sistema (no genera HTML).")
     args = parser.parse_args()
 
     load_dotenv(BASE_DIR / ".env")
+
+    if args.health:
+        import sys as _sys
+        _sys.exit(_print_health_snapshot())
+
     try:
         generate()
     except Exception as exc:

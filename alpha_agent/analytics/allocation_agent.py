@@ -96,6 +96,35 @@ def _get_recent_performance() -> tuple[float | None, float | None]:
         return None, None
 
 
+def _equity_history_recent(n: int = 50) -> list[float]:
+    """Lee los últimos N equity snapshots desde signals/equity_snapshots.json.
+
+    Soporta dos formatos en el JSON: lista de {ts, equity} o {date, v}.
+    Devuelve [] si no hay archivo o hay error — el caller debe asumir "sin historial".
+    """
+    try:
+        import json as _json
+        from pathlib import Path as _Path
+        p = _Path(__file__).resolve().parents[2] / "signals" / "equity_snapshots.json"
+        if not p.exists():
+            return []
+        data = _json.loads(p.read_text(encoding="utf-8"))
+        if not isinstance(data, list):
+            return []
+        out: list[float] = []
+        for entry in data[-n:]:
+            v = entry.get("equity", entry.get("v"))
+            if v is not None:
+                try:
+                    out.append(float(v))
+                except (TypeError, ValueError):
+                    pass
+        return out
+    except Exception as exc:
+        log.debug("_equity_history_recent: %s", exc)
+        return []
+
+
 def decide_allocation(
     regime: str,
     vix: float,
@@ -109,6 +138,67 @@ def decide_allocation(
     el 95% del tiempo pero sin costo de API y sin varianza estocástica.
 
     Principio: capital quieto no rinde. Deployer agresivo con edge, defensivo sin él.
+
+    Iter2: tras computar la decisión base, aplica composite_kelly_multiplier
+    (regime × drawdown_band × equity_curve) para modular CP/OPT. Si la equity
+    curve está en modo DEFENSIVE o el drawdown intradía bajó la banda,
+    achicamos el sleeve operativo en runtime sin tocar la regla base.
     """
     win_rate, recent_pnl = _get_recent_performance()
-    return _rule_default(regime, vix, win_rate, recent_pnl)
+    base = _rule_default(regime, vix, win_rate, recent_pnl)
+
+    # Sleeve modulator basado en equity curve + drawdown intradía.
+    #
+    # IMPORTANTE: NO usamos regime_mult del composite Kelly porque cp_pct ya viene
+    # modulado por régimen en _rule_default (BULL=83-88%, BEAR=45%). Mezclar
+    # otra vez con regime_mult (0.5x) sería doble-modulación y baja el sleeve
+    # excesivamente. Sólo aplicamos drawdown_mult × equity_curve_mult como
+    # "freno" en condiciones adversas; en operación normal el factor queda en 1.0
+    # y la regla base manda.
+    try:
+        from alpha_agent.analytics.kelly import risk_action_for_drawdown, equity_curve_multiplier
+        eq_hist = _equity_history_recent(50)
+        risk = risk_action_for_drawdown(0.0)   # placeholder — intradía lo maneja el monitor
+        ec_mult, ec_regime = equity_curve_multiplier(eq_hist)
+        drawdown_mult = float(risk["kelly_multiplier"])
+        # Cap el equity_curve_mult en 1.0 para no SOBREASIGNAR ("HOT" 1.2x no sube
+        # el sleeve por arriba del cp_pct base — esa decisión es del monitor en runtime).
+        ec_mult_capped = min(1.0, ec_mult)
+        modulator = drawdown_mult * ec_mult_capped
+        new_entries_ok = bool(risk["new_entries_allowed"]) and ec_regime != "DEFENSIVE"
+
+        if not new_entries_ok:
+            log.warning(
+                "Sleeve modulator: new_entries_allowed=False (ec=%s, dd_level=%s) → CP/OPT a 0",
+                ec_regime, risk["level"],
+            )
+            return AllocationDecision(
+                0.0, 0.0, 0.0,
+                max(1, base.n_cp_positions),
+                base.cp_max_hold_days,
+                f"{base.reasoning} | Defensivo por equity curve / drawdown.",
+                level=3,
+            )
+
+        if abs(modulator - 1.0) > 0.01:
+            adjusted_cp = max(0.0, min(1.0, base.cp_pct * modulator))
+            adjusted_opt = max(0.0, min(0.20, base.opt_pct * modulator))
+            log.info(
+                "Sleeve modulator: drawdown_mult=%.2f ec_mult=%.2f (ec=%s) → %.2f | CP %.0f%%→%.0f%% OPT %.0f%%→%.0f%%",
+                drawdown_mult, ec_mult_capped, ec_regime, modulator,
+                base.cp_pct * 100, adjusted_cp * 100,
+                base.opt_pct * 100, adjusted_opt * 100,
+            )
+            return AllocationDecision(
+                base.lp_pct,
+                adjusted_cp,
+                adjusted_opt,
+                base.n_cp_positions,
+                base.cp_max_hold_days,
+                f"{base.reasoning} | Sleeve mod {modulator:.2f} (ec={ec_regime}).",
+                level=base.level,
+            )
+    except Exception as exc:
+        log.debug("sleeve modulator no aplicado (%s) — usando base", exc)
+
+    return base

@@ -46,6 +46,40 @@ class AlpacaBroker(BrokerBase):
         self._secret = secret
         logger.info("Alpaca conectado (paper=%s)", paper)
 
+    def _submit_with_retry(self, req, *, max_attempts: int = 3, base_delay: float = 0.25):
+        """submit_order con retry exponencial en errores transitorios.
+
+        Política:
+          - 4xx (auth, validation, insufficient funds, etc.) → NO retry, levanta.
+          - 5xx / timeouts / network blips → retry hasta max_attempts.
+          - Backoff: 0.25s, 0.55s, 1.15s (con jitter).
+
+        Sin este wrapper, un blip de red en momento de fill = orden perdida
+        y capital sin desplegar (gap real de iter1 → iter2).
+        """
+        import time as _time
+        last_err: Exception | None = None
+        for attempt in range(max_attempts):
+            try:
+                return self._trading.submit_order(req)
+            except Exception as e:
+                last_err = e
+                status = getattr(e, "status_code", None) or getattr(getattr(e, "response", None), "status_code", None)
+                if isinstance(status, int) and 400 <= status < 500:
+                    # Error estructural — no reintentar.
+                    raise
+                if attempt + 1 >= max_attempts:
+                    break
+                delay = base_delay * (2 ** attempt) + (0.05 * attempt)
+                logger.warning(
+                    "submit_order intento %d falló (%s) — retry en %.2fs",
+                    attempt + 1, e, delay,
+                )
+                _time.sleep(delay)
+        # Agotamos retries → re-raise el último error.
+        assert last_err is not None
+        raise last_err
+
     # ──────────────────────────────────────────────────────────────────
     # Account
     # ──────────────────────────────────────────────────────────────────
@@ -107,7 +141,7 @@ class AlpacaBroker(BrokerBase):
         else:
             req = MarketOrderRequest(**common)
 
-        result = self._trading.submit_order(req)
+        result = self._submit_with_retry(req)
         logger.info(
             "Orden equity: %s %s %s → id=%s",
             order.side, order.qty, order.ticker, result.id,
@@ -233,7 +267,7 @@ class AlpacaBroker(BrokerBase):
         else:
             req = MarketOrderRequest(**common)
 
-        result = self._trading.submit_order(req)
+        result = self._submit_with_retry(req)
         logger.info(
             "Orden opción: BUY %d x %s → id=%s",
             order.contracts, symbol, result.id,
@@ -305,7 +339,7 @@ class AlpacaBroker(BrokerBase):
                 time_in_force=tif,
                 stop_price=round(new_stop, 2),
             )
-            result = self._trading.submit_order(req)
+            result = self._submit_with_retry(req)
             logger.info(
                 "Trailing stop actualizado: SELL %s @ stop $%.2f (tif=%s) → id=%s",
                 ticker, new_stop, tif.value, result.id,
