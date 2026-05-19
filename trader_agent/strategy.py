@@ -289,6 +289,29 @@ def execute(broker: BrokerBase, *, dry_run: bool = True, max_capital: float | No
     equity_intents = _apply_risk_debate(signals, equity_intents, positions, capital_adj)
     logger.info("Risk Arbiter: %d órdenes post-filtro", len(equity_intents))
 
+    # ── Earnings guard: no BUY si el ticker tiene earnings ≤3 días ────────────
+    # earnings_guard ya se usaba en scoring (penaliza el score) pero NUNCA se
+    # chequeaba al ejecutar. Resultado: si una señal sobrevive el scoring por
+    # poco, el trader compra el día previo a earnings y se come el gap overnight.
+    try:
+        from alpha_agent.analytics.earnings_guard import get_earnings_soon
+        _buy_tickers = [i.ticker for i in equity_intents if i.side.upper() == "BUY"]
+        if _buy_tickers:
+            _earn = get_earnings_soon(_buy_tickers, days=3)
+            if _earn:
+                _filtered = []
+                for intent in equity_intents:
+                    if intent.side.upper() == "BUY" and intent.ticker in _earn:
+                        logger.warning(
+                            "EARNINGS guard: skip BUY %s — earnings %s (≤3d, gap risk overnight)",
+                            intent.ticker, _earn[intent.ticker],
+                        )
+                        continue
+                    _filtered.append(intent)
+                equity_intents = _filtered
+    except Exception as _eg_err:
+        logger.debug("earnings_guard no disponible (%s) — siguiente sin filtro", _eg_err)
+
     # ── Macro calendar guard: evento mayor mañana → CP al 50% ───────────────────
     try:
         from alpha_agent.macro.event_calendar import get_upcoming_events

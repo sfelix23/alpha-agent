@@ -125,7 +125,7 @@ def _get_premarket_gaps(tickers: list[str]) -> dict[str, float]:
         return {}
 
 
-def _get_quality_bonus(tickers: list[str]) -> dict[str, float]:
+def _get_quality_bonus(tickers: list[str], *, regime: str = "LATERAL") -> dict[str, float]:
     """
     Quality factor bonus para LP y CP.
 
@@ -219,8 +219,18 @@ def _get_quality_bonus(tickers: list[str]) -> dict[str, float]:
                 except Exception:
                     pass
 
-                # Cap: max +0.80 / min -0.60 para no dominar el z-score base
-                bonuses[t] = max(-0.60, min(0.80, bonus))
+                # Cap variable por régimen (Iter2):
+                #   BULL    → +1.20 / -0.60  (alta calidad puede dominar más en rallies)
+                #   NEUTRAL → +0.80 / -0.60  (default histórico)
+                #   BEAR    → +0.60 / -0.80  (proteger más, premiar menos calidad)
+                _r = regime.upper() if isinstance(regime, str) else "LATERAL"
+                if _r == "BULL":
+                    pos_cap, neg_cap = 1.20, -0.60
+                elif _r == "BEAR":
+                    pos_cap, neg_cap = 0.60, -0.80
+                else:
+                    pos_cap, neg_cap = 0.80, -0.60
+                bonuses[t] = max(neg_cap, min(pos_cap, bonus))
             except Exception:
                 bonuses[t] = 0.0
         if bonuses:
@@ -366,7 +376,7 @@ def build_scores(
         logger.info("Concentrated mode: saltando guard correlación/sector (top_n=%d)", PARAMS.top_n_long_term)
 
     # Quality factor bonus sobre shortlist (ROE, deuda, analyst rating)
-    quality_lp = _get_quality_bonus(lp.index.tolist())
+    quality_lp = _get_quality_bonus(lp.index.tolist(), regime=regime)
     lp["quality_bonus"] = lp.index.map(lambda t: quality_lp.get(t, 0.0))
     lp["score_lp"] += lp["quality_bonus"]
     lp = lp.sort_values("score_lp", ascending=False)
@@ -571,7 +581,7 @@ def build_scores(
     # Quality bonus sobre top-15 CP (analyst rating + crecimiento revenue)
     # Solo top-15 para no hacer 49 llamadas a fundamentals
     top_cp_tickers = st.nlargest(15, "score_st").index.tolist()
-    quality_cp = _get_quality_bonus(top_cp_tickers)
+    quality_cp = _get_quality_bonus(top_cp_tickers, regime=regime)
     quality_cp_series = pd.Series(
         [quality_cp.get(t, 0.0) for t in st.index], index=st.index
     )

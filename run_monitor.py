@@ -115,11 +115,19 @@ def _update_trailing_stop(
         alerts.append("  _(dry-run: stop no enviado a Alpaca)_")
 
 
-def _compute_chandelier_stop(ticker: str) -> float | None:
+def _compute_chandelier_stop(ticker: str, regime: str = "LATERAL") -> float | None:
     """
-    Chandelier Exit = highest_close(22) - 3 × ATR(22).
-    Descarga últimos 30 días de OHLC via yfinance (rápido, sin cache).
-    Retorna None si no hay suficientes datos.
+    Chandelier Exit = highest_close(22) - N × ATR(22), donde N depende del régimen.
+
+    Iter2: ATR multiplier por régimen:
+        BULL    → 3.5 (stops anchos, deja correr trends largos)
+        LATERAL → 2.8 (default — balance)
+        BEAR    → 2.0 (stops tight, protege capital)
+
+    Esto reemplaza el multiplier fijo 3.5 que era demasiado ancho en BEAR
+    (dejaba caer las posiciones -7/-8% antes de cortar).
+
+    Descarga últimos 30 días de OHLC via yfinance. Retorna None si no hay datos.
     """
     try:
         import numpy as np
@@ -141,7 +149,9 @@ def _compute_chandelier_stop(ticker: str) -> float | None:
         highest_close_22 = float(close.tail(22).max())
         if np.isnan(atr22) or np.isnan(highest_close_22):
             return None
-        return round(highest_close_22 - 3.5 * atr22, 2)
+        r = regime.upper() if isinstance(regime, str) else "LATERAL"
+        atr_mult = 2.0 if r == "BEAR" else (3.5 if r == "BULL" else 2.8)
+        return round(highest_close_22 - atr_mult * atr22, 2)
     except Exception as e:
         logger.debug("chandelier_stop %s: %s", ticker, e)
         return None
@@ -459,7 +469,9 @@ def main():
     # excede timeout, y eso podría solapar con la próxima corrida programada.
     lock_path = BASE_DIR / "signals" / ".monitor.lock"
     lock_path.parent.mkdir(exist_ok=True)
-    lock = FileLock(str(lock_path), timeout=5)
+    # Timeout 30s: Cloud Run puede sufrir CPU throttle ocasional; 5s era demasiado
+    # agresivo. 30s da margen y el siguiente trigger del scheduler está a 30min.
+    lock = FileLock(str(lock_path), timeout=30)
     try:
         with lock:
             return _main_locked(args)
@@ -791,23 +803,60 @@ def _main_locked(args):
                     f"— vende 50%, resta corre libre de riesgo"
                 )
 
-            # ── Breakeven stop: cuando sube +8%, mover stop a entrada ────────
-            # Protege ganancias sin intervención manual. Solo avanza, nunca retrocede.
-            if action is None and avg_entry > 0 and pnl_pct >= 8.0:
-                breakeven_sl = round(avg_entry * 1.005, 2)  # +0.5% sobre entrada
-                current_sl   = signal.get("stop_loss") or 0.0
-                if breakeven_sl > current_sl + 0.01:
-                    _update_trailing_stop(
-                        broker, ticker, breakeven_sl, abs(qty),
-                        args.live and not args.dry_run, alerts,
-                        f"BREAKEVEN activado (+{pnl_pct:.1f}%) → SL movido a ${breakeven_sl:.2f}",
-                    )
-                    signal["stop_loss"] = breakeven_sl
+            # ── Adaptive trailing por conviction × régimen (Iter2) ───────────
+            # Antes era un breakeven fijo +8%. Ahora la tabla en kelly.adaptive_trailing
+            # modula según conviction + régimen:
+            #   BULL+ALTA:  BE a +8%, lock 60% del profit a +20%  ← deja correr
+            #   BEAR+MEDIA: BE a +2%, lock 30% del profit a +5%   ← protege rápido
+            if action is None and avg_entry > 0 and pnl_pct > 0:
+                try:
+                    from alpha_agent.analytics.kelly import adaptive_trailing
+                    _conv = (signal.get("thesis", {}) or {}).get("conviction", "MEDIA")
+                    _trail = adaptive_trailing(_conv, macro_regime)
+                    current_sl = signal.get("stop_loss") or 0.0
+
+                    # Si el profit alcanzó la banda de lock-profit, mover stop a
+                    # entrada + fracción del profit. Si no, intentar breakeven.
+                    if pnl_pct >= _trail["lock_at_pct"]:
+                        lock_sl = round(
+                            avg_entry * (1.0 + (pnl_pct / 100.0) * _trail["lock_fraction"]),
+                            2,
+                        )
+                        if lock_sl > current_sl + 0.01:
+                            _update_trailing_stop(
+                                broker, ticker, lock_sl, abs(qty),
+                                args.live and not args.dry_run, alerts,
+                                f"LOCK PROFIT ({_conv}/{macro_regime}) +{pnl_pct:.1f}% → SL ${lock_sl:.2f} "
+                                f"(protege {_trail['lock_fraction']*100:.0f}% del profit)",
+                            )
+                            signal["stop_loss"] = lock_sl
+                    elif pnl_pct >= _trail["be_at_pct"]:
+                        breakeven_sl = round(avg_entry * 1.005, 2)
+                        if breakeven_sl > current_sl + 0.01:
+                            _update_trailing_stop(
+                                broker, ticker, breakeven_sl, abs(qty),
+                                args.live and not args.dry_run, alerts,
+                                f"BREAKEVEN ({_conv}/{macro_regime}) +{pnl_pct:.1f}% → SL ${breakeven_sl:.2f}",
+                            )
+                            signal["stop_loss"] = breakeven_sl
+                except Exception as _at_err:
+                    # Fallback al breakeven fijo si algo falla con la tabla nueva
+                    logger.debug("adaptive_trailing falló (%s) — fallback BE +8%%", _at_err)
+                    if pnl_pct >= 8.0:
+                        breakeven_sl = round(avg_entry * 1.005, 2)
+                        current_sl = signal.get("stop_loss") or 0.0
+                        if breakeven_sl > current_sl + 0.01:
+                            _update_trailing_stop(
+                                broker, ticker, breakeven_sl, abs(qty),
+                                args.live and not args.dry_run, alerts,
+                                f"BREAKEVEN (fallback) +{pnl_pct:.1f}% → SL ${breakeven_sl:.2f}",
+                            )
+                            signal["stop_loss"] = breakeven_sl
 
             # Chandelier Exit trailing stop (Chuck LeBeau)
             # Sube dinámicamente con el precio; solo cierra si el precio cae
-            elif avg_entry > 0:
-                chandelier_level = _compute_chandelier_stop(ticker)
+            if action is None and avg_entry > 0:
+                chandelier_level = _compute_chandelier_stop(ticker, macro_regime)
                 current_sl = signal.get("stop_loss") or 0.0
 
                 if chandelier_level is not None and chandelier_level > current_sl + 0.01:
@@ -1047,11 +1096,16 @@ def _main_locked(args):
 
         # Persistir stop_loss actualizados por chandelier/breakeven de vuelta al JSON.
         # Sin esto, el próximo run re-lee el stop original y re-envía la misma orden a Alpaca.
+        # Atomic write: si Cloud Run mata el container a mitad de escribir, el archivo
+        # original queda intacto y la próxima corrida no lee basura.
         try:
-            SIGNALS_PATH.write_text(
+            import os as _os
+            _tmp = SIGNALS_PATH.with_suffix(".json.tmp")
+            _tmp.write_text(
                 __import__("json").dumps(signals_data, indent=2, ensure_ascii=False),
                 encoding="utf-8",
             )
+            _os.replace(_tmp, SIGNALS_PATH)
         except Exception as _sp_err:
             logger.debug("No se pudo persistir signals: %s", _sp_err)
 
