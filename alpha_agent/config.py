@@ -409,10 +409,24 @@ class LLMConfig:
     """
 
     # ── Kill switches y budget ──────────────────────────────────────────────
-    enable_anthropic: bool = False               # default OFF — encender manual cuando haya créditos
+    # Iter3: enable_anthropic se lee de env var ENABLE_ANTHROPIC en runtime via
+    # property — permite encender/apagar SIN rebuild Docker. Default OFF.
+    # Setear como env "true" / "1" / "yes" para activar.
     enable_sonnet: bool = False                  # Sonnet 4.6 detrás de flag separado (más caro)
     daily_anthropic_budget_usd: float = 0.10     # límite duro Anthropic/día
     daily_total_budget_usd: float = 0.50         # límite duro suma de todos los providers/día
+
+    @property
+    def enable_anthropic(self) -> bool:
+        """Runtime flag desde env var ENABLE_ANTHROPIC (default False).
+
+        Sin esto, cambiar el flag requería editar config.py + rebuild Docker
+        + update jobs. Ahora con un `gcloud run jobs update --update-env-vars`
+        se activa en segundos.
+        """
+        import os as _os
+        v = _os.getenv("ENABLE_ANTHROPIC", "").strip().lower()
+        return v in ("true", "1", "yes", "on")
 
     # ── Rate limits locales (requests/min por provider) ────────────────────
     rate_limit_anthropic_per_min: int = 5

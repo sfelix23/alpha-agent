@@ -135,7 +135,9 @@ def test_transient_error_retries_then_falls_through(install_providers, set_casca
 
 def test_400_disables_provider_no_retry(monkeypatch):
     """Un 400 levantado por el SDK debe auto-disable el provider 24h sin retry."""
-    monkeypatch.setattr(LLM, "enable_anthropic", True)
+    # Iter3: enable_anthropic ahora es @property que lee env var ENABLE_ANTHROPIC.
+    # Para activarlo en el test, seteamos el env var.
+    monkeypatch.setenv("ENABLE_ANTHROPIC", "true")
     monkeypatch.setenv("ANTHROPIC_API_KEY", "test-key")
 
     class FakeSDKError(Exception):

@@ -63,10 +63,15 @@ def _rule_default(regime: str, vix: float, win_rate: float | None, recent_pnl: f
         return AllocationDecision(0.0, cp, 0.10, n, 8, reason, level=2)
 
     # BULL — el caso principal
+    # Iter3 (modo agresivo): hold maximo CP reducido (18d→10d nivel 1, 14d→8d nivel 2).
+    # Rotacion mas rapida = mas oportunidades de capturar momentum sin quedarse colgado
+    # cuando un ticker pierde momentum (suele pasar a las 2 semanas).
     if winning_streak:
         # NIVEL 1: BULL + ganando → presionar al máximo; chandelier es el exit primario
-        return AllocationDecision(0.0, 0.88, 0.07, 2, 18,
-            f"BULL + racha ganadora ({win_rate:.0%} win rate): CP al máximo, hold hasta 18d.", level=1)
+        # Concentrar mas: 2→1 si VIX muy bajo (single best pick + opciones).
+        n_cp = 1 if vix < 15 else 2
+        return AllocationDecision(0.0, 0.88, 0.07, n_cp, 10,
+            f"BULL + racha ganadora ({win_rate:.0%} WR): CP {88}% en top-{n_cp}, hold 10d max (rotacion rapida).", level=1)
     elif losing_streak:
         # ya cubierto arriba pero por si acá
         return AllocationDecision(0.0, 0.50, 0.05, 1, 4,
@@ -74,8 +79,8 @@ def _rule_default(regime: str, vix: float, win_rate: float | None, recent_pnl: f
     else:
         # NIVEL 2: BULL sin historial suficiente → base sólida
         cp = 0.83 if vix < 18 else 0.75
-        return AllocationDecision(0.0, cp, 0.10, 2, 14,
-            f"BULL + VIX {vix:.1f}: CP {cp:.0%}, hold hasta 14d.", level=2)
+        return AllocationDecision(0.0, cp, 0.10, 2, 8,
+            f"BULL + VIX {vix:.1f}: CP {cp:.0%}, hold 8d max (modo agresivo).", level=2)
 
 
 def _get_recent_performance() -> tuple[float | None, float | None]:

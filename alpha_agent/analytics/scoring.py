@@ -405,12 +405,16 @@ def build_scores(
     # ret_6m excluye ret_1m para evitar reversal de corto plazo
     ret_6m_adj = st["ret_6m"].fillna(0) - st["ret_1m"].fillna(0) if "ret_6m" in st.columns else pd.Series(0.0, index=st.index)
 
+    # Iter3 (modo agresivo CP para batir SPY/QQQ): pesos rebalanceados hacia
+    # momentum reciente (ret_1m sube 0.38→0.48, ret_6m_adj baja 0.22→0.15).
+    # La idea: en mercado BULL con tech rally, lo que rinde es el momentum
+    # de 1-30 días, no el de 6 meses. Alpha jensen baja a 0.05 (noisy en CP).
     score_st = (
-        0.38 * _zscore(st["ret_1m"].fillna(0))
-        + 0.22 * _zscore(ret_6m_adj)               # momentum 2-6m (factor probado)
+        0.48 * _zscore(st["ret_1m"].fillna(0))
+        + 0.15 * _zscore(ret_6m_adj)               # momentum 2-6m (factor probado, peso reducido)
         + 0.15 * _zscore(st["ret_3m"].fillna(0))
         + 0.12 * _zscore(rsi_signal)
-        + 0.10 * _zscore(st["alpha_jensen"].clip(lower=0))
+        + 0.05 * _zscore(st["alpha_jensen"].clip(lower=0))
         - 0.05 * _zscore(-high_penalty)
     )
 
@@ -475,11 +479,17 @@ def build_scores(
             logger.info("QQQ mega-cap penalty omitida en BULL — son los líderes del rally")
 
     # Bonus momentum para tech en BULL — lideran el mercado, merece recuperar score
+    # Iter3: boost subido de +0.50 → +0.65. En BULL + tech rally, este boost
+    # es lo que más cierra el gap vs QQQ (que estaba +9% mientras LP/CP -5%).
     if regime == "BULL":
+        _n_boosted = 0
         for _tkr in TECH_BULL_CP_BOOST:
             if _tkr in score_st.index and "ret_1m" in st.columns:
                 if float(st.loc[_tkr, "ret_1m"]) >= 0.02:
-                    score_st.loc[_tkr] = score_st.loc[_tkr] + 0.50
+                    score_st.loc[_tkr] = score_st.loc[_tkr] + 0.65
+                    _n_boosted += 1
+        if _n_boosted:
+            logger.info("Tech BULL boost (+0.65): %d tickers con ret_1m >= 2%%", _n_boosted)
 
     # Momentum confluence: penalizar señales contradictorias entre timeframes
     # 5d vs 1m: si el ultra-corto y el mensual se contradicen → -0.15

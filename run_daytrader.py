@@ -36,11 +36,32 @@ LOG_DIR  = BASE_DIR / "logs"
 
 logger = logging.getLogger("daytrader")
 
-# Desplegamos 87.5% del capital DT en la mejor idea del dia.
-# Con $1600 en la cuenta => $1400 por trade.
-# Ej: AMD $120 => 11 shares; GOOGL $165 => 8 shares; COIN $220 => 6 shares.
-DT_BUDGET  = 1500.0
-DT_MAX_POS = 1       # 1 sola posicion concentrada por dia
+# Iter3: DT_BUDGET ya no es hardcoded — se calcula dinamico via
+# _resolve_dt_budget(broker) que usa min(equity * 0.875, available_capital).
+# Mantengo la constante como fallback si la cuenta no es accesible.
+DT_BUDGET_FALLBACK = 1500.0
+DT_BUDGET_PCT      = 0.875   # 87.5% del equity DT en la mejor idea
+DT_MAX_POS = 1               # 1 sola posicion concentrada por dia
+
+
+def _resolve_dt_budget(broker) -> float:
+    """Calcula budget DT dinamico = min(equity * 87.5%, available_capital).
+
+    available_capital descuenta reservas de otras sleeves; si LP/CP reservaron
+    capital, el DT no puede pisarlas y overdraftear.
+    """
+    try:
+        from alpha_agent.analytics.trade_db import available_capital
+        eq = float(broker.get_equity())
+        budget_from_equity = eq * DT_BUDGET_PCT
+        available = available_capital(broker, "DT")
+        budget = min(budget_from_equity, available) if available > 0 else budget_from_equity
+        logger.info("DT budget dinamico: equity $%.0f * %.0f%% = $%.0f, available $%.0f → $%.0f",
+                    eq, DT_BUDGET_PCT * 100, budget_from_equity, available, budget)
+        return max(0.0, budget)
+    except Exception as e:
+        logger.warning("DT budget dinamico fallo (%s) — fallback $%.0f", e, DT_BUDGET_FALLBACK)
+        return DT_BUDGET_FALLBACK
 
 # Ventana de entrada: 10:00-14:00 EDT = 14:00-18:00 UTC (verano)
 # GH Actions llega a este paso ~14:15 UTC, por eso usamos minutos precisos.
@@ -211,13 +232,13 @@ def main() -> None:
         logger.warning("DT no configurado: %s", e)
         return
 
-    # Budget dinámico: 93.75% del equity real de la cuenta DT (compoundea automáticamente)
+    # Iter3: budget dinamico via _resolve_dt_budget (87.5% del equity, capeado
+    # por available_capital para no pisar reservas de LP/CP).
     try:
         dt_equity = broker.get_equity()
-        budget = round(max(100.0, dt_equity * 0.9375), 2)
     except Exception:
-        dt_equity = DT_BUDGET
-        budget = DT_BUDGET
+        dt_equity = DT_BUDGET_FALLBACK
+    budget = _resolve_dt_budget(broker)
     logger.info("=== DAYTRADER START === live=%s equity=$%.0f budget=$%.0f", live, dt_equity, budget)
 
     try:
