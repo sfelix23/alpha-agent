@@ -9,7 +9,10 @@
 
 ## 🚨 Lo MÁS CRÍTICO que tenés que saber (no skipear)
 
-1. **El usuario es NAF**: economista argentino. Construye agentes de IA. Prefiere **modificar archivos existentes a crear nuevos** (decisión clave: en iter1 creé `alpha_agent/llm/` y tuve que deshacerlo).
+1. **Hay 2 usuarios**:
+   - **NAF** — economista argentino, diseñador original del sistema. Construye agentes de IA. Prefiere **modificar archivos existentes a crear nuevos** (decisión clave: en iter1 creé `alpha_agent/llm/` y tuve que deshacerlo).
+   - **Santino Felix** — hijo de NAF. También opera el sistema. Identificó iter10 que el sistema lo trataba como NAF, lo cual no era correcto.
+   - Si no sabés quién está hablando, **preguntá**.
 
 2. **Anthropic cuenta flageada** (400 "empresa deshabilitada") por uso anómalo. La política es **NUNCA llamarla a menos que `ENABLE_ANTHROPIC=true` esté seteada en env vars de Cloud Run**. Hay **kill switches en 6 archivos paralelos** que verifican el flag. Si cambiás algo del LLM, **respetá esto**.
 
@@ -187,6 +190,9 @@ python -c "from alpha_agent.news.claude_analyst import call_llm, get_gateway_sta
 | iter5 | 2026-05-19 | `_pull_state` en entrypoint (fix watchdog falso positivo) + bot `run` guard |
 | iter6 | 2026-05-19 | `_update_workflow_status` + push de llm_budget/state + dashboard card LLM Status |
 | iter7 | 2026-05-19 | Dashboard cards: Risk Band activa + Régimen+allocation activa + **Posiciones Huérfanas** |
+| iter8 | 2026-05-19 | **Auto-handler huérfanas** (regla: P&L>+20% mantener, <-5% close, >7d sin progreso close) + comando `liquidate` + botones interactivos |
+| iter9 | 2026-05-19 | Watchdog robusto (no alerta con datos corruptos) + `_pull_state` valida JSON + cooldown 4h |
+| iter10 | 2026-05-19 | Comandos `pause`/`resume`/`anthropic on/off`/`force daily` + card **Control Center** con botones + corrección identidad (Santino, hijo de NAF) |
 
 ---
 

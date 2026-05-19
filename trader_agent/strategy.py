@@ -156,6 +156,24 @@ def execute(broker: BrokerBase, *, dry_run: bool = True, max_capital: float | No
         logger.warning("Mercado cerrado. Abortando ejecución.")
         return [{"status": "market_closed"}]
 
+    # Iter10: pause flag — el usuario puede pausar todo nuevo trade desde Telegram.
+    # El monitor sigue gestionando posiciones existentes (stops, trailing), pero
+    # ningun BUY nuevo. Para reanudar: comando 'resume' en bot o borrar el archivo.
+    from pathlib import Path as _PathPause
+    _pause_flag = _PathPause(__file__).resolve().parents[1] / "signals" / "paused.flag"
+    if _pause_flag.exists():
+        try:
+            _msg = _pause_flag.read_text(encoding="utf-8")[:200]
+        except Exception:
+            _msg = "(sin info)"
+        logger.warning("TRADING PAUSADO via signals/paused.flag: %s", _msg)
+        send_whatsapp(
+            f"⏸️ *TRADING PAUSADO*\n\nNo se ejecutan trades nuevos.\n"
+            f"Razon: {_msg}\n\nPara reanudar: comando *resume* en el bot.",
+            header="TRADER ALPHA",
+        )
+        return [{"status": "paused", "reason": _msg}]
+
     ok, reason = _kill_switch_check(broker)
     logger.info("Kill switch: %s (%s)", "OK" if ok else "TRIGGERED", reason)
     if not ok:

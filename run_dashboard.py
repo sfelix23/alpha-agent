@@ -124,6 +124,109 @@ def _calc_metrics(history: list[dict], spy_history: list[dict], qqq_history: lis
 
 # ─── WORKFLOW HEALTH PANEL ────────────────────────────────────────────────────
 
+def _control_center_panel() -> str:
+    """Iter10: card "Control Center" con botones para los comandos mas usados.
+
+    Aprovecha el bot Telegram (links https://t.me/...?text=COMANDO) — no
+    requiere endpoints HTTP propios ni auth. El usuario apreta boton →
+    abre Telegram con mensaje pre-armado → bot procesa.
+    """
+    import os as _os
+    _bot = _os.getenv("TELEGRAM_BOT_USERNAME", "sfelix23_alpha_bot")
+    _is_paused = (BASE_DIR / "signals" / "paused.flag").exists()
+    _anthropic_on = _os.getenv("ENABLE_ANTHROPIC", "").lower() in ("true", "1", "yes")
+
+    pause_status = "⏸️ PAUSADO" if _is_paused else "▶️ ACTIVO"
+    pause_color = "#f85149" if _is_paused else "#3fb950"
+    pause_action = "resume" if _is_paused else "pause"
+    pause_label = "▶️ Reanudar trading" if _is_paused else "⏸️ Pausar trading"
+
+    anthropic_status = "🟢 ON" if _anthropic_on else "🔴 OFF"
+    anthropic_color = "#3fb950" if _anthropic_on else "#6e7681"
+    anthropic_action = "anthropic%20off" if _anthropic_on else "anthropic%20on"
+    anthropic_label = "🔴 Apagar Anthropic" if _anthropic_on else "🟢 Activar Anthropic"
+
+    _btn = ("display:inline-block;margin:6px 6px 0 0;padding:8px 14px;"
+            "border-radius:4px;font-size:.74rem;text-decoration:none;"
+            "font-family:var(--mono);border:1px solid")
+
+    return f"""<div class="card">
+  <div class="card-head">
+    <div>
+      <div class="card-title">🎮 CONTROL CENTER</div>
+      <div class="card-sub">Acciones a 1 click via Telegram (sin auth, aprovecha el bot existente)</div>
+    </div>
+    <div style="text-align:right;display:flex;flex-direction:column;gap:4px">
+      <div style="font-family:var(--mono);font-size:.78rem">
+        Trading: <span style="color:{pause_color};font-weight:600">{pause_status}</span>
+      </div>
+      <div style="font-family:var(--mono);font-size:.78rem">
+        Anthropic (local): <span style="color:{anthropic_color};font-weight:600">{anthropic_status}</span>
+      </div>
+    </div>
+  </div>
+
+  <div style="margin-top:10px">
+    <div style="font-size:.66rem;color:var(--mt);margin-bottom:6px;
+                text-transform:uppercase;letter-spacing:.5px">
+      Trading control
+    </div>
+    <a href="https://t.me/{_bot}?text={pause_action}" target="_blank"
+       style="{_btn};background:{pause_color}22;color:{pause_color};border-color:{pause_color}">
+      {pause_label}
+    </a>
+    <a href="https://t.me/{_bot}?text=force%20daily" target="_blank"
+       style="{_btn};background:#3b82f622;color:#3b82f6;border-color:#3b82f6">
+      🚀 Forzar daily ahora
+    </a>
+    <a href="https://t.me/{_bot}?text=liquidate%20orphans" target="_blank"
+       style="{_btn};background:#f8514922;color:#f85149;border-color:#f85149">
+      🔴 Liquidar huerfanas negativas
+    </a>
+  </div>
+
+  <div style="margin-top:14px">
+    <div style="font-size:.66rem;color:var(--mt);margin-bottom:6px;
+                text-transform:uppercase;letter-spacing:.5px">
+      LLM
+    </div>
+    <a href="https://t.me/{_bot}?text={anthropic_action}" target="_blank"
+       style="{_btn};background:{anthropic_color}22;color:{anthropic_color};border-color:{anthropic_color}">
+      {anthropic_label}
+    </a>
+    <a href="https://t.me/{_bot}?text=llm" target="_blank"
+       style="{_btn};background:#d2992222;color:#d29922;border-color:#d29922">
+      📊 Ver costos LLM hoy
+    </a>
+  </div>
+
+  <div style="margin-top:14px">
+    <div style="font-size:.66rem;color:var(--mt);margin-bottom:6px;
+                text-transform:uppercase;letter-spacing:.5px">
+      PC remoto
+    </div>
+    <a href="https://t.me/{_bot}?text=sleep" target="_blank"
+       style="{_btn};background:#6e768122;color:#6e7681;border-color:#6e7681">
+      💤 Dormir PC (suspend)
+    </a>
+    <a href="https://t.me/{_bot}?text=apagar" target="_blank"
+       style="{_btn};background:#7f1d1d44;color:#f85149;border-color:#f85149">
+      🔴 Apagar PC (60s)
+    </a>
+    <a href="https://t.me/{_bot}?text=health" target="_blank"
+       style="{_btn};background:#3fb95022;color:#3fb950;border-color:#3fb950">
+      🟢 Health snapshot
+    </a>
+  </div>
+
+  <div style="margin-top:12px;padding-top:8px;border-top:1px solid var(--bd);
+              font-size:.66rem;color:var(--mt)">
+    💡 Tip: el comando <code>apagar</code> da 60s de gracia. Si te arrepentís,
+    enviá <code>cancelar</code> antes que se cumpla.
+  </div>
+</div>"""
+
+
 def _risk_band_panel(equity: float, baseline: float = 1600.0) -> str:
     """Iter7: card mostrando en qué banda de drawdown está el sistema AHORA.
 
@@ -637,7 +740,8 @@ def _tab_resumen(equity, initial, regime, vix, wti, gold, dxy,
                  history, spy_history, signals_data, metrics, age_hours,
                  perf_data=None, qqq_history=None, mc_result=None,
                  tres_cuentas_html="", wf_health_html="", llm_status_html="",
-                 risk_band_html="", regime_active_html="", orphan_html=""):
+                 risk_band_html="", regime_active_html="", orphan_html="",
+                 control_center_html=""):
     pnl     = equity - initial
     pnl_pct = (pnl / initial * 100) if initial else 0
     pc      = _c(pnl)
@@ -771,6 +875,8 @@ def _tab_resumen(equity, initial, regime, vix, wti, gold, dxy,
   {ts_info}
   {kpis}
   {adv_kpis}
+  <div class="section-gap"></div>
+  {control_center_html}
   <div class="section-gap"></div>
   {orphan_html}
   <div class="section-gap"></div>
@@ -2672,17 +2778,19 @@ def build_html(equity, initial, history, positions, signals_data,
     tres_cuentas   = _tres_cuentas_panel(trades or [], dt_trades or [], scalp_trades or [])
     wf_health      = _workflow_health_panel(workflow_status or {})
     llm_status     = _llm_status_panel()
-    # Iter7: 3 cards nuevas
+    # Iter7+10: 4 cards nuevas
     risk_band      = _risk_band_panel(equity, initial)
     regime_active  = _regime_active_panel(signals_data)
     orphan_html    = _orphan_positions_panel(positions or [], signals_data)
+    control_center = _control_center_panel()  # iter10
     t_resumen    = _tab_resumen(equity, initial, regime, vix, wti, gold, dxy,
                                 history, spy_history, signals_data, metrics, age_hours,
                                 perf_data=perf_data, qqq_history=qqq_history, mc_result=mc_result,
                                 tres_cuentas_html=tres_cuentas, wf_health_html=wf_health,
                                 llm_status_html=llm_status,
                                 risk_band_html=risk_band, regime_active_html=regime_active,
-                                orphan_html=orphan_html)
+                                orphan_html=orphan_html,
+                                control_center_html=control_center)
     t_posiciones = _tab_posiciones(positions)
     t_senales    = _tab_senales(signals_data)
     t_mercado    = _tab_mercado(signals_data, discovery_data=discovery_data)
