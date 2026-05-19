@@ -25,15 +25,12 @@ if sys.platform == "win32" and hasattr(sys.stderr, "reconfigure"):
 import argparse
 from dotenv import load_dotenv
 
+from alpha_agent.config import setup_agent_logging
+
 BASE_DIR = Path(__file__).parent.resolve()
 SIGNALS_PATH = BASE_DIR / "signals" / "latest.json"
 
-logging.basicConfig(
-    level=logging.INFO,
-    format="[%(asctime)s] %(levelname)s — %(message)s",
-    datefmt="%H:%M:%S",
-    handlers=[logging.StreamHandler(sys.stdout)],
-)
+setup_agent_logging("midday")
 log = logging.getLogger("midday")
 
 

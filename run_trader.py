@@ -26,6 +26,7 @@ if sys.platform == "win32" and hasattr(sys.stderr, "reconfigure"):
 
 from dotenv import load_dotenv
 
+from alpha_agent.config import setup_agent_logging
 from trader_agent.brokers import AlpacaBroker
 from trader_agent.strategy import execute, notify, summarize_fills
 
@@ -38,11 +39,7 @@ def main() -> None:
     args = parser.parse_args()
 
     load_dotenv()
-    logging.basicConfig(
-        level=logging.INFO,
-        format="[%(asctime)s] %(levelname)s %(name)s — %(message)s",
-        datefmt="%H:%M:%S",
-    )
+    setup_agent_logging("trader")
     log = logging.getLogger("trader_agent")
 
     broker = AlpacaBroker(paper=True)  # 🚨 fuerzo paper, no tocar sin volver acá

@@ -45,7 +45,11 @@ def _sigma_for_ticker(ticker: str, capm: pd.DataFrame, returns: pd.DataFrame | N
         logger.debug("%s σ blend: GARCH=%.1f%% hist=%.1f%% → %.1f%%",
                      ticker, sigma_garch * 100, sigma_hist * 100, blended * 100)
         return blended
-    except Exception:
+    except (ValueError, ZeroDivisionError, KeyError, ImportError) as e:
+        # Específicos: ValueError/ZeroDivisionError vienen de arch fit en series degeneradas;
+        # KeyError si returns[ticker] tiene datos faltantes; ImportError si arch no instalado.
+        # No swallowear errores estructurales (FileNotFoundError, MemoryError, etc.).
+        logger.debug("%s GARCH falló (%s) — fallback a σ histórico", ticker, e)
         return sigma_hist
 
 

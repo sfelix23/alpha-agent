@@ -15,6 +15,8 @@ import contextlib
 import io
 import logging
 import os
+import pickle
+from concurrent.futures import ThreadPoolExecutor, TimeoutError as FuturesTimeout
 from datetime import date
 from pathlib import Path
 
@@ -24,6 +26,10 @@ import yfinance as yf
 from alpha_agent.config import ACTIVOS, BENCHMARK_TICKER, PARAMS, PATHS
 
 logger = logging.getLogger(__name__)
+
+# Timeout duro para yfinance — sin esto, una red lenta puede colgar el analyst
+# bloqueando el pipeline completo de Cloud Run (que tiene timeout de 30min).
+_YF_TIMEOUT_SECONDS = 45.0
 
 # Silenciar yfinance/yfinance-cache verbosity — sus errores de delisted tickers
 # son ruido: el código ya los filtra por min_obs.
@@ -45,6 +51,25 @@ def _cache_path(kind: str) -> Path:
     return PATHS.cache_dir / f"{kind}_{PARAMS.history_period}_{today}.pkl"
 
 
+def _atomic_pickle_write(df: pd.DataFrame, cache: Path) -> None:
+    """Escribe el pickle via tempfile + os.replace para evitar corrupción.
+
+    Si el proceso muere a mitad de `to_pickle`, el archivo final queda
+    truncado y el próximo read lanza UnpicklingError. Con atomic write, el
+    archivo viejo se mantiene hasta que el nuevo está completo.
+    """
+    tmp = cache.with_suffix(cache.suffix + ".tmp")
+    df.to_pickle(tmp)
+    os.replace(tmp, cache)
+
+
+def _yf_download_with_timeout(**kwargs) -> pd.DataFrame:
+    """Wrapper de yf.download con timeout duro para no colgar el pipeline."""
+    with ThreadPoolExecutor(max_workers=1) as ex:
+        future = ex.submit(lambda: yf.download(**kwargs))
+        return future.result(timeout=_YF_TIMEOUT_SECONDS)
+
+
 def _download_close(tickers: list[str], label: str) -> pd.DataFrame:
     """Descarga cierres ajustados de una lista de tickers en una sola llamada."""
     cache = _cache_path(label)
@@ -53,7 +78,9 @@ def _download_close(tickers: list[str], label: str) -> pd.DataFrame:
             df = pd.read_pickle(cache)
             logger.info("Cache hit: %s", cache.name)
             return df
-        except Exception as e:
+        except (pickle.UnpicklingError, EOFError, OSError, AttributeError) as e:
+            # Específicos: pickle corrupto (proceso muerto durante write), FS error,
+            # versión incompatible. No swallowear errores reales (MemoryError etc.).
             logger.warning("Cache corrupto %s (%s). Borrando y re-descargando.", cache.name, e)
             try:
                 cache.unlink()
@@ -61,16 +88,25 @@ def _download_close(tickers: list[str], label: str) -> pd.DataFrame:
                 pass
 
     logger.info("Descargando %d tickers desde Yahoo Finance…", len(tickers))
-    with _silence_stderr():
-        raw = yf.download(
-            tickers=tickers,
-            period=PARAMS.history_period,
-            interval=PARAMS.history_interval,
-            auto_adjust=True,
-            progress=False,
-            group_by="column",
-            threads=True,
-        )
+    try:
+        with _silence_stderr():
+            raw = _yf_download_with_timeout(
+                tickers=tickers,
+                period=PARAMS.history_period,
+                interval=PARAMS.history_interval,
+                auto_adjust=True,
+                progress=False,
+                group_by="column",
+                threads=True,
+            )
+    except FuturesTimeout:
+        logger.warning("yfinance timeout (%ss) — usando cache stale si existe", _YF_TIMEOUT_SECONDS)
+        if cache.exists():
+            try:
+                return pd.read_pickle(cache)
+            except (pickle.UnpicklingError, EOFError, OSError):
+                pass
+        raise RuntimeError(f"yfinance timeout y sin cache fallback para {label}")
 
     # yfinance devuelve MultiIndex cuando hay >1 ticker
     if isinstance(raw.columns, pd.MultiIndex):
@@ -89,7 +125,7 @@ def _download_close(tickers: list[str], label: str) -> pd.DataFrame:
             actual_n, expected_n,
         )
     else:
-        close.to_pickle(cache)
+        _atomic_pickle_write(close, cache)
     logger.info("Guardado en cache: %s (%d filas, %d activos válidos)", cache.name, len(close), close.shape[1])
     return close
 
@@ -100,7 +136,7 @@ def _download_ohlc(ticker: str) -> pd.DataFrame | None:
     if cache.exists():
         try:
             return pd.read_pickle(cache)
-        except Exception as e:
+        except (pickle.UnpicklingError, EOFError, OSError, AttributeError) as e:
             logger.debug("Cache OHLC corrupto %s (%s). Borrando.", cache.name, e)
             try:
                 cache.unlink()
@@ -109,14 +145,19 @@ def _download_ohlc(ticker: str) -> pd.DataFrame | None:
 
     try:
         with _silence_stderr():
-            df = yf.download(
-                ticker,
+            df = _yf_download_with_timeout(
+                tickers=ticker,
                 period=PARAMS.history_period,
                 interval=PARAMS.history_interval,
                 auto_adjust=True,
                 progress=False,
             )
+    except FuturesTimeout:
+        logger.debug("yfinance OHLC timeout para %s", ticker)
+        return None
     except Exception as e:
+        # Single-ticker download falla con varios tipos (HTTPError, JSONDecodeError, etc.).
+        # No vale la pena enumerar todos para un best-effort fetch que tiene cache fallback.
         logger.debug("yfinance falló para %s: %s", ticker, e)
         return None
 
@@ -135,7 +176,7 @@ def _download_ohlc(ticker: str) -> pd.DataFrame | None:
     if len(df) < PARAMS.min_obs:
         return None
 
-    df.to_pickle(cache)
+    _atomic_pickle_write(df, cache)
     return df
 
 

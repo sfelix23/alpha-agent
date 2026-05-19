@@ -288,6 +288,61 @@ PATHS = Paths()
 
 
 # ────────────────────────────────────────────────────────────────────────────
+# LOGGING CENTRALIZADO
+# ────────────────────────────────────────────────────────────────────────────
+def setup_agent_logging(agent_name: str, *, level: int = 20) -> None:
+    """Configura logging consistente para todos los run_*.py.
+
+    Reemplaza los `setup_logging()` duplicados que cada run_*.py tenía con
+    código copy-paste. Beneficios sobre la implementación previa:
+
+    - **RotatingFileHandler**: el archivo se rota al alcanzar 20MB (hasta 7
+      backups). Antes era un FileHandler simple → crecía sin límite, con
+      potencial agotamiento de FDs en jobs largos.
+    - **atexit cleanup**: cierra handlers limpio al salir (evita locks de
+      archivo en Windows si el proceso termina abrupto).
+    - **Formato consistente** con timestamp ISO y nombre del agente, así los
+      logs combinados en `logs/` son fáciles de parsear.
+    - **UTF-8 explícito** para no romper en Windows cp1252.
+
+    Args:
+        agent_name: prefijo del archivo de log (ej. "analyst" → analyst_<date>.log).
+        level: nivel mínimo a loguear (default INFO=20).
+    """
+    import atexit
+    import logging
+    import sys
+    from datetime import datetime
+    from logging.handlers import RotatingFileHandler
+
+    logs_dir = PATHS.logs_dir
+    today = datetime.now().strftime("%Y-%m-%d")
+    log_file = logs_dir / f"{agent_name}_{today}.log"
+
+    fmt = logging.Formatter(
+        "[%(asctime)s] %(levelname)s %(name)s — %(message)s",
+        datefmt="%Y-%m-%dT%H:%M:%S",
+    )
+
+    fh = RotatingFileHandler(
+        str(log_file),
+        maxBytes=20 * 1024 * 1024,   # 20 MB
+        backupCount=7,
+        encoding="utf-8",
+    )
+    fh.setFormatter(fmt)
+    sh = logging.StreamHandler(sys.stdout)
+    sh.setFormatter(fmt)
+
+    root = logging.getLogger()
+    root.setLevel(level)
+    # Limpiar handlers previos para que múltiples llamadas no dupliquen output.
+    root.handlers = [fh, sh]
+
+    atexit.register(logging.shutdown)
+
+
+# ────────────────────────────────────────────────────────────────────────────
 # NOTICIAS Y MACRO
 # ────────────────────────────────────────────────────────────────────────────
 # Tickers de Yahoo para indicadores macro — se consultan como si fueran activos
