@@ -811,26 +811,74 @@ def _main_locked(args):
 
             signal = get_signal_for_ticker(signals_data, ticker)
             if not signal:
-                # Sin señal en latest.json: posición huérfana (LP o DT abierta sin signal activo).
-                # Aplicar stop de emergencia: -12% LP / -8% DT para evitar pérdidas ilimitadas.
-                _orphan_stop_pct = 0.08 if pos.ticker in getattr(pos, "sleeve", "") else 0.12
-                _orphan_threshold = avg_entry * (1 - _orphan_stop_pct) if avg_entry else 0
-                if _orphan_threshold and current <= _orphan_threshold:
-                    logger.warning(
-                        "⚠️ ORPHAN STOP %s: sin señal + caída -%.0f%% ($%.2f <= $%.2f)",
-                        ticker, _orphan_stop_pct * 100, current, _orphan_threshold,
+                # ITER8: Auto-handler de huerfanas (sin signal activo). Reglas
+                # deterministicas — el sistema decide solo, sin intervencion manual:
+                #
+                #   1. P&L > +20%  → MANTENER (winner gordo, dejar correr)
+                #   2. P&L < -5%   → CERRAR (cortar perdedor rapido, antes era -8/-12%)
+                #   3. Hold > 7d Y P&L < +3% → CERRAR (no estancar capital)
+                #   4. Resto       → MANTENER + warning (zona neutra)
+                #
+                # Antes el sistema solo cerraba a -8/-12% — perdiendo $128-192 sobre $1600
+                # antes de actuar. Iter8 corta antes para preservar capital.
+                should_close = False
+                close_reason = ""
+
+                # Regla 1: dejar correr winners
+                if pnl_pct >= 20.0:
+                    logger.info(
+                        "🟢 Huerfana %s: P&L +%.1f%% — winner, MANTENER (regla 1)",
+                        ticker, pnl_pct,
                     )
+
+                # Regla 2: cortar perdedores rapido (-5%)
+                elif pnl_pct <= -5.0:
+                    should_close = True
+                    close_reason = f"P&L {pnl_pct:.1f}% <= -5% (cortar perdedor)"
+
+                # Regla 3: hold time excesivo sin progreso
+                else:
+                    # Obtener hold days desde trade_db
+                    try:
+                        from alpha_agent.analytics.trade_db import get_trades
+                        _orphan_trades = get_trades(ticker=ticker, limit=5)
+                        _orphan_buys = [t for t in _orphan_trades
+                                        if t.get("side") == "BUY" and not t.get("closed_at")]
+                        if _orphan_buys:
+                            _buy_ts = _orphan_buys[0].get("ts", "")
+                            from datetime import datetime as _dt
+                            try:
+                                _buy_dt = _dt.fromisoformat(_buy_ts)
+                                _hold_days = (_dt.now() - _buy_dt).total_seconds() / 86400
+                            except Exception:
+                                _hold_days = 0
+                            if _hold_days > 7 and pnl_pct < 3.0:
+                                should_close = True
+                                close_reason = f"Hold {_hold_days:.0f}d con P&L {pnl_pct:+.1f}% < +3% (sin progreso)"
+                    except Exception as _ot:
+                        logger.debug("orphan trade_db lookup falló: %s", _ot)
+
+                    if not should_close:
+                        logger.warning(
+                            "⚠️ Huerfana %s en zona neutra: P&L %+.1f%% — monitoreando",
+                            ticker, pnl_pct,
+                        )
+
+                if should_close:
+                    logger.warning("🔴 AUTO-CLOSE HUERFANA %s: %s", ticker, close_reason)
                     alerts.append(
-                        f"⚠️ *{ticker}*: posición sin señal activa — stop de emergencia "
-                        f"(-{_orphan_stop_pct*100:.0f}%) disparado (${current:.2f})"
+                        f"🔴 *AUTO-CLOSE HUERFANA {ticker}*\n"
+                        f"P&L: {pnl_pct:+.1f}% (${unrealized_pnl:+.2f})\n"
+                        f"Razon: {close_reason}"
                     )
                     if args.live and not args.dry_run:
                         try:
-                            broker.close_position(ticker)
+                            broker._trading.close_position(ticker, cancel_orders=True)
+                            closes.append(f"{ticker} (orphan auto-close)")
+                            logger.info("Huerfana %s cerrada OK", ticker)
                         except Exception as _oe:
-                            logger.error("Error cerrando posición huérfana %s: %s", ticker, _oe)
-                else:
-                    logger.warning("Posición huérfana %s (sin señal en latest.json) — P&L %.1f%%", ticker, pnl_pct)
+                            logger.error("Error cerrando huerfana %s: %s", ticker, _oe)
+                            alerts.append(f"❌ Error cerrando {ticker}: {_oe}")
                 continue
 
             stop_loss = signal.get("stop_loss")

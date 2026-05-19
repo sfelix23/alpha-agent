@@ -278,6 +278,11 @@ def _orphan_positions_panel(positions, signals_data: dict) -> str:
     if not orphans:
         return ""
 
+    # Iter8: bot username para botones interactivos. Hardcoded por ahora —
+    # idealmente leer de config. NAF usa @sfelix23_alpha_bot (chequear si cambia).
+    import os as _os_iter8
+    _bot_username = _os_iter8.getenv("TELEGRAM_BOT_USERNAME", "sfelix23_alpha_bot")
+
     rows = []
     total_pnl = 0.0
     for o in sorted(orphans, key=lambda x: -float(x.unrealized_pl)):
@@ -286,7 +291,27 @@ def _orphan_positions_panel(positions, signals_data: dict) -> str:
         pct = (pnl / cost * 100) if cost else 0
         total_pnl += pnl
         color = "#3fb950" if pnl >= 0 else "#f85149"
-        rec = "✅ Mantener (winner)" if pnl > 0 else "⚠️ Considerar liquidar"
+
+        # Iter8: 3 acciones diferentes segun el P&L
+        if pnl > 20:
+            rec = "✅ Winner — auto-mantener"
+            btn = ""
+        elif pnl < -5:
+            rec = "🔴 Auto-handler la cerrara en proxima corrida"
+            # Link al bot con comando liquidate <ticker> pre-armado
+            btn = (f'<a href="https://t.me/{_bot_username}?text=liquidate%20{o.ticker}" '
+                   f'target="_blank" style="display:inline-block;margin-top:4px;'
+                   f'padding:4px 10px;background:#f8514922;color:#f85149;'
+                   f'border:1px solid #f85149;border-radius:3px;font-size:.66rem;'
+                   f'text-decoration:none;font-family:var(--mono)">⚡ LIQUIDAR YA</a>')
+        else:
+            rec = "⚠️ Zona neutra — monitoreando"
+            btn = (f'<a href="https://t.me/{_bot_username}?text=liquidate%20{o.ticker}" '
+                   f'target="_blank" style="display:inline-block;margin-top:4px;'
+                   f'padding:4px 10px;background:#d2992222;color:#d29922;'
+                   f'border:1px solid #d29922;border-radius:3px;font-size:.66rem;'
+                   f'text-decoration:none;font-family:var(--mono)">⚡ Liquidar manual</a>')
+
         rows.append(f"""
         <div style="display:flex;justify-content:space-between;padding:8px 0;
                     border-bottom:1px solid var(--bd);font-size:.78rem">
@@ -301,16 +326,41 @@ def _orphan_positions_panel(positions, signals_data: dict) -> str:
               ${pnl:+.2f} ({pct:+.1f}%)
             </div>
             <div style="font-size:.66rem;color:var(--mt)">{rec}</div>
+            {btn}
           </div>
         </div>""")
     rows_html = "\n".join(rows)
     total_color = "#3fb950" if total_pnl >= 0 else "#f85149"
 
+    # Iter8: bot actions globales
+    _btn_style = ("display:inline-block;margin:4px 6px 0 0;padding:6px 12px;"
+                  "border-radius:4px;font-size:.72rem;text-decoration:none;"
+                  "font-family:var(--mono);border:1px solid")
+    bot_actions = f"""
+    <div style="margin-top:12px;padding-top:10px;border-top:1px solid var(--bd)">
+      <div style="font-size:.66rem;color:var(--mt);margin-bottom:6px;text-transform:uppercase;letter-spacing:.5px">
+        Acciones rapidas (abren Telegram con comando pre-armado)
+      </div>
+      <a href="https://t.me/{_bot_username}?text=liquidate%20orphans" target="_blank"
+         style="{_btn_style};background:#f8514922;color:#f85149;border-color:#f85149">
+        🔴 Liquidar todas las huerfanas negativas
+      </a>
+      <a href="https://t.me/{_bot_username}?text=cartera" target="_blank"
+         style="{_btn_style};background:#3b82f622;color:#3b82f6;border-color:#3b82f6">
+        📊 Ver cartera completa
+      </a>
+      <a href="https://t.me/{_bot_username}?text=health" target="_blank"
+         style="{_btn_style};background:#3fb95022;color:#3fb950;border-color:#3fb950">
+        🟢 Health snapshot
+      </a>
+    </div>
+    """
+
     return f"""<div class="card" style="border-left:3px solid #d29922">
   <div class="card-head">
     <div>
       <div class="card-title">⚠️ POSICIONES HUÉRFANAS ({len(orphans)})</div>
-      <div class="card-sub">Abiertas en Alpaca pero SIN signal activa · NO se gestionan automáticamente</div>
+      <div class="card-sub">Sin signal activa · Iter8: auto-handler las gestiona ahora</div>
     </div>
     <div style="text-align:right">
       <div style="font-family:var(--mono);font-size:1.2rem;font-weight:600;color:{total_color}">
@@ -322,9 +372,10 @@ def _orphan_positions_panel(positions, signals_data: dict) -> str:
   {rows_html}
   <div style="margin-top:10px;padding-top:8px;border-top:1px solid var(--bd);
               font-size:.7rem;color:var(--mt)">
-    ⚠️ Estas posiciones <b>NO tienen stop loss dinámico ni trailing</b>. El monitor
-    sólo loguea warnings. Liquidá manualmente las negativas para arrancar limpio.
+    <b>Reglas auto-handler (cada 30min):</b><br>
+    🟢 P&L > +20% → MANTENER (winner) · 🔴 P&L < -5% → AUTO-CLOSE · 🟡 Hold > 7d sin progreso → CLOSE
   </div>
+  {bot_actions}
 </div>"""
 
 
