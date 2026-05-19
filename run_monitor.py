@@ -488,6 +488,59 @@ def _main_locked(args):
     from alpha_agent.notifications import send_notification
     from alpha_agent.config import PARAMS
 
+    # ── Watchdog del pipeline (Iter4): detecta stale signals ────────────────────
+    # El sistema "no opero del 3 al 18 de mayo sin alerta". Esto previene eso.
+    # Si signals/latest.json es de hace >24h, alerta inmediata.
+    # Estado guardado en signals/watchdog_state.json para no spammear cada 30min.
+    try:
+        import json as _wd_json
+        from datetime import datetime as _wd_dt, timezone as _wd_tz
+        _wd_state_path = BASE_DIR / "signals" / "watchdog_state.json"
+        _sig_path = SIGNALS_PATH
+        if _sig_path.exists():
+            _sig_data = _wd_json.loads(_sig_path.read_text(encoding="utf-8"))
+            _gen_str = _sig_data.get("generated_at", "")
+            try:
+                _gen_dt = _wd_dt.fromisoformat(_gen_str.replace("Z", "+00:00"))
+                if _gen_dt.tzinfo is None:
+                    _gen_dt = _gen_dt.replace(tzinfo=_wd_tz.utc)
+                _age_h = (_wd_dt.now(_wd_tz.utc) - _gen_dt).total_seconds() / 3600
+            except Exception:
+                _age_h = 999.0  # parsing failed → asumir stale
+        else:
+            _age_h = 999.0
+
+        # Cooldown: no spam — solo alerta si pasaron >2h desde la ultima alerta del mismo problema
+        _last_alert_ts = 0.0
+        if _wd_state_path.exists():
+            try:
+                _last_alert_ts = float(_wd_json.loads(_wd_state_path.read_text()).get("last_alert_ts", 0))
+            except Exception:
+                pass
+        _now_ts = _wd_dt.now(_wd_tz.utc).timestamp()
+        _cooldown_ok = (_now_ts - _last_alert_ts) > 7200  # 2h
+
+        if _age_h > 24 and _cooldown_ok:
+            _wd_msg = (
+                f"🚨 *WATCHDOG* — signals/latest.json STALE\n"
+                f"Edad: {_age_h:.0f}h (umbral 24h)\n"
+                f"Ultimo analyst: {_gen_str or 'desconocido'}\n"
+                f"El sistema NO esta operando. Trigger manual:\n"
+                f"`gcloud run jobs execute alpha-daily --region us-central1 --project alpha-agent-2025`"
+            )
+            logger.warning("WATCHDOG ALERT: signals stale %.0fh", _age_h)
+            try:
+                send_notification(_wd_msg, header="WATCHDOG")
+                _wd_state_path.write_text(_wd_json.dumps({"last_alert_ts": _now_ts}), encoding="utf-8")
+            except Exception as _wne:
+                logger.debug("watchdog notify fail: %s", _wne)
+        elif _age_h > 24:
+            logger.warning("WATCHDOG: signals stale %.0fh (alerta en cooldown)", _age_h)
+        else:
+            logger.info("Watchdog OK: signals %.1fh de edad", _age_h)
+    except Exception as _wd_err:
+        logger.debug("watchdog error (no critico): %s", _wd_err)
+
     broker = AlpacaBroker(paper=True)
 
     # ── 1. Check horario de mercado (salir temprano si el mercado está cerrado)

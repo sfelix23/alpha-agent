@@ -264,25 +264,83 @@ def execute(broker: BrokerBase, *, dry_run: bool = True, max_capital: float | No
         ]
         logger.warning("Stale signal guard: BUYs en tickers no holding filtrados")
 
-    # ── TP sanity: no BUY si el TP ya quedó por debajo del precio de señal ────
-    # Señal stale → precio de mercado puede haber superado el TP ya calculado.
-    # Un TP < signal.price indica corrupción; TP < mercado actual = trade inútil.
+    # ── Validador de signals (Iter4): rechaza signals incoherentes ────────────
+    # Bug real del 19/05: MU venía con stop=$682.54 y tp=$650.66 (TP DEBAJO del
+    # stop). Trade perdedor garantizado. Validamos AHORA antes de ejecutar.
+    # Reglas:
+    #   1. stop_loss > 0 y take_profit > 0 (si están definidos)
+    #   2. take_profit > stop_loss × 1.5 (R/R mínimo aceptable)
+    #   3. take_profit > signal.price (no comprar para vender abajo)
+    #   4. stop_loss < signal.price (stop por debajo del precio actual)
+    # Si alguna falla, log + alerta + skip.
+    _validation_failures = []
     sane_intents = []
     for intent in equity_intents:
-        if intent.side.upper() == "BUY" and intent.take_profit:
-            sig_match = next(
-                (s for s in signals.long_term + signals.short_term if s.ticker == intent.ticker),
-                None,
-            )
-            sig_price = float(sig_match.price) if sig_match else 0.0
-            if sig_price > 0 and intent.take_profit <= sig_price * 1.01:
-                logger.warning(
-                    "TP sanity SKIP %s: take_profit $%.2f <= signal_price $%.2f "
-                    "(señal stale — TP ya superado por el mercado)",
-                    intent.ticker, intent.take_profit, sig_price,
+        if intent.side.upper() != "BUY":
+            sane_intents.append(intent)
+            continue
+
+        sig_match = next(
+            (s for s in signals.long_term + signals.short_term if s.ticker == intent.ticker),
+            None,
+        )
+        sig_price = float(sig_match.price) if sig_match else 0.0
+        sl = intent.stop_loss
+        tp = intent.take_profit
+
+        # 1. Stop o TP en 0 o negativo
+        if sl is not None and sl <= 0:
+            _validation_failures.append(f"{intent.ticker}: stop_loss invalido ({sl})")
+            continue
+        if tp is not None and tp <= 0:
+            _validation_failures.append(f"{intent.ticker}: take_profit invalido ({tp})")
+            continue
+
+        # 2. Coherencia stop vs TP — el bug critico de MU
+        if sl is not None and tp is not None:
+            if tp <= sl:
+                _validation_failures.append(
+                    f"{intent.ticker}: TP ${tp:.2f} <= SL ${sl:.2f} (TP debajo del stop, trade perdedor)"
                 )
                 continue
+            # R/R minimo 1.5:1
+            if sig_price > 0:
+                upside = tp - sig_price
+                downside = sig_price - sl
+                if downside > 0 and upside / downside < 1.5:
+                    _validation_failures.append(
+                        f"{intent.ticker}: R/R {upside/downside:.2f}x < 1.5x (TP ${tp:.2f} SL ${sl:.2f} px ${sig_price:.2f})"
+                    )
+                    continue
+
+        # 3. TP debajo del precio (señal stale)
+        if tp is not None and sig_price > 0 and tp <= sig_price * 1.01:
+            _validation_failures.append(
+                f"{intent.ticker}: TP ${tp:.2f} <= precio ${sig_price:.2f} (señal stale o corrupta)"
+            )
+            continue
+
+        # 4. Stop por encima del precio (BUY con stop arriba = inmediato cierre)
+        if sl is not None and sig_price > 0 and sl >= sig_price * 0.999:
+            _validation_failures.append(
+                f"{intent.ticker}: SL ${sl:.2f} >= precio ${sig_price:.2f} (stop arriba del precio, cierre inmediato)"
+            )
+            continue
+
         sane_intents.append(intent)
+
+    if _validation_failures:
+        msg = "*VALIDADOR SIGNALS* — rechazadas %d ordenes BUY:\n%s" % (
+            len(_validation_failures),
+            "\n".join(f"  - {f}" for f in _validation_failures),
+        )
+        logger.warning("Signal validation rejected %d BUYs:\n%s", len(_validation_failures), "\n".join(_validation_failures))
+        try:
+            from alpha_agent.notifications import send_notification
+            send_notification(msg, header="VALIDADOR SIGNALS")
+        except Exception as _ne:
+            logger.debug("send_notification fail: %s", _ne)
+
     equity_intents = sane_intents
 
     # ── Risk Arbiter: debate bull/bear antes de BUY ──────────────────────────
