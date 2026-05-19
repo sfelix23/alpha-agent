@@ -145,9 +145,21 @@ def _fear_greed_score(vix: float, regime: str) -> float:
 
 
 def _ai_synthesis(signals: dict[str, Any], api_key: str) -> tuple[str, float, str]:
-    """Claude Haiku sintetiza todas las señales en direction + conviction + reasoning."""
-    import anthropic, json
+    """Claude Haiku sintetiza todas las señales en direction + conviction + reasoning.
+
+    Iter3: kill switch defensivo. Si ENABLE_ANTHROPIC OFF, devolvemos NEUTRAL
+    con la conviction derivada del composite_score (heuristica), sin red.
+    """
+    from alpha_agent.config import LLM as _LLM
     score = signals.get("composite_score", 0.0)
+    if not _LLM.enable_anthropic:
+        # Heuristica determinista: composite_score [-1, 1] → direction
+        if score >= 0.30:
+            return "BULLISH", min(0.85, 0.5 + abs(score)), f"composite_score={score:+.2f} (LLM disabled, heuristica)"
+        if score <= -0.30:
+            return "BEARISH", min(0.85, 0.5 + abs(score)), f"composite_score={score:+.2f} (LLM disabled, heuristica)"
+        return "NEUTRAL", 0.5, f"composite_score={score:+.2f} (LLM disabled, heuristica)"
+    import anthropic, json
     prompt = (
         "You are a short-term market prediction AI (1-5 day horizon).\n"
         f"Signals summary:\n{json.dumps(signals, indent=2)}\n\n"
