@@ -1,0 +1,27 @@
+# Ignora archivos al subir a Cloud Build (no afectan el contenedor).
+.env
+.env.*
+.git/
+.gitignore
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.log
+.venv/
+venv/
+*.egg-info/
+dist/
+build/
+.pytest_cache/
+.claude/
+node_modules/
+# Datos grandes — no se necesitan en la imagen.
+logs/
+alpha_agent/data/cache/
+signals/equity_snapshots.json
+signals/llm_cache.sqlite
+signals/*.tmp
+# Docs / READMEs (no son runtime)
+docs/
+*.md

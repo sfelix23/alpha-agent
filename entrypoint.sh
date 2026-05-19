@@ -12,6 +12,10 @@ set -e
   [ -n "$TWILIO_TOKEN" ]         && echo "TWILIO_TOKEN=$TWILIO_TOKEN"
   [ -n "$MY_PHONE_NUMBER" ]      && echo "MY_PHONE_NUMBER=$MY_PHONE_NUMBER"
   [ -n "$GOOGLE_API_KEY" ]       && echo "GOOGLE_API_KEY=$GOOGLE_API_KEY"
+  # LLM gateway providers (Sesion 1+2 del plan)
+  [ -n "$GROQ_API_KEY" ]         && echo "GROQ_API_KEY=$GROQ_API_KEY"
+  [ -n "$DEEPSEEK_API_KEY" ]     && echo "DEEPSEEK_API_KEY=$DEEPSEEK_API_KEY"
+  [ -n "$OPENROUTER_API_KEY" ]   && echo "OPENROUTER_API_KEY=$OPENROUTER_API_KEY"
 } > .env
 
 echo "=== TASK=$TASK | $(date) ==="
