@@ -550,33 +550,45 @@ def _main_locked(args):
     capital_base = signals_data.get("capital_usd", PARAMS.paper_capital_usd)
     cp_max_hold_days = _read_cp_max_hold_days()
 
-    # ── 4. Kill switch: equity cayó más del threshold desde el capital base
-    kill_switch_pct = 0.03  # -3%
+    # ── 4. Risk budget escalado (Iter3): bandas en lugar de kill binario -3%
+    # Reemplaza el kill switch binario por el sistema escalado de kelly.py.
+    # Bandas: 0..-2% NORMAL, -2..-4% REDUCE, -4..-6% CLOSE_LOSERS,
+    # -6..-8% CLOSE_LONGS, <-8% KILL. Notifica via Telegram en cada cambio.
     drawdown = (capital_base - equity) / capital_base if capital_base > 0 else 0
+    drawdown_pct = -drawdown * 100  # negativo para alimentar risk_action_for_drawdown
 
     alerts: list[str] = []
     closes: list[str] = []
 
-    # ── 5. KILL SWITCH CHECK
-    if drawdown >= kill_switch_pct:
-        logger.warning("🚨 KILL SWITCH activado! DD=%.2f%% (threshold=%.0f%%)",
-                       drawdown * 100, kill_switch_pct * 100)
+    try:
+        from alpha_agent.analytics.kelly import risk_action_for_drawdown
+        risk_band = risk_action_for_drawdown(drawdown_pct)
+        risk_level = risk_band["level"]
+    except Exception as _rb_err:
+        logger.debug("risk_action_for_drawdown no disponible (%s) — fallback binario", _rb_err)
+        risk_band = {"level": "KILL" if drawdown >= 0.03 else "NORMAL"}
+        risk_level = risk_band["level"]
+
+    if risk_level != "NORMAL":
+        logger.warning("🚨 RISK BAND %s | DD=%.2f%% | equity=$%.0f baseline=$%.0f",
+                       risk_level, drawdown * 100, equity, capital_base)
         alerts.append(
-            f"🚨 *KILL SWITCH* activado\n"
-            f"Equity: ${equity:.0f} (DD {drawdown*100:.1f}% desde ${capital_base:.0f})"
+            f"🚨 *RISK BAND {risk_level}*\n"
+            f"Equity: ${equity:.0f} | DD {drawdown*100:.1f}% desde ${capital_base:.0f}\n"
+            f"{risk_band.get('description', '')}"
         )
 
+    # KILL — cerrar TODO
+    if risk_level == "KILL":
         if args.live and not args.dry_run:
             logger.warning("Cerrando TODAS las posiciones...")
             try:
-                # close_all_positions cierra equity + opciones en Alpaca REST API
                 broker._trading.close_all_positions(cancel_orders=True)
                 closes.append("ALL (kill switch)")
-                alerts.append("✅ Todas las posiciones cerradas (equity + opciones).")
+                alerts.append("✅ Todas las posiciones cerradas (kill switch).")
             except Exception as e:
                 alerts.append(f"❌ Error en close_all_positions: {e}")
                 logger.error("Error en kill switch: %s", e)
-                # Fallback: intentar cerrar posición a posición si el bulk falla
                 logger.warning("Fallback: cerrando posiciones individualmente...")
                 for _ks_pos in positions:
                     try:
@@ -586,6 +598,50 @@ def _main_locked(args):
                         logger.error("Kill switch fallback %s: %s", _ks_pos.ticker, _ks_e)
         else:
             alerts.append("_(dry-run: no se cerraron posiciones)_")
+    # CLOSE_LONGS — cerrar longs equity (mantiene hedge / opciones)
+    elif risk_level == "CLOSE_LONGS":
+        if args.live and not args.dry_run:
+            logger.warning("CLOSE_LONGS — cerrando posiciones equity long, manteniendo hedge")
+            for _ks_pos in positions:
+                _is_opt = getattr(_ks_pos, "asset_class", "equity") == "option"
+                if _is_opt:
+                    continue  # mantener hedge / opciones
+                _is_long = float(getattr(_ks_pos, "qty", 0)) > 0
+                if _is_long:
+                    try:
+                        broker._trading.close_position(_ks_pos.ticker, cancel_orders=True)
+                        closes.append(f"{_ks_pos.ticker} (CLOSE_LONGS)")
+                        logger.info("CLOSE_LONGS: %s cerrado", _ks_pos.ticker)
+                    except Exception as _ke:
+                        logger.error("CLOSE_LONGS fail %s: %s", _ks_pos.ticker, _ke)
+        else:
+            alerts.append("_(dry-run: no se cerraron longs)_")
+    # CLOSE_LOSERS — cerrar sólo perdedores (P&L < 0)
+    elif risk_level == "CLOSE_LOSERS":
+        if args.live and not args.dry_run:
+            logger.warning("CLOSE_LOSERS — cerrando posiciones con P&L negativo")
+            for _ks_pos in positions:
+                try:
+                    if float(getattr(_ks_pos, "unrealized_pl", 0)) >= 0:
+                        continue
+                    broker._trading.close_position(_ks_pos.ticker, cancel_orders=True)
+                    closes.append(f"{_ks_pos.ticker} (CLOSE_LOSERS, P&L<0)")
+                    logger.info("CLOSE_LOSERS: %s cerrado", _ks_pos.ticker)
+                except Exception as _ke:
+                    logger.error("CLOSE_LOSERS fail %s: %s", _ks_pos.ticker, _ke)
+        else:
+            alerts.append("_(dry-run: no se cerraron losers)_")
+    # REDUCE — no cerramos pero marcamos el flag para que el próximo daily no entre
+    elif risk_level == "REDUCE":
+        try:
+            from pathlib import Path as _P
+            (_P(__file__).parent / "signals" / "reduce_mode.flag").write_text(
+                f"DD {drawdown*100:.1f}% — REDUCE mode activo. Eliminar este archivo para resetear.",
+                encoding="utf-8",
+            )
+            logger.info("REDUCE flag escrito: signals/reduce_mode.flag")
+        except Exception:
+            pass
 
     else:
         # ── 5b. VIX SPIKE PROTOCOL: reducir CP al 50% si VIX sube >20% intradía
