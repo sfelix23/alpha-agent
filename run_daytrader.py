@@ -29,6 +29,8 @@ from pathlib import Path
 
 from dotenv import load_dotenv
 
+from alpha_agent.config import setup_agent_logging
+
 BASE_DIR = Path(__file__).parent.resolve()
 LOG_DIR  = BASE_DIR / "logs"
 
@@ -48,18 +50,8 @@ ENTRY_CLOSE_UTC_H = 18
 
 
 def _setup_logging() -> None:
-    LOG_DIR.mkdir(exist_ok=True)
-    today = datetime.now().strftime("%Y-%m-%d")
-    log_file = LOG_DIR / ("daytrader_" + today + ".log")
-    logging.basicConfig(
-        level=logging.INFO,
-        format="[%(asctime)s] %(levelname)s %(name)s -- %(message)s",
-        datefmt="%H:%M:%S",
-        handlers=[
-            logging.StreamHandler(sys.stdout),
-            logging.FileHandler(str(log_file), encoding="utf-8"),
-        ],
-    )
+    """Wrapper compatible — delega al logging centralizado en config.py."""
+    setup_agent_logging("daytrader")
 
 
 def _in_entry_window() -> bool:

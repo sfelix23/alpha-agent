@@ -47,23 +47,15 @@ if sys.platform == "win32" and hasattr(sys.stderr, "reconfigure"):
 from dotenv import load_dotenv
 load_dotenv(BASE_DIR / ".env")
 
+from alpha_agent.config import setup_agent_logging
+
 log = logging.getLogger("scalper")
 ET = ZoneInfo("America/New_York")
 
 
 def _setup_logging() -> None:
-    today    = datetime.now().strftime("%Y-%m-%d")
-    log_file = BASE_DIR / "logs" / f"scalper_{today}.log"
-    log_file.parent.mkdir(exist_ok=True)
-    logging.basicConfig(
-        level=logging.INFO,
-        format="[%(asctime)s] %(levelname)s %(name)s — %(message)s",
-        datefmt="%H:%M:%S",
-        handlers=[
-            logging.StreamHandler(sys.stdout),
-            logging.FileHandler(str(log_file), encoding="utf-8"),
-        ],
-    )
+    """Wrapper compatible — delega al logging centralizado en config.py."""
+    setup_agent_logging("scalper")
 
 
 def _build_broker():

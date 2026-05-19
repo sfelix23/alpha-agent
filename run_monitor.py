@@ -36,6 +36,7 @@ from datetime import datetime
 from pathlib import Path
 
 from dotenv import load_dotenv
+from alpha_agent.config import setup_agent_logging
 from alpha_agent.news.claude_analyst import assess_position as claude_assess
 
 # ── Rutas absolutas (funciona sin importar el working directory de Task Scheduler)
@@ -47,17 +48,8 @@ logger = logging.getLogger("monitor")
 
 
 def setup_logging():
-    LOG_DIR.mkdir(exist_ok=True)
-    log_file = LOG_DIR / f"monitor_{datetime.now().strftime('%Y-%m-%d')}.log"
-    logging.basicConfig(
-        level=logging.INFO,
-        format="[%(asctime)s] %(levelname)s %(name)s — %(message)s",
-        datefmt="%H:%M:%S",
-        handlers=[
-            logging.StreamHandler(sys.stdout),
-            logging.FileHandler(str(log_file), encoding="utf-8"),
-        ],
-    )
+    """Wrapper compatible — delega al logging centralizado en config.py."""
+    setup_agent_logging("monitor")
 
 
 def load_signals_latest() -> dict:

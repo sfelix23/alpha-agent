@@ -23,16 +23,32 @@ _DB_PATH = Path(__file__).resolve().parents[2] / "signals" / "trades.db"
 
 @contextmanager
 def _conn():
-    con = sqlite3.connect(str(_DB_PATH))
+    """Conexión SQLite con WAL + busy_timeout para resistir escritura concurrente.
+
+    Sin WAL, escrituras paralelas desde varios procesos (analyst + monitor +
+    daytrader corriendo a la vez en Cloud Run / GHA) pueden corromper la
+    base. WAL permite múltiples readers + 1 writer sin bloquear, y
+    busy_timeout=15s evita "database is locked" en bursts.
+    """
+    con = sqlite3.connect(str(_DB_PATH), timeout=15.0)
     con.row_factory = sqlite3.Row
     try:
+        con.execute("PRAGMA journal_mode=WAL")
+        con.execute("PRAGMA busy_timeout=15000")
+        con.execute("PRAGMA synchronous=NORMAL")
         yield con
         con.commit()
     finally:
         con.close()
 
 
-def _ensure_schema() -> None:
+def init_db() -> None:
+    """Crea la tabla `trades` y aplica migraciones de columnas. Idempotente.
+
+    Antes corría en module-load (linea final del archivo), con potencial race
+    si dos procesos importaban el módulo al mismo tiempo. Ahora se invoca
+    explícitamente desde cada run_*.py al arrancar.
+    """
     with _conn() as con:
         con.execute("""
             CREATE TABLE IF NOT EXISTS trades (
@@ -61,22 +77,27 @@ def _ensure_schema() -> None:
         """)
         con.execute("CREATE INDEX IF NOT EXISTS idx_ticker ON trades(ticker)")
         con.execute("CREATE INDEX IF NOT EXISTS idx_date ON trades(date)")
-        # Migración: agregar columnas a DBs existentes sin recrear
+        # Migración: agregar columnas a DBs existentes sin recrear.
+        # Estrechamos el except a OperationalError + verificación de "duplicate column"
+        # para no swallowear errores reales (DB corrupta, permisos, FS lleno).
         for col, typedef in [
             ("closed_at",    "TEXT"),
             ("exit_price",   "REAL"),
             ("pnl_usd",      "REAL"),
             ("pnl_pct",      "REAL"),
             ("hold_days",    "REAL"),
-            ("signals_json", "TEXT"),   # JSON con factores de scoring al momento de entrada
+            ("signals_json", "TEXT"),
         ]:
             try:
                 con.execute(f"ALTER TABLE trades ADD COLUMN {col} {typedef}")
-            except Exception:
-                pass  # columna ya existe
+            except sqlite3.OperationalError as e:
+                if "duplicate column" not in str(e).lower():
+                    raise
 
 
-_ensure_schema()
+# Init en module-load — mantiene compatibilidad con el patrón previo.
+# init_db() también es público por si run_*.py quieren llamarlo explícito.
+init_db()
 
 
 def log_trade(
