@@ -124,6 +124,104 @@ def _calc_metrics(history: list[dict], spy_history: list[dict], qqq_history: lis
 
 # ─── WORKFLOW HEALTH PANEL ────────────────────────────────────────────────────
 
+def _llm_status_panel() -> str:
+    """Iter6: card con estado del LLM gateway — providers, calls, costo.
+
+    Lee signals/llm_budget.json y signals/llm_provider_state.json (commiteados
+    por _push_results desde iter6). Si Anthropic está OFF (ENABLE_ANTHROPIC
+    no seteada), lo muestra explícito con el botón para activarlo.
+    """
+    import json, os
+    from datetime import datetime, timezone
+
+    budget = {}
+    state  = {"disabled": {}}
+    try:
+        b_path = BASE_DIR / "signals" / "llm_budget.json"
+        if b_path.exists():
+            budget = json.loads(b_path.read_text(encoding="utf-8"))
+    except Exception:
+        pass
+    try:
+        s_path = BASE_DIR / "signals" / "llm_provider_state.json"
+        if s_path.exists():
+            state = json.loads(s_path.read_text(encoding="utf-8"))
+    except Exception:
+        pass
+
+    providers_meta = [
+        ("groq",       "Groq",       "Llama 3.3 70B"),
+        ("gemini",     "Gemini",     "Flash 2.0"),
+        ("deepseek",   "DeepSeek",   "Chat / R1"),
+        ("openrouter", "OpenRouter", "Qwen 2.5 / Llama"),
+        ("anthropic",  "Anthropic",  "Haiku 4.5"),
+    ]
+
+    rows = []
+    total_calls = 0
+    total_cost = 0.0
+    cache_hits = 0
+    for pid, name, model in providers_meta:
+        p = budget.get("providers", {}).get(pid, {})
+        calls = p.get("calls", 0)
+        cost  = p.get("cost_usd", 0.0)
+        hits  = p.get("cache_hits", 0)
+        total_calls += calls
+        total_cost  += cost
+        cache_hits  += hits
+
+        disabled_entry = state.get("disabled", {}).get(pid)
+        if pid == "anthropic":
+            anthropic_on = os.getenv("ENABLE_ANTHROPIC", "").lower() in ("true", "1", "yes")
+            if not anthropic_on:
+                status_html = '<span style="color:#6e7681">OFF (flag)</span>'
+            elif disabled_entry:
+                status_html = f'<span style="color:#f85149">AUTO-DISABLED</span>'
+            else:
+                status_html = '<span style="color:#3fb950">ON</span>'
+        else:
+            if disabled_entry:
+                status_html = '<span style="color:#f85149">AUTO-DISABLED</span>'
+            else:
+                status_html = '<span style="color:#3fb950">activo</span>'
+
+        rows.append(f"""
+        <div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--bd);font-size:.78rem">
+          <div style="flex:1">
+            <div style="font-weight:600;color:var(--tx)">{name}</div>
+            <div style="font-size:.68rem;color:var(--mt)">{model}</div>
+          </div>
+          <div style="text-align:right">
+            <div style="font-family:var(--mono)">{calls} calls · ${cost:.4f}</div>
+            <div style="font-size:.68rem">{status_html}</div>
+          </div>
+        </div>
+        """)
+
+    rows_html = "".join(rows)
+    cache_pct = (cache_hits / max(total_calls, 1)) * 100 if total_calls else 0
+    today = budget.get("date", "—")
+
+    return f"""<div class="card">
+  <div class="card-head">
+    <div>
+      <div class="card-title">LLM GATEWAY — STATUS</div>
+      <div class="card-sub">5 providers · cascada free-first · Anthropic OFF por flag (anti-flag)</div>
+    </div>
+    <div style="text-align:right">
+      <div style="font-family:var(--mono);font-size:.9rem;color:var(--ac)">{total_calls} calls</div>
+      <div style="font-family:var(--mono);font-size:.74rem;color:var(--mt)">${total_cost:.4f} · {cache_pct:.0f}% cache hit</div>
+      <div style="font-size:.66rem;color:var(--mt)">fecha: {today}</div>
+    </div>
+  </div>
+  {rows_html}
+  <div style="margin-top:10px;padding-top:10px;border-top:1px solid var(--bd);font-size:.7rem;color:var(--mt)">
+    Para activar Anthropic temporalmente:
+    <code>gcloud run jobs update alpha-daily --update-env-vars ENABLE_ANTHROPIC=true --region us-central1 --project alpha-agent-2025</code>
+  </div>
+</div>"""
+
+
 def _workflow_health_panel(status: dict) -> str:
     """Mini-panel con estado de los workflows de GitHub Actions — con fetch live vía JS."""
     from datetime import datetime, timezone
@@ -283,7 +381,7 @@ def _tres_cuentas_panel(lp_trades: list, dt_trades: list, scalp_trades: list) ->
 def _tab_resumen(equity, initial, regime, vix, wti, gold, dxy,
                  history, spy_history, signals_data, metrics, age_hours,
                  perf_data=None, qqq_history=None, mc_result=None,
-                 tres_cuentas_html="", wf_health_html=""):
+                 tres_cuentas_html="", wf_health_html="", llm_status_html=""):
     pnl     = equity - initial
     pnl_pct = (pnl / initial * 100) if initial else 0
     pc      = _c(pnl)
@@ -421,6 +519,8 @@ def _tab_resumen(equity, initial, regime, vix, wti, gold, dxy,
   {tres_cuentas_html}
   <div class="section-gap"></div>
   {wf_health_html}
+  <div class="section-gap"></div>
+  {llm_status_html}
   <div class="section-gap"></div>
   {eq_chart}
   <div class="section-gap"></div>
@@ -2309,10 +2409,12 @@ def build_html(equity, initial, history, positions, signals_data,
 
     tres_cuentas   = _tres_cuentas_panel(trades or [], dt_trades or [], scalp_trades or [])
     wf_health      = _workflow_health_panel(workflow_status or {})
+    llm_status     = _llm_status_panel()
     t_resumen    = _tab_resumen(equity, initial, regime, vix, wti, gold, dxy,
                                 history, spy_history, signals_data, metrics, age_hours,
                                 perf_data=perf_data, qqq_history=qqq_history, mc_result=mc_result,
-                                tres_cuentas_html=tres_cuentas, wf_health_html=wf_health)
+                                tres_cuentas_html=tres_cuentas, wf_health_html=wf_health,
+                                llm_status_html=llm_status)
     t_posiciones = _tab_posiciones(positions)
     t_senales    = _tab_senales(signals_data)
     t_mercado    = _tab_mercado(signals_data, discovery_data=discovery_data)
