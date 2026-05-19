@@ -20,6 +20,31 @@ set -e
 
 echo "=== TASK=$TASK | $(date) ==="
 
+_pull_state() {
+  # Sincroniza signals/* desde el repo ANTES de correr cualquier task.
+  # Sin esto, cada container arranca con signals/latest.json del momento del
+  # build de la imagen (potencialmente días viejo). El watchdog del monitor
+  # disparaba "STALE 383h" falsos porque leía signals viejo de la imagen,
+  # no del repo actualizado por el daily.
+  # Bug discovered iter4 → fix iter5.
+  [ -z "$GH_TOKEN" ] && { echo "_pull_state: sin GH_TOKEN, skip"; return 0; }
+  local REPO_URL="https://alpha-bot:${GH_TOKEN}@github.com/sfelix23/alpha-agent.git"
+  local PULL_DIR="/tmp/_pull_${TASK:-run}_$$"
+  rm -rf "$PULL_DIR"
+  if git clone --depth=1 "$REPO_URL" "$PULL_DIR" 2>/dev/null; then
+    # Copiar archivos críticos del state al /app local del container.
+    for f in latest.json trades.db allocation.json equity_snapshots.json \
+             workflow_status.json last_run.json sentiment_cache.json \
+             discovery.json capital_baseline.json capital_reservations.json; do
+      [ -f "$PULL_DIR/signals/$f" ] && cp "$PULL_DIR/signals/$f" "/app/signals/$f" 2>/dev/null
+    done
+    rm -rf "$PULL_DIR"
+    echo "_pull_state: signals/ sincronizado desde repo"
+  else
+    echo "_pull_state: git clone falló, container queda con signals de la imagen"
+  fi
+}
+
 _push_results() {
   # Clona el repo en /tmp, copia los resultados y pushea.
   # Usa directorio único por TASK+PID para evitar race condition entre daily y monitor.
@@ -70,6 +95,7 @@ print(f"signals/latest.json OK ({age_min:.0f}min de edad)")
 
 case "$TASK" in
   daily)
+    _pull_state   # iter5: traer state del repo antes de correr
     python run_analyst.py --send || { echo "ANALYST FAILED — abortando pipeline"; _push_results; exit 1; }
     _validate_signals             || { echo "SIGNALS INVALIDOS — abortando pipeline";  _push_results; exit 1; }
     python run_trader.py --live       || true
@@ -78,11 +104,13 @@ case "$TASK" in
     _push_results
     ;;
   monitor)
+    _pull_state   # iter5: critico — sin esto el watchdog lee signals viejo de la imagen
     python run_monitor.py --live || true   # no abortar el push si el monitor falla
     python run_dashboard.py --no-open || true
     _push_results
     ;;
   weekly)
+    _pull_state
     python run_rebalancer.py --live
     ;;
   *)
