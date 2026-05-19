@@ -1,6 +1,7 @@
 # SYSTEM_CONTEXT.md — Compressed system reference
 
-> **Para Claude (y NAF): leé esto PRIMERO antes de hacer cambios.** Reemplaza la necesidad de re-explorar el repo. Última actualización: 2026-05-19 iter4.
+> **Para Claude (y NAF): leé esto PRIMERO antes de hacer cambios.** Reemplaza la necesidad de re-explorar el repo. Última actualización: **2026-05-19 iter7**.
+> Ver también **`HANDOFF.md`** para el resumen de la última sesión y pendientes urgentes.
 
 ## TL;DR (30 segundos)
 
@@ -279,6 +280,9 @@ curl "https://api.telegram.org/bot$token/setWebhook?url=https://$domain/webhook/
 - **iter2 (2026-05-19)**: enchufar código muerto de iter1 + robustness gaps (retry submit_order, atomic latest.json, earnings pre-BUY) + bot Telegram bidireccional + `--health` flag + CLAUDE.md/MEMORY.md.
 - **iter3 (2026-05-19)**: modo agresivo CP (ret_1m 0.48, tech boost +0.65, hold 8d) + risk bands LIVE en monitor + ENABLE_ANTHROPIC env var + DT_BUDGET dinámico + **kill switches en 6 archivos paralelos** (anti-flag de cuenta).
 - **iter4 (2026-05-19)**: validador signals pre-execution (fix bug MU stop>TP) + watchdog del analyst (stale >24h alerta) + este SYSTEM_CONTEXT.md.
+- **iter5 (2026-05-19)**: `_pull_state` en entrypoint clona repo al inicio de cada job (fix watchdog falso positivo — cada container leía signals viejo de la imagen Docker, no del repo) + bot `run` requiere `run force` para bypass guard.
+- **iter6 (2026-05-19)**: `_update_workflow_status` al final de cada job ok (fix dashboard "hace 171h") + `_push_results` expandido (llm_budget.json + provider_state + 4 archivos más) + nueva card "LLM GATEWAY — STATUS" en dashboard.
+- **iter7 (2026-05-19)**: 3 cards nuevas en dashboard — "Risk Band activa" (banda actual con color), "Régimen + Allocation activa" (CP%/OPT%/n/hold), **"Posiciones Huérfanas"** (las 9 sin signal — el riesgo concreto más alto hoy).
 
 ## Lectura crítica honesta (mi opinión)
 

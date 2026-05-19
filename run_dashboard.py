@@ -124,6 +124,210 @@ def _calc_metrics(history: list[dict], spy_history: list[dict], qqq_history: lis
 
 # ─── WORKFLOW HEALTH PANEL ────────────────────────────────────────────────────
 
+def _risk_band_panel(equity: float, baseline: float = 1600.0) -> str:
+    """Iter7: card mostrando en qué banda de drawdown está el sistema AHORA.
+
+    Refleja risk_action_for_drawdown de kelly.py — bandas escaladas que el
+    monitor aplica automáticamente. Color-coded para detectar visual rápido.
+    """
+    if baseline <= 0:
+        return ""
+    dd_pct = (equity - baseline) / baseline * 100
+    bands = [
+        (0,    -2,  "NORMAL",       "#3fb950", "Operación normal — Kelly 1.0x"),
+        (-2,   -4,  "REDUCE",       "#d29922", "Kelly 0.5x — sin entradas nuevas (reduce_mode.flag)"),
+        (-4,   -6,  "CLOSE_LOSERS", "#ffa657", "Cerrar posiciones con P&L<0"),
+        (-6,   -8,  "CLOSE_LONGS",  "#f85149", "Cerrar todos los longs equity, mantener hedge"),
+        (-8, -100,  "KILL",         "#b91c1c", "KILL SWITCH — close_all_positions"),
+    ]
+    active_band = bands[0]
+    for upper, lower, name, color, desc in bands:
+        if dd_pct <= upper and dd_pct > lower:
+            active_band = (upper, lower, name, color, desc)
+            break
+    if dd_pct < -8:
+        active_band = bands[-1]
+
+    name, color, desc = active_band[2], active_band[3], active_band[4]
+    band_rows = []
+    for upper, lower, bname, bcolor, bdesc in bands:
+        is_active = (bname == name)
+        bg = bcolor + "33" if is_active else "transparent"
+        weight = "700" if is_active else "400"
+        opacity = "1" if is_active else "0.55"
+        band_rows.append(f"""
+        <div style="display:flex;justify-content:space-between;padding:6px 10px;
+                    background:{bg};opacity:{opacity};font-size:.74rem;
+                    border-left:3px solid {bcolor}">
+          <span style="font-weight:{weight};color:{bcolor};font-family:var(--mono)">
+            {upper:+.0f}% → {lower:+.0f}% · {bname}
+          </span>
+          <span style="color:var(--mt)">{bdesc}</span>
+        </div>""")
+    rows_html = "\n".join(band_rows)
+
+    return f"""<div class="card">
+  <div class="card-head">
+    <div>
+      <div class="card-title">RISK BAND ACTIVA</div>
+      <div class="card-sub">Drawdown intradía vs baseline ${baseline:.0f}</div>
+    </div>
+    <div style="text-align:right">
+      <div style="font-family:var(--mono);font-size:1.6rem;font-weight:600;color:{color}">
+        {name}
+      </div>
+      <div style="font-family:var(--mono);font-size:.84rem;color:{color}">
+        {dd_pct:+.2f}%
+      </div>
+    </div>
+  </div>
+  {rows_html}
+  <div style="margin-top:10px;padding-top:8px;border-top:1px solid var(--bd);
+              font-size:.7rem;color:var(--mt)">
+    El monitor aplica esta lógica cada 30min. Cada cambio de banda notifica via WhatsApp/Telegram.
+  </div>
+</div>"""
+
+
+def _regime_active_panel(signals_data: dict) -> str:
+    """Iter7: card con régimen + parámetros de allocation activos hoy.
+
+    Lee signals/latest.json (params + macro) para mostrar qué allocation
+    aplicó hoy el analyst. Útil para confirmar que el modo agresivo iter3 está
+    activo y para ver el cp_pct, n_cp, hold_days vigentes.
+    """
+    macro = signals_data.get("macro", {})
+    params = signals_data.get("params", {})
+
+    regime = (macro.get("regime", "unknown") or "unknown").upper()
+    vix = macro.get("prices", {}).get("vix", 0) or 0
+
+    cp_pct = (params.get("weight_short_term", 0) or 0) * 100
+    opt_pct = (params.get("weight_options", 0) or 0) * 100
+    n_cp = params.get("top_n_short_term", 0) or 0
+    hold_days = params.get("max_hold_days_cp", 0) or 0
+
+    color_map = {"BULL": "#3fb950", "BEAR": "#f85149", "LATERAL": "#d29922", "NEUTRAL": "#d29922"}
+    rcolor = color_map.get(regime, "#6e7681")
+
+    return f"""<div class="card">
+  <div class="card-head">
+    <div>
+      <div class="card-title">RÉGIMEN + ALLOCATION ACTIVA</div>
+      <div class="card-sub">Lo que decidió el analyst hoy · iter3 modo agresivo CP</div>
+    </div>
+    <div style="text-align:right">
+      <div style="font-family:var(--mono);font-size:1.4rem;font-weight:700;color:{rcolor}">
+        {regime}
+      </div>
+      <div style="font-family:var(--mono);font-size:.78rem;color:var(--mt)">
+        VIX {vix:.1f}
+      </div>
+    </div>
+  </div>
+  <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));
+              gap:10px;margin-top:8px">
+    <div style="padding:10px;background:var(--s2);border-radius:4px">
+      <div style="font-size:.62rem;color:var(--mt);text-transform:uppercase">CP sleeve</div>
+      <div style="font-family:var(--mono);font-size:1.3rem;font-weight:600">{cp_pct:.0f}%</div>
+      <div style="font-size:.66rem;color:var(--mt)">peso del capital</div>
+    </div>
+    <div style="padding:10px;background:var(--s2);border-radius:4px">
+      <div style="font-size:.62rem;color:var(--mt);text-transform:uppercase">OPT sleeve</div>
+      <div style="font-family:var(--mono);font-size:1.3rem;font-weight:600">{opt_pct:.0f}%</div>
+      <div style="font-size:.66rem;color:var(--mt)">opciones long</div>
+    </div>
+    <div style="padding:10px;background:var(--s2);border-radius:4px">
+      <div style="font-size:.62rem;color:var(--mt);text-transform:uppercase">Top picks</div>
+      <div style="font-family:var(--mono);font-size:1.3rem;font-weight:600">{n_cp}</div>
+      <div style="font-size:.66rem;color:var(--mt)">concentración</div>
+    </div>
+    <div style="padding:10px;background:var(--s2);border-radius:4px">
+      <div style="font-size:.62rem;color:var(--mt);text-transform:uppercase">Hold máx</div>
+      <div style="font-family:var(--mono);font-size:1.3rem;font-weight:600">{hold_days}d</div>
+      <div style="font-size:.66rem;color:var(--mt)">rotación</div>
+    </div>
+  </div>
+</div>"""
+
+
+def _orphan_positions_panel(positions, signals_data: dict) -> str:
+    """Iter7: card con posiciones huérfanas — abiertas en Alpaca pero SIN signal.
+
+    Identifica posiciones que están en el broker pero no tienen señal activa
+    en signals/latest.json. Estas no se gestionan (no se les aplica trailing,
+    no tienen stop dinámico). Son el riesgo más concreto de pérdida hoy.
+    """
+    if not positions:
+        return ""
+    tickers_with_signal = set()
+    for bucket in ("long_term", "short_term", "options_book", "hedge_book"):
+        for s in signals_data.get(bucket, []):
+            t = s.get("ticker", "")
+            if t:
+                tickers_with_signal.add(t)
+
+    orphans = []
+    for p in positions:
+        is_option = any(c in p.ticker for c in ("C0", "P0")) and len(p.ticker) > 10
+        if is_option:
+            continue
+        if p.ticker not in tickers_with_signal:
+            orphans.append(p)
+
+    if not orphans:
+        return ""
+
+    rows = []
+    total_pnl = 0.0
+    for o in sorted(orphans, key=lambda x: -float(x.unrealized_pl)):
+        pnl = float(o.unrealized_pl)
+        cost = float(o.avg_price) * float(o.qty)
+        pct = (pnl / cost * 100) if cost else 0
+        total_pnl += pnl
+        color = "#3fb950" if pnl >= 0 else "#f85149"
+        rec = "✅ Mantener (winner)" if pnl > 0 else "⚠️ Considerar liquidar"
+        rows.append(f"""
+        <div style="display:flex;justify-content:space-between;padding:8px 0;
+                    border-bottom:1px solid var(--bd);font-size:.78rem">
+          <div style="flex:1">
+            <div style="font-weight:700;font-family:var(--mono)">{o.ticker}</div>
+            <div style="font-size:.66rem;color:var(--mt)">
+              {o.qty:.4f} shares · cost ${cost:.0f}
+            </div>
+          </div>
+          <div style="text-align:right;flex:1">
+            <div style="font-family:var(--mono);color:{color}">
+              ${pnl:+.2f} ({pct:+.1f}%)
+            </div>
+            <div style="font-size:.66rem;color:var(--mt)">{rec}</div>
+          </div>
+        </div>""")
+    rows_html = "\n".join(rows)
+    total_color = "#3fb950" if total_pnl >= 0 else "#f85149"
+
+    return f"""<div class="card" style="border-left:3px solid #d29922">
+  <div class="card-head">
+    <div>
+      <div class="card-title">⚠️ POSICIONES HUÉRFANAS ({len(orphans)})</div>
+      <div class="card-sub">Abiertas en Alpaca pero SIN signal activa · NO se gestionan automáticamente</div>
+    </div>
+    <div style="text-align:right">
+      <div style="font-family:var(--mono);font-size:1.2rem;font-weight:600;color:{total_color}">
+        ${total_pnl:+.2f}
+      </div>
+      <div style="font-size:.7rem;color:var(--mt)">P&L total huérfanas</div>
+    </div>
+  </div>
+  {rows_html}
+  <div style="margin-top:10px;padding-top:8px;border-top:1px solid var(--bd);
+              font-size:.7rem;color:var(--mt)">
+    ⚠️ Estas posiciones <b>NO tienen stop loss dinámico ni trailing</b>. El monitor
+    sólo loguea warnings. Liquidá manualmente las negativas para arrancar limpio.
+  </div>
+</div>"""
+
+
 def _llm_status_panel() -> str:
     """Iter6: card con estado del LLM gateway — providers, calls, costo.
 
@@ -381,7 +585,8 @@ def _tres_cuentas_panel(lp_trades: list, dt_trades: list, scalp_trades: list) ->
 def _tab_resumen(equity, initial, regime, vix, wti, gold, dxy,
                  history, spy_history, signals_data, metrics, age_hours,
                  perf_data=None, qqq_history=None, mc_result=None,
-                 tres_cuentas_html="", wf_health_html="", llm_status_html=""):
+                 tres_cuentas_html="", wf_health_html="", llm_status_html="",
+                 risk_band_html="", regime_active_html="", orphan_html=""):
     pnl     = equity - initial
     pnl_pct = (pnl / initial * 100) if initial else 0
     pc      = _c(pnl)
@@ -515,6 +720,12 @@ def _tab_resumen(equity, initial, regime, vix, wti, gold, dxy,
   {ts_info}
   {kpis}
   {adv_kpis}
+  <div class="section-gap"></div>
+  {orphan_html}
+  <div class="section-gap"></div>
+  {risk_band_html}
+  <div class="section-gap"></div>
+  {regime_active_html}
   <div class="section-gap"></div>
   {tres_cuentas_html}
   <div class="section-gap"></div>
@@ -2410,11 +2621,17 @@ def build_html(equity, initial, history, positions, signals_data,
     tres_cuentas   = _tres_cuentas_panel(trades or [], dt_trades or [], scalp_trades or [])
     wf_health      = _workflow_health_panel(workflow_status or {})
     llm_status     = _llm_status_panel()
+    # Iter7: 3 cards nuevas
+    risk_band      = _risk_band_panel(equity, initial)
+    regime_active  = _regime_active_panel(signals_data)
+    orphan_html    = _orphan_positions_panel(positions or [], signals_data)
     t_resumen    = _tab_resumen(equity, initial, regime, vix, wti, gold, dxy,
                                 history, spy_history, signals_data, metrics, age_hours,
                                 perf_data=perf_data, qqq_history=qqq_history, mc_result=mc_result,
                                 tres_cuentas_html=tres_cuentas, wf_health_html=wf_health,
-                                llm_status_html=llm_status)
+                                llm_status_html=llm_status,
+                                risk_band_html=risk_band, regime_active_html=regime_active,
+                                orphan_html=orphan_html)
     t_posiciones = _tab_posiciones(positions)
     t_senales    = _tab_senales(signals_data)
     t_mercado    = _tab_mercado(signals_data, discovery_data=discovery_data)
