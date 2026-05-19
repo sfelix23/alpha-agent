@@ -391,3 +391,94 @@ def get_summary() -> dict:
         "total_pnl_usd":  round(total_pnl, 2),
         "avg_hold_days":  round(avg_hold, 2),
     }
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Capital coordination entre sleeves (Sesión 4 del plan)
+#
+# Las 3 cuentas Alpaca (LP/CP, scalper, daytrader) operan independientes pero
+# el daytrader tenía un DT_BUDGET=1500 hardcodeado. Si LP/CP toman capital,
+# el daytrader puede pedir órdenes que excedan buying_power.
+#
+# Estas funciones persisten reservas en signals/capital_reservations.json
+# para que cada sleeve consulte cuánto le queda antes de operar.
+# ─────────────────────────────────────────────────────────────────────────────
+
+import json as _json
+from datetime import datetime as _datetime
+
+_CAPITAL_PATH = _DB_PATH.parent / "capital_reservations.json"
+
+
+def _load_capital() -> dict:
+    if not _CAPITAL_PATH.exists():
+        return {"reservations": {}, "updated_at": None}
+    try:
+        return _json.loads(_CAPITAL_PATH.read_text(encoding="utf-8"))
+    except (_json.JSONDecodeError, OSError) as e:
+        logger.warning("capital_reservations corrupto (%s) — reset", e)
+        return {"reservations": {}, "updated_at": None}
+
+
+def _save_capital(data: dict) -> None:
+    data["updated_at"] = _datetime.utcnow().isoformat(timespec="seconds")
+    tmp = _CAPITAL_PATH.with_suffix(".json.tmp")
+    tmp.write_text(_json.dumps(data, indent=2, sort_keys=True), encoding="utf-8")
+    tmp.replace(_CAPITAL_PATH)
+
+
+def reserve_capital(sleeve: str, amount: float) -> bool:
+    """Marca `amount` USD como reservado para este sleeve. Idempotente — pisa el valor.
+
+    Llamar al arrancar cada agente con el budget que necesita. El próximo
+    `available_capital()` lo descuenta del buying_power total.
+    """
+    data = _load_capital()
+    data["reservations"][sleeve] = {
+        "amount": float(amount),
+        "since": _datetime.utcnow().isoformat(timespec="seconds"),
+    }
+    _save_capital(data)
+    logger.info("capital: %s reservó $%.2f", sleeve, amount)
+    return True
+
+
+def release_capital(sleeve: str) -> None:
+    """Libera la reserva de un sleeve (al cerrar todas sus posiciones)."""
+    data = _load_capital()
+    if data["reservations"].pop(sleeve, None):
+        _save_capital(data)
+        logger.info("capital: %s liberó reserva", sleeve)
+
+
+def available_capital(broker, sleeve: str) -> float:
+    """USD disponibles para `sleeve` = buying_power − reservas de OTROS sleeves.
+
+    Args:
+        broker: AlpacaBroker con get_buying_power() o get_equity().
+        sleeve: identificador del sleeve consultando ("LP", "CP", "DT", "SCALP").
+
+    Returns:
+        USD disponibles. Si el broker falla, devuelve 0 (defensivo).
+    """
+    try:
+        if hasattr(broker, "get_buying_power"):
+            total = float(broker.get_buying_power())
+        else:
+            total = float(broker.get_equity())
+    except Exception as e:
+        logger.warning("available_capital: broker error (%s) — retornando 0", e)
+        return 0.0
+
+    data = _load_capital()
+    reserved_by_others = sum(
+        r.get("amount", 0.0)
+        for s, r in data["reservations"].items()
+        if s != sleeve
+    )
+    return max(0.0, total - reserved_by_others)
+
+
+def get_capital_snapshot() -> dict:
+    """Para el dashboard."""
+    return _load_capital()

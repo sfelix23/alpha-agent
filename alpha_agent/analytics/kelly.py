@@ -134,3 +134,85 @@ def blend_markowitz_kelly(
         {t: f"{w:.1%}" for t, w in blended[blended > 0].items()},
     )
     return blended
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Risk budget escalado y Kelly multiplier por régimen (Sesión 4-5 del plan)
+#
+# El plan original reemplazaba el kill switch binario -3% por un escalado
+# por bandas de drawdown. También módula el Kelly fraction según régimen + VIX
+# para presionar el acelerador en BULL y bajar en BEAR.
+# ─────────────────────────────────────────────────────────────────────────────
+
+
+def risk_action_for_drawdown(drawdown_pct: float) -> dict[str, str | float]:
+    """Devuelve la acción de riesgo según la banda de drawdown intradía.
+
+    En vez de kill switch binario -3% (cierra todo), escala:
+        0 a -2%   → operación normal
+        -2 a -4%  → reduce Kelly fraction 50%, no entradas nuevas
+        -4 a -6%  → close losers, hold winners
+        -6 a -8%  → close all longs, mantener hedge SPY puts si hay
+        < -8%     → kill switch total + alerta
+
+    Args:
+        drawdown_pct: negativo (ej. -3.5).
+
+    Returns:
+        Dict con:
+          - level: "NORMAL" | "REDUCE" | "CLOSE_LOSERS" | "CLOSE_LONGS" | "KILL"
+          - kelly_multiplier: 0.0 a 1.0 (escala el sizing)
+          - new_entries_allowed: bool
+          - description: human-readable
+    """
+    if drawdown_pct >= -2.0:
+        return {
+            "level": "NORMAL", "kelly_multiplier": 1.0, "new_entries_allowed": True,
+            "description": f"Operación normal — drawdown {drawdown_pct:+.1f}%",
+        }
+    if drawdown_pct >= -4.0:
+        return {
+            "level": "REDUCE", "kelly_multiplier": 0.5, "new_entries_allowed": False,
+            "description": f"Reduce sizing 50%, sin entradas nuevas — drawdown {drawdown_pct:+.1f}%",
+        }
+    if drawdown_pct >= -6.0:
+        return {
+            "level": "CLOSE_LOSERS", "kelly_multiplier": 0.3, "new_entries_allowed": False,
+            "description": f"Cerrar perdedores, hold ganadores — drawdown {drawdown_pct:+.1f}%",
+        }
+    if drawdown_pct >= -8.0:
+        return {
+            "level": "CLOSE_LONGS", "kelly_multiplier": 0.0, "new_entries_allowed": False,
+            "description": f"Cerrar TODOS los longs, mantener hedge — drawdown {drawdown_pct:+.1f}%",
+        }
+    return {
+        "level": "KILL", "kelly_multiplier": 0.0, "new_entries_allowed": False,
+        "description": f"KILL SWITCH — drawdown {drawdown_pct:+.1f}% inferior a -8%",
+    }
+
+
+def kelly_multiplier_for_regime(regime: str, vix: float) -> float:
+    """Multiplicador del Kelly base según régimen + VIX.
+
+    Hoy el sistema usa half-Kelly plano (0.5) para todo. Esto módula:
+        BULL  + VIX<15   → 0.6 (más agresivo, drawdowns esperados -10/-15%)
+        BULL  + VIX<22   → 0.5 (default)
+        LATERAL + VIX<22 → 0.4
+        BEAR  + VIX<25   → 0.3 (defensivo)
+        Cualquiera + VIX>25 → 0.2 (panic mode)
+
+    Args:
+        regime: "BULL" | "BEAR" | "LATERAL" (case-insensitive)
+        vix: nivel actual del VIX.
+
+    Returns:
+        Fracción [0.2, 0.6] que se aplica al f_star de Kelly.
+    """
+    r = regime.upper() if isinstance(regime, str) else "LATERAL"
+    if vix > 25:
+        return 0.2
+    if r == "BULL":
+        return 0.6 if vix < 15 else 0.5
+    if r == "BEAR":
+        return 0.3
+    return 0.4   # LATERAL o desconocido
