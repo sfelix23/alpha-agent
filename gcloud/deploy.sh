@@ -95,11 +95,15 @@ load_secret "GH_TOKEN"          true   # GitHub PAT con permisos 'repo'
 load_secret "ALPACA_DT_API_KEY"
 load_secret "ALPACA_DT_SECRET_KEY"
 load_secret "GOOGLE_API_KEY"
+# LLM gateway providers (opcionales — sin estos el sistema cae a keywords)
+load_secret "GROQ_API_KEY"
+load_secret "DEEPSEEK_API_KEY"
+load_secret "OPENROUTER_API_KEY"
 
 # ── 6. Cloud Run Jobs ─────────────────────────────────────
 echo "[6/7] Creando Cloud Run Jobs..."
 
-SECRETS_FLAG="ALPACA_API_KEY=ALPACA_API_KEY:latest,ALPACA_SECRET_KEY=ALPACA_SECRET_KEY:latest,ANTHROPIC_API_KEY=ANTHROPIC_API_KEY:latest,TWILIO_SID=TWILIO_SID:latest,TWILIO_TOKEN=TWILIO_TOKEN:latest,MY_PHONE_NUMBER=MY_PHONE_NUMBER:latest,GH_TOKEN=GH_TOKEN:latest"
+SECRETS_FLAG="ALPACA_API_KEY=ALPACA_API_KEY:latest,ALPACA_SECRET_KEY=ALPACA_SECRET_KEY:latest,ANTHROPIC_API_KEY=ANTHROPIC_API_KEY:latest,TWILIO_SID=TWILIO_SID:latest,TWILIO_TOKEN=TWILIO_TOKEN:latest,MY_PHONE_NUMBER=MY_PHONE_NUMBER:latest,GH_TOKEN=GH_TOKEN:latest,GOOGLE_API_KEY=GOOGLE_API_KEY:latest,GROQ_API_KEY=GROQ_API_KEY:latest"
 
 for job in alpha-daily alpha-monitor alpha-weekly; do
   task="${job#alpha-}"
