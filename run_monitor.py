@@ -36,6 +36,8 @@ from datetime import datetime
 from pathlib import Path
 
 from dotenv import load_dotenv
+from filelock import FileLock, Timeout as FileLockTimeout
+
 from alpha_agent.config import setup_agent_logging
 from alpha_agent.news.claude_analyst import assess_position as claude_assess
 
@@ -452,6 +454,22 @@ def main():
     load_dotenv(BASE_DIR / ".env")
     setup_logging()
 
+    # Lockfile para evitar que dos invocaciones simultáneas pisen la DB y
+    # dupliquen llamadas LLM. Cloud Scheduler puede reintentar un Job si
+    # excede timeout, y eso podría solapar con la próxima corrida programada.
+    lock_path = BASE_DIR / "signals" / ".monitor.lock"
+    lock_path.parent.mkdir(exist_ok=True)
+    lock = FileLock(str(lock_path), timeout=5)
+    try:
+        with lock:
+            return _main_locked(args)
+    except FileLockTimeout:
+        logger.warning("Otro monitor en ejecución (lock %s) — skip.", lock_path)
+        return
+
+
+def _main_locked(args):
+    """Cuerpo principal del monitor, ejecutado bajo el filelock."""
     logger.info("=== MONITOR START === live=%s dry_run=%s", args.live, args.dry_run)
 
     from trader_agent.brokers.alpaca_broker import AlpacaBroker

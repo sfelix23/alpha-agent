@@ -40,9 +40,34 @@ _push_results() {
   rm -rf "$PUSH_DIR"
 }
 
+_validate_signals() {
+  # Valida que signals/latest.json exista, sea JSON parseable, tenga el campo
+  # esperado y no esté stale (>30 min). Sin esto, si el analyst crashea a mitad
+  # el trader puede leer un JSON corrupto y operar con basura.
+  python -c '
+import json, sys
+from pathlib import Path
+from datetime import datetime, timezone
+p = Path("signals/latest.json")
+if not p.exists():
+    sys.exit("signals/latest.json no existe")
+try:
+    data = json.loads(p.read_text(encoding="utf-8"))
+except json.JSONDecodeError as e:
+    sys.exit(f"signals/latest.json JSON invalido: {e}")
+if not any(k in data for k in ("signals", "long_term", "short_term")):
+    sys.exit("signals/latest.json sin campos esperados")
+age_min = (datetime.now(timezone.utc).timestamp() - p.stat().st_mtime) / 60
+if age_min > 30:
+    sys.exit(f"signals/latest.json stale ({age_min:.0f}min > 30min)")
+print(f"signals/latest.json OK ({age_min:.0f}min de edad)")
+'
+}
+
 case "$TASK" in
   daily)
-    python run_analyst.py --send
+    python run_analyst.py --send || { echo "ANALYST FAILED — abortando pipeline"; _push_results; exit 1; }
+    _validate_signals             || { echo "SIGNALS INVALIDOS — abortando pipeline";  _push_results; exit 1; }
     python run_trader.py --live       || true
     python run_daytrader.py --live    || true
     python run_dashboard.py --no-open || true
