@@ -45,6 +45,32 @@ _pull_state() {
   fi
 }
 
+_update_workflow_status() {
+  # Iter6: actualiza signals/workflow_status.json al FINAL de cada job exitoso.
+  # Sin esto, el dashboard muestra "hace 171h" porque el archivo queda stale
+  # del ultimo update manual hace dias. Si el job falla, no se updatea (el
+  # dashboard puede inferir "stale" = "fallo").
+  local job_key="alpha_${TASK}"
+  local now_ts=$(date -u +%Y-%m-%dT%H:%M)
+  python -c "
+import json
+from pathlib import Path
+p = Path('/app/signals/workflow_status.json')
+data = {}
+if p.exists():
+    try:
+        data = json.loads(p.read_text(encoding='utf-8'))
+    except Exception:
+        data = {}
+data['${job_key}'] = {'ts': '${now_ts}', 'ok': True}
+p.parent.mkdir(parents=True, exist_ok=True)
+tmp = p.with_suffix('.json.tmp')
+tmp.write_text(json.dumps(data, indent=2), encoding='utf-8')
+tmp.replace(p)
+print(f'workflow_status updated: ${job_key} = ${now_ts}')
+" 2>&1 || echo "workflow_status update failed (no critico)"
+}
+
 _push_results() {
   # Clona el repo en /tmp, copia los resultados y pushea.
   # Usa directorio único por TASK+PID para evitar race condition entre daily y monitor.
@@ -53,12 +79,19 @@ _push_results() {
   local PUSH_DIR="/tmp/_push_${TASK:-run}_$$"
   rm -rf "$PUSH_DIR"
   git clone --depth=1 "$REPO_URL" "$PUSH_DIR" 2>/dev/null || { echo "git clone failed, skip push"; return 0; }
-  cp /app/signals/latest.json           "$PUSH_DIR/signals/" 2>/dev/null || true
-  cp /app/signals/trades.db             "$PUSH_DIR/signals/" 2>/dev/null || true
-  cp /app/signals/allocation.json       "$PUSH_DIR/signals/" 2>/dev/null || true
-  cp /app/signals/equity_snapshots.json "$PUSH_DIR/signals/" 2>/dev/null || true
-  cp /app/signals/workflow_status.json  "$PUSH_DIR/signals/" 2>/dev/null || true
-  cp /app/docs/index.html               "$PUSH_DIR/docs/"    2>/dev/null || true
+  cp /app/signals/latest.json              "$PUSH_DIR/signals/" 2>/dev/null || true
+  cp /app/signals/trades.db                "$PUSH_DIR/signals/" 2>/dev/null || true
+  cp /app/signals/allocation.json          "$PUSH_DIR/signals/" 2>/dev/null || true
+  cp /app/signals/equity_snapshots.json    "$PUSH_DIR/signals/" 2>/dev/null || true
+  cp /app/signals/workflow_status.json     "$PUSH_DIR/signals/" 2>/dev/null || true
+  # Iter6: incluir state del LLM gateway para dashboard
+  cp /app/signals/llm_budget.json          "$PUSH_DIR/signals/" 2>/dev/null || true
+  cp /app/signals/llm_provider_state.json  "$PUSH_DIR/signals/" 2>/dev/null || true
+  cp /app/signals/last_run.json            "$PUSH_DIR/signals/" 2>/dev/null || true
+  cp /app/signals/discovery.json           "$PUSH_DIR/signals/" 2>/dev/null || true
+  cp /app/signals/capital_baseline.json    "$PUSH_DIR/signals/" 2>/dev/null || true
+  cp /app/signals/capital_reservations.json "$PUSH_DIR/signals/" 2>/dev/null || true
+  cp /app/docs/index.html                  "$PUSH_DIR/docs/"    2>/dev/null || true
   cd "$PUSH_DIR"
   git config user.name  "alpha-bot"
   git config user.email "alpha-bot@users.noreply.github.com"
@@ -101,12 +134,14 @@ case "$TASK" in
     python run_trader.py --live       || true
     python run_daytrader.py --live    || true
     python run_dashboard.py --no-open || true
+    _update_workflow_status
     _push_results
     ;;
   monitor)
     _pull_state   # iter5: critico — sin esto el watchdog lee signals viejo de la imagen
     python run_monitor.py --live || true   # no abortar el push si el monitor falla
     python run_dashboard.py --no-open || true
+    _update_workflow_status
     _push_results
     ;;
   weekly)
