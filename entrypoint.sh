@@ -32,10 +32,32 @@ _pull_state() {
   local PULL_DIR="/tmp/_pull_${TASK:-run}_$$"
   rm -rf "$PULL_DIR"
   if git clone --depth=1 "$REPO_URL" "$PULL_DIR" 2>/dev/null; then
-    # Copiar archivos críticos del state al /app local del container.
-    for f in latest.json trades.db allocation.json equity_snapshots.json \
+    # Iter9: VALIDAR latest.json antes de copiar. Si esta vacio o sin
+    # generated_at, no lo copiamos — preferimos el de la imagen Docker
+    # (aunque sea viejo, al menos parsea y no dispara watchdog falsos).
+    local LJSON="$PULL_DIR/signals/latest.json"
+    if [ -f "$LJSON" ]; then
+      if python -c "
+import json, sys
+try:
+    d = json.load(open('$LJSON', encoding='utf-8'))
+    g = d.get('generated_at', '')
+    if not g:
+        sys.exit('no generated_at')
+    print(f'latest.json OK: generated_at={g}')
+except Exception as e:
+    sys.exit(f'invalid: {e}')
+" 2>&1; then
+        cp "$LJSON" /app/signals/latest.json 2>/dev/null
+      else
+        echo "_pull_state: latest.json del repo invalido — NO copiado (mantengo el de imagen)"
+      fi
+    fi
+    # Otros archivos (no criticos para watchdog) se copian sin validar.
+    for f in trades.db allocation.json equity_snapshots.json \
              workflow_status.json last_run.json sentiment_cache.json \
-             discovery.json capital_baseline.json capital_reservations.json; do
+             discovery.json capital_baseline.json capital_reservations.json \
+             llm_budget.json llm_provider_state.json; do
       [ -f "$PULL_DIR/signals/$f" ] && cp "$PULL_DIR/signals/$f" "/app/signals/$f" 2>/dev/null
     done
     rm -rf "$PULL_DIR"
