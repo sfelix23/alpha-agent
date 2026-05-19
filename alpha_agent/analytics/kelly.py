@@ -216,3 +216,101 @@ def kelly_multiplier_for_regime(regime: str, vix: float) -> float:
     if r == "BEAR":
         return 0.3
     return 0.4   # LATERAL o desconocido
+
+
+def adaptive_trailing(conviction: str, regime: str) -> dict[str, float]:
+    """Trailing stop adaptativo según conviction × régimen.
+
+    Reemplaza la regla fija "+5%→breakeven, +10%→lock 50%" por una tabla
+    que deja correr más a los winners en BULL+ALTA y protege antes en
+    BEAR+MEDIA.
+
+    Returns:
+        Dict con:
+          - be_at_pct: mover stop a breakeven cuando P&L >= este %
+          - lock_at_pct: empezar a proteger profit cuando P&L >= este %
+          - lock_fraction: qué fracción del profit proteger (0-1)
+    """
+    r = regime.upper() if isinstance(regime, str) else "LATERAL"
+    c = conviction.upper() if isinstance(conviction, str) else "MEDIA"
+    table = {
+        ("BULL",    "ALTA"):  {"be_at_pct": 8.0,  "lock_at_pct": 20.0, "lock_fraction": 0.6},
+        ("BULL",    "MEDIA"): {"be_at_pct": 6.0,  "lock_at_pct": 15.0, "lock_fraction": 0.5},
+        ("LATERAL", "ALTA"):  {"be_at_pct": 5.0,  "lock_at_pct": 12.0, "lock_fraction": 0.5},
+        ("LATERAL", "MEDIA"): {"be_at_pct": 4.0,  "lock_at_pct": 10.0, "lock_fraction": 0.4},
+        ("BEAR",    "ALTA"):  {"be_at_pct": 3.0,  "lock_at_pct": 8.0,  "lock_fraction": 0.4},
+        ("BEAR",    "MEDIA"): {"be_at_pct": 2.0,  "lock_at_pct": 5.0,  "lock_fraction": 0.3},
+    }
+    return table.get((r, c), table[("LATERAL", "MEDIA")])
+
+
+def equity_curve_multiplier(equity_history: list[float]) -> tuple[float, str]:
+    """Multiplicador de sizing según la propia equity curve (meta-strategy).
+
+    Idea: cuando estás en racha (equity > MA20), presioná; cuando perdés
+    racha (equity < MA20), achicá. Equity < MA50 por >5 días → modo defensivo.
+    En backtests reduce drawdowns 30-50% manteniendo gran parte del upside.
+
+    Args:
+        equity_history: lista de equity histórico (orden cronológico,
+            del más antiguo al más reciente). Lee desde
+            signals/equity_snapshots.json.
+
+    Returns:
+        (multiplier, regime_label) donde multiplier ∈ [0.0, 1.2] y
+        regime_label es "HOT" | "NORMAL" | "COOLING" | "DEFENSIVE".
+    """
+    if not equity_history or len(equity_history) < 5:
+        return 1.0, "NORMAL"
+
+    ma20 = sum(equity_history[-20:]) / min(20, len(equity_history))
+    current = equity_history[-1]
+
+    if len(equity_history) >= 50:
+        ma50 = sum(equity_history[-50:]) / 50
+        # ¿>5 días por debajo de MA50?
+        recent_below_ma50 = sum(
+            1 for v in equity_history[-7:] if v < ma50
+        )
+        if recent_below_ma50 >= 5:
+            return 0.0, "DEFENSIVE"
+
+    if current > ma20:
+        return 1.2, "HOT"
+    if current < ma20 * 0.97:   # claramente debajo (3% margen)
+        return 0.7, "COOLING"
+    return 1.0, "NORMAL"
+
+
+def composite_kelly_multiplier(
+    *,
+    regime: str,
+    vix: float,
+    drawdown_pct: float,
+    equity_history: list[float] | None = None,
+) -> dict:
+    """Compone los 3 multiplicadores de Kelly en uno solo para el sizing final.
+
+    final = regime_mult × drawdown_mult × equity_curve_mult
+
+    Devuelve un dict con los 3 componentes + el final, para que el caller
+    pueda loguear cuál bajó el sizing en qué corrida.
+    """
+    regime_mult = kelly_multiplier_for_regime(regime, vix)
+    risk = risk_action_for_drawdown(drawdown_pct)
+    drawdown_mult = float(risk["kelly_multiplier"])
+    if equity_history:
+        ec_mult, ec_regime = equity_curve_multiplier(equity_history)
+    else:
+        ec_mult, ec_regime = 1.0, "NORMAL"
+
+    final = regime_mult * drawdown_mult * ec_mult
+    return {
+        "regime_mult": regime_mult,
+        "drawdown_mult": drawdown_mult,
+        "drawdown_level": risk["level"],
+        "equity_curve_mult": ec_mult,
+        "equity_curve_regime": ec_regime,
+        "final_multiplier": round(final, 3),
+        "new_entries_allowed": bool(risk["new_entries_allowed"]) and ec_regime != "DEFENSIVE",
+    }

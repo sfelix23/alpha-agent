@@ -482,3 +482,103 @@ def available_capital(broker, sleeve: str) -> float:
 def get_capital_snapshot() -> dict:
     """Para el dashboard."""
     return _load_capital()
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Multi-account aggregator (Sesión 5 del plan)
+#
+# Combina P&L, equity y Sharpe rolling de las 3 cuentas Alpaca (LP/CP,
+# scalper, daytrader) en una vista unificada. Esto permite ver el sistema
+# entero como un portfolio de estrategias non-correlated, y eventualmente
+# rotar capital al sleeve que mejor performa.
+# ─────────────────────────────────────────────────────────────────────────────
+
+
+def rolling_sharpe_by_sleeve(days: int = 30) -> dict[str, dict]:
+    """Sharpe ratio rolling por sleeve usando los trades cerrados de trade_db.
+
+    Args:
+        days: ventana en días para calcular el Sharpe.
+
+    Returns:
+        Dict {sleeve: {n_trades, avg_pnl, std_pnl, sharpe, win_rate}}.
+    """
+    from collections import defaultdict
+    from datetime import timedelta as _td
+
+    since = (_datetime.now() - _td(days=days)).strftime("%Y-%m-%d")
+    with _conn() as con:
+        rows = con.execute(
+            "SELECT sleeve, pnl_usd, pnl_pct FROM trades "
+            "WHERE side='BUY' AND closed_at IS NOT NULL AND date(closed_at) >= ?",
+            (since,),
+        ).fetchall()
+
+    by_sleeve: dict[str, list[float]] = defaultdict(list)
+    for r in rows:
+        sleeve = r["sleeve"] or "UNKNOWN"
+        pnl = r["pnl_pct"] or 0.0
+        by_sleeve[sleeve].append(pnl)
+
+    result = {}
+    for sleeve, pnls in by_sleeve.items():
+        n = len(pnls)
+        if n < 2:
+            result[sleeve] = {"n_trades": n, "avg_pnl": 0.0, "std_pnl": 0.0, "sharpe": 0.0, "win_rate": 0.0}
+            continue
+        avg = sum(pnls) / n
+        var = sum((p - avg) ** 2 for p in pnls) / (n - 1)
+        std = var ** 0.5
+        sharpe = (avg / std) if std > 0 else 0.0
+        wins = sum(1 for p in pnls if p > 0)
+        result[sleeve] = {
+            "n_trades": n,
+            "avg_pnl": round(avg, 2),
+            "std_pnl": round(std, 2),
+            "sharpe": round(sharpe, 2),
+            "win_rate": round(wins / n, 2),
+        }
+    return result
+
+
+def get_combined_state(brokers: dict | None = None) -> dict:
+    """Snapshot agregado de las 3 cuentas Alpaca + P&L por sleeve.
+
+    Args:
+        brokers: dict opcional {account_id: broker}. Si es None, lee sólo
+            de trade_db (sin tocar Alpaca). Útil para el dashboard que no
+            quiere depender de red.
+
+    Returns:
+        Dict con:
+          - total_equity (None si brokers=None)
+          - by_account: {main, scalp, dt} con equity y posiciones
+          - by_sleeve: P&L y Sharpe rolling por sleeve
+          - capital_reservations: estado del capital_manager
+          - summary: stats del trade_db (open_positions, win_rate, total_pnl_usd)
+    """
+    state: dict = {
+        "total_equity": None,
+        "by_account": {},
+        "by_sleeve": rolling_sharpe_by_sleeve(30),
+        "capital_reservations": _load_capital().get("reservations", {}),
+        "summary": get_summary(),
+    }
+
+    if brokers:
+        total = 0.0
+        for account_id, broker in brokers.items():
+            try:
+                equity = float(broker.get_equity())
+                positions = broker.get_positions() if hasattr(broker, "get_positions") else []
+                state["by_account"][account_id] = {
+                    "equity": equity,
+                    "n_positions": len(positions),
+                }
+                total += equity
+            except Exception as e:
+                logger.warning("aggregator: broker %s error (%s)", account_id, e)
+                state["by_account"][account_id] = {"equity": None, "error": str(e)}
+        state["total_equity"] = round(total, 2) if total > 0 else None
+
+    return state
