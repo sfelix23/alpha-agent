@@ -43,6 +43,12 @@ class SwarmOpinion:
 # ── helpers ──────────────────────────────────────────────────────────────────
 
 def _haiku(system: str, user: str, max_tokens: int = 500) -> str:
+    # Iter3: kill switch defensivo. Si ENABLE_ANTHROPIC no está set o es false,
+    # NO tocamos Anthropic (politica anti-flag de cuenta). Devolvemos un veredicto
+    # NO-GO neutro que el parser entiende como "agente no opino, skip trade".
+    from alpha_agent.config import LLM as _LLM
+    if not _LLM.enable_anthropic:
+        return "→ Anthropic deshabilitado por flag (ENABLE_ANTHROPIC OFF).\nNO-GO|0|llm_disabled"
     from anthropic import Anthropic
     client = Anthropic(api_key=os.getenv("ANTHROPIC_API_KEY"))
     resp = client.messages.create(

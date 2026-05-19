@@ -41,7 +41,19 @@ def _build_trades_summary(trades: list[dict]) -> str:
 
 
 def _analyze_with_claude(trades_text: str, equity_now: float, equity_week_ago: float) -> str:
-    """Claude Sonnet analiza los trades de la semana y da recomendaciones."""
+    """Claude Sonnet analiza los trades de la semana y da recomendaciones.
+
+    Iter3: kill switch — si Anthropic OFF, devuelve resumen heuristico simple
+    sin llamar la red.
+    """
+    from alpha_agent.config import LLM as _LLM
+    pnl_pct = ((equity_now - equity_week_ago) / equity_week_ago * 100) if equity_week_ago else 0
+    if not _LLM.enable_anthropic:
+        return (
+            f"[Anthropic OFF] Equity semanal: ${equity_week_ago:,.0f} → ${equity_now:,.0f} "
+            f"({pnl_pct:+.1f}%). Análisis cualitativo deshabilitado por flag. "
+            "Para activar: `gcloud run jobs update --update-env-vars ENABLE_ANTHROPIC=true`."
+        )
     try:
         import anthropic
         client = anthropic.Anthropic()

@@ -83,9 +83,11 @@ def main() -> None:
         lines.append("")
         lines.extend(["" + w for w in warnings])
 
-    # Claude summary (si disponible)
+    # Claude summary (si disponible y flag activado)
+    # Iter3: chequea ENABLE_ANTHROPIC además de la presencia de la key.
     import os
-    if os.getenv("ANTHROPIC_API_KEY"):
+    from alpha_agent.config import LLM as _LLM
+    if os.getenv("ANTHROPIC_API_KEY") and _LLM.enable_anthropic:
         try:
             import anthropic
             client = anthropic.Anthropic()

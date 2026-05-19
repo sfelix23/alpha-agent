@@ -91,6 +91,17 @@ def _meta_agent(
     direction: str,
     ev_data: dict,
 ) -> tuple[bool, float, str]:
+    # Iter3: kill switch. Si Anthropic OFF, decision determinista basada en
+    # consenso de los agentes (que tambien tienen su kill switch local).
+    from alpha_agent.config import LLM as _LLM
+    if not _LLM.enable_anthropic:
+        go_count = sum(1 for o in opinions if o.stance == "GO")
+        nogo_count = sum(1 for o in opinions if o.stance == "NO-GO")
+        if go_count >= 3 and nogo_count == 0:
+            return True, 0.75, f"Meta heuristico (LLM OFF): {go_count} GO, sin NO-GO → GO size 0.75"
+        if nogo_count >= 2:
+            return False, 0.0, f"Meta heuristico (LLM OFF): {nogo_count} NO-GO → SKIP"
+        return False, 0.0, "Meta heuristico (LLM OFF): consenso insuficiente → SKIP defensivo"
     from anthropic import Anthropic
     client = Anthropic(api_key=os.getenv("ANTHROPIC_API_KEY"))
 
@@ -463,6 +474,17 @@ def _meta_agent_lp(
     opinions: list[SwarmOpinion], ev_data: dict,
 ) -> tuple[bool, float, str]:
     """Meta-agente Sonnet para posiciones LP/CP."""
+    # Iter3: kill switch — decision determinista si Anthropic OFF.
+    from alpha_agent.config import LLM as _LLM
+    if not _LLM.enable_anthropic:
+        go_count = sum(1 for o in opinions if o.stance == "GO")
+        nogo_count = sum(1 for o in opinions if o.stance == "NO-GO")
+        ev_ok = bool(ev_data.get("ev_positive", False))
+        if ev_ok and go_count >= 3 and nogo_count == 0:
+            return True, 0.75, f"Meta-LP heuristico (LLM OFF): EV+ y {go_count} GO → size 0.75"
+        if not ev_ok or nogo_count >= 2:
+            return False, 0.0, f"Meta-LP heuristico (LLM OFF): EV={'+' if ev_ok else '-'} {nogo_count} NO-GO → SKIP"
+        return False, 0.0, "Meta-LP heuristico (LLM OFF): consenso insuficiente → SKIP"
     from anthropic import Anthropic
     client = Anthropic(api_key=os.getenv("ANTHROPIC_API_KEY"))
 

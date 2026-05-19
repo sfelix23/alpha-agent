@@ -19,6 +19,10 @@ log = logging.getLogger(__name__)
 
 
 def _haiku(system: str, user: str, max_tokens: int = 300) -> str:
+    # Iter3: kill switch defensivo. Si flag OFF, NO-GO neutro (parser entiende skip).
+    from alpha_agent.config import LLM as _LLM
+    if not _LLM.enable_anthropic:
+        return "NO-GO|Anthropic deshabilitado por flag (ENABLE_ANTHROPIC OFF)"
     from anthropic import Anthropic
     client = Anthropic(api_key=os.getenv("ANTHROPIC_API_KEY"))
     resp = client.messages.create(

@@ -164,7 +164,16 @@ Incluí máximo {N_FINAL} picks. Solo los que genuinamente merezcan atención.""
             except Exception as exc_g:
                 logger.debug("Gemini scanner synthesis failed: %s", exc_g)
 
-        # Fallback: Claude Haiku
+        # Iter3: Fallback Claude Haiku SOLO si flag ON (anti-flag de cuenta)
+        from alpha_agent.config import LLM as _LLM
+        if not _LLM.enable_anthropic:
+            logger.info("scanner synthesis: Gemini fallo y Anthropic OFF → heuristica Sharpe")
+            return [
+                {"ticker": c["ticker"], "prioridad": "MEDIA",
+                 "razon": f"Sharpe 3M: {c['sharpe_3m']:.2f}, momentum 1M: {c['mom_1m_pct']:+.1f}%",
+                 "riesgo": "Sin AI disponible (Anthropic flag OFF)"}
+                for c in candidates[:N_FINAL]
+            ]
         resp = client.messages.create(
             model=CLAUDE_MODEL,
             max_tokens=800,

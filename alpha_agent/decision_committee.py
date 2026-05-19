@@ -45,6 +45,11 @@ class CommitteeDecision:
 # ── helpers ──────────────────────────────────────────────────────────────────
 
 def _haiku(system: str, user: str, max_tokens: int = 300) -> str:
+    # Iter3: kill switch defensivo (anti-flag de cuenta Anthropic).
+    # Devolvemos veredicto NO-GO neutro que el parser interpreta como skip.
+    from alpha_agent.config import LLM as _LLM
+    if not _LLM.enable_anthropic:
+        return "NO-GO|0|Anthropic deshabilitado (flag ENABLE_ANTHROPIC OFF)"
     from anthropic import Anthropic
     client = Anthropic(api_key=os.getenv("ANTHROPIC_API_KEY"))
     resp = client.messages.create(
@@ -167,6 +172,16 @@ def _sentiment_agent(cand: dict, headlines: list[str], earnings_days: int | None
 # ── meta-agente ───────────────────────────────────────────────────────────────
 
 def _meta_agent(cand: dict, opinions: list[AgentOpinion], direction: str) -> tuple[bool, float, str]:
+    # Iter3: kill switch — decision determinista si Anthropic OFF.
+    from alpha_agent.config import LLM as _LLM
+    if not _LLM.enable_anthropic:
+        go_count = sum(1 for o in opinions if o.stance == "GO")
+        nogo_count = sum(1 for o in opinions if o.stance == "NO-GO")
+        if go_count >= 3 and nogo_count == 0:
+            return True, 0.75, f"Meta heuristico (LLM OFF): {go_count}/4 GO → size 0.75"
+        if nogo_count >= 2:
+            return False, 0.0, f"Meta heuristico (LLM OFF): {nogo_count} NO-GO → SKIP"
+        return False, 0.0, "Meta heuristico (LLM OFF): consenso insuficiente → SKIP"
     from anthropic import Anthropic
     client = Anthropic(api_key=os.getenv("ANTHROPIC_API_KEY"))
 

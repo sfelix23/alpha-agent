@@ -161,6 +161,11 @@ def _analyze_with_sonnet(ticker: str, filing_text: str, filing_date: str) -> dic
     Analiza un 8-K con Claude Sonnet para determinar impacto en precio.
     Usa Sonnet (no Haiku) porque los 8-K contienen lenguaje legal complejo.
     """
+    # Iter3: kill switch defensivo. Si flag OFF, no analizar (skip).
+    # El filing pasa sin clasificar y el scoring lo trata como neutral.
+    from alpha_agent.config import LLM as _LLM
+    if not _LLM.enable_anthropic:
+        return None
     api_key = os.getenv("ANTHROPIC_API_KEY")
     if not api_key:
         return None
