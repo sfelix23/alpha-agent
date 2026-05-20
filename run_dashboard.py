@@ -124,6 +124,206 @@ def _calc_metrics(history: list[dict], spy_history: list[dict], qqq_history: lis
 
 # ─── WORKFLOW HEALTH PANEL ────────────────────────────────────────────────────
 
+def _advanced_metrics_panel(history, qqq_history, spy_history) -> str:
+    """Iter11: métricas risk-adjusted vs QQQ.
+
+    El retorno absoluto miente en un tech bull (QQQ siempre gana). Estas
+    métricas miden si el portfolio es bueno AJUSTADO POR RIESGO:
+    - Calmar: retorno anualizado / max drawdown (eficiencia del riesgo)
+    - Beta vs QQQ: cuánto se mueve con el Nasdaq (1.0 = igual, <1 defensivo)
+    - Up/Down capture: % de las subidas/bajadas de QQQ que captura
+    - Information Ratio: alpha vs QQQ / tracking error (consistencia del alpha)
+    - Batting average: % de días que el portfolio supera al QQQ
+    """
+    def _rets(hist):
+        vals = [h.get("equity", h.get("v")) for h in hist if h.get("equity", h.get("v")) is not None]
+        return [(vals[i] - vals[i-1]) / vals[i-1] for i in range(1, len(vals)) if vals[i-1] > 0]
+
+    port_r = _rets(history or [])
+    qqq_r = _rets(qqq_history or [])
+    n = min(len(port_r), len(qqq_r))
+
+    if n < 3:
+        return ""  # no hay data suficiente
+
+    port_r = port_r[-n:]
+    qqq_r = qqq_r[-n:]
+
+    # Calmar: retorno anualizado / max drawdown del portfolio
+    vals = [h.get("equity", h.get("v")) for h in history if h.get("equity", h.get("v")) is not None]
+    total_ret = (vals[-1] - vals[0]) / vals[0] if vals and vals[0] > 0 else 0
+    arr = ((1 + total_ret) ** (252 / max(len(vals), 1)) - 1) if total_ret > -1 else -1
+    peak, max_dd = vals[0], 0.0
+    for v in vals:
+        peak = max(peak, v)
+        max_dd = max(max_dd, (peak - v) / peak if peak > 0 else 0)
+    calmar = (arr / max_dd) if max_dd > 0.001 else 0
+
+    # Beta vs QQQ
+    mean_p = sum(port_r) / n
+    mean_q = sum(qqq_r) / n
+    cov = sum((port_r[i] - mean_p) * (qqq_r[i] - mean_q) for i in range(n)) / n
+    var_q = sum((q - mean_q) ** 2 for q in qqq_r) / n
+    beta = (cov / var_q) if var_q > 0 else 0
+
+    # Up / Down capture vs QQQ
+    up_p = [port_r[i] for i in range(n) if qqq_r[i] > 0]
+    up_q = [qqq_r[i] for i in range(n) if qqq_r[i] > 0]
+    dn_p = [port_r[i] for i in range(n) if qqq_r[i] < 0]
+    dn_q = [qqq_r[i] for i in range(n) if qqq_r[i] < 0]
+    up_cap = (sum(up_p) / sum(up_q) * 100) if up_q and sum(up_q) != 0 else 0
+    dn_cap = (sum(dn_p) / sum(dn_q) * 100) if dn_q and sum(dn_q) != 0 else 0
+
+    # Information Ratio: alpha vs QQQ / tracking error
+    active = [port_r[i] - qqq_r[i] for i in range(n)]
+    mean_active = sum(active) / n
+    te = (sum((a - mean_active) ** 2 for a in active) / n) ** 0.5
+    info_ratio = (mean_active / te * (252 ** 0.5)) if te > 0 else 0
+
+    # Batting average: % de días que port > qqq
+    batting = sum(1 for i in range(n) if port_r[i] > qqq_r[i]) / n * 100
+
+    def _cell(label, value, good, sub):
+        color = "#3fb950" if good else ("#d29922" if good is None else "#f85149")
+        return f"""<div style="padding:12px;background:var(--s2);border-radius:4px">
+          <div style="font-size:.62rem;color:var(--mt);text-transform:uppercase;letter-spacing:.6px">{label}</div>
+          <div style="font-family:var(--mono);font-size:1.3rem;font-weight:600;color:{color}">{value}</div>
+          <div style="font-size:.64rem;color:var(--mt)">{sub}</div>
+        </div>"""
+
+    cells = "".join([
+        _cell("Calmar Ratio", f"{calmar:.2f}", calmar > 1.0, "ret anual / max DD · >1 bueno"),
+        _cell("Beta vs QQQ", f"{beta:.2f}", None, "1.0=igual Nasdaq · <1 defensivo"),
+        _cell("Up Capture", f"{up_cap:.0f}%", up_cap > 80, "de las subidas de QQQ"),
+        _cell("Down Capture", f"{dn_cap:.0f}%", dn_cap < 80, "de las bajadas (menor=mejor)"),
+        _cell("Information Ratio", f"{info_ratio:.2f}", info_ratio > 0, "alpha/TE vs QQQ · >0.5 bueno"),
+        _cell("Batting Avg", f"{batting:.0f}%", batting > 50, "% dias que supera QQQ"),
+    ])
+
+    # Veredicto honesto
+    if up_cap > 100 and dn_cap < 100:
+        verdict = "🟢 Capturas mas subidas que bajadas vs QQQ — perfil ideal"
+    elif dn_cap < up_cap:
+        verdict = "🟡 Down capture < up capture — defendes bien aunque captures menos"
+    else:
+        verdict = "🔴 Capturas mas bajadas que subidas vs QQQ — revisar seleccion"
+
+    return f"""<div class="card">
+  <div class="card-head">
+    <div>
+      <div class="card-title">MÉTRICAS RISK-ADJUSTED vs QQQ</div>
+      <div class="card-sub">El retorno absoluto miente en bull. Esto mide eficiencia del riesgo.</div>
+    </div>
+  </div>
+  <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin-top:8px">
+    {cells}
+  </div>
+  <div style="margin-top:12px;padding-top:8px;border-top:1px solid var(--bd);font-size:.72rem;color:var(--mt)">
+    {verdict}
+  </div>
+</div>"""
+
+
+def _control_center_panel() -> str:
+    """Iter11: card "Control Center" con botones que ejecutan via Flask fetch().
+
+    Antes (iter10) usaba links t.me/bot?text= pero Telegram BLOQUEA pre-llenar
+    mensajes a bots. Ahora los botones llaman a /api/cmd/<action> del Flask
+    local (mismo que sirve el bot). Funciona desde http://localhost:5050/dashboard
+    o desde file:/// (con CORS). Resultado se muestra en un panel inline.
+    """
+    import os as _os
+    _is_paused = (BASE_DIR / "signals" / "paused.flag").exists()
+    _anthropic_on = _os.getenv("ENABLE_ANTHROPIC", "").lower() in ("true", "1", "yes")
+
+    pause_status = "⏸️ PAUSADO" if _is_paused else "▶️ ACTIVO"
+    pause_color = "#f85149" if _is_paused else "#3fb950"
+    pause_action = "resume" if _is_paused else "pause"
+    pause_label = "▶️ Reanudar trading" if _is_paused else "⏸️ Pausar trading"
+
+    anthropic_status = "🟢 ON" if _anthropic_on else "🔴 OFF"
+    anthropic_color = "#3fb950" if _anthropic_on else "#6e7681"
+    anthropic_action = "anthropic_off" if _anthropic_on else "anthropic_on"
+    anthropic_label = "🔴 Apagar Anthropic" if _anthropic_on else "🟢 Activar Anthropic"
+
+    _btn = ("margin:6px 6px 0 0;padding:8px 14px;border-radius:4px;"
+            "font-size:.74rem;font-family:var(--mono);border:1px solid;"
+            "cursor:pointer;background:transparent")
+
+    # JS helper: detecta origin (file:// vs http) y hace fetch al Flask.
+    js = """<script>
+(function(){
+  if (window.__alphaCmdDefined) return;
+  window.__alphaCmdDefined = true;
+  const API = (location.protocol === 'file:') ? 'http://localhost:5050' : '';
+  window.alphaCmd = async function(action, confirmMsg){
+    if (confirmMsg && !confirm(confirmMsg)) return;
+    const out = document.getElementById('cc-result');
+    if (out){ out.style.display='block'; out.textContent='Ejecutando '+action+'...'; }
+    try {
+      const r = await fetch(API + '/api/cmd/' + action, {method:'POST'});
+      const d = await r.json();
+      if (out){ out.textContent = d.result || d.error || 'OK'; }
+    } catch(e) {
+      if (out){
+        out.textContent = 'No se pudo conectar al dashboard Flask.\\n' +
+          'Abri http://localhost:5050/dashboard en vez de file://, o asegurate ' +
+          'que start_dashboard.ps1 este corriendo.\\nError: ' + e;
+      }
+    }
+  };
+})();
+</script>"""
+
+    return f"""<div class="card">
+  {js}
+  <div class="card-head">
+    <div>
+      <div class="card-title">🎮 CONTROL CENTER</div>
+      <div class="card-sub">Botones ejecutan directo via Flask local (sin Telegram)</div>
+    </div>
+    <div style="text-align:right;display:flex;flex-direction:column;gap:4px">
+      <div style="font-family:var(--mono);font-size:.78rem">
+        Trading: <span style="color:{pause_color};font-weight:600">{pause_status}</span>
+      </div>
+      <div style="font-family:var(--mono);font-size:.78rem">
+        Anthropic (local): <span style="color:{anthropic_color};font-weight:600">{anthropic_status}</span>
+      </div>
+    </div>
+  </div>
+
+  <div style="margin-top:10px">
+    <div style="font-size:.66rem;color:var(--mt);margin-bottom:6px;text-transform:uppercase;letter-spacing:.5px">Trading control</div>
+    <button onclick="alphaCmd('{pause_action}')" style="{_btn};color:{pause_color};border-color:{pause_color}">{pause_label}</button>
+    <button onclick="alphaCmd('force_daily','Forzar un alpha-daily extra ahora?')" style="{_btn};color:#3b82f6;border-color:#3b82f6">🚀 Forzar daily ahora</button>
+    <button onclick="alphaCmd('liquidate_orphans','Liquidar TODAS las huerfanas con P&L negativo?')" style="{_btn};color:#f85149;border-color:#f85149">🔴 Liquidar huerfanas negativas</button>
+  </div>
+
+  <div style="margin-top:14px">
+    <div style="font-size:.66rem;color:var(--mt);margin-bottom:6px;text-transform:uppercase;letter-spacing:.5px">LLM</div>
+    <button onclick="alphaCmd('{anthropic_action}','Cambiar estado de Anthropic?')" style="{_btn};color:{anthropic_color};border-color:{anthropic_color}">{anthropic_label}</button>
+    <button onclick="alphaCmd('llm')" style="{_btn};color:#d29922;border-color:#d29922">📊 Ver costos LLM hoy</button>
+    <button onclick="alphaCmd('health')" style="{_btn};color:#3fb950;border-color:#3fb950">🟢 Health snapshot</button>
+  </div>
+
+  <div style="margin-top:14px">
+    <div style="font-size:.66rem;color:var(--mt);margin-bottom:6px;text-transform:uppercase;letter-spacing:.5px">PC remoto</div>
+    <button onclick="alphaCmd('sleep','Poner la PC en sleep?')" style="{_btn};color:#6e7681;border-color:#6e7681">💤 Dormir PC (suspend)</button>
+    <button onclick="alphaCmd('apagar','APAGAR la PC en 60s? (mandá cancelar para abortar)')" style="{_btn};color:#f85149;border-color:#f85149">🔴 Apagar PC (60s)</button>
+    <button onclick="alphaCmd('cancelar')" style="{_btn};color:#d29922;border-color:#d29922">✋ Cancelar shutdown</button>
+  </div>
+
+  <pre id="cc-result" style="display:none;margin-top:12px;padding:10px;background:var(--s2);
+       border-radius:4px;font-size:.72rem;color:var(--tx);white-space:pre-wrap;
+       border-left:3px solid var(--ac);max-height:200px;overflow:auto"></pre>
+
+  <div style="margin-top:12px;padding-top:8px;border-top:1px solid var(--bd);font-size:.66rem;color:var(--mt)">
+    💡 Para que los botones funcionen, abrí <b>http://localhost:5050/dashboard</b> (no file://).
+    El comando <code>apagar</code> da 60s de gracia.
+  </div>
+</div>"""
+
+
 def _risk_band_panel(equity: float, baseline: float = 1600.0) -> str:
     """Iter7: card mostrando en qué banda de drawdown está el sistema AHORA.
 
@@ -278,6 +478,11 @@ def _orphan_positions_panel(positions, signals_data: dict) -> str:
     if not orphans:
         return ""
 
+    # Iter8: bot username para botones interactivos. Hardcoded por ahora —
+    # idealmente leer de config. NAF usa @sfelix23_alpha_bot (chequear si cambia).
+    import os as _os_iter8
+    _bot_username = _os_iter8.getenv("TELEGRAM_BOT_USERNAME", "sfelix23_alpha_bot")
+
     rows = []
     total_pnl = 0.0
     for o in sorted(orphans, key=lambda x: -float(x.unrealized_pl)):
@@ -286,7 +491,27 @@ def _orphan_positions_panel(positions, signals_data: dict) -> str:
         pct = (pnl / cost * 100) if cost else 0
         total_pnl += pnl
         color = "#3fb950" if pnl >= 0 else "#f85149"
-        rec = "✅ Mantener (winner)" if pnl > 0 else "⚠️ Considerar liquidar"
+
+        # Iter8: 3 acciones diferentes segun el P&L
+        if pnl > 20:
+            rec = "✅ Winner — auto-mantener"
+            btn = ""
+        elif pnl < -5:
+            rec = "🔴 Auto-handler la cerrara en proxima corrida"
+            # Link al bot con comando liquidate <ticker> pre-armado
+            btn = (f'<a href="https://t.me/{_bot_username}?text=liquidate%20{o.ticker}" '
+                   f'target="_blank" style="display:inline-block;margin-top:4px;'
+                   f'padding:4px 10px;background:#f8514922;color:#f85149;'
+                   f'border:1px solid #f85149;border-radius:3px;font-size:.66rem;'
+                   f'text-decoration:none;font-family:var(--mono)">⚡ LIQUIDAR YA</a>')
+        else:
+            rec = "⚠️ Zona neutra — monitoreando"
+            btn = (f'<a href="https://t.me/{_bot_username}?text=liquidate%20{o.ticker}" '
+                   f'target="_blank" style="display:inline-block;margin-top:4px;'
+                   f'padding:4px 10px;background:#d2992222;color:#d29922;'
+                   f'border:1px solid #d29922;border-radius:3px;font-size:.66rem;'
+                   f'text-decoration:none;font-family:var(--mono)">⚡ Liquidar manual</a>')
+
         rows.append(f"""
         <div style="display:flex;justify-content:space-between;padding:8px 0;
                     border-bottom:1px solid var(--bd);font-size:.78rem">
@@ -301,16 +526,41 @@ def _orphan_positions_panel(positions, signals_data: dict) -> str:
               ${pnl:+.2f} ({pct:+.1f}%)
             </div>
             <div style="font-size:.66rem;color:var(--mt)">{rec}</div>
+            {btn}
           </div>
         </div>""")
     rows_html = "\n".join(rows)
     total_color = "#3fb950" if total_pnl >= 0 else "#f85149"
 
+    # Iter8: bot actions globales
+    _btn_style = ("display:inline-block;margin:4px 6px 0 0;padding:6px 12px;"
+                  "border-radius:4px;font-size:.72rem;text-decoration:none;"
+                  "font-family:var(--mono);border:1px solid")
+    bot_actions = f"""
+    <div style="margin-top:12px;padding-top:10px;border-top:1px solid var(--bd)">
+      <div style="font-size:.66rem;color:var(--mt);margin-bottom:6px;text-transform:uppercase;letter-spacing:.5px">
+        Acciones rapidas (abren Telegram con comando pre-armado)
+      </div>
+      <a href="https://t.me/{_bot_username}?text=liquidate%20orphans" target="_blank"
+         style="{_btn_style};background:#f8514922;color:#f85149;border-color:#f85149">
+        🔴 Liquidar todas las huerfanas negativas
+      </a>
+      <a href="https://t.me/{_bot_username}?text=cartera" target="_blank"
+         style="{_btn_style};background:#3b82f622;color:#3b82f6;border-color:#3b82f6">
+        📊 Ver cartera completa
+      </a>
+      <a href="https://t.me/{_bot_username}?text=health" target="_blank"
+         style="{_btn_style};background:#3fb95022;color:#3fb950;border-color:#3fb950">
+        🟢 Health snapshot
+      </a>
+    </div>
+    """
+
     return f"""<div class="card" style="border-left:3px solid #d29922">
   <div class="card-head">
     <div>
       <div class="card-title">⚠️ POSICIONES HUÉRFANAS ({len(orphans)})</div>
-      <div class="card-sub">Abiertas en Alpaca pero SIN signal activa · NO se gestionan automáticamente</div>
+      <div class="card-sub">Sin signal activa · Iter8: auto-handler las gestiona ahora</div>
     </div>
     <div style="text-align:right">
       <div style="font-family:var(--mono);font-size:1.2rem;font-weight:600;color:{total_color}">
@@ -322,9 +572,10 @@ def _orphan_positions_panel(positions, signals_data: dict) -> str:
   {rows_html}
   <div style="margin-top:10px;padding-top:8px;border-top:1px solid var(--bd);
               font-size:.7rem;color:var(--mt)">
-    ⚠️ Estas posiciones <b>NO tienen stop loss dinámico ni trailing</b>. El monitor
-    sólo loguea warnings. Liquidá manualmente las negativas para arrancar limpio.
+    <b>Reglas auto-handler (cada 30min):</b><br>
+    🟢 P&L > +20% → MANTENER (winner) · 🔴 P&L < -5% → AUTO-CLOSE · 🟡 Hold > 7d sin progreso → CLOSE
   </div>
+  {bot_actions}
 </div>"""
 
 
@@ -586,7 +837,8 @@ def _tab_resumen(equity, initial, regime, vix, wti, gold, dxy,
                  history, spy_history, signals_data, metrics, age_hours,
                  perf_data=None, qqq_history=None, mc_result=None,
                  tres_cuentas_html="", wf_health_html="", llm_status_html="",
-                 risk_band_html="", regime_active_html="", orphan_html=""):
+                 risk_band_html="", regime_active_html="", orphan_html="",
+                 control_center_html="", adv_metrics_html=""):
     pnl     = equity - initial
     pnl_pct = (pnl / initial * 100) if initial else 0
     pc      = _c(pnl)
@@ -721,11 +973,15 @@ def _tab_resumen(equity, initial, regime, vix, wti, gold, dxy,
   {kpis}
   {adv_kpis}
   <div class="section-gap"></div>
+  {control_center_html}
+  <div class="section-gap"></div>
   {orphan_html}
   <div class="section-gap"></div>
   {risk_band_html}
   <div class="section-gap"></div>
   {regime_active_html}
+  <div class="section-gap"></div>
+  {adv_metrics_html}
   <div class="section-gap"></div>
   {tres_cuentas_html}
   <div class="section-gap"></div>
@@ -2621,17 +2877,21 @@ def build_html(equity, initial, history, positions, signals_data,
     tres_cuentas   = _tres_cuentas_panel(trades or [], dt_trades or [], scalp_trades or [])
     wf_health      = _workflow_health_panel(workflow_status or {})
     llm_status     = _llm_status_panel()
-    # Iter7: 3 cards nuevas
+    # Iter7+10: 4 cards nuevas
     risk_band      = _risk_band_panel(equity, initial)
     regime_active  = _regime_active_panel(signals_data)
     orphan_html    = _orphan_positions_panel(positions or [], signals_data)
+    control_center = _control_center_panel()  # iter10/11
+    adv_metrics    = _advanced_metrics_panel(history, qqq_history, spy_history)  # iter11
     t_resumen    = _tab_resumen(equity, initial, regime, vix, wti, gold, dxy,
                                 history, spy_history, signals_data, metrics, age_hours,
                                 perf_data=perf_data, qqq_history=qqq_history, mc_result=mc_result,
                                 tres_cuentas_html=tres_cuentas, wf_health_html=wf_health,
                                 llm_status_html=llm_status,
                                 risk_band_html=risk_band, regime_active_html=regime_active,
-                                orphan_html=orphan_html)
+                                orphan_html=orphan_html,
+                                control_center_html=control_center,
+                                adv_metrics_html=adv_metrics)
     t_posiciones = _tab_posiciones(positions)
     t_senales    = _tab_senales(signals_data)
     t_mercado    = _tab_mercado(signals_data, discovery_data=discovery_data)

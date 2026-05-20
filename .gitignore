@@ -5,6 +5,10 @@
 # ── Runtime generado ─────────────────────────────────────────────────────
 logs/
 signals/signals_*.json
+signals/llm_cache.sqlite
+signals/llm_cache.sqlite-*
+signals/*.sqlite-wal
+signals/*.sqlite-shm
 dashboard.html
 alpha_agent/data/cache/
 .cache/
