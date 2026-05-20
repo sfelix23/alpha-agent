@@ -42,6 +42,9 @@ alpha_agent/analytics/trade_db.py      ← SQLite (WAL+busy_timeout 15s), capita
 alpha_agent/analytics/allocation_agent.py ← decide_allocation con sleeve modulator (drawdown × equity_curve)
 alpha_agent/analytics/scoring.py       ← build_scores, quality bonus cap variable por régimen
 alpha_agent/analytics/earnings_guard.py ← get_earnings_soon (chequeado pre-BUY en strategy.py)
+alpha_agent/discovery/universe_scanner.py ← discovery semanal (gate liquidez) + _rotate_universe (rotación auto)
+alpha_agent/config.py get_effective_cp_universe ← CP_UNIVERSE dinámico (estático ± overrides/veto)
+signals/cp_universe_overrides.json     ← added/removed/vetoed + history de rotación (persistido)
 alpha_agent/daytrading/scanner.py      ← _candle_strength()
 trader_agent/brokers/alpaca_broker.py  ← paper=True, _submit_with_retry (3 intentos backoff)
 trader_agent/strategy.py               ← earnings guard pre-BUY + risk debate + macro guard
@@ -129,7 +132,7 @@ done
 
 ### Bot Telegram/WhatsApp
 - Mandar `/help` o `ayuda` para ver comandos disponibles.
-- Comandos clave: `estado`, `cartera`, `equity`, `run`, `logs`, `llm`, `health`, `despertar`, `sleep`, **`apagar`** (shutdown 60s con `cancelar` para abortar).
+- Comandos clave: `estado`, `cartera`, `equity`, `run`, `logs`, `llm`, `health`, `memoria`, `universo`, `veto/unveto TICKER`, `despertar`, `sleep`, **`apagar`** (shutdown 60s con `cancelar` para abortar).
 - Setup webhook Telegram (one-time): `curl "https://api.telegram.org/bot$TELEGRAM_BOT_TOKEN/setWebhook?url=https://$NGROK_DOMAIN/webhook/telegram"`.
 
 ---
@@ -145,6 +148,10 @@ done
 - `signals/allocation.json` ← LP/CP/OPT pcts del último allocation agent
 
 **Implementado recientemente (mayo 2026):**
+
+Iter 16-17 (2026-05-20) — **ejecución agresiva + universo auto-rotativo**:
+- **iter16 ejecución**: scale-in 60%→**85%** en AGGRESSIVE (`strategy._apply_scale_in`); **fallback opciones→equity** (`_options_fallback_to_equity`) si no hay contrato → redirige al top CP. Para que el perfil agresivo realmente despliegue (hoy quedó 44%). Scalper ya no spamea vetos (solo loguea).
+- **iter17 universo**: recorte de ADRs argentinos ilíquidos (sacados LOMA/TGS/EDN/PAM/IRS/DESP/TGNO4.BA; quedan GGAL/BMA/MELI/VIST/YPF). Gate de liquidez en discovery (`_quick_score`: ADV≥$20M, precio≥$5). **CP_UNIVERSE dinámico**: `config.get_effective_cp_universe()` = (estático ∪ added) − removed − vetoed, lee `signals/cp_universe_overrides.json`. **Rotación automática** semanal (`universe_scanner._rotate_universe` en run_rebalancer): candidato repetido 2 sem + líquido + supera al más flojo por 20% → swap (1/sem, nunca saca posiciones abiertas ni PROTECTED_CP, respeta veto). Bot: `universo`/`veto`/`unveto`.
 
 Iter 15 (2026-05-20) — **foco en CP + dashboard observable**:
 - **DT y scalping DESACTIVADOS** (data-driven): DT nunca operó (0 trades), SCALP 6 abiertas/0 cerradas/$0 realizado. `config.enable_daytrading=False`, `enable_scalping=False` (reversibles); early-exit en `run_daytrader`/`run_scalper`; sacado del `entrypoint.sh` daily. Foco/capital/medición en CP momentum (único motor con edge).
