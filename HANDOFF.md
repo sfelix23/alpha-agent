@@ -9,10 +9,10 @@
 
 ## 🚨 Lo MÁS CRÍTICO que tenés que saber (no skipear)
 
-1. **Hay 2 usuarios**:
-   - **NAF** — economista argentino, diseñador original del sistema. Construye agentes de IA. Prefiere **modificar archivos existentes a crear nuevos** (decisión clave: en iter1 creé `alpha_agent/llm/` y tuve que deshacerlo).
-   - **Santino Felix** — hijo de NAF. También opera el sistema. Identificó iter10 que el sistema lo trataba como NAF, lo cual no era correcto.
-   - Si no sabés quién está hablando, **preguntá**.
+1. **El usuario es Santino Felix** — única persona, diseñador y operador del sistema completo. Argentino. Master Finanzas + Big Data. Construye agentes de IA en VS Code.
+   - "NAF" era su cuenta/alias anterior (probablemente la que se flageó con Anthropic — por eso aparece como referencia histórica en commits antiguos y en mi memoria de sesiones previas).
+   - Prefiere **modificar archivos existentes a crear nuevos** (decisión clave: en iter1 creé `alpha_agent/llm/` y tuve que deshacerlo).
+   - **NO trates a "NAF" como persona distinta de Santino — es la misma persona.**
 
 2. **Anthropic cuenta flageada** (400 "empresa deshabilitada") por uso anómalo. La política es **NUNCA llamarla a menos que `ENABLE_ANTHROPIC=true` esté seteada en env vars de Cloud Run**. Hay **kill switches en 6 archivos paralelos** que verifican el flag. Si cambiás algo del LLM, **respetá esto**.
 
