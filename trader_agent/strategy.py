@@ -401,24 +401,90 @@ def execute(broker: BrokerBase, *, dry_run: bool = True, max_capital: float | No
     # ── Opciones (direccionales + hedge) ────────────────────────────
     option_intents = build_option_intents(signals, capital_adj)
     logger.info("Options plan: %d intents", len(option_intents))
-    fills.extend(_submit_option_intents(broker, option_intents, dry_run=dry_run))
+    opt_fills = _submit_option_intents(broker, option_intents, dry_run=dry_run)
+    fills.extend(opt_fills)
+
+    # iter15: fallback opciones → equity. Si NINGUNA opción se desplegó (no se
+    # encontró contrato, etc.), el sleeve de opciones quedaría en cash. En perfil
+    # agresivo redirigimos ese capital al mejor nombre CP para no dejar plata ociosa.
+    try:
+        fills.extend(_options_fallback_to_equity(
+            broker, signals, opt_fills, capital_adj, dry_run=dry_run,
+            regime=regime, vix=vix,
+        ))
+    except Exception as _ofb_exc:
+        logger.debug("options fallback no aplicado (%s)", _ofb_exc)
 
     return fills
 
 
+def _options_fallback_to_equity(broker, signals, opt_fills, capital_adj, *,
+                                dry_run: bool, regime: str, vix: float) -> list[dict]:
+    """Si las opciones no se desplegaron, redirige su presupuesto al top CP.
+
+    Sólo en perfil AGGRESSIVE. Respeta el buying power disponible (no sobre-invierte).
+    """
+    try:
+        from alpha_agent.config import PARAMS as _P
+    except Exception:
+        return []
+    if getattr(_P, "risk_appetite", "") != "AGGRESSIVE":
+        return []
+    # ¿Se desplegó alguna opción?
+    if any(f.get("status") in ("submitted", "filled") for f in (opt_fills or [])):
+        return []
+    if not signals.short_term:
+        return []
+
+    opt_budget = capital_adj * float(getattr(_P, "weight_options", 0.0) or 0.0)
+    if opt_budget < 50:
+        return []
+
+    # Headroom real: buying power − invertido actual
+    try:
+        bp = float(broker.get_buying_power()) if hasattr(broker, "get_buying_power") else float(broker.get_equity())
+        invested = total_invested_notional(broker.get_positions())
+        headroom = max(0.0, bp - invested)
+    except Exception:
+        headroom = opt_budget
+    notional = min(opt_budget, headroom)
+    if notional < 50:
+        return []
+
+    top = signals.short_term[0]
+    logger.info(
+        "Options fallback → equity: opciones no desplegadas, redirijo $%.0f al top CP %s",
+        notional, top.ticker,
+    )
+    intent = TradeIntent(
+        ticker=top.ticker, side="BUY", notional=notional, horizon="CP",
+        stop_loss=top.stop_loss, take_profit=top.take_profit,
+    )
+    return _submit_equity_intents(broker, [intent], dry_run=dry_run, regime=regime, vix=vix)
+
+
 def _apply_scale_in(intents: list[TradeIntent], held_tickers: set[str]) -> list[TradeIntent]:
     """
-    Nuevas posiciones (no en cartera actual) entran al 60% del notional.
-    Reduce slippage y riesgo de entrada en breakouts falsos.
-    El 40% restante se añade en el siguiente ciclo si la posición confirma.
+    Nuevas posiciones entran a una fracción del notional (resto se completa el
+    ciclo siguiente si confirma). Reduce slippage y riesgo de breakout falso.
+
+    iter15: la fracción depende del perfil de riesgo. En AGGRESSIVE entramos al
+    85% (no 60%) — el scale-in al 60% dejaba el libro sub-desplegado (day-1 ~54%)
+    y eso rema contra el objetivo de multiplicar rápido. 85% mantiene un pequeño
+    colchón contra falsos breakouts sin sacrificar despliegue.
     """
+    try:
+        from alpha_agent.config import PARAMS as _P
+        frac = 0.85 if getattr(_P, "risk_appetite", "") == "AGGRESSIVE" else 0.60
+    except Exception:
+        frac = 0.60
     result = []
     for intent in intents:
         if intent.side.upper() == "BUY" and intent.ticker not in held_tickers:
-            scaled = intent.notional * 0.60
+            scaled = intent.notional * frac
             logger.info(
-                "Scale-in NEW %s: $%.0f → $%.0f (60%% entrada inicial)",
-                intent.ticker, intent.notional, scaled,
+                "Scale-in NEW %s: $%.0f → $%.0f (%.0f%% entrada inicial)",
+                intent.ticker, intent.notional, scaled, frac * 100,
             )
             intent = TradeIntent(
                 ticker=intent.ticker,
