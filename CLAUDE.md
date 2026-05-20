@@ -37,7 +37,8 @@ alpha_agent/analytics/kelly.py         ← Kelly blend GARCH+hist, composite_kel
                                          risk_action_for_drawdown, kelly_multiplier_for_regime,
                                          adaptive_trailing, equity_curve_multiplier
 alpha_agent/analytics/trade_db.py      ← SQLite (WAL+busy_timeout 15s), capital reservations,
-                                         rolling_sharpe_by_sleeve, get_combined_state (multi-account)
+                                         rolling_sharpe_by_sleeve, get_combined_state (multi-account),
+                                         SEGUNDO CEREBRO: get_ticker_memory/memory_score_adjustment/summarize_learnings
 alpha_agent/analytics/allocation_agent.py ← decide_allocation con sleeve modulator (drawdown × equity_curve)
 alpha_agent/analytics/scoring.py       ← build_scores, quality bonus cap variable por régimen
 alpha_agent/analytics/earnings_guard.py ← get_earnings_soon (chequeado pre-BUY en strategy.py)
@@ -63,11 +64,13 @@ signals/capital_reservations.json      ← reservas de capital por sleeve
 |-----------|-------|
 | Sleeves (BULL niv 1) | LP 0% · CP 88% · OPT 7% · cash 5% (allocation_agent dinámico) |
 | Sleeves (BEAR/VIX>30) | LP 0% · CP 45% · OPT 5% (defensivo) |
+| **Concentración (iter13)** | **n_cp=3 nombres** (niv 1-2) · max 40%/nombre · floor 30%/pos · conviction ALTA ×1.5 → top ~40% ("agresivo con control") |
 | Risk budget escalado | 0..-2% NORMAL · -2..-4% REDUCE 0.5x · -4..-6% CLOSE_LOSERS · -6..-8% CLOSE_LONGS · <-8% KILL |
 | Trailing stop adaptive | BULL+ALTA: BE +8% lock 60% a +20%. BEAR+MEDIA: BE +2% lock 30% a +5% |
 | Chandelier ATR mult | BULL 3.5 · LATERAL 2.8 · BEAR 2.0 |
 | Quality multiplier cap | BULL +1.20/-0.60 · LATERAL +0.80/-0.60 · BEAR +0.60/-0.80 |
-| Max β LP | 2.0 · Min Sharpe LP 0.30 · Top LP 2 · Top CP 2 (concentrated) |
+| **Segundo cerebro (iter13)** | memoria por ticker: favorable (≥60% win, +pnl, ≥3 trades) score +0.25 · adverso (≤34% win, -pnl) score -0.50 |
+| Max β LP | 2.0 · Min Sharpe LP 0.30 · Top LP 2 · Top CP 3 (agresivo con control) |
 | Options | Long-only · min DTE 30 días · BEAR/VIX>25→hedge puts SPY · max 1 contract/trade |
 | Cuenta Alpaca LP/CP | paper · Level 3 options · fractional ON |
 | Cuenta Alpaca DT | ALPACA_DT_API_KEY · $1500 budget hardcoded |
@@ -139,6 +142,12 @@ done
 - `signals/allocation.json` ← LP/CP/OPT pcts del último allocation agent
 
 **Implementado recientemente (mayo 2026):**
+
+Iter 11-13 (2026-05-19):
+- **Botones dashboard arreglados** (iter11): `dashboard/app.py` expone `/api/cmd/<action>` (CORS, localhost-only) + ruta `/dashboard`. Los botones usan `fetch()` (los links `t.me/bot?text=` están bloqueados por Telegram). **Abrir `http://localhost:5050/dashboard`** para que funcionen. Si dan 404: matar zombies en puerto 5050 (`netstat -ano | findstr :5050` → Stop-Process).
+- **Benchmark race** (iter12): dashboard compara Portfolio vs SPY vs QQQ vs **Buffett (BRK-B)**. Estado actual: 2º de 4 — le gana a SPY y BRK-B, atrás de QQQ.
+- **"Agresivo con control"** (iter13): `max_weight_per_asset` 0.50→0.40; `allocation_agent` n_cp floor a 3 nombres (antes 1-2) → con floor 30%/pos + conviction ×1.5, el top llega a ~40% sin riesgo catastrófico de un solo nombre. Despliega el sleeve completo (mata el cash drag de 23%).
+- **Segundo cerebro** (iter13): `trade_db.get_ticker_memory / memory_score_adjustment / summarize_learnings` — memoria por ticker derivada de trades cerrados (sin tabla nueva). `scoring.py` ajusta score CP (favorable +0.25, adverso -0.50). Panel "🧠 Segundo Cerebro" en dashboard + comando bot `memoria`.
 
 Iter 2 (2026-05-19):
 - **Robustness gaps cerrados**: `_submit_with_retry` con backoff 0.25/0.55/1.15s en alpaca_broker (sólo 5xx, NO 4xx); atomic write `signals/latest.json` (tempfile + os.replace) en monitor; filelock timeout 5s → 30s; earnings_guard chequeado **antes** del BUY en strategy.py (no sólo en scoring).
