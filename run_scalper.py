@@ -241,12 +241,10 @@ async def _stream_and_trade(live: bool) -> None:
         )
 
         if not go:
+            # iter15: NO notificar vetos por WhatsApp — eran spam cada minuto (un veto
+            # por cada barra rechazada, sobre todo con Anthropic OFF → NO-GO siempre).
+            # Los vetos son ruido no accionable: solo se loguean. Las EJECUCIONES sí avisan.
             log.info("SCALP VETADO %s — %s", ticker, reason)
-            try:
-                from alpha_agent.notifications import send_notification as send_whatsapp
-                send_whatsapp(f"SCALP VETO {ticker} [{direction}]\n{reason[:200]}")
-            except Exception:
-                pass
             return
 
         oid = _place_bracket(broker, ticker, bracket, live)
