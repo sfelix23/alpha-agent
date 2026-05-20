@@ -18,8 +18,8 @@
 | Trader | `run_trader.py` | Ejecuta órdenes Alpaca desde signals |
 | Monitor | `run_monitor.py` | Cada 30min: stops/TPs/trailing (solo alerta si actúa) |
 | Midday | `run_midday.py` | 14:00 ART: CP scan técnico (RSI/MACD/sweep) |
-| Scalper | `run_scalper.py` | ORB 15min WebSocket — cuenta separada |
-| DayTrader | `run_daytrader.py` | Gap+VWAP+candle intraday — cuenta separada |
+| ~~Scalper~~ | `run_scalper.py` | **DESACTIVADO (iter15)** — `enable_scalping=False`. Sin edge medible. |
+| ~~DayTrader~~ | `run_daytrader.py` | **DESACTIVADO (iter15)** — `enable_daytrading=False`. Nunca operó. |
 | Orquestador | `run_autonomous.ps1` | Task Scheduler 10:35 ART lun-vie |
 
 ---
@@ -145,6 +145,11 @@ done
 - `signals/allocation.json` ← LP/CP/OPT pcts del último allocation agent
 
 **Implementado recientemente (mayo 2026):**
+
+Iter 15 (2026-05-20) — **foco en CP + dashboard observable**:
+- **DT y scalping DESACTIVADOS** (data-driven): DT nunca operó (0 trades), SCALP 6 abiertas/0 cerradas/$0 realizado. `config.enable_daytrading=False`, `enable_scalping=False` (reversibles); early-exit en `run_daytrader`/`run_scalper`; sacado del `entrypoint.sh` daily. Foco/capital/medición en CP momentum (único motor con edge).
+- **Dashboard 4 mejoras**: (1) medidor de **despliegue de capital** (invertido vs target vs cash — caza sub-despliegue); (2) **riesgo por posición** (stop/dist/​$ en riesgo/días hold); (3) **calidad de salidas** (avg win/loss, profit factor, expectancy + alerta si win-rate alto pero W/L<1); (4) **estado de señales** (ejecutada/skip+motivo) + **memoria expandida** por ticker. Rotación sectorial ya existía.
+- **Hallazgo**: CP tiene 70% win pero P&L realizado negativo → cortamos winners temprano / dejamos correr losers (el dashboard ahora lo muestra). Pendiente afinar exits.
 
 Iter 14 (2026-05-20) — **perfil de riesgo AGRESIVO edge-driven**:
 - Decisión Santino: tomar más riesgo siempre que el retorno esperado lo justifique (paper → real). Fundamento: Kelly fraccional + mean-variance con menor aversión + anti-martingala, con **piso anti-ruina** (kill -13%, no se compone desde cero).
