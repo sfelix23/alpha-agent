@@ -12,12 +12,15 @@ Las señales de opciones se expresan como OptionIntent (contracts a comprar).
 
 from __future__ import annotations
 
+import logging
 from dataclasses import dataclass
 
 from alpha_agent.config import PARAMS
 from alpha_agent.reporting.signals import Signal, Signals
 
 from .brokers.base import Position
+
+logger = logging.getLogger(__name__)
 
 
 @dataclass
@@ -149,6 +152,13 @@ def diff_against_current(
         for p in positions
         if getattr(p, "asset_class", "equity") == "equity"
     }
+    # iter18: costo base por ticker para proteger ganadores en la rotación.
+    _cost = {
+        p.ticker: (getattr(p, "avg_price", 0) or 0) * (getattr(p, "qty", 0) or 0)
+        for p in positions
+        if getattr(p, "asset_class", "equity") == "equity"
+    }
+    _WINNER_KEEP_PCT = 3.0  # no rotar afuera ganadores con +3% — dejá correr el momentum
     intents: list[TradeIntent] = []
 
     # Tickers con sobre-exposición respecto al target → SELL el exceso
@@ -156,6 +166,18 @@ def diff_against_current(
         target_notional = target.get(t, {}).get("notional", 0.0)
         delta = target_notional - mv
         if delta < -threshold:
+            # iter18 WINNER PROTECTION: si el ticker salió del target (target=0) pero
+            # la posición está GANANDO (≥+3%), NO la vendemos por rotación. La dejamos
+            # correr; el monitor la gestiona con stop/trailing. Diagnóstico: los winners
+            # salían chicos (+2.4% prom) porque el rebalanceo diario los rotaba vivos.
+            cost = _cost.get(t, 0.0)
+            pnl_pct = ((mv - cost) / cost * 100) if cost > 0 else 0.0
+            if target_notional <= 0 and pnl_pct >= _WINNER_KEEP_PCT:
+                logger.info(
+                    "Winner protection: %s +%.1f%% fuera de target — NO rotar (deja correr)",
+                    t, pnl_pct,
+                )
+                continue
             intents.append(TradeIntent(
                 ticker=t, side="SELL", notional=abs(delta),
                 horizon=target.get(t, {}).get("horizon", "LP"),

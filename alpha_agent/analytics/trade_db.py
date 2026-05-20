@@ -281,10 +281,16 @@ def reconcile_buy_sell_pairs() -> int:
             if sell_qty <= 0:
                 continue
 
-            # Find oldest open BUY(s) for this ticker (FIFO)
+            # Find oldest open BUY(s) for this ticker (FIFO).
+            # iter18 fix: SOLO BUYs anteriores o iguales al SELL (ts <= sell_ts).
+            # Antes matcheaba cualquier BUY abierto → emparejaba un SELL con un BUY
+            # POSTERIOR y producía hold_days negativo (cerrado antes de abierto),
+            # corrompiendo todas las métricas de hold/win.
             buys = con.execute(
-                "SELECT id, qty, price, ts FROM trades WHERE ticker=? AND side='BUY' AND closed_at IS NULL ORDER BY id ASC",
-                (ticker,),
+                "SELECT id, qty, price, ts FROM trades "
+                "WHERE ticker=? AND side='BUY' AND closed_at IS NULL AND ts <= ? "
+                "ORDER BY id ASC",
+                (ticker, sell_ts),
             ).fetchall()
 
             remaining_sell_qty = sell_qty
@@ -304,7 +310,7 @@ def reconcile_buy_sell_pairs() -> int:
                 try:
                     buy_dt = datetime.fromisoformat(buy_ts)
                     sell_dt = datetime.fromisoformat(sell_ts)
-                    hold_days = round((sell_dt - buy_dt).total_seconds() / 86400, 2)
+                    hold_days = max(0.0, round((sell_dt - buy_dt).total_seconds() / 86400, 2))
                 except Exception:
                     hold_days = 0.0
 
