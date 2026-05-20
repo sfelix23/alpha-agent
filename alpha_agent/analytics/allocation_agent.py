@@ -60,9 +60,9 @@ def _rule_default(regime: str, vix: float, win_rate: float | None, recent_pnl: f
         )
         return AllocationDecision(0.0, 0.45, 0.05, 1, 4, reason, level=3)
 
-    # NEUTRAL: posición base conservadora (3 nombres = diversificación + despliegue)
+    # NEUTRAL: base (iter14 agresivo sube exposición; 3 nombres = diversifica incertidumbre)
     if vix > 22 or reg == "NEUTRAL":
-        cp = 0.80 if winning_streak else 0.65
+        cp = 0.84 if winning_streak else 0.72
         n  = 3
         reason = f"NEUTRAL/VIX {vix:.0f}: CP {cp:.0%} en top-3, {'racha ganadora → más exposición.' if winning_streak else 'posición moderada.'}"
         return AllocationDecision(0.0, cp, 0.10, n, 8, reason, level=2)
@@ -73,23 +73,23 @@ def _rule_default(regime: str, vix: float, win_rate: float | None, recent_pnl: f
     # cuando un ticker pierde momentum (suele pasar a las 2 semanas).
     if winning_streak:
         # NIVEL 1: BULL + ganando → presionar al máximo; chandelier es el exit primario.
-        # Iter13 "agresivo con control": SIEMPRE 3 nombres (nunca 1). Con floor 30% +
-        # conviction ×1.5, el de mayor convicción llega a ~40% (absorbe la subida) y
-        # los otros 2 sostienen ~30% c/u. Evita el 88%-en-un-nombre del modo anterior,
-        # que era "máximo riesgo" (un gap overnight te borraba la cuenta).
-        n_cp = 3
-        return AllocationDecision(0.0, 0.88, 0.07, n_cp, 10,
-            f"BULL + racha ganadora ({win_rate:.0%} WR): CP 88% en top-{n_cp} (control concentración), hold 10d max.", level=1)
+        # iter14 AGRESIVO: CP 90%, OPT 8% (cash ~2%). n_cp=2 si VIX<18 (concentrar en
+        # las 2 mejores ideas = más beta al edge) o 3 si VIX>=18 (diversificar cuando
+        # hay más incertidumbre). El piramidado de la equity curve (HOT 1.35x) puede
+        # llevar el sleeve hasta ~0.95 en racha.
+        n_cp = 2 if vix < 18 else 3
+        return AllocationDecision(0.0, 0.90, 0.08, n_cp, 10,
+            f"BULL + racha ganadora ({win_rate:.0%} WR): CP 90% en top-{n_cp} (agresivo edge-driven), hold 10d max.", level=1)
     elif losing_streak:
         # ya cubierto arriba pero por si acá
-        return AllocationDecision(0.0, 0.50, 0.05, 2, 4,
-            f"BULL pero racha perdedora: reduciendo CP al 50%, 2 nombres.", level=3)
+        return AllocationDecision(0.0, 0.55, 0.05, 2, 4,
+            f"BULL pero racha perdedora: reduciendo CP al 55%, 2 nombres.", level=3)
     else:
-        # NIVEL 2: BULL sin historial suficiente → base sólida, 3 nombres para
-        # desplegar el sleeve completo y diluir riesgo idiosincrático.
-        cp = 0.83 if vix < 18 else 0.75
-        return AllocationDecision(0.0, cp, 0.10, 3, 8,
-            f"BULL + VIX {vix:.1f}: CP {cp:.0%} en top-3, hold 8d max (agresivo con control).", level=2)
+        # NIVEL 2: BULL sin historial suficiente → base sólida pero agresiva.
+        cp = 0.88 if vix < 18 else 0.80
+        n_cp = 2 if vix < 18 else 3
+        return AllocationDecision(0.0, cp, 0.10, n_cp, 8,
+            f"BULL + VIX {vix:.1f}: CP {cp:.0%} en top-{n_cp}, hold 8d max (agresivo edge-driven).", level=2)
 
 
 def _get_recent_performance() -> tuple[float | None, float | None]:
@@ -175,9 +175,10 @@ def decide_allocation(
         risk = risk_action_for_drawdown(0.0)   # placeholder — intradía lo maneja el monitor
         ec_mult, ec_regime = equity_curve_multiplier(eq_hist)
         drawdown_mult = float(risk["kelly_multiplier"])
-        # Cap el equity_curve_mult en 1.0 para no SOBREASIGNAR ("HOT" 1.2x no sube
-        # el sleeve por arriba del cp_pct base — esa decisión es del monitor en runtime).
-        ec_mult_capped = min(1.0, ec_mult)
+        # iter14 AGRESIVO: permitir piramidar en racha (HOT 1.35x sube el sleeve por
+        # arriba del base, anti-martingala). Cap a 1.30 para no pasarnos. El cap duro
+        # de despliegue (≤0.95 = 5% cash mínimo) lo aplica adjusted_cp más abajo.
+        ec_mult_capped = min(1.30, ec_mult)
         modulator = drawdown_mult * ec_mult_capped
         new_entries_ok = bool(risk["new_entries_allowed"]) and ec_regime != "DEFENSIVE"
 
@@ -195,8 +196,9 @@ def decide_allocation(
             )
 
         if abs(modulator - 1.0) > 0.01:
-            adjusted_cp = max(0.0, min(1.0, base.cp_pct * modulator))
-            adjusted_opt = max(0.0, min(0.20, base.opt_pct * modulator))
+            # Cap duro: CP ≤ 0.95 (deja ≥5% cash operativo aun piramidando), OPT ≤ 0.25
+            adjusted_cp = max(0.0, min(0.95, base.cp_pct * modulator))
+            adjusted_opt = max(0.0, min(0.25, base.opt_pct * modulator))
             log.info(
                 "Sleeve modulator: drawdown_mult=%.2f ec_mult=%.2f (ec=%s) → %.2f | CP %.0f%%→%.0f%% OPT %.0f%%→%.0f%%",
                 drawdown_mult, ec_mult_capped, ec_regime, modulator,

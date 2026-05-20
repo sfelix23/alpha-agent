@@ -24,9 +24,13 @@ from alpha_agent.config import PARAMS
 
 logger = logging.getLogger(__name__)
 
-_HALF_KELLY  = 0.5
+# iter14 AGRESIVO: 0.5→0.65 (Kelly fraccional). Full-Kelly maximiza crecimiento
+# log pero arriesga ruina si μ está sobreestimado; 0.65 captura ~91% del crecimiento
+# con ~65% de la varianza. Nota: dentro de un sleeve el factor se normaliza, así que
+# afecta sobre todo el blend Kelly/Markowitz (LP) y la peakedness relativa.
+_HALF_KELLY  = 0.65
 _MIN_SIGMA   = 0.01
-_MAX_F_STAR  = 2.0   # cap pre-half-Kelly: evita fracciones patológicas con sigma bajo
+_MAX_F_STAR  = 3.0   # iter14: 2.0→3.0 — deja que el nombre de mayor edge domine más antes de normalizar
 
 
 def _sigma_for_ticker(ticker: str, capm: pd.DataFrame, returns: pd.DataFrame | None) -> float:
@@ -101,14 +105,16 @@ def blend_markowitz_kelly(
     markowitz_weights: pd.Series,
     capm: pd.DataFrame,
     *,
-    kelly_alpha: float = 0.30,
+    kelly_alpha: float = 0.50,
 ) -> pd.Series:
     """
     final = (1 - kelly_alpha) * markowitz + kelly_alpha * kelly
 
     Args:
-        kelly_alpha: peso de Kelly en el blend (default 30% — quarter-Kelly probado
-                     óptimo por investigación: reduce drawdowns 20-30% manteniendo el edge).
+        kelly_alpha: peso de Kelly en el blend. iter14 AGRESIVO: 0.30→0.50 — pondera
+                     más el edge real (Kelly) vs minimizar varianza (Markowitz).
+                     Markowitz tiende a diluir en muchos nombres de baja vol; subir
+                     kelly_alpha concentra en donde el retorno esperado es mayor.
 
     Returns:
         Serie renormalizada a suma = 1.
@@ -165,29 +171,34 @@ def risk_action_for_drawdown(drawdown_pct: float) -> dict[str, str | float]:
           - new_entries_allowed: bool
           - description: human-readable
     """
-    if drawdown_pct >= -2.0:
+    # iter14 AGRESIVO: bandas más anchas. Con posiciones de mayor vol, -2/-4% es
+    # ruido normal; cortar ahí te saca por whipsaw justo antes del rebote. Dejamos
+    # respirar hasta -6%, recortamos gradual, y el piso anti-ruina pasa a -13%
+    # (un -13% necesita +15% para recuperar — todavía componible; -50% necesita +100%).
+    if drawdown_pct >= -3.0:
         return {
             "level": "NORMAL", "kelly_multiplier": 1.0, "new_entries_allowed": True,
             "description": f"Operación normal — drawdown {drawdown_pct:+.1f}%",
         }
-    if drawdown_pct >= -4.0:
-        return {
-            "level": "REDUCE", "kelly_multiplier": 0.5, "new_entries_allowed": False,
-            "description": f"Reduce sizing 50%, sin entradas nuevas — drawdown {drawdown_pct:+.1f}%",
-        }
     if drawdown_pct >= -6.0:
+        # iter14: seguimos permitiendo entradas (presionar), sólo bajamos un poco el sizing
         return {
-            "level": "CLOSE_LOSERS", "kelly_multiplier": 0.3, "new_entries_allowed": False,
+            "level": "REDUCE", "kelly_multiplier": 0.7, "new_entries_allowed": True,
+            "description": f"Sizing 0.7x, entradas selectivas — drawdown {drawdown_pct:+.1f}%",
+        }
+    if drawdown_pct >= -9.0:
+        return {
+            "level": "CLOSE_LOSERS", "kelly_multiplier": 0.4, "new_entries_allowed": False,
             "description": f"Cerrar perdedores, hold ganadores — drawdown {drawdown_pct:+.1f}%",
         }
-    if drawdown_pct >= -8.0:
+    if drawdown_pct >= -13.0:
         return {
             "level": "CLOSE_LONGS", "kelly_multiplier": 0.0, "new_entries_allowed": False,
             "description": f"Cerrar TODOS los longs, mantener hedge — drawdown {drawdown_pct:+.1f}%",
         }
     return {
         "level": "KILL", "kelly_multiplier": 0.0, "new_entries_allowed": False,
-        "description": f"KILL SWITCH — drawdown {drawdown_pct:+.1f}% inferior a -8%",
+        "description": f"KILL SWITCH — drawdown {drawdown_pct:+.1f}% inferior a -13%",
     }
 
 
@@ -208,14 +219,17 @@ def kelly_multiplier_for_regime(regime: str, vix: float) -> float:
     Returns:
         Fracción [0.2, 0.6] que se aplica al f_star de Kelly.
     """
+    # iter14 AGRESIVO: multiplicadores subidos. En BULL (drift positivo = equity
+    # risk premium) presionar fuerte es EV-positivo. Sólo se recorta de verdad en
+    # VIX>28 (régimen de pánico, donde la correlación va a 1 y la diversificación falla).
     r = regime.upper() if isinstance(regime, str) else "LATERAL"
-    if vix > 25:
-        return 0.2
+    if vix > 28:
+        return 0.35
     if r == "BULL":
-        return 0.6 if vix < 15 else 0.5
+        return 0.90 if vix < 15 else 0.75
     if r == "BEAR":
-        return 0.3
-    return 0.4   # LATERAL o desconocido
+        return 0.45
+    return 0.60   # LATERAL o desconocido
 
 
 def adaptive_trailing(conviction: str, regime: str) -> dict[str, float]:
@@ -257,7 +271,7 @@ def equity_curve_multiplier(equity_history: list[float]) -> tuple[float, str]:
             signals/equity_snapshots.json.
 
     Returns:
-        (multiplier, regime_label) donde multiplier ∈ [0.0, 1.2] y
+        (multiplier, regime_label) donde multiplier ∈ [0.35, 1.35] (iter14) y
         regime_label es "HOT" | "NORMAL" | "COOLING" | "DEFENSIVE".
     """
     if not equity_history or len(equity_history) < 5:
@@ -273,12 +287,13 @@ def equity_curve_multiplier(equity_history: list[float]) -> tuple[float, str]:
             1 for v in equity_history[-7:] if v < ma50
         )
         if recent_below_ma50 >= 5:
-            return 0.0, "DEFENSIVE"
+            return 0.35, "DEFENSIVE"   # iter14: 0.0→0.35 — recortar fuerte pero no quedar flat
 
+    # iter14 AGRESIVO (anti-martingala): piramidar más fuerte en racha, achicar menos.
     if current > ma20:
-        return 1.2, "HOT"
+        return 1.35, "HOT"          # iter14: 1.2→1.35 — presionar la racha ganadora
     if current < ma20 * 0.97:   # claramente debajo (3% margen)
-        return 0.7, "COOLING"
+        return 0.80, "COOLING"      # iter14: 0.7→0.80 — de-risk más suave
     return 1.0, "NORMAL"
 
 

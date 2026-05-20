@@ -210,44 +210,56 @@ class FinancialParams:
     history_interval: str = "1d"
     min_obs: int = 60                     # mínimo de observaciones para incluir un activo
 
-    # ── GROWTH MODE para $1,600 ────────────────────────────────────────────────
-    # Objetivo: multiplicar capital en plazo medio-largo con riesgo productivo.
-    # Más CP (momentum, 1-5 días) que LP (hold semanas) para capitalizar tendencias.
-    # Sleeves: 55% LP (2 pos × $440) + 35% CP (2 pos × $280) + 10% cash reserva
-    weight_long_term: float = 0.0    # LP siempre desactivado — CP momentum es superior para $1600
-    weight_short_term: float = 0.85  # CP: 85% (fallback; build_target_portfolio lee signals.params)
-    weight_options: float = 0.10          # 10% = ~$160 → 1 contrato long call/put por ciclo
+    # ── PERFIL DE RIESGO (iter14): AGRESIVO — edge-driven ──────────────────────
+    # Decisión Santino (2026-05-20): es paper, busca multiplicar rápido para luego
+    # pasar a real. No conservador: tomar más riesgo SIEMPRE que el retorno esperado
+    # lo justifique. Fundamento financiero — no "arriesgar a lo loco":
+    #   · Kelly fraccional (0.65, no full) → ~91% del crecimiento log de full-Kelly
+    #     con ~65% de la varianza. Full-Kelly arriesga ruina si μ está sobreestimado.
+    #   · Mean-variance con menor aversión (kelly_alpha 0.50) → pondera más el edge
+    #     real (Kelly) vs minimizar varianza (Markowitz).
+    #   · Anti-martingala: piramidar en racha (equity_curve HOT >1.0), achicar en
+    #     drawdown — pero con piso anti-ruina (kill -13%, no -8%): no se puede
+    #     componer desde cero (media geométrica).
+    # Para volver a conservador (real money): risk_appetite="MODERADO" y revertir.
+    risk_appetite: str = "AGGRESSIVE"     # AGGRESSIVE | MODERADO | CONSERVADOR (doc/tuning)
 
-    # Filtros LP — menos estrictos para que haya más candidatos
-    max_beta_lp: float = 2.0             # beta alto = más upside en bull (era 1.8)
-    min_sharpe_lp: float = 0.30          # menos estricto (era 0.40) — más candidatos LP
+    # ── GROWTH MODE para $1,600 ────────────────────────────────────────────────
+    # Más CP (momentum, 1-5 días) que LP (hold semanas) para capitalizar tendencias.
+    weight_long_term: float = 0.0    # LP siempre desactivado — CP momentum es superior para $1600
+    weight_short_term: float = 0.90  # CP 90% (iter14: +cash deployment; allocation_agent lo modula)
+    weight_options: float = 0.14          # 14% (iter14: +convexidad/leverage con riesgo definido)
+
+    # Filtros de selección — iter14: dejar entrar nombres de mayor beta/vol con
+    # retorno esperado alto (la volatilidad ES el combustible del retorno si hay edge).
+    max_beta_lp: float = 2.8             # beta alto = más upside en bull (iter14: 2.0→2.8)
+    min_sharpe_lp: float = 0.10          # iter14: 0.30→0.10 — admite alta-vol con alto μ
 
     # Parámetros técnicos para CP
     rsi_oversold: float = 35.0
-    rsi_overbought: float = 75.0          # era 70 — permite entrar en momentum fuerte
-    atr_stop_multiple: float = 2.0
+    rsi_overbought: float = 80.0          # iter14: 75→80 — no castigar momentum fuerte tan temprano
+    atr_stop_multiple: float = 2.5        # iter14: 2.0→2.5 — stops más anchos, dejar respirar la vol
 
-    # Growth: 2 LP (alta convicción, ~$440/pos) + 2 CP (momentum, ~$280/pos)
+    # Growth: 2 LP + n CP (el allocation_agent fija n_cp dinámico: 2 concentrado / 3 difuso)
     top_n_long_term: int = 2
-    top_n_short_term: int = 2             # era 1 — 2 CP para más exposición al momentum
+    top_n_short_term: int = 2             # fallback; decide_allocation manda (2-3 según VIX)
 
-    # Bucket options — call sobre el pick #1 del LP
+    # Bucket options — iter14: más leverage cuando hay convicción (riesgo = prima, definido)
     top_n_bearish: int = 1                # máx 1 put direccional
-    max_contracts_per_trade: int = 1      # 1 contrato por trade (capital limitado)
+    max_contracts_per_trade: int = 3      # iter14: 1→3 contratos (convexidad en alta convicción)
 
-    # Concentración máxima — "agresivo con control" (iter13): 40% max en un nombre.
-    # Con n_cp=3 + floor 30% por posición, el de mayor convicción (ALTA ×1.5) llega
-    # a ~40% (absorbe la subida) y los otros 2 sostienen ~30% c/u → sin riesgo
-    # catastrófico de un solo nombre. Antes 0.50 dejaba 53% en VIST (toothless con n=2).
-    max_weight_per_asset: float = 0.40    # 40% max en un solo nombre
+    # Concentración máxima (cap del blend Kelly/Markowitz, sobre todo LP).
+    # iter14 agresivo: 0.40→0.55 — el edge se concentra en la mejor idea. El CP real
+    # se concentra vía n_cp + conviction ×1.8 + floor 20% (signals.py), no por este cap.
+    max_weight_per_asset: float = 0.55    # 55% max en un solo nombre
 
-    # Kill switch — growth mode acepta volatilidad intradía para capturar tendencias
-    # -6% en $1600 = $96 pérdida diaria máxima antes del kill switch
-    max_daily_drawdown: float = 0.06      # 6% — era 5%, más margen para que las posiciones respiren
+    # Kill switch — iter14: bandas más anchas. Con posiciones de mayor vol, -6% es
+    # ruido; cortar ahí te saca por whipsaw. Piso anti-ruina a -12% intradía.
+    max_daily_drawdown: float = 0.12      # 12% (iter14: 6%→12%) — vol productiva, no ruina
 
     # Límites derivados — calibrados para capital ~$1600 USD
-    max_options_allocation: float = 0.20  # techo duro sobre el bucket options (= weight_options)
-    max_single_option_premium: float = 150.0  # máx USD por contrato — cabe en sleeve de $160
+    max_options_allocation: float = 0.25  # iter14: 0.20→0.25 techo del bucket options
+    max_single_option_premium: float = 250.0  # iter14: 150→250 — bets de opciones más grandes
     max_hedge_allocation: float = 0.10    # hasta 10% del libro en puts SPY cuando bear
     enable_short_equity: bool = False     # OFF por default — preferimos puts (riesgo limitado)
     enable_options: bool = True           # ON — long calls/puts OTM, riesgo limitado a la prima

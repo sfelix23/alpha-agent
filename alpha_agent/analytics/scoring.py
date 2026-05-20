@@ -456,14 +456,14 @@ def build_scores(
         )
         score_st += 0.12 * oversold_bounce.astype(float)
 
-    # Penalización RSI sobrecomprado escalonada:
-    # RSI > 75: -0.30 (señal débil de CP — ya subió demasiado)
-    # RSI > 82: -0.70 adicional (sobrecompra extrema — mean-reversion estadísticamente probable)
-    # Antes era -0.15 fijo. El aumento refleja que RSI > 80 en CP reduce win-rate histórico.
+    # Penalización RSI sobrecomprado (iter14 AGRESIVO: umbrales subidos para dejar
+    # correr el momentum fuerte). RSI > 80: -0.20 (antes >75 -0.30). RSI > 88: -0.70
+    # (sobrecompra extrema — mean-reversion estadísticamente probable; ese piso se
+    # mantiene porque RSI>88 sí destruye win-rate histórico, no es agresividad sana).
     if "rsi" in st.columns:
         rsi_col = st["rsi"].fillna(50)
-        score_st -= 0.30 * (rsi_col > 75).astype(float)
-        score_st -= 0.70 * (rsi_col > 82).astype(float)
+        score_st -= 0.20 * (rsi_col > 80).astype(float)
+        score_st -= 0.70 * (rsi_col > 88).astype(float)
 
     # Exclusión de mega-caps QQQ del sleeve CP: mercado perfectamente eficiente en estos nombres.
     # Compramos NVDA/AMD/MSFT CP después de +20% semanal = pagamos el run que ya hicieron los quant funds.

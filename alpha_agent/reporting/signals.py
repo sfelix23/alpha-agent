@@ -304,10 +304,13 @@ def build_signals(
     # Ajuste por convicción CP (antes del floor para no perder la calibración)
     sig.short_term = _apply_conviction_weights(sig.short_term)
 
-    # Floor DESPUÉS del conviction reweighting: cada posición CP recibe al menos 30%
-    # del sleeve. Aplicarlo aquí garantiza que el floor no sea violado por _apply_conviction_weights.
+    # Floor DESPUÉS del conviction reweighting: cada posición CP recibe al menos 20%
+    # del sleeve (iter14 AGRESIVO: 0.30→0.20). Bajar el floor deja que la convicción
+    # concentre más en la mejor idea (con n=2 el top puede llegar a ~64% del sleeve;
+    # con n=3, ~55%) en vez de forzar igualdad. El floor evita que un nombre quede
+    # como polvo, pero no impone diversificación cuando hay una idea claramente mejor.
     if len(sig.short_term) >= 2:
-        _MIN_W = 0.30
+        _MIN_W = 0.20
         ws = [s.weight_target for s in sig.short_term]
         ws = [max(w, _MIN_W) for w in ws]
         _total = sum(ws) or 1.0
@@ -320,10 +323,11 @@ def build_signals(
 def _apply_conviction_weights(signals: list[Signal]) -> list[Signal]:
     """
     Repondera los weight_target según la convicción de cada señal.
-    ALTA → ×1.5 | MEDIA → ×1.0 | BAJA → ×0.6
+    iter14 AGRESIVO: ALTA → ×1.8 | MEDIA → ×1.0 | BAJA → ×0.5 (tilt más marcado
+    hacia la alta convicción — el de mayor edge se lleva más capital).
     Los pesos se renormalizan para que sumen 1.0.
     """
-    _MULT = {"ALTA": 1.5, "MEDIA": 1.0, "BAJA": 0.6}
+    _MULT = {"ALTA": 1.8, "MEDIA": 1.0, "BAJA": 0.5}
     if not signals:
         return signals
 
