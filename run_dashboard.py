@@ -124,26 +124,76 @@ def _calc_metrics(history: list[dict], spy_history: list[dict], qqq_history: lis
 
 # ─── WORKFLOW HEALTH PANEL ────────────────────────────────────────────────────
 
-def _advanced_metrics_panel(history, qqq_history, spy_history) -> str:
-    """Iter11: métricas risk-adjusted vs QQQ.
+def _advanced_metrics_panel(history, qqq_history, spy_history, brk_history=None) -> str:
+    """Iter11/12: métricas risk-adjusted vs QQQ + carrera vs SPY/QQQ/Buffett.
 
     El retorno absoluto miente en un tech bull (QQQ siempre gana). Estas
     métricas miden si el portfolio es bueno AJUSTADO POR RIESGO:
+    - Carrera de retornos: Portfolio vs SPY vs QQQ vs BRK-B (Buffett) misma ventana
     - Calmar: retorno anualizado / max drawdown (eficiencia del riesgo)
     - Beta vs QQQ: cuánto se mueve con el Nasdaq (1.0 = igual, <1 defensivo)
     - Up/Down capture: % de las subidas/bajadas de QQQ que captura
     - Information Ratio: alpha vs QQQ / tracking error (consistencia del alpha)
     - Batting average: % de días que el portfolio supera al QQQ
     """
+    brk_history = brk_history or []
+
     def _rets(hist):
         vals = [h.get("equity", h.get("v")) for h in hist if h.get("equity", h.get("v")) is not None]
         return [(vals[i] - vals[i-1]) / vals[i-1] for i in range(1, len(vals)) if vals[i-1] > 0]
+
+    def _total_ret(hist):
+        vals = [h.get("equity", h.get("v")) for h in hist if h.get("equity", h.get("v")) is not None]
+        return ((vals[-1] - vals[0]) / vals[0] * 100) if len(vals) >= 2 and vals[0] > 0 else None
+
+    # ── Carrera de retornos (misma ventana de días que tenga el portfolio) ──
+    n_days = len([h for h in (history or []) if h.get("equity", h.get("v")) is not None])
+    race_rows = ""
+    if n_days >= 2:
+        contenders = [
+            ("Portfolio", _total_ret(history), "#3fb950"),
+            ("S&P 500 (SPY)", _total_ret((spy_history or [])[-n_days:]), "#58a6ff"),
+            ("Nasdaq (QQQ)", _total_ret((qqq_history or [])[-n_days:]), "#bc8cff"),
+            ("Buffett (BRK-B)", _total_ret((brk_history or [])[-n_days:]), "#d29922"),
+        ]
+        valid = [(nm, r, c) for nm, r, c in contenders if r is not None]
+        best = max((r for _, r, _ in valid), default=0)
+        bars = []
+        span = max(abs(r) for _, r, _ in valid) or 1.0
+        for nm, r, c in sorted(valid, key=lambda x: -x[1]):
+            width = min(100, abs(r) / span * 100)
+            crown = " 👑" if r == best else ""
+            bars.append(f"""
+        <div style="display:flex;align-items:center;gap:8px;margin:5px 0">
+          <span style="width:120px;font-size:.72rem;color:var(--mt)">{nm}{crown}</span>
+          <div style="flex:1;background:var(--s2);border-radius:3px;height:18px;position:relative">
+            <div style="width:{width:.0f}%;background:{c};height:100%;border-radius:3px;
+                        min-width:2px;opacity:.85"></div>
+          </div>
+          <span style="width:64px;text-align:right;font-family:var(--mono);font-size:.78rem;
+                       font-weight:600;color:{c}">{r:+.2f}%</span>
+        </div>""")
+        race_rows = f"""<div style="margin-bottom:14px">
+      <div style="font-size:.68rem;color:var(--mt);text-transform:uppercase;letter-spacing:.6px;margin-bottom:6px">
+        Carrera de retornos · últimos {n_days} snapshots
+      </div>
+      {''.join(bars)}
+    </div>"""
 
     port_r = _rets(history or [])
     qqq_r = _rets(qqq_history or [])
     n = min(len(port_r), len(qqq_r))
 
     if n < 3:
+        # Sin data suficiente para risk-adjusted, pero mostramos la carrera si la hay
+        if race_rows:
+            return f"""<div class="card">
+  <div class="card-head"><div>
+    <div class="card-title">PORTFOLIO vs BENCHMARKS</div>
+    <div class="card-sub">Pocos datos aún para métricas risk-adjusted</div>
+  </div></div>
+  {race_rows}
+</div>"""
         return ""  # no hay data suficiente
 
     port_r = port_r[-n:]
@@ -211,10 +261,11 @@ def _advanced_metrics_panel(history, qqq_history, spy_history) -> str:
     return f"""<div class="card">
   <div class="card-head">
     <div>
-      <div class="card-title">MÉTRICAS RISK-ADJUSTED vs QQQ</div>
+      <div class="card-title">PORTFOLIO vs BENCHMARKS · RISK-ADJUSTED</div>
       <div class="card-sub">El retorno absoluto miente en bull. Esto mide eficiencia del riesgo.</div>
     </div>
   </div>
+  {race_rows}
   <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin-top:8px">
     {cells}
   </div>
@@ -2845,11 +2896,13 @@ def _tab_scalper(scalp_trades: list[dict]) -> str:
 def build_html(equity, initial, history, positions, signals_data,
                spy_history=None, qqq_history=None, metrics=None, perf_data=None, discovery_data=None,
                trades=None, mc_result=None, dt_trades=None, scalp_trades=None,
-               workflow_status=None, dt_scan=None):
+               workflow_status=None, dt_scan=None, brk_history=None):
     if spy_history is None:
         spy_history = []
     if qqq_history is None:
         qqq_history = []
+    if brk_history is None:
+        brk_history = []
     if metrics is None:
         metrics = {}
 
@@ -2882,7 +2935,7 @@ def build_html(equity, initial, history, positions, signals_data,
     regime_active  = _regime_active_panel(signals_data)
     orphan_html    = _orphan_positions_panel(positions or [], signals_data)
     control_center = _control_center_panel()  # iter10/11
-    adv_metrics    = _advanced_metrics_panel(history, qqq_history, spy_history)  # iter11
+    adv_metrics    = _advanced_metrics_panel(history, qqq_history, spy_history, brk_history)  # iter11/12
     t_resumen    = _tab_resumen(equity, initial, regime, vix, wti, gold, dxy,
                                 history, spy_history, signals_data, metrics, age_hours,
                                 perf_data=perf_data, qqq_history=qqq_history, mc_result=mc_result,
@@ -3074,9 +3127,10 @@ def generate() -> None:
         except Exception as _ef:
             logger.warning("equity_snapshots fallback error: %s", _ef)
 
-    # SPY + QQQ benchmarks (con cache de 1h para no re-descargar en cada refresh)
+    # SPY + QQQ + BRK-B (Buffett) benchmarks — cache de 1h para no re-descargar
     spy_history: list[dict] = []
     qqq_history: list[dict] = []
+    brk_history: list[dict] = []  # iter12: Berkshire = proxy de Warren Buffett
     bench_cache_path = BASE_DIR / "signals" / "benchmarks_cache.json"
 
     def _load_bench_cache() -> dict:
@@ -3090,10 +3144,10 @@ def generate() -> None:
                 pass
         return {}
 
-    def _save_bench_cache(spy: list, qqq: list) -> None:
+    def _save_bench_cache(spy: list, qqq: list, brk: list) -> None:
         try:
             bench_cache_path.write_text(
-                json.dumps({"ts": datetime.now().timestamp(), "spy": spy, "qqq": qqq}),
+                json.dumps({"ts": datetime.now().timestamp(), "spy": spy, "qqq": qqq, "brk": brk}),
                 encoding="utf-8",
             )
         except Exception:
@@ -3101,19 +3155,21 @@ def generate() -> None:
 
     if len(history) >= 2:
         cached = _load_bench_cache()
-        if cached.get("spy") and cached.get("qqq"):
+        if cached.get("spy") and cached.get("qqq") and cached.get("brk"):
             spy_history = cached["spy"]
             qqq_history = cached["qqq"]
-            logger.info("Benchmarks cargados desde cache (%d SPY, %d QQQ)", len(spy_history), len(qqq_history))
+            brk_history = cached["brk"]
+            logger.info("Benchmarks cargados desde cache (%d SPY, %d QQQ, %d BRK)",
+                        len(spy_history), len(qqq_history), len(brk_history))
         else:
             try:
                 import yfinance as yf
-                bench_df = yf.download("SPY QQQ", period="1mo", progress=False, auto_adjust=True)
+                bench_df = yf.download("SPY QQQ BRK-B", period="1mo", progress=False, auto_adjust=True)
                 if not bench_df.empty:
                     close = bench_df["Close"]
                     if hasattr(close, "squeeze") and close.ndim == 1:
                         close = close.to_frame()
-                    for ticker, hist_list in [("SPY", spy_history), ("QQQ", qqq_history)]:
+                    for ticker, hist_list in [("SPY", spy_history), ("QQQ", qqq_history), ("BRK-B", brk_history)]:
                         if ticker in close.columns:
                             col = close[ticker].dropna()
                             if len(col) >= 2:
@@ -3121,8 +3177,9 @@ def generate() -> None:
                                 for ts, v in zip(col.index, col.values):
                                     hist_list.append({"ts": int(ts.timestamp()), "equity": float(v) / base})
                     # Normalizar las listas (equity = ratio, no $ absolutos)
-                    logger.info("Benchmarks descargados: %d SPY, %d QQQ", len(spy_history), len(qqq_history))
-                    _save_bench_cache(spy_history, qqq_history)
+                    logger.info("Benchmarks descargados: %d SPY, %d QQQ, %d BRK",
+                                len(spy_history), len(qqq_history), len(brk_history))
+                    _save_bench_cache(spy_history, qqq_history, brk_history)
             except Exception as e:
                 logger.warning("Benchmarks no disponibles: %s", e)
 
@@ -3278,7 +3335,8 @@ def generate() -> None:
                          metrics=metrics, perf_data=perf_data, discovery_data=discovery_data,
                          trades=trades, mc_result=mc_result,
                          dt_trades=dt_trades, scalp_trades=scalp_trades,
-                         workflow_status=workflow_status, dt_scan=dt_scan_data)
+                         workflow_status=workflow_status, dt_scan=dt_scan_data,
+                         brk_history=brk_history)
     OUT_PATH.write_text(html, encoding="utf-8")
     logger.info("Dashboard generado -> %s (%d bytes)", OUT_PATH, len(html))
 
