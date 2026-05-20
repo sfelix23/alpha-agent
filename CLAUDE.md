@@ -62,16 +62,19 @@ signals/capital_reservations.json      ← reservas de capital por sleeve
 
 | Parámetro | Valor |
 |-----------|-------|
-| Sleeves (BULL niv 1) | LP 0% · CP 88% · OPT 7% · cash 5% (allocation_agent dinámico) |
-| Sleeves (BEAR/VIX>30) | LP 0% · CP 45% · OPT 5% (defensivo) |
-| **Concentración (iter13)** | **n_cp=3 nombres** (niv 1-2) · max 40%/nombre · floor 30%/pos · conviction ALTA ×1.5 → top ~40% ("agresivo con control") |
-| Risk budget escalado | 0..-2% NORMAL · -2..-4% REDUCE 0.5x · -4..-6% CLOSE_LOSERS · -6..-8% CLOSE_LONGS · <-8% KILL |
+| **Perfil de riesgo (iter14)** | **AGGRESSIVE** (edge-driven) · `config.risk_appetite` · Kelly fraccional 0.65 · kelly_alpha 0.50 · anti-martingala con piso anti-ruina |
+| Sleeves (BULL niv 1) | LP 0% · CP 90% · OPT 8% · cash 2% (allocation_agent dinámico) |
+| Sleeves (BEAR/VIX>30) | LP 0% · CP 45-55% · OPT 5% (defensivo) |
+| **Concentración (iter14)** | **n_cp=2** si VIX<18 (concentra mejores ideas) / 3 si VIX≥18 · floor 20%/pos · conviction ALTA ×1.8 → top ~64% (n=2) / ~55% (n=3) · cap blend 0.55 |
+| **Kelly regime mult (iter14)** | BULL<15 0.90 · BULL 0.75 · LATERAL 0.60 · BEAR 0.45 · pánico VIX>28 0.35 |
+| Risk budget escalado (iter14) | 0..-3% NORMAL · -3..-6% REDUCE 0.7x (entradas ON) · -6..-9% CLOSE_LOSERS · -9..-13% CLOSE_LONGS · <-13% KILL |
+| Equity curve (anti-martingala) | HOT 1.35x (piramida racha) · COOLING 0.80x · DEFENSIVE 0.35x · cap sleeve 0.95 |
 | Trailing stop adaptive | BULL+ALTA: BE +8% lock 60% a +20%. BEAR+MEDIA: BE +2% lock 30% a +5% |
-| Chandelier ATR mult | BULL 3.5 · LATERAL 2.8 · BEAR 2.0 |
+| Chandelier ATR mult | BULL 3.5 · LATERAL 2.8 · BEAR 2.0 (stop base atr_mult 2.5) |
 | Quality multiplier cap | BULL +1.20/-0.60 · LATERAL +0.80/-0.60 · BEAR +0.60/-0.80 |
 | **Segundo cerebro (iter13)** | memoria por ticker: favorable (≥60% win, +pnl, ≥3 trades) score +0.25 · adverso (≤34% win, -pnl) score -0.50 |
-| Max β LP | 2.0 · Min Sharpe LP 0.30 · Top LP 2 · Top CP 3 (agresivo con control) |
-| Options | Long-only · min DTE 30 días · BEAR/VIX>25→hedge puts SPY · max 1 contract/trade |
+| Max β LP | 2.8 · Min Sharpe LP 0.10 · Top LP 2 · Top CP 2-3 (agresivo edge-driven) |
+| Options | Long-only · min DTE 30 días · BEAR/VIX>25→hedge puts SPY · max 3 contracts/trade · prima ≤$250 |
 | Cuenta Alpaca LP/CP | paper · Level 3 options · fractional ON |
 | Cuenta Alpaca DT | ALPACA_DT_API_KEY · $1500 budget hardcoded |
 | Cuenta Alpaca SCALP | ALPACA_SCALP_API_KEY · WebSocket ORB |
@@ -142,6 +145,16 @@ done
 - `signals/allocation.json` ← LP/CP/OPT pcts del último allocation agent
 
 **Implementado recientemente (mayo 2026):**
+
+Iter 14 (2026-05-20) — **perfil de riesgo AGRESIVO edge-driven**:
+- Decisión Santino: tomar más riesgo siempre que el retorno esperado lo justifique (paper → real). Fundamento: Kelly fraccional + mean-variance con menor aversión + anti-martingala, con **piso anti-ruina** (kill -13%, no se compone desde cero).
+- **Sizing**: `_HALF_KELLY` 0.5→0.65, `_MAX_F_STAR` 2→3, `kelly_alpha` 0.30→0.50, regime mults subidos.
+- **Bandas drawdown más anchas** (vol = ruido): kill -8%→-13%, `max_daily_drawdown` 6%→12%, entradas permitidas hasta -6%.
+- **Anti-martingala**: equity curve HOT 1.2→1.35 (piramida), allocation permite ec_mult hasta 1.30 (antes cap 1.0), cap duro CP≤0.95.
+- **Concentración**: n_cp=2 si VIX<18, floor 30%→20%, conviction ×1.5→×1.8. CP deploy 88%→90%.
+- **Selección**: max_beta 2.0→2.8, min_sharpe 0.30→0.10, rsi_overbought 75→80, atr_stop 2.0→2.5.
+- **Convexidad**: weight_options 10%→14%, max_contracts 1→3, prima ≤$250.
+- `config.risk_appetite="AGGRESSIVE"` (dial reversible para real money). **CLAVE: la fracción Kelly se normaliza dentro del sleeve → la concentración real del CP la dan n_cp + conviction + floor, NO max_weight_per_asset (eso es para LP/blend).**
 
 Iter 11-13 (2026-05-19):
 - **Botones dashboard arreglados** (iter11): `dashboard/app.py` expone `/api/cmd/<action>` (CORS, localhost-only) + ruta `/dashboard`. Los botones usan `fetch()` (los links `t.me/bot?text=` están bloqueados por Telegram). **Abrir `http://localhost:5050/dashboard`** para que funcionen. Si dan 404: matar zombies en puerto 5050 (`netstat -ano | findstr :5050` → Stop-Process).
