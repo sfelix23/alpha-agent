@@ -275,6 +275,60 @@ def _advanced_metrics_panel(history, qqq_history, spy_history, brk_history=None)
 </div>"""
 
 
+def _deployment_panel(equity, positions, signals_data) -> str:
+    """Iter15: medidor de despliegue/exposición. Invertido vs target vs cash.
+
+    Cazaría al instante un caso como el de hoy (44% desplegado cuando el target
+    era ~98%). Lee el target del allocation (signals.params: CP + OPT).
+    """
+    if not equity or equity <= 0:
+        return ""
+    invested = sum((p.market_value or 0) for p in (positions or []) if (p.market_value or 0) > 1.0)
+    dust = sum((p.market_value or 0) for p in (positions or []) if 0 < (p.market_value or 0) <= 1.0)
+    cash = max(0.0, equity - invested - dust)
+    dep_pct = invested / equity * 100
+    cash_pct = cash / equity * 100
+
+    params = (signals_data or {}).get("params", {}) or {}
+    target_pct = (float(params.get("weight_short_term", 0) or 0)
+                  + float(params.get("weight_options", 0) or 0)) * 100
+    if target_pct <= 0:
+        target_pct = 90.0  # fallback razonable (perfil agresivo)
+    gap = target_pct - dep_pct
+
+    if gap <= 8:
+        color, verdict = "#3fb950", f"🟢 Desplegado según target ({dep_pct:.0f}% vs {target_pct:.0f}%)"
+    elif gap <= 25:
+        color, verdict = "#d29922", f"🟡 Sub-desplegado: {gap:.0f}pp por debajo del target ({target_pct:.0f}%)"
+    else:
+        color, verdict = "#f85149", f"🔴 MUY sub-desplegado: {gap:.0f}pp de capital ocioso vs target {target_pct:.0f}%"
+
+    # barra apilada: invertido (color) + cash (gris) + marcador de target
+    return f"""<div class="card">
+  <div class="card-head"><div>
+    <div class="card-title">DESPLIEGUE DE CAPITAL</div>
+    <div class="card-sub">Cuánto capital está realmente trabajando vs el target del allocation</div>
+  </div>
+  <div style="text-align:right">
+    <div style="font-family:var(--mono);font-size:1.6rem;font-weight:600;color:{color}">{dep_pct:.0f}%</div>
+    <div style="font-family:var(--mono);font-size:.78rem;color:var(--mt)">invertido</div>
+  </div></div>
+  <div style="position:relative;height:26px;background:#30363d;border-radius:4px;overflow:hidden;margin-top:6px">
+    <div style="width:{min(dep_pct,100):.0f}%;height:100%;background:{color};opacity:.85"></div>
+    <div style="position:absolute;top:0;left:{min(target_pct,100):.0f}%;height:100%;width:2px;background:#fff"></div>
+    <div style="position:absolute;top:3px;left:8px;font-size:.7rem;color:#fff;font-family:var(--mono)">
+      ${invested:,.0f} invertido · ${cash:,.0f} cash ({cash_pct:.0f}%)
+    </div>
+  </div>
+  <div style="display:flex;justify-content:space-between;font-size:.64rem;color:var(--mt);margin-top:3px">
+    <span>0%</span><span>↑ target {target_pct:.0f}%</span><span>100%</span>
+  </div>
+  <div style="margin-top:10px;padding-top:8px;border-top:1px solid var(--bd);font-size:.74rem;color:{color}">
+    {verdict}
+  </div>
+</div>"""
+
+
 def _learnings_panel() -> str:
     """Iter13: "Segundo Cerebro" — lecciones que el sistema aprendió de sus trades.
 
@@ -1288,7 +1342,7 @@ def _pnl_calendar(history):
 
 # ─── TAB: POSICIONES ──────────────────────────────────────────────────────────
 
-def _tab_posiciones(positions):
+def _tab_posiciones(positions, signals_data=None):
     if not positions:
         return """
 <div class="tab-content" id="tab-posiciones">
@@ -1296,6 +1350,53 @@ def _tab_posiciones(positions):
     Sin posiciones abiertas en este momento.
   </p></div>
 </div>"""
+
+    # iter15: lookup de stop/TP (desde signals) + fecha de entrada (desde trade_db)
+    # para mostrar riesgo por posición: distancia al stop, $ en riesgo, días en hold.
+    _stops: dict[str, dict] = {}
+    for _bucket in ("long_term", "short_term"):
+        for _s in (signals_data or {}).get(_bucket, []):
+            _t = _s.get("ticker")
+            if _t:
+                _stops[_t] = {"stop": _s.get("stop_loss"), "tp": _s.get("take_profit")}
+    _entry_dates: dict[str, str] = {}
+    try:
+        from alpha_agent.analytics.trade_db import get_trades as _gt
+        for _tr in _gt(limit=200):
+            if _tr.get("side") == "BUY" and not _tr.get("closed_at"):
+                _tk = _tr.get("ticker")
+                if _tk and _tk not in _entry_dates:
+                    _entry_dates[_tk] = (_tr.get("ts") or _tr.get("date") or "")
+    except Exception:
+        pass
+
+    def _risk_row(p) -> str:
+        info = _stops.get(p.ticker, {})
+        stop = info.get("stop")
+        tp = info.get("tp")
+        px = p.market_value / p.qty if (p.qty or 0) else (p.avg_price or 0)
+        bits = []
+        if stop and px:
+            dist = (px - stop) / px * 100
+            at_risk = max(0.0, (px - stop) * (p.qty or 0))
+            dcol = "#f85149" if dist < 4 else ("#d29922" if dist < 8 else "#3fb950")
+            bits.append(f'<span>Stop <b style="color:#f85149">{_usd(stop)}</b></span>')
+            bits.append(f'<span>Dist. stop <b style="color:{dcol}">{dist:+.1f}%</b></span>')
+            bits.append(f'<span>$ en riesgo <b>{_usd(at_risk)}</b></span>')
+        if tp:
+            bits.append(f'<span>TP <b style="color:#3fb950">{_usd(tp)}</b></span>')
+        ed = _entry_dates.get(p.ticker, "")
+        if ed:
+            try:
+                from datetime import datetime as _dt
+                days = (_dt.now() - _dt.fromisoformat(ed[:19])).total_seconds() / 86400
+                bits.append(f'<span>Hold <b>{days:.0f}d</b></span>')
+            except Exception:
+                pass
+        if not bits:
+            bits.append('<span class="muted">sin stop en señal (huérfana)</span>')
+        return ('<div class="pos-meta" style="margin-top:4px;border-top:1px dashed var(--bd);padding-top:5px">'
+                + "".join(bits) + "</div>")
 
     COLORS = ["#58a6ff","#3fb950","#d29922","#f85149","#bc8cff",
               "#ffa657","#79c0ff","#56d364","#ff7b72","#d2a8ff"]
@@ -1342,6 +1443,7 @@ def _tab_posiciones(positions):
     <span>Valor actual <b>{_usd(p.market_value)}</b></span>
     <span>P&L <b style="color:{pc}">{"+" if pnl>=0 else ""}{_usd(pnl)}</b></span>
   </div>
+  {_risk_row(p)}
 </div>"""
 
     # Sección de posiciones expiradas/sin valor (colapsable)
@@ -1666,12 +1768,38 @@ def _swarm_inline(swarm: dict | None) -> str:
 </div>"""
 
 
-def _tab_senales(signals_data):
+def _tab_senales(signals_data, positions=None):
     if not signals_data:
         return '<div class="tab-content" id="tab-senales"><div class="card"><p class="muted" style="padding:40px">Sin senales disponibles.</p></div></div>'
 
     gen_at = signals_data.get("generated_at","")[:16].replace("T"," ")
     body   = ""
+
+    # iter15: estado de ejecución por señal (ejecutada vs pendiente/skip + motivo)
+    _held = {p.ticker for p in (positions or []) if (p.market_value or 0) > 1.0}
+    _stopouts = set()
+    _mem_bias: dict[str, str] = {}
+    try:
+        from alpha_agent.analytics.trade_db import get_recent_stopouts, get_ticker_memory
+        _stopouts = get_recent_stopouts(hours=36)
+    except Exception:
+        get_ticker_memory = None  # type: ignore
+
+    def _exec_badge(tk: str) -> str:
+        if tk in _held:
+            return '<span style="font-size:.66rem;padding:2px 7px;border-radius:4px;background:#3fb95022;color:#3fb950;border:1px solid #3fb95055">✓ EJECUTADA</span>'
+        reason = "pendiente / sin BP"
+        if tk in _stopouts:
+            reason = "stop-out cooldown 36h"
+        else:
+            try:
+                if get_ticker_memory:
+                    m = get_ticker_memory(tk)
+                    if m.get("bias") == "adverso":
+                        reason = "memoria adversa"
+            except Exception:
+                pass
+        return f'<span style="font-size:.66rem;padding:2px 7px;border-radius:4px;background:#d2992222;color:#d29922;border:1px solid #d2992255">⏳ {reason}</span>'
 
     for bucket in ("long_term","short_term","options_book","hedge_book"):
         items = signals_data.get(bucket, [])
@@ -1706,6 +1834,7 @@ def _tab_senales(signals_data):
     <div class="sig-left">
       <span class="sig-ticker">{ticker}</span>
       <span class="conv-badge" style="background:{cc}22;color:{cc};border:1px solid {cc}55">{cl}</span>
+      {_exec_badge(ticker)}
     </div>
     <div class="sig-right">
       <span class="muted" style="font-size:.78rem">{_usd(price)}</span>
@@ -1739,10 +1868,46 @@ def _tab_senales(signals_data):
   </div>
 </div>"""
 
+    # iter15: memoria expandida — tabla por ticker (segundo cerebro completo)
+    mem_html = ""
+    try:
+        from alpha_agent.analytics.trade_db import _conn, get_ticker_memory
+        with _conn() as _con:
+            _tks = [r["ticker"] for r in _con.execute(
+                "SELECT ticker, COUNT(*) c FROM trades WHERE side='BUY' AND closed_at IS NOT NULL "
+                "GROUP BY ticker ORDER BY c DESC"
+            ).fetchall()]
+        rows = ""
+        for tk in _tks:
+            m = get_ticker_memory(tk)
+            if not m["n"]:
+                continue
+            bcol = {"favorable": "#3fb950", "adverso": "#f85149"}.get(m["bias"], "#8b949e")
+            wr = m["win_rate"]; ap = m["avg_pnl_pct"]
+            rows += (f"<tr><td class='rt-ticker'>{tk}</td>"
+                     f"<td>{m['n']}</td>"
+                     f"<td style='color:{'#3fb950' if (wr or 0)>=0.5 else '#f85149'}'>{(wr*100):.0f}%</td>"
+                     f"<td style='color:{'#3fb950' if (ap or 0)>=0 else '#f85149'}'>{ap:+.1f}%</td>"
+                     f"<td>{m['avg_hold_days']:.0f}d</td>"
+                     f"<td style='color:{bcol};font-weight:700'>{m['bias'].upper()}</td></tr>")
+        if rows:
+            mem_html = f"""
+  <div class="card" style="margin-top:18px">
+    <div class="card-head"><div>
+      <div class="card-title">🧠 SEGUNDO CEREBRO · memoria completa por ticker</div>
+      <div class="card-sub">Cómo le fue a ESTE sistema operando cada ticker. Alimenta el scorer (favorable +0.25, adverso -0.50).</div>
+    </div></div>
+    <table><thead><tr><th>Ticker</th><th>Trades</th><th>Win%</th><th>Avg P&L</th><th>Hold</th><th>Veredicto</th></tr></thead>
+    <tbody>{rows}</tbody></table>
+  </div>"""
+    except Exception:
+        pass
+
     return f"""
 <div class="tab-content" id="tab-senales">
-  <p class="ts" style="margin-bottom:16px">Ultima actualizacion: {gen_at} &nbsp;&middot;&nbsp; Clic en cada senal para ver el analisis completo</p>
+  <p class="ts" style="margin-bottom:16px">Ultima actualizacion: {gen_at} &nbsp;&middot;&nbsp; Clic en cada senal para ver el analisis completo &nbsp;&middot;&nbsp; ✓=ejecutada ⏳=pendiente/skip</p>
   {body}
+  {mem_html}
 </div>"""
 
 
@@ -2193,9 +2358,20 @@ def _tab_historial(trades: list[dict]) -> str:
     closed = [t for t in buys if t.get("closed_at")]
     n_closed = len(closed)
     wins = [t for t in closed if (t.get("pnl_usd") or 0) > 0]
+    losses = [t for t in closed if (t.get("pnl_usd") or 0) < 0]
     win_rate = len(wins) / n_closed * 100 if n_closed else None
     total_pnl = sum(t.get("pnl_usd") or 0 for t in closed)
     avg_hold = sum(t.get("hold_days") or 0 for t in closed) / n_closed if n_closed else None
+
+    # iter15: calidad de salidas — avg win/loss, profit factor, expectancy.
+    # Explica casos como "70% win pero P&L negativo" (losers > winners).
+    gross_win = sum(t.get("pnl_usd") or 0 for t in wins)
+    gross_loss = abs(sum(t.get("pnl_usd") or 0 for t in losses))
+    avg_win = (gross_win / len(wins)) if wins else 0.0
+    avg_loss = (gross_loss / len(losses)) if losses else 0.0
+    profit_factor = (gross_win / gross_loss) if gross_loss > 0 else (float("inf") if gross_win > 0 else 0.0)
+    win_loss_ratio = (avg_win / avg_loss) if avg_loss > 0 else 0.0
+    expectancy = (total_pnl / n_closed) if n_closed else 0.0
 
     # ── KPI bar ───────────────────────────────────────────────────────────
     def _wr_color(wr):
@@ -2224,7 +2400,30 @@ def _tab_historial(trades: list[dict]) -> str:
       <div class="kpi-label">Hold promedio</div>
       <div class="kpi-val">{avg_hold:.1f}d</div>
     </div>
-  </div>"""
+  </div>
+  <div style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:16px">
+    <div class="kpi-card" style="flex:1;min-width:110px">
+      <div class="kpi-label">Avg ganador</div>
+      <div class="kpi-val" style="color:#3fb950">+{_usd(avg_win)}</div>
+    </div>
+    <div class="kpi-card" style="flex:1;min-width:110px">
+      <div class="kpi-label">Avg perdedor</div>
+      <div class="kpi-val" style="color:#f85149">-{_usd(avg_loss)}</div>
+    </div>
+    <div class="kpi-card" style="flex:1;min-width:110px">
+      <div class="kpi-label">Win/Loss ratio</div>
+      <div class="kpi-val" style="color:{'#3fb950' if win_loss_ratio>=1 else '#f85149'}">{win_loss_ratio:.2f}x</div>
+    </div>
+    <div class="kpi-card" style="flex:1;min-width:110px">
+      <div class="kpi-label">Profit factor</div>
+      <div class="kpi-val" style="color:{'#3fb950' if profit_factor>=1.3 else ('#d29922' if profit_factor>=1 else '#f85149')}">{('∞' if profit_factor==float('inf') else f'{profit_factor:.2f}')}</div>
+    </div>
+    <div class="kpi-card" style="flex:1;min-width:120px">
+      <div class="kpi-label">Expectancy/trade</div>
+      <div class="kpi-val" style="color:{_c(expectancy)}">{"+" if expectancy>=0 else ""}{_usd(expectancy)}</div>
+    </div>
+  </div>
+  {('<div class="card" style="border-left:3px solid #d29922;font-size:.8rem;color:var(--mt);margin-bottom:14px">⚠️ Win rate alto pero Win/Loss < 1: cortás los ganadores temprano y dejás correr los perdedores. El trailing/stop necesita dejar correr más los winners.</div>' if (win_rate or 0) > 55 and win_loss_ratio < 1 and n_closed >= 5 else '')}"""
 
     # ── Desglose P&L por sleeve ───────────────────────────────────────────
     SLEEVE_META = {
@@ -2969,7 +3168,8 @@ def build_html(equity, initial, history, positions, signals_data,
     regime_active  = _regime_active_panel(signals_data)
     orphan_html    = _orphan_positions_panel(positions or [], signals_data)
     control_center = _control_center_panel()  # iter10/11
-    adv_metrics    = _advanced_metrics_panel(history, qqq_history, spy_history, brk_history)  # iter11/12
+    adv_metrics    = _deployment_panel(equity, positions, signals_data)  # iter15: despliegue
+    adv_metrics   += _advanced_metrics_panel(history, qqq_history, spy_history, brk_history)  # iter11/12
     adv_metrics   += _learnings_panel()  # iter13: segundo cerebro
     t_resumen    = _tab_resumen(equity, initial, regime, vix, wti, gold, dxy,
                                 history, spy_history, signals_data, metrics, age_hours,
@@ -2980,8 +3180,8 @@ def build_html(equity, initial, history, positions, signals_data,
                                 orphan_html=orphan_html,
                                 control_center_html=control_center,
                                 adv_metrics_html=adv_metrics)
-    t_posiciones = _tab_posiciones(positions)
-    t_senales    = _tab_senales(signals_data)
+    t_posiciones = _tab_posiciones(positions, signals_data)
+    t_senales    = _tab_senales(signals_data, positions=positions)
     t_mercado    = _tab_mercado(signals_data, discovery_data=discovery_data)
     t_historial  = _tab_historial(trades or [])
     t_daytrader  = _tab_daytrader(dt_trades or [], dt_scan=dt_scan)
