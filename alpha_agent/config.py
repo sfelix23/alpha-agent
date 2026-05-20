@@ -235,8 +235,11 @@ class FinancialParams:
     top_n_bearish: int = 1                # máx 1 put direccional
     max_contracts_per_trade: int = 1      # 1 contrato por trade (capital limitado)
 
-    # Concentración máxima — hasta 50% en la mejor idea
-    max_weight_per_asset: float = 0.50    # 50% max en un solo nombre
+    # Concentración máxima — "agresivo con control" (iter13): 40% max en un nombre.
+    # Con n_cp=3 + floor 30% por posición, el de mayor convicción (ALTA ×1.5) llega
+    # a ~40% (absorbe la subida) y los otros 2 sostienen ~30% c/u → sin riesgo
+    # catastrófico de un solo nombre. Antes 0.50 dejaba 53% en VIST (toothless con n=2).
+    max_weight_per_asset: float = 0.40    # 40% max en un solo nombre
 
     # Kill switch — growth mode acepta volatilidad intradía para capturar tendencias
     # -6% en $1600 = $96 pérdida diaria máxima antes del kill switch

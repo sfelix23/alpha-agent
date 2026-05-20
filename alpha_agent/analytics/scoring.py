@@ -623,6 +623,25 @@ def build_scores(
     except Exception as exc:
         logger.debug("Stop-out cooldown no disponible: %s", exc)
 
+    # ── Segundo cerebro: memoria por ticker (iter13) ───────────────────────────
+    # El sistema aprende de cómo le fue históricamente operando CADA ticker.
+    # favorable (≥60% win, +pnl, ≥3 trades) → +0.25 | adverso (≤34% win, -pnl) → -0.50.
+    # Aditivo (no multiplicativo) para no invertir el signo de scores negativos.
+    try:
+        from alpha_agent.analytics.trade_db import get_ticker_memory
+        _BIAS_ADJ = {"favorable": 0.25, "adverso": -0.50}
+        mem_adjusted = []
+        for _tkr in st.nlargest(15, "score_st").index.tolist():
+            mem = get_ticker_memory(_tkr)
+            adj = _BIAS_ADJ.get(mem["bias"], 0.0)
+            if adj != 0.0 and _tkr in st.index:
+                st.loc[_tkr, "score_st"] += adj
+                mem_adjusted.append(f"{_tkr} {mem['bias']} {adj:+.2f}")
+        if mem_adjusted:
+            logger.info("Segundo cerebro (memoria ticker): %s", ", ".join(mem_adjusted))
+    except Exception as exc:
+        logger.debug("memoria ticker no disponible: %s", exc)
+
     # ── Market Predictor boost ────────────────────────────────────────────────
     if market_prediction is not None:
         boost = market_prediction.cp_boost

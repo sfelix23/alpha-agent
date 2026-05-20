@@ -275,6 +275,40 @@ def _advanced_metrics_panel(history, qqq_history, spy_history, brk_history=None)
 </div>"""
 
 
+def _learnings_panel() -> str:
+    """Iter13: "Segundo Cerebro" — lecciones que el sistema aprendió de sus trades.
+
+    Lee trade_db.summarize_learnings(): tickers con historial fuerte (favorable o
+    adverso) que el scorer usa para subir/bajar score. Es la memoria machine-readable
+    que reemplaza la idea de Obsidian — vive en la SQLite y alimenta decisiones.
+    """
+    try:
+        from alpha_agent.analytics.trade_db import summarize_learnings
+        lessons = summarize_learnings(limit=8)
+    except Exception as e:
+        return ""
+    if not lessons:
+        return ""
+    rows = []
+    for l in lessons:
+        is_adv = "ADVERSO" in l
+        color = "#f85149" if is_adv else "#3fb950"
+        icon = "🔴" if is_adv else "🟢"
+        rows.append(f"""<div style="display:flex;gap:8px;padding:6px 10px;font-size:.74rem;
+                    border-left:3px solid {color};background:{color}11;margin:4px 0">
+          <span>{icon}</span><span style="color:var(--mt)">{l}</span></div>""")
+    return f"""<div class="card">
+  <div class="card-head"><div>
+    <div class="card-title">🧠 SEGUNDO CEREBRO · memoria de trades</div>
+    <div class="card-sub">El sistema aprende: sube los que históricamente gana, baja/evita los que pierde</div>
+  </div></div>
+  {''.join(rows)}
+  <div style="margin-top:10px;padding-top:8px;border-top:1px solid var(--bd);font-size:.7rem;color:var(--mt)">
+    favorable → score +0.25 · adverso → score -0.50 (se aplica al scorer CP cada corrida)
+  </div>
+</div>"""
+
+
 def _control_center_panel() -> str:
     """Iter11: card "Control Center" con botones que ejecutan via Flask fetch().
 
@@ -2936,6 +2970,7 @@ def build_html(equity, initial, history, positions, signals_data,
     orphan_html    = _orphan_positions_panel(positions or [], signals_data)
     control_center = _control_center_panel()  # iter10/11
     adv_metrics    = _advanced_metrics_panel(history, qqq_history, spy_history, brk_history)  # iter11/12
+    adv_metrics   += _learnings_panel()  # iter13: segundo cerebro
     t_resumen    = _tab_resumen(equity, initial, regime, vix, wti, gold, dxy,
                                 history, spy_history, signals_data, metrics, age_hours,
                                 perf_data=perf_data, qqq_history=qqq_history, mc_result=mc_result,

@@ -582,3 +582,116 @@ def get_combined_state(brokers: dict | None = None) -> dict:
         state["total_equity"] = round(total, 2) if total > 0 else None
 
     return state
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# SEGUNDO CEREBRO — memoria de trades / post-mortems (iter13)
+#
+# Filosofía: el sistema debe APRENDER de sus operaciones pasadas, no repetir
+# errores. En vez de Obsidian (notas humanas que el bot no puede leer), la
+# memoria vive en la misma SQLite de trades y se DERIVA de los trades cerrados
+# — sin tabla nueva, sin migración, funciona con el historial existente.
+#
+# - get_ticker_memory(ticker): historial + veredicto + lección de ESE ticker.
+# - memory_score_adjustment(ticker): multiplicador para el scorer (sube los que
+#   históricamente ganan acá, baja/evita los que cronicamente pierden).
+# - summarize_learnings(): top lecciones legibles para el brief y el dashboard.
+# ─────────────────────────────────────────────────────────────────────────────
+
+
+def get_ticker_memory(ticker: str, lookback_days: int = 240) -> dict:
+    """Memoria de un ticker: cómo le fue a ESTE sistema operándolo.
+
+    Returns dict con n, win_rate, avg_pnl_pct, avg_hold_days, last_outcome,
+    last_pnl_pct, bias ('favorable'|'adverso'|'neutral') y lesson (texto).
+    bias='neutral' si hay <3 trades cerrados (sin evidencia suficiente).
+    """
+    since = (datetime.now() - timedelta(days=lookback_days)).strftime("%Y-%m-%d")
+    with _conn() as con:
+        rows = con.execute(
+            """SELECT pnl_pct, pnl_usd, hold_days, closed_at, regime
+               FROM trades
+               WHERE ticker=? AND side='BUY' AND closed_at IS NOT NULL AND date >= ?
+               ORDER BY closed_at ASC""",
+            (ticker, since),
+        ).fetchall()
+
+    n = len(rows)
+    base = {
+        "ticker": ticker, "n": n, "win_rate": None, "avg_pnl_pct": None,
+        "avg_hold_days": None, "last_outcome": None, "last_pnl_pct": None,
+        "bias": "neutral", "lesson": "",
+    }
+    if n == 0:
+        return base
+
+    pcts = [r["pnl_pct"] or 0.0 for r in rows]
+    holds = [r["hold_days"] or 0.0 for r in rows]
+    wins = sum(1 for p in pcts if p > 0)
+    win_rate = round(wins / n, 2)
+    avg_pct = round(sum(pcts) / n, 2)
+    avg_hold = round(sum(holds) / n, 1)
+    last = rows[-1]
+    last_pct = round(last["pnl_pct"] or 0.0, 2)
+    last_outcome = "WIN" if last_pct > 0 else ("LOSS" if last_pct < 0 else "FLAT")
+
+    base.update({
+        "win_rate": win_rate, "avg_pnl_pct": avg_pct, "avg_hold_days": avg_hold,
+        "last_outcome": last_outcome, "last_pnl_pct": last_pct,
+    })
+
+    # Veredicto sólo con evidencia suficiente (>=3 trades)
+    if n >= 3:
+        if win_rate >= 0.60 and avg_pct > 0:
+            base["bias"] = "favorable"
+            base["lesson"] = (f"{ticker}: histórico FAVORABLE — {win_rate:.0%} win, "
+                              f"{avg_pct:+.1f}% prom en {n} trades. Sistema lo opera bien.")
+        elif win_rate <= 0.34 and avg_pct < 0:
+            base["bias"] = "adverso"
+            base["lesson"] = (f"{ticker}: histórico ADVERSO — sólo {win_rate:.0%} win, "
+                              f"{avg_pct:+.1f}% prom en {n} trades. Reducir tamaño o evitar.")
+        else:
+            base["bias"] = "neutral"
+            base["lesson"] = (f"{ticker}: mixto — {win_rate:.0%} win, {avg_pct:+.1f}% prom ({n} trades).")
+    return base
+
+
+def memory_score_adjustment(ticker: str) -> float:
+    """Multiplicador de score basado en la memoria del ticker (segundo cerebro).
+
+    favorable → 1.12 (sube ganadores históricos)
+    adverso   → 0.82 (baja perdedores crónicos)
+    neutral   → 1.00
+    Devuelve 1.0 ante cualquier error (nunca rompe el scorer).
+    """
+    try:
+        mem = get_ticker_memory(ticker)
+        return {"favorable": 1.12, "adverso": 0.82}.get(mem["bias"], 1.0)
+    except Exception as exc:
+        logger.debug("memory_score_adjustment(%s): %s", ticker, exc)
+        return 1.0
+
+
+def summarize_learnings(limit: int = 8, lookback_days: int = 240) -> list[str]:
+    """Top lecciones legibles para el brief WhatsApp y el dashboard.
+
+    Prioriza tickers con veredicto fuerte (favorable/adverso) y más trades.
+    """
+    since = (datetime.now() - timedelta(days=lookback_days)).strftime("%Y-%m-%d")
+    with _conn() as con:
+        tickers = [r["ticker"] for r in con.execute(
+            """SELECT ticker, COUNT(*) c FROM trades
+               WHERE side='BUY' AND closed_at IS NOT NULL AND date >= ?
+               GROUP BY ticker HAVING c >= 3 ORDER BY c DESC""",
+            (since,),
+        ).fetchall()]
+
+    lessons: list[tuple[int, str]] = []
+    for t in tickers:
+        mem = get_ticker_memory(t, lookback_days)
+        if mem["bias"] in ("favorable", "adverso") and mem["lesson"]:
+            # ordena: adverso primero (más accionable), luego por nº de trades
+            rank = (0 if mem["bias"] == "adverso" else 1, -mem["n"])
+            lessons.append((rank, mem["lesson"]))
+    lessons.sort(key=lambda x: x[0])
+    return [l for _, l in lessons[:limit]]

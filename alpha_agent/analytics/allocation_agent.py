@@ -5,11 +5,16 @@ Filosofía: capital quieto no rinde. Deployer agresivo cuando hay edge demostrad
 defensivo cuando el sistema está perdiendo. Opciones solo con catalizador real.
 
 Sistema de 3 niveles basado en régimen + racha reciente:
-  NIVEL 1 — Alta convicción (BULL + win_rate >= 55%): CP 88%, OPT condicional
-  NIVEL 2 — Base (BULL sin historial / NEUTRAL): CP 75%, OPT si hay catalizador
+  NIVEL 1 — Alta convicción (BULL + win_rate >= 55%): CP 88% en 3 nombres, OPT condicional
+  NIVEL 2 — Base (BULL sin historial / NEUTRAL): CP 75-83% en 3 nombres, OPT si hay catalizador
   NIVEL 3 — Defensivo (BEAR / racha perdedora): CP 45%, OPT mínimo
 
 LP siempre 0%: con $1600 el CP rotatorio supera ampliamente a holds de semanas.
+
+Iter13 "agresivo con control": n_cp pasó de 1-2 a 3 nombres en niveles 1-2. Con el
+floor de 30%/posición + conviction ×1.5 (en signals.py), el de mayor convicción llega
+a ~40% (absorbe la subida) sin que un solo gap overnight borre la cuenta. Combinado con
+max_weight_per_asset=0.40. Despliega el sleeve completo → menos cash drag.
 """
 from __future__ import annotations
 
@@ -55,11 +60,11 @@ def _rule_default(regime: str, vix: float, win_rate: float | None, recent_pnl: f
         )
         return AllocationDecision(0.0, 0.45, 0.05, 1, 4, reason, level=3)
 
-    # NEUTRAL: posición base conservadora
+    # NEUTRAL: posición base conservadora (3 nombres = diversificación + despliegue)
     if vix > 22 or reg == "NEUTRAL":
         cp = 0.80 if winning_streak else 0.65
-        n  = 2
-        reason = f"NEUTRAL/VIX {vix:.0f}: CP {cp:.0%}, {'racha ganadora → más exposición.' if winning_streak else 'posición moderada.'}"
+        n  = 3
+        reason = f"NEUTRAL/VIX {vix:.0f}: CP {cp:.0%} en top-3, {'racha ganadora → más exposición.' if winning_streak else 'posición moderada.'}"
         return AllocationDecision(0.0, cp, 0.10, n, 8, reason, level=2)
 
     # BULL — el caso principal
@@ -67,20 +72,24 @@ def _rule_default(regime: str, vix: float, win_rate: float | None, recent_pnl: f
     # Rotacion mas rapida = mas oportunidades de capturar momentum sin quedarse colgado
     # cuando un ticker pierde momentum (suele pasar a las 2 semanas).
     if winning_streak:
-        # NIVEL 1: BULL + ganando → presionar al máximo; chandelier es el exit primario
-        # Concentrar mas: 2→1 si VIX muy bajo (single best pick + opciones).
-        n_cp = 1 if vix < 15 else 2
+        # NIVEL 1: BULL + ganando → presionar al máximo; chandelier es el exit primario.
+        # Iter13 "agresivo con control": SIEMPRE 3 nombres (nunca 1). Con floor 30% +
+        # conviction ×1.5, el de mayor convicción llega a ~40% (absorbe la subida) y
+        # los otros 2 sostienen ~30% c/u. Evita el 88%-en-un-nombre del modo anterior,
+        # que era "máximo riesgo" (un gap overnight te borraba la cuenta).
+        n_cp = 3
         return AllocationDecision(0.0, 0.88, 0.07, n_cp, 10,
-            f"BULL + racha ganadora ({win_rate:.0%} WR): CP {88}% en top-{n_cp}, hold 10d max (rotacion rapida).", level=1)
+            f"BULL + racha ganadora ({win_rate:.0%} WR): CP 88% en top-{n_cp} (control concentración), hold 10d max.", level=1)
     elif losing_streak:
         # ya cubierto arriba pero por si acá
-        return AllocationDecision(0.0, 0.50, 0.05, 1, 4,
-            f"BULL pero racha perdedora: reduciendo CP al 50%.", level=3)
+        return AllocationDecision(0.0, 0.50, 0.05, 2, 4,
+            f"BULL pero racha perdedora: reduciendo CP al 50%, 2 nombres.", level=3)
     else:
-        # NIVEL 2: BULL sin historial suficiente → base sólida
+        # NIVEL 2: BULL sin historial suficiente → base sólida, 3 nombres para
+        # desplegar el sleeve completo y diluir riesgo idiosincrático.
         cp = 0.83 if vix < 18 else 0.75
-        return AllocationDecision(0.0, cp, 0.10, 2, 8,
-            f"BULL + VIX {vix:.1f}: CP {cp:.0%}, hold 8d max (modo agresivo).", level=2)
+        return AllocationDecision(0.0, cp, 0.10, 3, 8,
+            f"BULL + VIX {vix:.1f}: CP {cp:.0%} en top-3, hold 8d max (agresivo con control).", level=2)
 
 
 def _get_recent_performance() -> tuple[float | None, float | None]:
