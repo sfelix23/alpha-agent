@@ -33,6 +33,7 @@ from alpha_agent.config import (
     QQQ_MEGA_CAPS,
     SECTOR_MAP,
     TECH_BULL_CP_BOOST,
+    get_effective_cp_universe,
 )
 
 logger = logging.getLogger(__name__)
@@ -384,10 +385,12 @@ def build_scores(
     # ── SHORT TERM ────────────────────────────────────────────────────────────
     st = df.copy()
 
-    # Filtrar al universo CP focalizado — z-scores entre 25 tickers concentrados
-    # son más informativos que z-scores entre los 49 heterogéneos del universo completo
-    if CP_UNIVERSE:
-        st = st[st.index.isin(CP_UNIVERSE)]
+    # Filtrar al universo CP focalizado — z-scores entre ~25 tickers concentrados
+    # son más informativos que entre los heterogéneos del universo completo.
+    # iter17: usa el universo EFECTIVO (estático ± rotación automática ± veto).
+    _cp_universe = get_effective_cp_universe()
+    if _cp_universe:
+        st = st[st.index.isin(_cp_universe)]
         if st.empty:
             logger.warning(
                 "CP_UNIVERSE filter: ningún ticker del universo CP tiene datos de mercado hoy "

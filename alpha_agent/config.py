@@ -12,19 +12,19 @@ from dataclasses import dataclass, field
 from pathlib import Path
 
 # ────────────────────────────────────────────────────────────────────────────
-# UNIVERSO DE ACTIVOS (49)
+# UNIVERSO DE ACTIVOS (iter17: recortado — sin ADRs argentinos ilíquidos)
 # ────────────────────────────────────────────────────────────────────────────
 ACTIVOS: dict[str, str] = {
     # Energía y petróleo
     "Exxon": "XOM", "Chevron": "CVX", "Petrobras": "PBR", "Schlumberger": "SLB",
-    "Shell": "SHEL", "TotalEnergies": "TTE", "Vista": "VIST", "YPF": "YPF", "Pampa": "PAM",
+    "Shell": "SHEL", "TotalEnergies": "TTE", "Vista": "VIST", "YPF": "YPF",
     # Defensa y geopolítica
     "Lockheed": "LMT", "Raytheon": "RTX", "Northrop": "NOC", "General_Dynamics": "GD",
     "Boeing": "BA", "Palantir": "PLTR", "Anduril_Proxy": "AVAV",
-    # Argentina (NYSE ADRs) — alto beta, asimétrico con recuperación macro AR
-    "Galicia": "GGAL", "Macro": "BMA", "TGS": "TGS", "Edenor": "EDN",
-    "MercadoLibre": "MELI", "Despegar": "DESP", "IRSA": "IRS",
-    "Loma_Negra": "LOMA", "Transportadora_Gas_Norte": "TGNO4.BA",
+    # Argentina (NYSE ADRs líquidos) — alto beta, asimétrico con recuperación macro AR.
+    # iter17: sacados los ilíquidos (TGS, EDN, DESP, IRS, LOMA, TGNO4.BA, PAM) — spread
+    # ancho/volumen bajo come el edge en cuenta chica. Quedan los líquidos con edge real.
+    "Galicia": "GGAL", "Macro": "BMA", "MercadoLibre": "MELI",
     # Growth / momentum — alto potencial de retorno asimétrico
     "Broadcom": "AVGO", "Netflix": "NFLX", "CrowdStrike": "CRWD", "Coinbase": "COIN",
     # Minería / Litio / Cobre / Oro / Uranio
@@ -122,12 +122,42 @@ CP_UNIVERSE: frozenset[str] = frozenset({
     "OXY",
 })
 
+# Núcleo protegido: líderes líquidos que la rotación automática NUNCA saca solo
+# (iter17). Se pueden sacar manualmente, pero el rotador no los toca.
+PROTECTED_CP: frozenset[str] = frozenset({
+    "NVDA", "AMD", "MSFT", "GOOGL", "META", "AMZN",
+})
+
+
+def get_effective_cp_universe() -> frozenset[str]:
+    """CP_UNIVERSE efectivo = (estático ∪ added) − removed − vetoed (iter17).
+
+    Lee signals/cp_universe_overrides.json (escrito por la rotación automática y
+    los comandos veto del bot). Lazy: NO corre I/O en import. Si el JSON falta o
+    está corrupto, devuelve el CP_UNIVERSE estático (fail-safe).
+    """
+    try:
+        import json as _json
+        from pathlib import Path as _Path
+        p = _Path(__file__).resolve().parents[1] / "signals" / "cp_universe_overrides.json"
+        if not p.exists():
+            return CP_UNIVERSE
+        data = _json.loads(p.read_text(encoding="utf-8"))
+        added = set(data.get("added", []))
+        removed = set(data.get("removed", []))
+        vetoed = set(data.get("vetoed", []))
+        eff = (set(CP_UNIVERSE) | added) - removed - vetoed
+        return frozenset(eff) if eff else CP_UNIVERSE
+    except Exception:
+        return CP_UNIVERSE
+
 # Tickers donde el sistema tiene ventaja informacional estructural sobre el mercado:
 # Argentina (cobertura institucional muy baja), energía internacional, minerales,
 # defensa. En estos sectores el CAPM + macro + noticias locales agrega alpha real.
 ALPHA_PREMIUM_LP: frozenset[str] = frozenset({
-    # Argentina ADRs — mercado ineficiente, pocos fondos los cubren
-    "GGAL", "BMA", "TGS", "VIST", "IRS", "LOMA", "EDN", "TGNO4.BA", "YPF", "PAM",
+    # Argentina ADRs líquidos — mercado ineficiente, pocos fondos los cubren
+    # (iter17: removidos TGS/IRS/LOMA/EDN/TGNO4.BA/PAM por iliquidez)
+    "GGAL", "BMA", "VIST", "YPF",
     # Energía internacional no-SPY
     "PBR", "SHEL", "TTE", "SLB", "XOM", "CVX", "OXY",
     # Minería / metales / uranio
@@ -268,6 +298,15 @@ class FinancialParams:
     # CP momentum (único motor con edge). Reversible: poner True para reactivar.
     enable_daytrading: bool = False       # OFF (iter15) — run_daytrader hace early-exit
     enable_scalping: bool = False         # OFF (iter15) — run_scalper hace early-exit
+
+    # ── Discovery + rotación de universo (iter17) ──────────────────────────────
+    # Gate de liquidez: discovery solo surface candidatos tradeables.
+    discovery_min_adv_usd: float = 20_000_000   # avg dollar volume 20d mínimo
+    discovery_min_price: float = 5.0            # precio mínimo (evita penny stocks)
+    # Rotación automática del CP_UNIVERSE (corre semanal en run_rebalancer):
+    rotation_enabled: bool = True               # auto-incorporar candidatos fuertes
+    rotation_margin: float = 0.20               # candidato debe superar al más flojo por 20%
+    rotation_max_per_week: int = 1              # máx 1 swap/semana (anti-churn)
     min_days_to_expiry: int = 30          # evita theta decay brutal y PDT en cuentas <$25k
     max_days_to_expiry: int = 45          # evita gamma muerta (bajé de 60 a 45)
     target_delta_directional: float = 0.35  # puts/calls direccionales delta 0.35 (más OTM = más barato)

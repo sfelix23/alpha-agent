@@ -245,11 +245,18 @@ def main() -> None:
                 "vix": (macro_ctx.get("prices") or {}).get("vix", 20),
             }
             from alpha_agent.discovery.universe_scanner import (
-                scan_for_candidates, format_whatsapp_discovery
+                scan_for_candidates, format_whatsapp_discovery, _rotate_universe
             )
             disc_result = scan_for_candidates(macro_context=macro_for_scan)
             discovery_lines = format_whatsapp_discovery(disc_result)
             logger.info("Discovery: %d picks", len(disc_result.get("candidates", [])))
+            # iter17: rotación automática del CP_UNIVERSE (guardarraíles dentro).
+            try:
+                rot_msg = _rotate_universe(disc_result, broker=broker)
+                if rot_msg:
+                    discovery_lines = (discovery_lines or "") + rot_msg
+            except Exception as e:
+                logger.warning("Rotación de universo error: %s", e)
         except Exception as e:
             logger.warning("Discovery scan error: %s", e)
 
