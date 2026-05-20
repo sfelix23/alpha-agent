@@ -1,1 +1,1 @@
-{"lp_pct": 0.0, "cp_pct": 0.75, "opt_pct": 0.1, "n_cp_positions": 2, "cp_max_hold_days": 8, "level": 2, "reasoning": "BULL + VIX 18.1: CP 75%, hold 8d max (modo agresivo).", "generated_at": "2026-05-19T15:52:09.766937"}
+{"lp_pct": 0.0, "cp_pct": 0.83, "opt_pct": 0.1, "n_cp_positions": 3, "cp_max_hold_days": 8, "level": 2, "reasoning": "BULL + VIX 18.0: CP 83% en top-3, hold 8d max (agresivo con control).", "generated_at": "2026-05-20T13:42:27.909554"}
