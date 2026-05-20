@@ -331,6 +331,17 @@ def main() -> None:
     _setup_logging()
     log.info("=== SCALPER INIT === live=%s", live)
 
+    # iter15: scalping desactivado por config (datos: 6 abiertas / 0 cerradas / $0
+    # realizado = sin edge medible, y requiere PC+WebSocket). Reversible:
+    # PARAMS.enable_scalping=True en config.py para reactivar.
+    try:
+        from alpha_agent.config import PARAMS as _P
+        if not getattr(_P, "enable_scalping", True):
+            log.info("Scalping DESACTIVADO (config.enable_scalping=False). Saliendo.")
+            return
+    except Exception:
+        pass
+
     try:
         broker = _build_broker()
     except RuntimeError as e:

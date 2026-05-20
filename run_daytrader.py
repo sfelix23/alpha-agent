@@ -222,6 +222,16 @@ def main() -> None:
     load_dotenv(BASE_DIR / ".env")
     _setup_logging()
 
+    # iter15: DT desactivado por config (datos: nunca encontró setup válido → 0 trades).
+    # Reversible: PARAMS.enable_daytrading=True en config.py para reactivar.
+    try:
+        from alpha_agent.config import PARAMS as _P
+        if not getattr(_P, "enable_daytrading", True):
+            logger.info("Day trading DESACTIVADO (config.enable_daytrading=False). Saliendo.")
+            return
+    except Exception:
+        pass
+
     if not _in_entry_window():
         logger.info("Fuera de ventana DT (10:00-14:00 EDT). Saliendo.")
         return

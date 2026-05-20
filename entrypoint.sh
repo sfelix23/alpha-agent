@@ -132,7 +132,10 @@ case "$TASK" in
     python run_analyst.py --send || { echo "ANALYST FAILED — abortando pipeline"; _push_results; exit 1; }
     _validate_signals             || { echo "SIGNALS INVALIDOS — abortando pipeline";  _push_results; exit 1; }
     python run_trader.py --live       || true
-    python run_daytrader.py --live    || true
+    # iter15: day trading desactivado (nunca encontró setup válido → 0 trades en todo
+    # el historial). run_daytrader igual hace early-exit por config.enable_daytrading=False,
+    # pero lo sacamos del pipeline para no gastar el arranque. Reactivar: descomentar.
+    # python run_daytrader.py --live    || true
     python run_dashboard.py --no-open || true
     _update_workflow_status
     _push_results

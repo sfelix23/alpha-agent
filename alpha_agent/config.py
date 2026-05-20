@@ -263,6 +263,11 @@ class FinancialParams:
     max_hedge_allocation: float = 0.10    # hasta 10% del libro en puts SPY cuando bear
     enable_short_equity: bool = False     # OFF por default — preferimos puts (riesgo limitado)
     enable_options: bool = True           # ON — long calls/puts OTM, riesgo limitado a la prima
+    # iter15: DT y scalping DESACTIVADOS por decisión de Santino (datos: DT nunca operó,
+    # SCALP 6 abiertas / 0 cerradas / $0 realizado = sin edge medible). Foco y capital en
+    # CP momentum (único motor con edge). Reversible: poner True para reactivar.
+    enable_daytrading: bool = False       # OFF (iter15) — run_daytrader hace early-exit
+    enable_scalping: bool = False         # OFF (iter15) — run_scalper hace early-exit
     min_days_to_expiry: int = 30          # evita theta decay brutal y PDT en cuentas <$25k
     max_days_to_expiry: int = 45          # evita gamma muerta (bajé de 60 a 45)
     target_delta_directional: float = 0.35  # puts/calls direccionales delta 0.35 (más OTM = más barato)
