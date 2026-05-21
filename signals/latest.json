@@ -1,49 +1,49 @@
 {
-  "generated_at": "2026-05-20T13:43:31",
+  "generated_at": "2026-05-21T13:44:11",
   "horizon": "medium_long_70_30_high_conviction",
   "capital_usd": 1600.0,
   "params": {
     "weight_long_term": 0.0,
-    "weight_short_term": 0.83,
-    "weight_options": 0.1,
+    "weight_short_term": 0.9,
+    "weight_options": 0.14,
     "risk_free_rate": 0.045,
-    "max_beta_lp": 2.0,
-    "min_sharpe_lp": 0.3,
+    "max_beta_lp": 2.8,
+    "min_sharpe_lp": 0.1,
     "top_n_long_term": 2,
-    "top_n_short_term": 3,
+    "top_n_short_term": 2,
     "top_n_bearish": 1,
-    "max_weight_per_asset": 0.4,
+    "max_weight_per_asset": 0.55,
     "enable_short_equity": false,
     "enable_options": true
   },
   "macro": {
     "regime": "bull",
-    "regime_reason": "SPY +8.9% sobre SMA200 con pendiente positiva",
+    "regime_reason": "SPY +9.2% sobre SMA200 con pendiente positiva",
     "prices": {
-      "oil_wti": 102.03,
-      "oil_brent": 108.85,
-      "gold": 4493.4,
-      "dxy": 99.405,
-      "vix": 17.97,
-      "us10y": 4.649
+      "oil_wti": 102.3,
+      "oil_brent": 108.87,
+      "gold": 4496.5,
+      "dxy": 99.446,
+      "vix": 17.72,
+      "us10y": 4.615
     },
     "changes_1d": {
-      "oil_wti": -0.0533,
-      "oil_brent": -0.0218,
-      "gold": -0.0029,
-      "dxy": 0.0011,
-      "vix": -0.005,
-      "us10y": -0.0039
+      "oil_wti": 0.0411,
+      "oil_brent": 0.0367,
+      "gold": -0.0077,
+      "dxy": 0.0034,
+      "vix": 0.0161,
+      "us10y": 0.0094
     },
     "changes_1m": {
-      "oil_wti": 0.1075,
-      "oil_brent": 0.1053,
-      "gold": -0.0436,
-      "dxy": 0.0101,
-      "vix": -0.0785,
-      "us10y": 0.0832
+      "oil_wti": 0.1005,
+      "oil_brent": 0.0683,
+      "gold": -0.0499,
+      "dxy": 0.0087,
+      "vix": -0.0634,
+      "us10y": 0.0748
     },
-    "spy_vs_sma200": 0.0895
+    "spy_vs_sma200": 0.092
   },
   "long_term": [],
   "short_term": [
@@ -51,58 +51,58 @@
       "ticker": "MU",
       "side": "BUY",
       "horizon": "CP",
-      "price": 719.51,
-      "stop_loss": 661.95,
-      "take_profit": 863.41,
-      "weight_target": 0.4639,
+      "price": 748.34,
+      "stop_loss": 688.47,
+      "take_profit": 898.02,
+      "weight_target": 0.6382,
       "thesis": {
         "ticker": "MU",
         "horizon": "CP",
-        "conviction": "ALTA",
+        "conviction": "MEDIA",
         "quant": {
-          "mu_anual": 2.2384623439200624,
-          "sigma_anual": 0.6381900145365623,
-          "beta": 2.3112118724866573,
-          "alpha_jensen": 1.7258732085685966,
-          "sharpe": 3.4370051143982567,
-          "expected_return_capm": 0.5125891353514657
+          "mu_anual": 2.3396207666673177,
+          "sigma_anual": 0.6382462556122933,
+          "beta": 2.312774545868971,
+          "alpha_jensen": 1.8123262256685524,
+          "sharpe": 3.5951965976925364,
+          "expected_return_capm": 0.5272945409987652
         },
         "technical": {
-          "price": 719.51,
-          "rsi": 68.6,
-          "atr": 61.1907,
-          "stop_loss_atr": 597.12,
-          "ret_1m": 0.4759682216036376,
-          "ret_3m": 0.6811249379027939,
-          "dist_52w_high": -0.10468125815221063
+          "price": 748.34,
+          "rsi": 68.82,
+          "atr": 59.9379,
+          "stop_loss_atr": 628.47,
+          "ret_1m": 0.5534853624652922,
+          "ret_3m": 0.778414892411118,
+          "dist_52w_high": -0.06879413889946695
         },
         "fundamental": {
-          "sentiment_score": 1.0,
+          "sentiment_score": -0.167,
           "n_headlines": 6,
-          "positive": 6,
-          "negative": 0,
+          "positive": 2,
+          "negative": 3,
           "sample_titles": [
-            "Why the memory chip supply shortage won't hurt suppliers",
-            "ServiceNow stock gains as investors push further into software",
-            "Prediction: This Will Be Micron's Stock Price at the End of 2027 (Hint: It's Well Over $1,000)"
+            "Jim Cramer on Sandisk: “Gotta Let It Come Down More”",
+            "Jim Cramer Says “I’ve Been Waiting for Micron to Come Down”",
+            "Jim Cramer on Western Digital: “That Seems Too Rich to Me”"
           ]
         },
         "macro": {
           "regime": "bull",
-          "regime_reason": "SPY +8.9% sobre SMA200 con pendiente positiva",
-          "vix": 17.97,
-          "oil_wti": 102.03,
-          "dxy_1m": 0.0101,
-          "gold_1m": -0.0436
+          "regime_reason": "SPY +9.2% sobre SMA200 con pendiente positiva",
+          "vix": 17.72,
+          "oil_wti": 102.3,
+          "dxy_1m": 0.0087,
+          "gold_1m": -0.0499
         },
         "risk": {
-          "dollars_allocated": 689.37,
-          "weight_of_total_portfolio": 0.4309,
-          "max_loss_usd_if_stop_hit": 117.26,
-          "max_loss_pct_of_capital": 0.0733,
-          "stop_loss": 597.12
+          "dollars_allocated": 1095.14,
+          "weight_of_total_portfolio": 0.6845,
+          "max_loss_usd_if_stop_hit": 175.42,
+          "max_loss_pct_of_capital": 0.1096,
+          "stop_loss": 628.47
         },
-        "thesis_text": "MU — horizonte CORTO PLAZO. Convicción ALTA. Setup técnico: RSI 69, momentum 1m +47.6%, momentum 3m +68.1%. Stop loss ATR en $597.12 (riesgo ≈ 17.0% desde entrada). Sentiment de noticias refuerza el setup.",
+        "thesis_text": "MU — horizonte CORTO PLAZO. Convicción MEDIA. Setup técnico: RSI 69, momentum 1m +55.3%, momentum 3m +77.8%. Stop loss ATR en $628.47 (riesgo ≈ 16.0% desde entrada).",
         "key_risks": [
           "Sin riesgos macro mayores detectados; el riesgo principal es idiosincrático del activo."
         ],
@@ -111,7 +111,7 @@
           "size_factor": 0.0,
           "reasoning": "Meta-LP heuristico (LLM OFF): EV=+ 4 NO-GO → SKIP",
           "go_count": 0,
-          "ev": 896.2,
+          "ev": 940.7,
           "ev_positive": true,
           "opinions": [
             {
@@ -143,108 +143,7 @@
               "cot": "→ Anthropic deshabilitado por flag (ENABLE_ANTHROPIC OFF)."
             }
           ],
-          "debate_id": "MU-CP-1779284614"
-        }
-      },
-      "option": null
-    },
-    {
-      "ticker": "VIST",
-      "side": "BUY",
-      "horizon": "CP",
-      "price": 79.93,
-      "stop_loss": 73.64,
-      "take_profit": 95.66,
-      "weight_target": 0.2681,
-      "thesis": {
-        "ticker": "VIST",
-        "horizon": "CP",
-        "conviction": "ALTA",
-        "quant": {
-          "mu_anual": 0.945069216314933,
-          "sigma_anual": 0.5108436153169251,
-          "beta": 0.9017349473697386,
-          "alpha_jensen": 0.7176361519229754,
-          "sharpe": 1.7619271129708336,
-          "expected_return_capm": 0.22743306439195765
-        },
-        "technical": {
-          "price": 79.93,
-          "rsi": 59.72,
-          "atr": 3.1474,
-          "stop_loss_atr": 73.64,
-          "ret_1m": 0.16346439382514322,
-          "ret_3m": 0.35428667714728124,
-          "dist_52w_high": 0.0
-        },
-        "fundamental": {
-          "sentiment_score": 0.5,
-          "n_headlines": 6,
-          "positive": 4,
-          "negative": 1,
-          "sample_titles": [
-            "Vista Energy Q1 Earnings Miss on Lower Realized Commodity Prices",
-            "Are Investors Undervaluing Shell (SHEL) Right Now?",
-            "Vista Energy, S.A.B. de C.V. - Sponsored ADR (VIST) Is a Great Choice for 'Trend' Investors, Here's Why"
-          ]
-        },
-        "macro": {
-          "regime": "bull",
-          "regime_reason": "SPY +8.9% sobre SMA200 con pendiente positiva",
-          "vix": 17.97,
-          "oil_wti": 102.03,
-          "dxy_1m": 0.0101,
-          "gold_1m": -0.0436
-        },
-        "risk": {
-          "dollars_allocated": 330.32,
-          "weight_of_total_portfolio": 0.2064,
-          "max_loss_usd_if_stop_hit": 25.99,
-          "max_loss_pct_of_capital": 0.0162,
-          "stop_loss": 73.64
-        },
-        "thesis_text": "VIST — horizonte CORTO PLAZO. Convicción ALTA. Setup técnico: RSI 60, momentum 1m +16.3%, momentum 3m +35.4%. Stop loss ATR en $73.64 (riesgo ≈ 7.9% desde entrada). Sentiment de noticias refuerza el setup.",
-        "key_risks": [
-          "WTI +10.8% 1m: precio elevado favorece energía pero riesgo de demand destruction."
-        ],
-        "swarm": {
-          "go": false,
-          "size_factor": 0.0,
-          "reasoning": "Meta-LP heuristico (LLM OFF): EV=+ 4 NO-GO → SKIP",
-          "go_count": 0,
-          "ev": 340.86,
-          "ev_positive": true,
-          "opinions": [
-            {
-              "agent": "TechnicalCP",
-              "stance": "NO-GO",
-              "confidence": 0,
-              "reasoning": "llm_disabled",
-              "cot": "→ Anthropic deshabilitado por flag (ENABLE_ANTHROPIC OFF)."
-            },
-            {
-              "agent": "MacroLP",
-              "stance": "NO-GO",
-              "confidence": 0,
-              "reasoning": "llm_disabled",
-              "cot": "→ Anthropic deshabilitado por flag (ENABLE_ANTHROPIC OFF)."
-            },
-            {
-              "agent": "SentimentLP",
-              "stance": "NO-GO",
-              "confidence": 0,
-              "reasoning": "llm_disabled",
-              "cot": "→ Anthropic deshabilitado por flag (ENABLE_ANTHROPIC OFF)."
-            },
-            {
-              "agent": "RiskAuditorLP",
-              "stance": "NO-GO",
-              "confidence": 0,
-              "reasoning": "llm_disabled",
-              "cot": "→ Anthropic deshabilitado por flag (ENABLE_ANTHROPIC OFF)."
-            }
-          ],
-          "debate_id": "VIST-CP-1779284614"
+          "debate_id": "MU-CP-1779371054"
         }
       },
       "option": null
@@ -253,58 +152,58 @@
       "ticker": "DDOG",
       "side": "BUY",
       "horizon": "CP",
-      "price": 216.03,
-      "stop_loss": 198.75,
-      "take_profit": 259.23,
-      "weight_target": 0.2681,
+      "price": 214.1,
+      "stop_loss": 196.97,
+      "take_profit": 256.92,
+      "weight_target": 0.3618,
       "thesis": {
         "ticker": "DDOG",
         "horizon": "CP",
         "conviction": "ALTA",
         "quant": {
-          "mu_anual": 1.3133275623116463,
-          "sigma_anual": 0.5208697393887063,
-          "beta": 1.2639552824784441,
-          "alpha_jensen": 1.0126124698562162,
-          "sharpe": 2.4350187127402676,
-          "expected_return_capm": 0.30071509245543004
+          "mu_anual": 1.2405952160771567,
+          "sigma_anual": 0.5159876993687617,
+          "beta": 1.273173880596712,
+          "alpha_jensen": 0.9300938452449665,
+          "sharpe": 2.317100228435289,
+          "expected_return_capm": 0.3105013708321902
         },
         "technical": {
-          "price": 216.03,
-          "rsi": 92.13,
-          "atr": 12.2693,
-          "stop_loss_atr": 191.49,
-          "ret_1m": 0.6348569681938427,
-          "ret_3m": 0.8678021091060113,
-          "dist_52w_high": 0.0
+          "price": 214.1,
+          "rsi": 88.7,
+          "atr": 12.0421,
+          "stop_loss_atr": 190.02,
+          "ret_1m": 0.6744877606873878,
+          "ret_3m": 1.0864397072614307,
+          "dist_52w_high": -0.004880259459704828
         },
         "fundamental": {
-          "sentiment_score": 0.333,
+          "sentiment_score": 0.667,
           "n_headlines": 6,
           "positive": 4,
-          "negative": 2,
+          "negative": 0,
           "sample_titles": [
-            "Invest in These 5 Big Data Behemoths to Gain From Wall Street Rally",
-            "Datadog Backs Dust To Link Observability With Multiplayer AI Workloads",
-            "2 S&P 500 Stocks with Promising Prospects and 1 We Ignore"
+            "Assessing Datadog (DDOG) Valuation After A 64% One Month Share Price Surge",
+            "After a 50% Drop, Is ServiceNow Stock Worth Buying?",
+            "Wedbush Remains Bullish On Dynatrace (DT) With $48 PT And Outperform Rating"
           ]
         },
         "macro": {
           "regime": "bull",
-          "regime_reason": "SPY +8.9% sobre SMA200 con pendiente positiva",
-          "vix": 17.97,
-          "oil_wti": 102.03,
-          "dxy_1m": 0.0101,
-          "gold_1m": -0.0436
+          "regime_reason": "SPY +9.2% sobre SMA200 con pendiente positiva",
+          "vix": 17.72,
+          "oil_wti": 102.3,
+          "dxy_1m": 0.0087,
+          "gold_1m": -0.0499
         },
         "risk": {
-          "dollars_allocated": 308.32,
-          "weight_of_total_portfolio": 0.1927,
-          "max_loss_usd_if_stop_hit": 35.02,
-          "max_loss_pct_of_capital": 0.0219,
-          "stop_loss": 191.49
+          "dollars_allocated": 344.86,
+          "weight_of_total_portfolio": 0.2155,
+          "max_loss_usd_if_stop_hit": 38.79,
+          "max_loss_pct_of_capital": 0.0242,
+          "stop_loss": 190.02
         },
-        "thesis_text": "DDOG — horizonte CORTO PLAZO. Convicción ALTA. Setup técnico: RSI 92, momentum 1m +63.5%, momentum 3m +86.8%. ⚠️ RSI en sobrecompra → riesgo de reversión a la media. Stop loss ATR en $191.49 (riesgo ≈ 11.4% desde entrada). Sentiment de noticias refuerza el setup.",
+        "thesis_text": "DDOG — horizonte CORTO PLAZO. Convicción ALTA. Setup técnico: RSI 89, momentum 1m +67.4%, momentum 3m +108.6%. ⚠️ RSI en sobrecompra → riesgo de reversión a la media. Stop loss ATR en $190.02 (riesgo ≈ 11.2% desde entrada). Sentiment de noticias refuerza el setup.",
         "key_risks": [
           "Sin riesgos macro mayores detectados; el riesgo principal es idiosincrático del activo."
         ],
@@ -313,7 +212,7 @@
           "size_factor": 0.0,
           "reasoning": "Meta-LP heuristico (LLM OFF): EV=+ 4 NO-GO → SKIP",
           "go_count": 0,
-          "ev": 501.81,
+          "ev": 470.34,
           "ev_positive": true,
           "opinions": [
             {
@@ -345,289 +244,142 @@
               "cot": "→ Anthropic deshabilitado por flag (ENABLE_ANTHROPIC OFF)."
             }
           ],
-          "debate_id": "DDOG-CP-1779284614"
+          "debate_id": "DDOG-CP-1779371054"
         }
       },
       "option": null
     }
   ],
-  "options_book": [
-    {
-      "ticker": "GOOGL",
-      "side": "BUY_CALL",
-      "horizon": "DERIV",
-      "price": 389.37,
-      "stop_loss": null,
-      "take_profit": null,
-      "weight_target": 0.5,
-      "thesis": {
-        "ticker": "GOOGL",
-        "horizon": "DERIV",
-        "conviction": "MEDIA",
-        "quant": {
-          "mu_anual": 0.8210091014154975,
-          "sigma_anual": 0.30082552938686574,
-          "beta": 1.0875478444249078,
-          "alpha_jensen": 0.5559835977904817,
-          "sharpe": 2.5795985566688366,
-          "expected_return_capm": 0.2650255036250159
-        },
-        "technical": {
-          "price": 389.37,
-          "rsi": 53.43,
-          "atr": 9.4964,
-          "stop_loss_atr": 370.38,
-          "ret_1m": 0.14750084496239624,
-          "ret_3m": 0.23704392590889056,
-          "dist_52w_high": -0.03290944354649705
-        },
-        "fundamental": {
-          "sentiment_score": 0.167,
-          "n_headlines": 6,
-          "positive": 3,
-          "negative": 2,
-          "sample_titles": [
-            "Earnings live updates: Target stock rises as the retailer looks to reclaim its 'Tarjay' moniker, Nvidia earnings loom",
-            "AI data centers met with growing opposition across US",
-            "Trump's Big Tech trades while in office raise concerns"
-          ]
-        },
-        "macro": {
-          "regime": "bull",
-          "regime_reason": "SPY +8.9% sobre SMA200 con pendiente positiva",
-          "vix": 17.97,
-          "oil_wti": 102.03,
-          "dxy_1m": 0.0101,
-          "gold_1m": -0.0436
-        },
-        "risk": {
-          "dollars_allocated": 40.0,
-          "weight_of_total_portfolio": 0.2075,
-          "max_loss_usd_if_stop_hit": 1.95,
-          "max_loss_pct_of_capital": 0.0012,
-          "stop_loss": 370.38
-        },
-        "thesis_text": "GOOGL — apuesta alcista vía CALL (riesgo limitado a la prima). Strike $451.67, expiry 2026-06-26 (~37d), prima estimada $1.17/share = $117/contrato. Breakeven $452.84. Delta objetivo 0.35. Backup: GOOGL — horizonte CORTO PLAZO. Convicción MEDIA. Setup técnico: RSI 53, momentum 1m +14.8%, momentum 3m +23.7%. Stop loss ATR en $370.38 (riesgo ≈ 4.9% desde entrada).",
-        "key_risks": [
-          "Yield 10Y US en 4.65% → duration alta castigada, presión sobre valuaciones growth."
-        ]
-      },
-      "option": {
-        "type": "call",
-        "strike": 451.67,
-        "expiry": "2026-06-26",
-        "days_to_expiry": 37,
-        "premium_per_share_est": 1.17,
-        "contract_cost_est": 116.81,
-        "breakeven": 452.84,
-        "delta_est": 0.35,
-        "sigma_used": 0.301,
-        "max_loss_usd": 116.81
-      }
-    },
-    {
-      "ticker": "TTE",
-      "side": "BUY_CALL",
-      "horizon": "DERIV",
-      "price": 93.65,
-      "stop_loss": null,
-      "take_profit": null,
-      "weight_target": 0.5,
-      "thesis": {
-        "ticker": "TTE",
-        "horizon": "DERIV",
-        "conviction": "ALTA",
-        "quant": {
-          "mu_anual": 0.6360274567150921,
-          "sigma_anual": 0.2329912542154305,
-          "beta": 0.34796197022284825,
-          "alpha_jensen": 0.5206300869505279,
-          "sharpe": 2.53669374288449,
-          "expected_return_capm": 0.1153973697645642
-        },
-        "technical": {
-          "price": 93.65,
-          "rsi": 53.36,
-          "atr": 1.7071,
-          "stop_loss_atr": 90.24,
-          "ret_1m": 0.045550986323051657,
-          "ret_3m": 0.2154219828433399,
-          "dist_52w_high": 0.0
-        },
-        "fundamental": {
-          "sentiment_score": 0.833,
-          "n_headlines": 6,
-          "positive": 5,
-          "negative": 0,
-          "sample_titles": [
-            "Assessing TotalEnergies (ENXTPA:TTE) Valuation After Strait Of Hormuz Tensions And Share Buyback Activity",
-            "The US Now Ships Oil to Australia as the Strait of Hormuz Crisis Escalates",
-            "1 Brilliant Energy Stock to Buy Now and Hold for the Long Term"
-          ]
-        },
-        "macro": {
-          "regime": "bull",
-          "regime_reason": "SPY +8.9% sobre SMA200 con pendiente positiva",
-          "vix": 17.97,
-          "oil_wti": 102.03,
-          "dxy_1m": 0.0101,
-          "gold_1m": -0.0436
-        },
-        "risk": {
-          "dollars_allocated": 40.0,
-          "weight_of_total_portfolio": 0.2075,
-          "max_loss_usd_if_stop_hit": 1.46,
-          "max_loss_pct_of_capital": 0.0009,
-          "stop_loss": 90.24
-        },
-        "thesis_text": "TTE — apuesta alcista vía CALL (riesgo limitado a la prima). Strike $97.4, expiry 2026-06-26 (~37d), prima estimada $1.47/share = $147/contrato. Breakeven $98.87. Delta objetivo 0.35. Backup: TTE — horizonte CORTO PLAZO. Convicción ALTA. Setup técnico: RSI 53, momentum 1m +4.6%, momentum 3m +21.5%. Stop loss ATR en $90.24 (riesgo ≈ 3.6% desde entrada). Sentiment de noticias refuerza el setup.",
-        "key_risks": [
-          "WTI +10.8% 1m: precio elevado favorece energía pero riesgo de demand destruction."
-        ]
-      },
-      "option": {
-        "type": "call",
-        "strike": 97.4,
-        "expiry": "2026-06-26",
-        "days_to_expiry": 37,
-        "premium_per_share_est": 1.47,
-        "contract_cost_est": 146.92,
-        "breakeven": 98.87,
-        "delta_est": 0.35,
-        "sigma_used": 0.233,
-        "max_loss_usd": 146.92
-      }
-    }
-  ],
+  "options_book": [],
   "hedge_book": [],
   "portfolio": {},
   "radar": {
     "entries": [
       {
-        "ticker": "MU",
-        "sector": "Tech",
-        "price": 719.36,
-        "pct_1d": 0.0295,
-        "pct_1w": -0.1049,
-        "pct_1m": 0.6008,
-        "action": "BUY_CP",
-        "headline": "Why the memory chip supply shortage won't hurt suppliers",
-        "sentiment": 1.0,
-        "n_headlines": 6
-      },
-      {
-        "ticker": "VIST",
-        "sector": "Energy",
-        "price": 79.93,
-        "pct_1d": 0.0086,
-        "pct_1w": 0.1686,
-        "pct_1m": 0.1775,
-        "action": "BUY_CP",
-        "headline": "Vista Energy Q1 Earnings Miss on Lower Realized Commodity Prices",
-        "sentiment": 0.5,
-        "n_headlines": 6
-      },
-      {
-        "ticker": "TTE",
-        "sector": "Energy",
-        "price": 93.65,
-        "pct_1d": 0.0081,
-        "pct_1w": 0.025,
-        "pct_1m": 0.0597,
-        "action": "CALL",
-        "headline": "Update: Market Chatter: Commodity Trading Regulator Examines Unusual Ira...",
-        "sentiment": 0.833,
-        "n_headlines": 6
-      },
-      {
         "ticker": "DDOG",
         "sector": "Tech",
-        "price": 216.85,
-        "pct_1d": 0.0079,
-        "pct_1w": 0.0562,
-        "pct_1m": 0.6772,
+        "price": 214.1,
+        "pct_1d": 0.0088,
+        "pct_1w": 0.0555,
+        "pct_1m": 0.6203,
         "action": "BUY_CP",
-        "headline": "Invest in These 5 Big Data Behemoths to Gain From Wall Street Rally",
-        "sentiment": 0.333,
+        "headline": "Assessing Datadog (DDOG) Valuation After A 64% One Month Share Price Surge",
+        "sentiment": 0.667,
         "n_headlines": 6
       },
       {
-        "ticker": "GOOGL",
+        "ticker": "MU",
         "sector": "Tech",
-        "price": 389.04,
-        "pct_1d": 0.0035,
-        "pct_1w": -0.0337,
-        "pct_1m": 0.1708,
-        "action": "CALL",
-        "headline": "Earnings live updates: Target stock rises as the retailer looks to recla...",
-        "sentiment": 0.167,
+        "price": 747.63,
+        "pct_1d": 0.0214,
+        "pct_1w": -0.0366,
+        "pct_1m": 0.5337,
+        "action": "BUY_CP",
+        "headline": "Jim Cramer on Sandisk: “Gotta Let It Come Down More”",
+        "sentiment": -0.167,
         "n_headlines": 6
       },
       {
         "ticker": "ARM",
         "sector": "Tech",
-        "price": 245.6,
-        "pct_1d": 0.1006,
-        "pct_1w": 0.1103,
-        "pct_1m": 0.3995,
+        "price": 282.99,
+        "pct_1d": 0.1023,
+        "pct_1w": 0.2385,
+        "pct_1m": 0.4396,
         "action": "—",
-        "headline": "Intel, Micron, and other semiconductor stocks extend bounce ahead of Nvi...",
-        "sentiment": 0.167,
+        "headline": "Nvidia CPU comments read positively for this chip stock: analyst",
+        "sentiment": 0.833,
         "n_headlines": 6
       },
       {
-        "ticker": "AMD",
-        "sector": "Tech",
-        "price": 430.73,
-        "pct_1d": 0.0403,
-        "pct_1w": -0.0332,
-        "pct_1m": 0.514,
+        "ticker": "YPF",
+        "sector": "Energy",
+        "price": 48.53,
+        "pct_1d": 0.031,
+        "pct_1w": 0.0987,
+        "pct_1m": 0.1247,
         "action": "—",
-        "headline": "Intel, Micron, and other semiconductor stocks extend bounce ahead of Nvi...",
-        "sentiment": 1.0,
-        "n_headlines": 6
-      },
-      {
-        "ticker": "FCX",
-        "sector": "Materials",
-        "price": 58.94,
-        "pct_1d": 0.0042,
-        "pct_1w": -0.1223,
-        "pct_1m": -0.1276,
-        "action": "—",
-        "headline": "Stocks Settle Lower on Rising Bond Yields",
-        "sentiment": -0.833,
+        "headline": "YPF Sociedad Anonima (YPF) Just Overtook the 20-Day Moving Average",
+        "sentiment": 0.833,
         "n_headlines": 6
       },
       {
         "ticker": "ETHE",
         "sector": "Crypto",
-        "price": 17.16,
-        "pct_1d": 0.0035,
-        "pct_1w": -0.0618,
-        "pct_1m": -0.0797,
+        "price": 17.09,
+        "pct_1d": -0.0138,
+        "pct_1w": -0.0822,
+        "pct_1m": -0.1215,
         "action": "—",
         "headline": "Beyond Bitcoin: Crypto ETFs to Watch Amid Ethereum's Momentum",
         "sentiment": 1.0,
         "n_headlines": 6
       },
       {
-        "ticker": "YPF",
-        "sector": "Energy",
-        "price": 48.09,
-        "pct_1d": 0.0027,
-        "pct_1w": 0.1048,
-        "pct_1m": 0.1153,
+        "ticker": "CRWD",
+        "sector": "Tech",
+        "price": 653.74,
+        "pct_1d": 0.0056,
+        "pct_1w": 0.1272,
+        "pct_1m": 0.4008,
         "action": "—",
-        "headline": "YPF Sociedad Anonima (YPF) Just Overtook the 20-Day Moving Average",
+        "headline": "Mizuho Sends Urgent Message on Snowflake, CrowdStrike Ahead of Earnings",
         "sentiment": 0.833,
+        "n_headlines": 6
+      },
+      {
+        "ticker": "PBR",
+        "sector": "Energy",
+        "price": 20.31,
+        "pct_1d": 0.024,
+        "pct_1w": 0.0265,
+        "pct_1m": -0.0357,
+        "action": "—",
+        "headline": "Here Are Thursday’s Top Wall Street Analyst Research Calls: DraftKings, ...",
+        "sentiment": 0.667,
+        "n_headlines": 6
+      },
+      {
+        "ticker": "VIST",
+        "sector": "Energy",
+        "price": 76.97,
+        "pct_1d": 0.0223,
+        "pct_1w": 0.0713,
+        "pct_1m": 0.1204,
+        "action": "—",
+        "headline": "Global Growth Stocks With Up To 29% Insider Ownership",
+        "sentiment": 0.5,
+        "n_headlines": 6
+      },
+      {
+        "ticker": "CAT",
+        "sector": "Industrials",
+        "price": 868.07,
+        "pct_1d": -0.0052,
+        "pct_1w": -0.0567,
+        "pct_1m": 0.0732,
+        "action": "—",
+        "headline": "Deere Earnings Easily Beat, But There's A Catch. The Stock Is Falling.",
+        "sentiment": 0.667,
+        "n_headlines": 6
+      },
+      {
+        "ticker": "MSTR",
+        "sector": "Crypto",
+        "price": 165.42,
+        "pct_1d": -0.0024,
+        "pct_1w": -0.1153,
+        "pct_1m": -0.0777,
+        "action": "—",
+        "headline": "What Offers Mercado Libre (MELI) a Longer Runway for Extraordinary Growth?",
+        "sentiment": 0.5,
         "n_headlines": 6
       }
     ],
-    "n_up": 44,
-    "n_down": 24,
-    "biggest_winner": "ARM +10.1%",
-    "biggest_loser": "TGS -2.0%"
+    "n_up": 24,
+    "n_down": 37,
+    "biggest_winner": "ARM +10.2%",
+    "biggest_loser": "COST -2.6%"
   },
   "edgar_alerts": []
 }
