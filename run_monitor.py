@@ -520,10 +520,15 @@ def _main_locked(args):
         _now_ts = _wd_dt.now(_wd_tz.utc).timestamp()
         _cooldown_ok = (_now_ts - _last_alert_ts) > 7200  # 2h
 
-        if _age_h > 24 and _cooldown_ok:
+        # iter22: umbral 24h→26h. El daily corre 1×/día a hora fija; 24h era
+        # EXACTAMENTE la cadencia → el watchdog disparaba en el borde si el monitor
+        # checkeaba 1 min antes de que el daily refrescara latest.json (falso STALE).
+        # 26h da 2h de buffer para que el daily refresque antes de alertar.
+        _WD_STALE_H = 26
+        if _age_h > _WD_STALE_H and _cooldown_ok:
             _wd_msg = (
                 f"🚨 *WATCHDOG* — signals/latest.json STALE\n"
-                f"Edad: {_age_h:.0f}h (umbral 24h)\n"
+                f"Edad: {_age_h:.0f}h (umbral {_WD_STALE_H}h)\n"
                 f"Ultimo analyst: {_gen_str or 'desconocido'}\n"
                 f"El sistema NO esta operando. Trigger manual:\n"
                 f"`gcloud run jobs execute alpha-daily --region us-central1 --project alpha-agent-2025`"
@@ -534,7 +539,7 @@ def _main_locked(args):
                 _wd_state_path.write_text(_wd_json.dumps({"last_alert_ts": _now_ts}), encoding="utf-8")
             except Exception as _wne:
                 logger.debug("watchdog notify fail: %s", _wne)
-        elif _age_h > 24:
+        elif _age_h > _WD_STALE_H:
             logger.warning("WATCHDOG: signals stale %.0fh (alerta en cooldown)", _age_h)
         else:
             logger.info("Watchdog OK: signals %.1fh de edad", _age_h)

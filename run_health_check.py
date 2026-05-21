@@ -1,11 +1,13 @@
 """
-Health check — detecta si el bot no corrió y manda alerta.
+Health check — detecta si el ANALYST de Cloud Run no corrió y manda alerta.
 
-Corre via Task Scheduler a las 12:30 ART (después del run de las 10:35).
-Si signals/last_run.json tiene más de 4 horas → el bot falló → WhatsApp de alerta.
+iter22: reescrito. Antes leía signals/last_run.json LOCAL, que dejó de actualizarse
+cuando Cloud Run reemplazó la ejecución local (~12/05) → falsas alarmas eternas
+("bot no corrió en 217h"). Ahora mira la frescura REAL: el generated_at del
+signals/latest.json que Cloud Run pushea al repo en cada daily. Umbral 26h
+(el daily corre 1×/día hábil; 26h = se saltó un día). Fines de semana: omitido.
 
-Uso:
-    python run_health_check.py
+Corre via Task Scheduler local. Uso: python run_health_check.py
 """
 
 from __future__ import annotations
@@ -13,14 +15,14 @@ from __future__ import annotations
 import json
 import logging
 import sys
-from datetime import datetime, timedelta
+from datetime import datetime, timezone
 from pathlib import Path
 
 from dotenv import load_dotenv
 
-BASE_DIR   = Path(__file__).parent.resolve()
-HEALTH_FILE = BASE_DIR / "signals" / "last_run.json"
-LOG_DIR    = BASE_DIR / "logs"
+BASE_DIR = Path(__file__).parent.resolve()
+RAW_URL = "https://raw.githubusercontent.com/sfelix23/alpha-agent/master/signals/latest.json"
+STALE_HOURS = 26.0   # daily 1×/día hábil; >26h = se saltó (no el 4h del path local viejo)
 
 if sys.platform == "win32" and hasattr(sys.stdout, "reconfigure"):
     sys.stdout.reconfigure(encoding="utf-8", errors="replace")
@@ -29,69 +31,51 @@ logging.basicConfig(level=logging.INFO, format="[%(asctime)s] %(message)s", date
 logger = logging.getLogger("health_check")
 
 
+def _fetch_generated_at() -> datetime | None:
+    """generated_at del latest.json en el repo (lo que Cloud Run actualiza)."""
+    try:
+        import requests
+        r = requests.get(RAW_URL, timeout=15, headers={"Cache-Control": "no-cache"})
+        r.raise_for_status()
+        g = (r.json() or {}).get("generated_at", "")
+        if not g:
+            return None
+        dt = datetime.fromisoformat(g.replace("Z", "+00:00"))
+        return dt if dt.tzinfo else dt.replace(tzinfo=timezone.utc)
+    except Exception as e:
+        logger.warning("No pude leer latest.json del repo: %s", e)
+        return None
+
+
 def main() -> None:
     load_dotenv(BASE_DIR / ".env")
-
     from alpha_agent.notifications import send_whatsapp
 
-    now = datetime.now()
-
-    # No alertar en fines de semana
+    now = datetime.now(timezone.utc)
     if now.weekday() >= 5:
         logger.info("Fin de semana — health check omitido.")
         return
 
-    if not HEALTH_FILE.exists():
-        msg = (
-            f"⚠️ *HEALTH ALERT*\n"
-            f"No se encontró signals/last_run.json\n"
-            f"El bot nunca corrió o los archivos fueron borrados.\n"
-            f"Hora: {now.strftime('%H:%M')}"
-        )
-        logger.warning("last_run.json no encontrado")
-        send_whatsapp(msg)
+    gen = _fetch_generated_at()
+    if gen is None:
+        logger.info("No se pudo determinar frescura del repo — no se alerta (evita falso positivo).")
         return
 
-    try:
-        data = json.loads(HEALTH_FILE.read_text(encoding="utf-8-sig"))  # utf-8-sig strips BOM (PowerShell 5.1)
-        last_run_str = data.get("last_run", "")
-        status = data.get("status", "unknown")
-        last_run = datetime.fromisoformat(last_run_str)
-    except Exception as e:
-        logger.error("Error leyendo health file: %s", e)
-        send_whatsapp(f"⚠️ *HEALTH ALERT* — Error leyendo last_run.json: {e}")
-        return
+    age_hours = (now - gen).total_seconds() / 3600
+    logger.info("latest.json (repo) generado hace %.1fh", age_hours)
 
-    age_hours = (now - last_run).total_seconds() / 3600
-    logger.info("Último run: %s (hace %.1fh) — status: %s", last_run_str, age_hours, status)
-
-    # Umbral: si el bot corrió pero falló
-    if status in ("analyst_failed", "trader_failed"):
+    if age_hours > STALE_HOURS:
         send_whatsapp(
             f"⚠️ *HEALTH ALERT*\n"
-            f"El bot corrió pero falló: `{status}`\n"
-            f"Último intento: {last_run.strftime('%H:%M')}\n"
-            f"Revisar logs: `logs/autonomous_{now.strftime('%Y-%m-%d')}.log`"
+            f"El analyst de Cloud Run no actualizó signals en {age_hours:.0f}h "
+            f"(umbral {STALE_HOURS:.0f}h)\n"
+            f"Último: {gen.strftime('%d/%m %H:%M')} UTC\n\n"
+            f"Trigger manual:\n"
+            f"`gcloud run jobs execute alpha-daily --region us-central1 --project alpha-agent-2025`"
         )
-        return
-
-    # Umbral: si no corrió en las últimas 4 horas en día hábil
-    if age_hours > 4.0:
-        equity_str = data.get("equity", "N/D")
-        send_whatsapp(
-            f"⚠️ *HEALTH ALERT*\n"
-            f"El bot no corrió en {age_hours:.1f}h\n"
-            f"Último run exitoso: {last_run.strftime('%d/%m %H:%M')}\n"
-            f"Equity registrado: ${equity_str}\n\n"
-            f"Causas posibles:\n"
-            f"• PC apagada (no Sleep)\n"
-            f"• Error en Task Scheduler\n"
-            f"• Python crash sin retry\n\n"
-            f"Revisar: Task Scheduler → Alpha Analyst"
-        )
-        logger.warning("HEALTH ALERT enviado — bot no corrió en %.1fh", age_hours)
+        logger.warning("HEALTH ALERT enviado — analyst Cloud Run stale %.1fh", age_hours)
     else:
-        logger.info("Sistema OK — último run hace %.1fh con status '%s'", age_hours, status)
+        logger.info("Sistema OK — analyst Cloud Run corrió hace %.1fh.", age_hours)
 
 
 if __name__ == "__main__":
