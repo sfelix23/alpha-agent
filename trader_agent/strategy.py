@@ -244,8 +244,10 @@ def execute(broker: BrokerBase, *, dry_run: bool = True, max_capital: float | No
     positions = broker.get_positions()
     invested = total_invested_notional(positions)
     equity_intents = diff_against_current(target, positions)
-    # Guard: no exceder capital disponible (evita sobre-invertir con margin)
-    equity_intents = check_capital_headroom(capital, positions, equity_intents)
+    # iter19: headroom = min(buying_power, equity - invested). Pasamos EQUITY (no el
+    # capital ya capeado por bp) + bp por separado para evitar la doble resta de
+    # invested que dejaba 56% en cash. Sin margen: tope al equity y al bp real.
+    equity_intents = check_capital_headroom(equity, positions, equity_intents, buying_power=bp)
     logger.info(
         "Equity plan: %d órdenes (capital=$%.2f, ya invertido=$%.2f, headroom=$%.2f)",
         len(equity_intents), capital, invested, capital - invested,

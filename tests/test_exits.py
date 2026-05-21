@@ -1,5 +1,5 @@
-"""Tests de protección de ganadores + reconciliación de holds (iter18)."""
-from trader_agent.portfolio import diff_against_current
+"""Tests de protección de ganadores + reconciliación + headroom (iter18-19)."""
+from trader_agent.portfolio import diff_against_current, check_capital_headroom, TradeIntent
 
 
 class _Pos:
@@ -27,6 +27,26 @@ def test_winner_in_target_still_trims_overexposure():
     intents = diff_against_current(target, positions, threshold=25.0)
     sells = [i for i in intents if i.side == "SELL" and i.ticker == "WIN"]
     assert sells and abs(sells[0].notional - 400.0) < 1e-6  # vende el exceso 500-100
+
+
+def test_headroom_no_double_subtraction(tmp_path):
+    # iter19: equity 1722, bp 970, invertido 751 → headroom ~970 (no 219).
+    pos = [_Pos("HELD", 751.0, 751.0, 1.0)]
+    buys = [TradeIntent(ticker="NEW", side="BUY", notional=900.0, horizon="CP",
+                        stop_loss=None, take_profit=None)]
+    out = check_capital_headroom(1722.0, pos, list(buys), buying_power=970.0)
+    deployed = sum(i.notional for i in out if i.side == "BUY")
+    assert deployed >= 850  # despliega el cash real, no $219
+
+
+def test_headroom_no_margin_abuse():
+    # equity 1722, invertido 1600, bp alto → solo ~122 libres (sin margen)
+    pos = [_Pos("HELD", 1600.0, 1600.0, 1.0)]
+    buys = [TradeIntent(ticker="NEW", side="BUY", notional=900.0, horizon="CP",
+                        stop_loss=None, take_profit=None)]
+    out = check_capital_headroom(1722.0, pos, list(buys), buying_power=5000.0)
+    deployed = sum(i.notional for i in out if i.side == "BUY")
+    assert deployed <= 200  # no usa margen aunque bp lo permita
 
 
 def test_reconcile_hold_days_never_negative(tmp_path, monkeypatch):

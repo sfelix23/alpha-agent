@@ -238,11 +238,18 @@ def check_capital_headroom(
     capital: float,
     positions: list[Position],
     intents: list[TradeIntent],
+    buying_power: float | None = None,
 ) -> list[TradeIntent]:
     """
     Filtra intents de BUY para no exceder el capital disponible.
     Acredita el producido de los SELLs pendientes al headroom para que
     la rotación (sell viejo → buy nuevo) use todo el capital disponible.
+
+    iter19 fix del cash drag: el headroom correcto = min(buying_power, equity - invested).
+    Antes se pasaba capital=min(equity, bp) y se restaba invested OTRA VEZ → doble
+    resta (bp ya excluye lo invertido) → desplegaba ~$219 cuando había ~$970 libres.
+    Ahora `capital` debe ser EQUITY; `buying_power` capea al cash real del broker.
+    Si buying_power es None (callers viejos/tests), mantiene el comportamiento previo.
     """
     invested = total_invested_notional(positions)
     # Los SELLs del mismo ciclo liberan capital: los acreditamos al headroom.
@@ -250,7 +257,12 @@ def check_capital_headroom(
     pending_sell_proceeds = sum(
         i.notional for i in intents if i.side == "SELL"
     )
+    # Tope sin margen: nunca exponer más que el equity (equity - invested = cash libre).
     headroom = capital - invested + pending_sell_proceeds
+    # Tope duro por buying power real del broker (cash liquidado disponible HOY).
+    if buying_power is not None:
+        headroom = min(headroom, buying_power + pending_sell_proceeds)
+    headroom = max(0.0, headroom)
 
     filtered = []
     buy_total = 0.0
