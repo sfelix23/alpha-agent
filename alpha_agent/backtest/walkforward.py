@@ -164,35 +164,38 @@ def _build_target_weights(
     technical_snapshot: pd.DataFrame,
 ) -> pd.Series:
     """
-    Pipeline completo: CAPM + scoring (con MACD/EMA/volumen) + Markowitz + Kelly blend.
-    Devuelve pesos target para LP sleeve.
+    iter21: modela la estrategia LIVE real = sleeve CP momentum (el único activo).
+
+    Antes usaba el sleeve LP (scores["long_term"]) × PARAMS.weight_long_term=0.0 →
+    todo a cash → backtest 0%. Ahora usa scores["short_term"] (CP, ya filtrado a
+    get_effective_cp_universe en build_scores), toma top_n_short_term, pondera por
+    score dentro del sleeve y despliega weight_short_term (~0.90). Mismo scoring que
+    el analyst live (CAPM + técnico + memoria), sin look-ahead (solo data hasta t).
     """
     capm = compute_capm_metrics(closes_window, benchmark_window)
     if capm.empty:
         return pd.Series(dtype=float)
 
     scores = build_scores(capm, technical_snapshot, closes=closes_window)
-    lp_df = scores["long_term"]
-    if lp_df.empty or len(lp_df) < 2:
+    cp_df = scores.get("short_term")
+    if cp_df is None or cp_df.empty:
         return pd.Series(dtype=float)
 
-    try:
-        port = optimize_portfolio(closes_window, capm["mu_anual"], candidates=lp_df.index.tolist())
-    except Exception as e:
-        logger.debug("Optimize falló en rebalance: %s", e)
+    n = max(1, int(PARAMS.top_n_short_term))
+    top = cp_df.head(n)
+    if top.empty:
         return pd.Series(dtype=float)
 
-    weights = port["weights"]
-    # Kelly blend: combina Markowitz con half-Kelly para mejorar retorno compuesto
-    try:
-        weights = blend_markowitz_kelly(weights, capm)
-    except Exception:
-        pass
-
-    top = weights[weights > 0].head(PARAMS.top_n_long_term)
-    if top.sum() == 0:
+    # Peso por score dentro del sleeve (score_st puede ser negativo → shift a positivo).
+    if "score_st" in top.columns:
+        sc = top["score_st"].astype(float)
+        sc = sc - sc.min() + 0.10   # asegura pesos positivos manteniendo el ranking
+    else:
+        sc = pd.Series(1.0, index=top.index)
+    if sc.sum() <= 0:
         return pd.Series(dtype=float)
-    return top / top.sum() * PARAMS.weight_long_term
+    w = sc / sc.sum()
+    return w * float(PARAMS.weight_short_term)
 
 
 def _technical_snapshot(ohlc: dict[str, pd.DataFrame], as_of: pd.Timestamp) -> pd.DataFrame:
