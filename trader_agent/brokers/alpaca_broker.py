@@ -129,9 +129,24 @@ class AlpacaBroker(BrokerBase):
         }
         side = side_map.get(order.side.upper(), OrderSide.BUY)
 
+        # iter20: clamp del SELL a la cantidad realmente disponible. Evita el error
+        # "insufficient qty available" cuando el qty pedido (notional/price redondeado)
+        # excede por decimales lo que se tiene (ej: pidió 5.0376 vs 5.0347 disponibles).
+        sell_qty = order.qty
+        if order.side.upper() == "SELL":
+            try:
+                pos = self._trading.get_open_position(order.ticker)
+                avail = float(getattr(pos, "qty_available", None) or pos.qty or 0)
+                if avail > 0 and order.qty > avail:
+                    logger.info("SELL %s: clamp qty %.4f → %.4f (disponible)",
+                                order.ticker, order.qty, avail)
+                    sell_qty = avail
+            except Exception as _e:
+                logger.debug("clamp SELL %s: no pude leer posición (%s)", order.ticker, _e)
+
         common = dict(
             symbol=order.ticker,
-            qty=order.qty,
+            qty=sell_qty,
             side=side,
             time_in_force=TimeInForce.DAY,
             client_order_id=order.client_order_id,

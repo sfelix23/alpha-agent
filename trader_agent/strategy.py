@@ -698,11 +698,26 @@ def _submit_equity_intents(
                 except Exception as _db_exc:
                     logger.debug("trade_db log error: %s", _db_exc)
         except Exception as e:
-            logger.error("Falló equity %s: %s", intent.ticker, e)
-            fills.append({
-                "asset": "equity", "ticker": intent.ticker, "side": intent.side,
-                "qty": 0, "status": f"error: {e}", "order_id": None,
-            })
+            msg = str(e).lower()
+            # iter20: PDT (Pattern Day Trading) — cuenta <$25k no puede hacer >3
+            # day-trades/5d. Alpaca bloquea el SELL. NO es un error del sistema:
+            # lo logueamos como info y la posición sigue (el monitor la gestiona
+            # con stop/trailing). Evita el spam de ERROR y respeta la regla.
+            if "pattern day trading" in msg or "40310100" in msg:
+                logger.info(
+                    "PDT: %s %s diferido (límite day-trade <$25k) — la posición sigue, "
+                    "el monitor la gestiona", intent.side, intent.ticker,
+                )
+                fills.append({
+                    "asset": "equity", "ticker": intent.ticker, "side": intent.side,
+                    "qty": 0, "status": "pdt_deferred", "order_id": None,
+                })
+            else:
+                logger.error("Falló equity %s: %s", intent.ticker, e)
+                fills.append({
+                    "asset": "equity", "ticker": intent.ticker, "side": intent.side,
+                    "qty": 0, "status": f"error: {e}", "order_id": None,
+                })
     return fills
 
 
