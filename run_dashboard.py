@@ -329,6 +329,59 @@ def _deployment_panel(equity, positions, signals_data) -> str:
 </div>"""
 
 
+def _universe_panel() -> str:
+    """Iter21: universo CP efectivo + historial de rotación automática.
+
+    Muestra qué nombres mira el sleeve CP hoy (estático ± rotación ± veto) y las
+    últimas rotaciones automáticas. Observabilidad del motor de iter17.
+    """
+    try:
+        from alpha_agent.config import get_effective_cp_universe
+        import json as _json
+        eff = sorted(get_effective_cp_universe())
+        ov_path = BASE_DIR / "signals" / "cp_universe_overrides.json"
+        ov = {}
+        if ov_path.exists():
+            try:
+                ov = _json.loads(ov_path.read_text(encoding="utf-8"))
+            except Exception:
+                ov = {}
+    except Exception:
+        return ""
+    if not eff:
+        return ""
+    vetoed = ov.get("vetoed", [])
+    hist = (ov.get("history", []) or [])[-5:]
+    chips = "".join(
+        f'<span style="display:inline-block;padding:3px 8px;margin:2px;border-radius:4px;'
+        f'background:var(--s2);font-family:var(--mono);font-size:.72rem">{t}</span>'
+        for t in eff
+    )
+    hist_html = ""
+    if hist:
+        rows = "".join(
+            f'<div style="font-size:.74rem;padding:4px 0;color:var(--mt)">'
+            f'<span style="color:#3fb950">+{h.get("in")}</span> / '
+            f'<span style="color:#f85149">&minus;{h.get("out")}</span> '
+            f'<span style="opacity:.6">({(h.get("ts") or "")[:10]})</span></div>'
+            for h in reversed(hist)
+        )
+        hist_html = (f'<div style="margin-top:10px;padding-top:8px;border-top:1px solid var(--bd)">'
+                     f'<div style="font-size:.66rem;color:var(--mt);text-transform:uppercase;margin-bottom:4px">'
+                     f'Rotaciones automáticas</div>{rows}</div>')
+    veto_html = (f'<div style="margin-top:8px;font-size:.72rem;color:#f85149">🚫 Vetados: '
+                 f'{", ".join(vetoed)}</div>') if vetoed else ""
+    return f"""<div class="card">
+  <div class="card-head"><div>
+    <div class="card-title">UNIVERSO CP ACTIVO ({len(eff)})</div>
+    <div class="card-sub">Lo que mira el sleeve CP hoy · rotación automática semanal (iter17)</div>
+  </div></div>
+  <div style="margin-top:6px">{chips}</div>
+  {veto_html}
+  {hist_html}
+</div>"""
+
+
 def _learnings_panel() -> str:
     """Iter13: "Segundo Cerebro" — lecciones que el sistema aprendió de sus trades.
 
@@ -3171,6 +3224,7 @@ def build_html(equity, initial, history, positions, signals_data,
     adv_metrics    = _deployment_panel(equity, positions, signals_data)  # iter15: despliegue
     adv_metrics   += _advanced_metrics_panel(history, qqq_history, spy_history, brk_history)  # iter11/12
     adv_metrics   += _learnings_panel()  # iter13: segundo cerebro
+    adv_metrics   += _universe_panel()   # iter21: universo CP + rotación
     t_resumen    = _tab_resumen(equity, initial, regime, vix, wti, gold, dxy,
                                 history, spy_history, signals_data, metrics, age_hours,
                                 perf_data=perf_data, qqq_history=qqq_history, mc_result=mc_result,

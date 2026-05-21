@@ -810,6 +810,21 @@ def _main_locked(args):
             pnl_pct = pnl_pct_from_position(pos)
 
             signal = get_signal_for_ticker(signals_data, ticker)
+
+            # iter21: DUST SWEEP — limpia restos chicos sin señal (legacy de rotaciones
+            # viejas). $1-$15 sin señal se cierran (sellable). Sub-$1 son invendibles en
+            # Alpaca (min $1 notional) → se ignoran. No son day-trades (dust viejo) → PDT-safe.
+            _mv = pos.market_value or 0
+            if not signal and 1.0 <= _mv <= 15.0:
+                logger.info("Dust sweep: %s mv $%.2f sin señal → cerrar", ticker, _mv)
+                if args.live and not args.dry_run:
+                    try:
+                        broker.close_position(ticker)
+                        alerts.append(f"🧹 Dust: {ticker} cerrada (${_mv:.2f})")
+                    except Exception as _de:
+                        logger.debug("dust sweep %s no cerró (%s)", ticker, _de)
+                continue
+
             if not signal:
                 # Sin señal en latest.json: posición huérfana (LP o DT abierta sin signal activo).
                 # Aplicar stop de emergencia: -12% LP / -8% DT para evitar pérdidas ilimitadas.
