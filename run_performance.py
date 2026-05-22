@@ -107,8 +107,34 @@ def main() -> None:
     except Exception:
         pass
 
-    week_return_pct  = week_pnl / capital_base * 100 if capital_base > 0 else 0.0
-    month_return_pct = month_pnl / capital_base * 100 if capital_base > 0 else 0.0
+    # iter24-fix: el retorno del portfolio es el CAMBIO REAL DE EQUITY (mark-to-market),
+    # no solo el P&L realizado de trades cerrados. Antes usaba week_pnl/1600 → ignoraba
+    # lo no realizado y daba un alpha inconsistente con el rebalancer (que sí usa equity).
+    def _equity_days_ago(n: int) -> float | None:
+        try:
+            import json as _j
+            data = _j.loads((Path("signals") / "equity_snapshots.json").read_text(encoding="utf-8"))
+            if not isinstance(data, list) or len(data) < 2:
+                return None
+            vals = [(e.get("ts") or e.get("date") or "", e.get("equity", e.get("v")))
+                    for e in data if e.get("equity", e.get("v")) is not None]
+            if len(vals) < 2:
+                return None
+            # el snapshot más cercano a hace n días = el de índice -(n+1) si hay historia
+            idx = max(0, len(vals) - 1 - n)
+            return float(vals[idx][1])
+        except Exception:
+            return None
+
+    if equity_now and equity_now > 0:
+        eq_1w = _equity_days_ago(5) or capital_base
+        eq_1m = _equity_days_ago(21) or capital_base
+        week_return_pct  = (equity_now / eq_1w - 1) * 100 if eq_1w > 0 else 0.0
+        month_return_pct = (equity_now / eq_1m - 1) * 100 if eq_1m > 0 else 0.0
+    else:
+        # fallback (sin equity de Alpaca): usar realizado como antes
+        week_return_pct  = week_pnl / capital_base * 100 if capital_base > 0 else 0.0
+        month_return_pct = month_pnl / capital_base * 100 if capital_base > 0 else 0.0
 
     spy_1w  = _spy_returns(5)
     spy_1m  = _spy_returns(21)
