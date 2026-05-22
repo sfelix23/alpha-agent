@@ -94,6 +94,15 @@ def init_db() -> None:
                 if "duplicate column" not in str(e).lower():
                     raise
 
+        # iter23: backfill — limpiar hold_days NEGATIVOS de datos viejos (pre-fix
+        # iter18 emparejaba SELLs con BUYs posteriores → hold negativo, ensuciaba el
+        # avg_hold del reporte semanal "-2.3d/-0.9d"). No sabemos el hold real de esos
+        # trades mal-pareados → los clampeamos a 0. Idempotente.
+        try:
+            con.execute("UPDATE trades SET hold_days = 0 WHERE hold_days < 0")
+        except sqlite3.OperationalError:
+            pass
+
 
 # Init en module-load — mantiene compatibilidad con el patrón previo.
 # init_db() también es público por si run_*.py quieren llamarlo explícito.

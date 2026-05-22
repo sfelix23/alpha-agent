@@ -525,6 +525,32 @@ def _main_locked(args):
         # checkeaba 1 min antes de que el daily refrescara latest.json (falso STALE).
         # 26h da 2h de buffer para que el daily refresque antes de alertar.
         _WD_STALE_H = 26
+
+        # iter23: cross-check con workflow_status.json. Si _pull_state falla
+        # intermitentemente, el monitor lee el latest.json viejo de la imagen Docker
+        # y el watchdog falsea STALE aunque el daily SÍ corrió. workflow_status.json
+        # (que el daily actualiza al final) es la fuente confiable de "cuándo corrió
+        # el analyst". Si alpha_daily corrió hace <26h, NO alertamos.
+        try:
+            _wf_path = BASE_DIR / "signals" / "workflow_status.json"
+            if _wf_path.exists():
+                _wf = _wd_json.loads(_wf_path.read_text(encoding="utf-8"))
+                _wf_ts = (_wf.get("alpha_daily", {}) or {}).get("ts", "")
+                if _wf_ts:
+                    _wf_dt = _wd_dt.fromisoformat(_wf_ts)
+                    if _wf_dt.tzinfo is None:
+                        _wf_dt = _wf_dt.replace(tzinfo=_wd_tz.utc)
+                    _wf_age_h = (_wd_dt.now(_wd_tz.utc) - _wf_dt).total_seconds() / 3600
+                    if _wf_age_h < _WD_STALE_H and _age_h > _WD_STALE_H:
+                        logger.info(
+                            "Watchdog: latest.json parece stale (%.0fh) pero alpha_daily "
+                            "corrió hace %.1fh (workflow_status) → _pull_state hiccup, NO alerto",
+                            _age_h, _wf_age_h,
+                        )
+                        _age_h = _wf_age_h  # usar la fuente confiable
+        except Exception as _wfe:
+            logger.debug("watchdog workflow_status cross-check falló: %s", _wfe)
+
         if _age_h > _WD_STALE_H and _cooldown_ok:
             _wd_msg = (
                 f"🚨 *WATCHDOG* — signals/latest.json STALE\n"
@@ -831,6 +857,13 @@ def _main_locked(args):
                 continue
 
             if not signal:
+                # iter23: dust invendible (sub-$1). Alpaca no deja vender <$1 notional,
+                # así que el orphan stop intentaba cerrar MSTR ($0.64) cada 30min, fallaba
+                # y RE-DISPARABA la alerta → spam. Lo ignoramos: ni alerta ni intento de
+                # cierre (no se puede). Solo log debug.
+                if _mv < 1.0:
+                    logger.debug("Dust invendible %s ($%.2f) sin señal — ignorado (sub-$1)", ticker, _mv)
+                    continue
                 # Sin señal en latest.json: posición huérfana (LP o DT abierta sin signal activo).
                 # Aplicar stop de emergencia: -12% LP / -8% DT para evitar pérdidas ilimitadas.
                 _orphan_stop_pct = 0.08 if pos.ticker in getattr(pos, "sleeve", "") else 0.12
