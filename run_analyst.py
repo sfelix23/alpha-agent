@@ -219,6 +219,7 @@ def main() -> None:
         object.__setattr__(PARAMS, "weight_short_term", alloc.cp_pct)
         object.__setattr__(PARAMS, "weight_long_term",  alloc.lp_pct)
         object.__setattr__(PARAMS, "top_n_short_term",  alloc.n_cp_positions)
+        object.__setattr__(PARAMS, "max_hold_days_cp",  alloc.cp_max_hold_days)  # iter24: panel régimen
         log.info(
             "🤖 AI Allocation → LP=%.0f%% CP=%.0f%% cash=%.0f%% | %d CP | max %dd | nivel=%d | %s",
             alloc.lp_pct * 100, alloc.cp_pct * 100,

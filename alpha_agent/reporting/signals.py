@@ -227,6 +227,7 @@ def build_signals(
             "top_n_long_term": PARAMS.top_n_long_term,
             "top_n_short_term": PARAMS.top_n_short_term,
             "top_n_bearish": PARAMS.top_n_bearish,
+            "max_hold_days_cp": getattr(PARAMS, "max_hold_days_cp", 0),  # iter24: para panel régimen
             "max_weight_per_asset": PARAMS.max_weight_per_asset,
             "enable_short_equity": PARAMS.enable_short_equity,
             "enable_options": PARAMS.enable_options,

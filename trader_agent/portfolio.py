@@ -158,7 +158,12 @@ def diff_against_current(
         for p in positions
         if getattr(p, "asset_class", "equity") == "equity"
     }
-    _WINNER_KEEP_PCT = 3.0  # no rotar afuera ganadores con +3% — dejá correr el momentum
+    # iter24: NO rotar a CASH posiciones que no son perdedoras. En una cuenta cash,
+    # vender por rotación deja el producido SIN LIQUIDAR (T+1) → no se puede recomprar
+    # el mismo día → cash drag (hoy 33% desplegado tras vender VIST+MU ~flat). Momentum
+    # sano = cortar perdedores, mantener el resto. Solo rotamos a cash si pnl < -3%
+    # (perdedor real); el monitor maneja stop/TP/trailing/max-hold de los demás.
+    _ROTATE_LOSER_PCT = -3.0
     intents: list[TradeIntent] = []
 
     # Tickers con sobre-exposición respecto al target → SELL el exceso
@@ -166,15 +171,12 @@ def diff_against_current(
         target_notional = target.get(t, {}).get("notional", 0.0)
         delta = target_notional - mv
         if delta < -threshold:
-            # iter18 WINNER PROTECTION: si el ticker salió del target (target=0) pero
-            # la posición está GANANDO (≥+3%), NO la vendemos por rotación. La dejamos
-            # correr; el monitor la gestiona con stop/trailing. Diagnóstico: los winners
-            # salían chicos (+2.4% prom) porque el rebalanceo diario los rotaba vivos.
             cost = _cost.get(t, 0.0)
             pnl_pct = ((mv - cost) / cost * 100) if cost > 0 else 0.0
-            if target_notional <= 0 and pnl_pct >= _WINNER_KEEP_PCT:
+            # Solo rotación a cash (target=0): mantener si NO es perdedor (≥ -3%).
+            if target_notional <= 0 and pnl_pct >= _ROTATE_LOSER_PCT:
                 logger.info(
-                    "Winner protection: %s +%.1f%% fuera de target — NO rotar (deja correr)",
+                    "Hold protection: %s %.1f%% fuera de target pero no perdedor — NO rotar a cash",
                     t, pnl_pct,
                 )
                 continue

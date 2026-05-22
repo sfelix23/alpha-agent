@@ -294,6 +294,9 @@ def _deployment_panel(equity, positions, signals_data) -> str:
                   + float(params.get("weight_options", 0) or 0)) * 100
     if target_pct <= 0:
         target_pct = 90.0  # fallback razonable (perfil agresivo)
+    # iter24: el sleeve de opciones usa el MISMO capital → cp+opt podía dar >100%
+    # (104%), imposible sin margen. Cap a 97% (deja ~3% buffer de cash).
+    target_pct = min(97.0, target_pct)
     gap = target_pct - dep_pct
 
     if gap <= 8:
@@ -2605,6 +2608,24 @@ def _tab_historial(trades: list[dict]) -> str:
 
 def _tab_daytrader(dt_trades: list[dict], dt_scan: dict | None = None) -> str:
     """Day Trading tab — sleeve DT, cuenta Alpaca separada."""
+    # iter24: DT desactivado (iter15). Mostrar estado real, no el "corre via GHA 11:15"
+    # viejo (GHA está apagado y DT hace early-exit). Si no hay trades, banner DESACTIVADO.
+    try:
+        from alpha_agent.config import PARAMS as _P
+        _dt_on = getattr(_P, "enable_daytrading", True)
+    except Exception:
+        _dt_on = True
+    if not _dt_on and not [t for t in dt_trades if t.get("side", "").upper() == "BUY"]:
+        return (
+            '<div class="tab-content" id="tab-daytrader">'
+            '<div class="card"><p class="muted" style="padding:40px 60px;text-align:center;font-size:1rem">'
+            '🚫 <b>Day Trading DESACTIVADO</b> (iter15)<br>'
+            '<span style="font-size:.82rem;color:var(--mt)">'
+            'Decisión data-driven: nunca encontró setup válido (0 trades).<br>'
+            'El capital y el foco están en el sleeve CP. Reversible: '
+            '<code>config.enable_daytrading=True</code>.'
+            '</span></p></div></div>'
+        )
     buys        = [t for t in dt_trades if t.get("side", "").upper() == "BUY"]
     closed      = [t for t in buys if t.get("closed_at")]
     open_trades = [t for t in buys if not t.get("closed_at")]
@@ -2967,6 +2988,22 @@ def _tab_daytrader(dt_trades: list[dict], dt_scan: dict | None = None) -> str:
 
 def _tab_scalper(scalp_trades: list[dict]) -> str:
     """Scalping tab — sleeve SCALP, cuenta Alpaca separada (ALPACA_SCALP_*)."""
+    # iter24: scalping desactivado (iter15). Banner DESACTIVADO si no hay trades.
+    try:
+        from alpha_agent.config import PARAMS as _P
+        _sc_on = getattr(_P, "enable_scalping", True)
+    except Exception:
+        _sc_on = True
+    if not _sc_on and not [t for t in scalp_trades if t.get("side", "").upper() in ("BUY", "SELL")]:
+        return (
+            '<div class="tab-content" id="tab-scalping">'
+            '<div class="card"><p class="muted" style="padding:40px 60px;text-align:center;font-size:1rem">'
+            '🚫 <b>Scalping DESACTIVADO</b> (iter15)<br>'
+            '<span style="font-size:.82rem;color:var(--mt)">'
+            'Sin edge medible (6 abiertas / 0 cerradas / $0 realizado) y requería PC+WebSocket.<br>'
+            'Reversible: <code>config.enable_scalping=True</code>.'
+            '</span></p></div></div>'
+        )
     buys        = [t for t in scalp_trades if t.get("side", "").upper() in ("BUY", "SELL")]
     closed      = [t for t in buys if t.get("closed_at")]
     open_trades = [t for t in buys if not t.get("closed_at")]
