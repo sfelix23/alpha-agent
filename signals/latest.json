@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-05-21T13:44:11",
+  "generated_at": "2026-05-22T13:43:55",
   "horizon": "medium_long_70_30_high_conviction",
   "capital_usd": 1600.0,
   "params": {
@@ -10,7 +10,7 @@
     "max_beta_lp": 2.8,
     "min_sharpe_lp": 0.1,
     "top_n_long_term": 2,
-    "top_n_short_term": 2,
+    "top_n_short_term": 0,
     "top_n_bearish": 1,
     "max_weight_per_asset": 0.55,
     "enable_short_equity": false,
@@ -18,368 +18,165 @@
   },
   "macro": {
     "regime": "bull",
-    "regime_reason": "SPY +9.2% sobre SMA200 con pendiente positiva",
+    "regime_reason": "SPY +10.5% sobre SMA200 con pendiente positiva",
     "prices": {
-      "oil_wti": 102.3,
-      "oil_brent": 108.87,
-      "gold": 4496.5,
-      "dxy": 99.446,
-      "vix": 17.72,
-      "us10y": 4.615
+      "oil_wti": 96.5,
+      "oil_brent": 103.36,
+      "gold": 4527.6,
+      "dxy": 99.231,
+      "vix": 16.72,
+      "us10y": 4.536
     },
     "changes_1d": {
-      "oil_wti": 0.0411,
-      "oil_brent": 0.0367,
-      "gold": -0.0077,
-      "dxy": 0.0034,
-      "vix": 0.0161,
-      "us10y": 0.0094
+      "oil_wti": 0.0016,
+      "oil_brent": 0.0076,
+      "gold": -0.0027,
+      "dxy": 0.0004,
+      "vix": -0.0024,
+      "us10y": -0.0109
     },
     "changes_1m": {
-      "oil_wti": 0.1005,
-      "oil_brent": 0.0683,
-      "gold": -0.0499,
-      "dxy": 0.0087,
-      "vix": -0.0634,
-      "us10y": 0.0748
+      "oil_wti": 0.0068,
+      "oil_brent": -0.0163,
+      "gold": -0.0377,
+      "dxy": 0.0044,
+      "vix": -0.1341,
+      "us10y": 0.0493
     },
-    "spy_vs_sma200": 0.092
+    "spy_vs_sma200": 0.1051
   },
   "long_term": [],
-  "short_term": [
-    {
-      "ticker": "MU",
-      "side": "BUY",
-      "horizon": "CP",
-      "price": 748.34,
-      "stop_loss": 688.47,
-      "take_profit": 898.02,
-      "weight_target": 0.6382,
-      "thesis": {
-        "ticker": "MU",
-        "horizon": "CP",
-        "conviction": "MEDIA",
-        "quant": {
-          "mu_anual": 2.3396207666673177,
-          "sigma_anual": 0.6382462556122933,
-          "beta": 2.312774545868971,
-          "alpha_jensen": 1.8123262256685524,
-          "sharpe": 3.5951965976925364,
-          "expected_return_capm": 0.5272945409987652
-        },
-        "technical": {
-          "price": 748.34,
-          "rsi": 68.82,
-          "atr": 59.9379,
-          "stop_loss_atr": 628.47,
-          "ret_1m": 0.5534853624652922,
-          "ret_3m": 0.778414892411118,
-          "dist_52w_high": -0.06879413889946695
-        },
-        "fundamental": {
-          "sentiment_score": -0.167,
-          "n_headlines": 6,
-          "positive": 2,
-          "negative": 3,
-          "sample_titles": [
-            "Jim Cramer on Sandisk: “Gotta Let It Come Down More”",
-            "Jim Cramer Says “I’ve Been Waiting for Micron to Come Down”",
-            "Jim Cramer on Western Digital: “That Seems Too Rich to Me”"
-          ]
-        },
-        "macro": {
-          "regime": "bull",
-          "regime_reason": "SPY +9.2% sobre SMA200 con pendiente positiva",
-          "vix": 17.72,
-          "oil_wti": 102.3,
-          "dxy_1m": 0.0087,
-          "gold_1m": -0.0499
-        },
-        "risk": {
-          "dollars_allocated": 1095.14,
-          "weight_of_total_portfolio": 0.6845,
-          "max_loss_usd_if_stop_hit": 175.42,
-          "max_loss_pct_of_capital": 0.1096,
-          "stop_loss": 628.47
-        },
-        "thesis_text": "MU — horizonte CORTO PLAZO. Convicción MEDIA. Setup técnico: RSI 69, momentum 1m +55.3%, momentum 3m +77.8%. Stop loss ATR en $628.47 (riesgo ≈ 16.0% desde entrada).",
-        "key_risks": [
-          "Sin riesgos macro mayores detectados; el riesgo principal es idiosincrático del activo."
-        ],
-        "swarm": {
-          "go": false,
-          "size_factor": 0.0,
-          "reasoning": "Meta-LP heuristico (LLM OFF): EV=+ 4 NO-GO → SKIP",
-          "go_count": 0,
-          "ev": 940.7,
-          "ev_positive": true,
-          "opinions": [
-            {
-              "agent": "TechnicalCP",
-              "stance": "NO-GO",
-              "confidence": 0,
-              "reasoning": "llm_disabled",
-              "cot": "→ Anthropic deshabilitado por flag (ENABLE_ANTHROPIC OFF)."
-            },
-            {
-              "agent": "MacroLP",
-              "stance": "NO-GO",
-              "confidence": 0,
-              "reasoning": "llm_disabled",
-              "cot": "→ Anthropic deshabilitado por flag (ENABLE_ANTHROPIC OFF)."
-            },
-            {
-              "agent": "SentimentLP",
-              "stance": "NO-GO",
-              "confidence": 0,
-              "reasoning": "llm_disabled",
-              "cot": "→ Anthropic deshabilitado por flag (ENABLE_ANTHROPIC OFF)."
-            },
-            {
-              "agent": "RiskAuditorLP",
-              "stance": "NO-GO",
-              "confidence": 0,
-              "reasoning": "llm_disabled",
-              "cot": "→ Anthropic deshabilitado por flag (ENABLE_ANTHROPIC OFF)."
-            }
-          ],
-          "debate_id": "MU-CP-1779371054"
-        }
-      },
-      "option": null
-    },
-    {
-      "ticker": "DDOG",
-      "side": "BUY",
-      "horizon": "CP",
-      "price": 214.1,
-      "stop_loss": 196.97,
-      "take_profit": 256.92,
-      "weight_target": 0.3618,
-      "thesis": {
-        "ticker": "DDOG",
-        "horizon": "CP",
-        "conviction": "ALTA",
-        "quant": {
-          "mu_anual": 1.2405952160771567,
-          "sigma_anual": 0.5159876993687617,
-          "beta": 1.273173880596712,
-          "alpha_jensen": 0.9300938452449665,
-          "sharpe": 2.317100228435289,
-          "expected_return_capm": 0.3105013708321902
-        },
-        "technical": {
-          "price": 214.1,
-          "rsi": 88.7,
-          "atr": 12.0421,
-          "stop_loss_atr": 190.02,
-          "ret_1m": 0.6744877606873878,
-          "ret_3m": 1.0864397072614307,
-          "dist_52w_high": -0.004880259459704828
-        },
-        "fundamental": {
-          "sentiment_score": 0.667,
-          "n_headlines": 6,
-          "positive": 4,
-          "negative": 0,
-          "sample_titles": [
-            "Assessing Datadog (DDOG) Valuation After A 64% One Month Share Price Surge",
-            "After a 50% Drop, Is ServiceNow Stock Worth Buying?",
-            "Wedbush Remains Bullish On Dynatrace (DT) With $48 PT And Outperform Rating"
-          ]
-        },
-        "macro": {
-          "regime": "bull",
-          "regime_reason": "SPY +9.2% sobre SMA200 con pendiente positiva",
-          "vix": 17.72,
-          "oil_wti": 102.3,
-          "dxy_1m": 0.0087,
-          "gold_1m": -0.0499
-        },
-        "risk": {
-          "dollars_allocated": 344.86,
-          "weight_of_total_portfolio": 0.2155,
-          "max_loss_usd_if_stop_hit": 38.79,
-          "max_loss_pct_of_capital": 0.0242,
-          "stop_loss": 190.02
-        },
-        "thesis_text": "DDOG — horizonte CORTO PLAZO. Convicción ALTA. Setup técnico: RSI 89, momentum 1m +67.4%, momentum 3m +108.6%. ⚠️ RSI en sobrecompra → riesgo de reversión a la media. Stop loss ATR en $190.02 (riesgo ≈ 11.2% desde entrada). Sentiment de noticias refuerza el setup.",
-        "key_risks": [
-          "Sin riesgos macro mayores detectados; el riesgo principal es idiosincrático del activo."
-        ],
-        "swarm": {
-          "go": false,
-          "size_factor": 0.0,
-          "reasoning": "Meta-LP heuristico (LLM OFF): EV=+ 4 NO-GO → SKIP",
-          "go_count": 0,
-          "ev": 470.34,
-          "ev_positive": true,
-          "opinions": [
-            {
-              "agent": "TechnicalCP",
-              "stance": "NO-GO",
-              "confidence": 0,
-              "reasoning": "llm_disabled",
-              "cot": "→ Anthropic deshabilitado por flag (ENABLE_ANTHROPIC OFF)."
-            },
-            {
-              "agent": "MacroLP",
-              "stance": "NO-GO",
-              "confidence": 0,
-              "reasoning": "llm_disabled",
-              "cot": "→ Anthropic deshabilitado por flag (ENABLE_ANTHROPIC OFF)."
-            },
-            {
-              "agent": "SentimentLP",
-              "stance": "NO-GO",
-              "confidence": 0,
-              "reasoning": "llm_disabled",
-              "cot": "→ Anthropic deshabilitado por flag (ENABLE_ANTHROPIC OFF)."
-            },
-            {
-              "agent": "RiskAuditorLP",
-              "stance": "NO-GO",
-              "confidence": 0,
-              "reasoning": "llm_disabled",
-              "cot": "→ Anthropic deshabilitado por flag (ENABLE_ANTHROPIC OFF)."
-            }
-          ],
-          "debate_id": "DDOG-CP-1779371054"
-        }
-      },
-      "option": null
-    }
-  ],
+  "short_term": [],
   "options_book": [],
   "hedge_book": [],
   "portfolio": {},
   "radar": {
     "entries": [
       {
-        "ticker": "DDOG",
-        "sector": "Tech",
-        "price": 214.1,
-        "pct_1d": 0.0088,
-        "pct_1w": 0.0555,
-        "pct_1m": 0.6203,
-        "action": "BUY_CP",
-        "headline": "Assessing Datadog (DDOG) Valuation After A 64% One Month Share Price Surge",
-        "sentiment": 0.667,
-        "n_headlines": 6
-      },
-      {
-        "ticker": "MU",
-        "sector": "Tech",
-        "price": 747.63,
-        "pct_1d": 0.0214,
-        "pct_1w": -0.0366,
-        "pct_1m": 0.5337,
-        "action": "BUY_CP",
-        "headline": "Jim Cramer on Sandisk: “Gotta Let It Come Down More”",
-        "sentiment": -0.167,
+        "ticker": "DELL",
+        "sector": "Other",
+        "price": 281.63,
+        "pct_1d": 0.114,
+        "pct_1w": 0.1638,
+        "pct_1m": 0.3276,
+        "action": "—",
+        "headline": "Easing Bond Yields Lift US Equity Futures Pre-Bell Amid Ongoing Middle E...",
+        "sentiment": 0.5,
         "n_headlines": 6
       },
       {
         "ticker": "ARM",
         "sector": "Tech",
-        "price": 282.99,
-        "pct_1d": 0.1023,
-        "pct_1w": 0.2385,
-        "pct_1m": 0.4396,
+        "price": 295.32,
+        "pct_1d": -0.0098,
+        "pct_1w": 0.4119,
+        "pct_1m": 0.4433,
         "action": "—",
-        "headline": "Nvidia CPU comments read positively for this chip stock: analyst",
-        "sentiment": 0.833,
-        "n_headlines": 6
-      },
-      {
-        "ticker": "YPF",
-        "sector": "Energy",
-        "price": 48.53,
-        "pct_1d": 0.031,
-        "pct_1w": 0.0987,
-        "pct_1m": 0.1247,
-        "action": "—",
-        "headline": "YPF Sociedad Anonima (YPF) Just Overtook the 20-Day Moving Average",
-        "sentiment": 0.833,
-        "n_headlines": 6
-      },
-      {
-        "ticker": "ETHE",
-        "sector": "Crypto",
-        "price": 17.09,
-        "pct_1d": -0.0138,
-        "pct_1w": -0.0822,
-        "pct_1m": -0.1215,
-        "action": "—",
-        "headline": "Beyond Bitcoin: Crypto ETFs to Watch Amid Ethereum's Momentum",
-        "sentiment": 1.0,
+        "headline": "Is Arm Holdings (ARM) the Best European Growth Stock to Buy?",
+        "sentiment": 0.667,
         "n_headlines": 6
       },
       {
         "ticker": "CRWD",
         "sector": "Tech",
-        "price": 653.74,
-        "pct_1d": 0.0056,
-        "pct_1w": 0.1272,
-        "pct_1m": 0.4008,
+        "price": 665.97,
+        "pct_1d": 0.0274,
+        "pct_1w": 0.121,
+        "pct_1m": 0.4953,
         "action": "—",
-        "headline": "Mizuho Sends Urgent Message on Snowflake, CrowdStrike Ahead of Earnings",
-        "sentiment": 0.833,
+        "headline": "Cybersecurity stocks are hitting records again as chips play catch-up: C...",
+        "sentiment": 1.0,
         "n_headlines": 6
       },
       {
-        "ticker": "PBR",
-        "sector": "Energy",
-        "price": 20.31,
-        "pct_1d": 0.024,
-        "pct_1w": 0.0265,
-        "pct_1m": -0.0357,
+        "ticker": "AMD",
+        "sector": "Tech",
+        "price": 468.81,
+        "pct_1d": 0.0428,
+        "pct_1w": 0.1054,
+        "pct_1m": 0.5354,
         "action": "—",
-        "headline": "Here Are Thursday’s Top Wall Street Analyst Research Calls: DraftKings, ...",
-        "sentiment": 0.667,
-        "n_headlines": 6
-      },
-      {
-        "ticker": "VIST",
-        "sector": "Energy",
-        "price": 76.97,
-        "pct_1d": 0.0223,
-        "pct_1w": 0.0713,
-        "pct_1m": 0.1204,
-        "action": "—",
-        "headline": "Global Growth Stocks With Up To 29% Insider Ownership",
-        "sentiment": 0.5,
-        "n_headlines": 6
-      },
-      {
-        "ticker": "CAT",
-        "sector": "Industrials",
-        "price": 868.07,
-        "pct_1d": -0.0052,
-        "pct_1w": -0.0567,
-        "pct_1m": 0.0732,
-        "action": "—",
-        "headline": "Deere Earnings Easily Beat, But There's A Catch. The Stock Is Falling.",
+        "headline": "2028 will be a more important earnings year for Nvidia: Analyst",
         "sentiment": 0.667,
         "n_headlines": 6
       },
       {
         "ticker": "MSTR",
         "sector": "Crypto",
-        "price": 165.42,
-        "pct_1d": -0.0024,
-        "pct_1w": -0.1153,
-        "pct_1m": -0.0777,
+        "price": 165.41,
+        "pct_1d": 0.0034,
+        "pct_1w": -0.0677,
+        "pct_1m": -0.0409,
         "action": "—",
-        "headline": "What Offers Mercado Libre (MELI) a Longer Runway for Extraordinary Growth?",
+        "headline": "Forget MSTR—This BTC Peer's Stock Gained 37% This Month, Powered By Hype...",
+        "sentiment": 1.0,
+        "n_headlines": 6
+      },
+      {
+        "ticker": "YPF",
+        "sector": "Energy",
+        "price": 48.2,
+        "pct_1d": 0.0054,
+        "pct_1w": 0.104,
+        "pct_1m": 0.1129,
+        "action": "—",
+        "headline": "YPF Sociedad Anonima (YPF) Just Overtook the 20-Day Moving Average",
+        "sentiment": 0.833,
+        "n_headlines": 6
+      },
+      {
+        "ticker": "ASML",
+        "sector": "Tech",
+        "price": 1628.68,
+        "pct_1d": 0.023,
+        "pct_1w": 0.0845,
+        "pct_1m": 0.1512,
+        "action": "—",
+        "headline": "ASML (ASML) Surpasses Market Returns: Some Facts Worth Knowing",
+        "sentiment": 0.667,
+        "n_headlines": 6
+      },
+      {
+        "ticker": "MRK",
+        "sector": "Healthcare",
+        "price": 120.54,
+        "pct_1d": 0.0403,
+        "pct_1w": 0.0823,
+        "pct_1m": 0.0517,
+        "action": "—",
+        "headline": "Merck Stock Zooms Closer To A Breakout On 'A New Chapter' In Cancer",
+        "sentiment": 0.5,
+        "n_headlines": 6
+      },
+      {
+        "ticker": "MELI",
+        "sector": "Consumer",
+        "price": 1695.67,
+        "pct_1d": 0.0106,
+        "pct_1w": 0.0962,
+        "pct_1m": -0.0628,
+        "action": "—",
+        "headline": "Will GE Vernova, MercadoLibre, or NVR Be the Next Big Stock Split?",
+        "sentiment": 0.667,
+        "n_headlines": 6
+      },
+      {
+        "ticker": "AVAV",
+        "sector": "Defense",
+        "price": 168.85,
+        "pct_1d": 0.0353,
+        "pct_1w": 0.0687,
+        "pct_1m": -0.1637,
+        "action": "—",
+        "headline": "NASA Engineers Say New Rotor Breakthrough Could Enable Supersonic Helico...",
         "sentiment": 0.5,
         "n_headlines": 6
       }
     ],
-    "n_up": 24,
-    "n_down": 37,
-    "biggest_winner": "ARM +10.2%",
-    "biggest_loser": "COST -2.6%"
+    "n_up": 45,
+    "n_down": 18,
+    "biggest_winner": "DELL +11.4%",
+    "biggest_loser": "TTE -1.5%"
   },
   "edgar_alerts": []
 }
