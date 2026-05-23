@@ -149,6 +149,13 @@ done
 
 **Implementado recientemente (mayo 2026):**
 
+Iter 25-29 (2026-05-22/23) — **backtester debiasado + diversificación del sizing (HALLAZGO CLAVE)**:
+- **Backtester honesto**: `build_scores(backtest_mode=True)` apaga look-ahead + filtro CP curado; `run_backtest.py --broad` (S&P500 diverso). Reveló que el +118% era sesgo.
+- **HALLAZGO**: concentrar en top-2 = Sharpe 0.68/DD -41% (peor que SPY); **diversificar el SIZING a top-5 = Sharpe 1.13/DD -33% (supera SPY 0.94)** — mejora CAGR+Sharpe+DD+win a la vez. iter29: `n_cp` 2→**5/6** (allocation_agent + `top_n_short_term=5` + `_MIN_W` floor 0.12). **NO volver a concentrar en 2-3 sin re-backtestear.**
+- **iter28**: universo CP diverso (tech 72%→29%, +UNH/PFE/BAC/MA/PG/KO/HD/WMT/NEE/DE/HON) + `TECH_BULL_CP_BOOST` 0.65→0.15.
+- **iter22-24**: fix falsas alarmas health/watchdog · spam MSTR dust · backfill holds · no rotar no-perdedores a cash · dashboard DT/scalp banners DESACTIVADO.
+- **Pendiente**: turnover ~787% (alto), verificar daily lunes (5-6 pos + cash deploy live).
+
 Iter 16-17 (2026-05-20) — **ejecución agresiva + universo auto-rotativo**:
 - **iter16 ejecución**: scale-in 60%→**85%** en AGGRESSIVE (`strategy._apply_scale_in`); **fallback opciones→equity** (`_options_fallback_to_equity`) si no hay contrato → redirige al top CP. Para que el perfil agresivo realmente despliegue (hoy quedó 44%). Scalper ya no spamea vetos (solo loguea).
 - **iter17 universo**: recorte de ADRs argentinos ilíquidos (sacados LOMA/TGS/EDN/PAM/IRS/DESP/TGNO4.BA; quedan GGAL/BMA/MELI/VIST/YPF). Gate de liquidez en discovery (`_quick_score`: ADV≥$20M, precio≥$5). **CP_UNIVERSE dinámico**: `config.get_effective_cp_universe()` = (estático ∪ added) − removed − vetoed, lee `signals/cp_universe_overrides.json`. **Rotación automática** semanal (`universe_scanner._rotate_universe` en run_rebalancer): candidato repetido 2 sem + líquido + supera al más flojo por 20% → swap (1/sem, nunca saca posiciones abiertas ni PROTECTED_CP, respeta veto). Bot: `universo`/`veto`/`unveto`.
