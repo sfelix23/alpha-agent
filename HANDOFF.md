@@ -51,11 +51,13 @@ El backtester debiasado reveló la verdad del edge. **Cada sesgo que se saca, el
 
 ---
 
-## 🎯 Estado al cierre (iter29, 2026-05-23) — TODO OPERANDO
+## 🎯 Estado al cierre (iter30, 2026-05-23) — TODO OPERANDO
 
 - ✅ Equity ~$1.72k (+7-8%). Cloud Run + schedulers activos. LLM 100% free.
-- ✅ **iter29 deployado**: 5-6 posiciones diversificadas, universo CP diverso (41, tech 29%).
+- ✅ **iter29 deployado y validado**: 5-6 posiciones diversificadas, universo CP diverso (41, tech 29%). Backtest @30bps confirma Sharpe **1.50** (mensual) vs SPY 0.94.
+- ✅ **iter30 (análisis, no deploy)**: barrido de cadencia de rebalanceo (ver pendiente #1). Conclusión: **mensual es el óptimo** (Sharpe casi = semanal, 1/2.5 turnover, mejor DD). El live corre daily = sobre-opera → implementar gate de entrada mensual (próxima sesión).
 - ⚠️ **Verificar el daily del LUNES**: que opere con 5-6 posiciones + mantenga despliegue alto (el fix de cash drag iter24 es nuevo).
+- ℹ️ **Nota de workspace**: el worktree `trusting-moser-f5f2d8` está VIEJO (iter10). Todo el código real/deployado vive en **master `D:/Agente`**. Editar siempre ahí (`git -C "D:/Agente"`), nunca en el worktree.
 
 ### Lo hecho esta sesión (iter11→29, todo en master + deployado)
 | Iter | Cambio |
@@ -73,8 +75,16 @@ El backtester debiasado reveló la verdad del edge. **Cada sesgo que se saca, el
 
 ## 🔴 Pendientes (backlog priorizado)
 
-### #1 — Reducir turnover (787%/año es altísimo)
-Con slippage real (20bps+) el turnover erosiona el +53%. Probar rebalanceo menos frecuente / más histéresis en la rotación (el winner-protection iter24 ya ayuda). Backtest en curso: `--rebalance 42 --cost-bps 20`. El live corre daily; bajar churn = más hold-protection o rebalance menos seguido.
+### #1 — Bajar la cadencia de rotación de entradas a ~MENSUAL (RESUELTO el análisis, falta implementar)
+**Barrido de frecuencia validado (universo amplio, top-5, 2y OOS, costo realista 30bps):**
+| Cadencia | Sharpe @10bps | Sharpe @30bps | Turnover | Max DD |
+|---|---|---|---|---|
+| Semanal (5d) | 1.51 | **1.62** | ~1900-2100% | -24% |
+| Mensual (21d) | 1.13 | **1.50** | ~720-790% | **-19%** |
+| Trimestral (63d) | 0.75 | — | 292% | — |
+
+**Conclusión:** mensual ≈ semanal en Sharpe (1.50 vs 1.62) pero con **1/2.5 del turnover Y mejor drawdown (-19% vs -24%)**. Trimestral mata el edge (el momentum decae). **El live corre DAILY → sobre-opera**: paga turnover de semanal-plus sin ganar Sharpe, y en cuenta <$25k el spread real erosiona más que los 30bps modelados.
+**Implementar (próxima sesión):** gate de "última rotación de entradas" (~21 días hábiles) — el daily sigue gestionando salidas/stops/losers todos los días, pero **solo ENTRA nombres nuevos ~1 vez/mes**. El winner/hold-protection (iter24) ya reduce churn; esto lo completa. Riesgo: tocar `portfolio.diff_against_current` / cadencia del analyst → testear bien antes de deployar. NO deployar sin backtest del flujo live con el gate puesto.
 
 ### #2 — Verificar daily del lunes (cash deploy + 5 posiciones live)
 El fix de cash drag (iter24) + 5 posiciones (iter29) son nuevos. Confirmar en el daily del lunes que despliega ~90% en 5-6 nombres diversos (no vuelve a 33% ni a 2 posiciones).
