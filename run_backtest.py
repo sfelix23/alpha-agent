@@ -26,12 +26,44 @@ from alpha_agent.config import PARAMS, PATHS
 from alpha_agent.data import download_universe
 
 
+def _download_broad_universe(log):
+    """Universo AMPLIO y diverso para un backtest honesto (debiasing del selection
+    bias). En vez de los ~25-42 ganadores curados de ACTIVOS, baja una muestra del
+    S&P 500 (incluye no-tech, perdedores, etc.) + el benchmark. Cap ~120 para que
+    sea tratable con yfinance. Reusa el download de market_data."""
+    import pandas as pd
+    from alpha_agent.config import BENCHMARK_TICKER, PARAMS
+    from alpha_agent.data import market_data as _md
+    from alpha_agent.discovery.universe_scanner import _get_sp500_tickers
+
+    tickers = _get_sp500_tickers()
+    # Cap a 120 para tiempo de descarga razonable; asegurar el benchmark presente.
+    tickers = tickers[:120]
+    if BENCHMARK_TICKER not in tickers:
+        tickers = [BENCHMARK_TICKER, *tickers]
+    log.info("Universo amplio: %d tickers", len(tickers))
+
+    closes = _md._download_close(tickers, "broad")
+    valid = [c for c in closes.columns if closes[c].dropna().shape[0] >= PARAMS.min_obs]
+    closes = closes[valid]
+    ohlc = {}
+    for t in valid:
+        df = _md._download_ohlc(t)
+        if df is not None and len(df) >= PARAMS.min_obs:
+            ohlc[t] = df
+    log.info("Universo amplio listo: %d con historia válida", len(ohlc))
+    return closes, ohlc
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description="Walk-forward backtest del alpha_agent.")
     parser.add_argument("--capital", type=float, default=PARAMS.paper_capital_usd)
     parser.add_argument("--lookback", type=int, default=252, help="Ventana en días hábiles.")
     parser.add_argument("--rebalance", type=int, default=21, help="Frecuencia rebalance en días hábiles.")
     parser.add_argument("--cost-bps", type=float, default=10.0, help="Costo transacción en bps.")
+    parser.add_argument("--broad", action="store_true",
+                        help="Universo AMPLIO (S&P 500 diverso) en vez de ACTIVOS — quita el "
+                             "selection bias de los ganadores curados. Test honesto.")
     parser.add_argument("--save", action="store_true", help="Guardar equity curve y log a disco.")
     args = parser.parse_args()
 
@@ -43,8 +75,12 @@ def main() -> None:
     )
     log = logging.getLogger("backtest")
 
-    log.info("📉 Descargando universo histórico…")
-    closes, ohlc = download_universe()
+    if args.broad:
+        log.info("📉 Descargando universo AMPLIO (S&P 500 diverso) — debiasing…")
+        closes, ohlc = _download_broad_universe(log)
+    else:
+        log.info("📉 Descargando universo histórico (ACTIVOS)…")
+        closes, ohlc = download_universe()
 
     log.info("🔁 Corriendo walk-forward: lookback=%d, rebalance=%d, costo=%.0fbps",
              args.lookback, args.rebalance, args.cost_bps)

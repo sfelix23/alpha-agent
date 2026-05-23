@@ -394,7 +394,10 @@ def build_scores(
     # Filtrar al universo CP focalizado — z-scores entre ~25 tickers concentrados
     # son más informativos que entre los heterogéneos del universo completo.
     # iter17: usa el universo EFECTIVO (estático ± rotación automática ± veto).
-    _cp_universe = get_effective_cp_universe()
+    # iter25 debiasing: en backtest NO filtramos al CP_UNIVERSE curado (= selection
+    # bias de ganadores conocidos) → scoreamos TODO el universo de entrada. Asi el
+    # backtest elige top-N del set amplio, no de la lista pre-seleccionada de winners.
+    _cp_universe = None if backtest_mode else get_effective_cp_universe()
     if _cp_universe:
         st = st[st.index.isin(_cp_universe)]
         if st.empty:
