@@ -490,18 +490,19 @@ def build_scores(
         else:
             logger.info("QQQ mega-cap penalty omitida en BULL — son los líderes del rally")
 
-    # Bonus momentum para tech en BULL — lideran el mercado, merece recuperar score
-    # Iter3: boost subido de +0.50 → +0.65. En BULL + tech rally, este boost
-    # es lo que más cierra el gap vs QQQ (que estaba +9% mientras LP/CP -5%).
-    if regime == "BULL":
+    # iter28: boost tech REDUCIDO +0.65 → +0.15. El backtest mostró que el tilt
+    # fuerte a tech baja el Sharpe (0.68 vs 1.20 diverso) y agranda el drawdown
+    # (-41% vs -21%). Dejamos un nudge mínimo en BULL, no un sesgo dominante — que
+    # el momentum elija entre todos los sectores. (En backtest se apaga del todo.)
+    if regime == "BULL" and not backtest_mode:
         _n_boosted = 0
         for _tkr in TECH_BULL_CP_BOOST:
             if _tkr in score_st.index and "ret_1m" in st.columns:
                 if float(st.loc[_tkr, "ret_1m"]) >= 0.02:
-                    score_st.loc[_tkr] = score_st.loc[_tkr] + 0.65
+                    score_st.loc[_tkr] = score_st.loc[_tkr] + 0.15
                     _n_boosted += 1
         if _n_boosted:
-            logger.info("Tech BULL boost (+0.65): %d tickers con ret_1m >= 2%%", _n_boosted)
+            logger.info("Tech BULL boost (+0.15, reducido iter28): %d tickers", _n_boosted)
 
     # Momentum confluence: penalizar señales contradictorias entre timeframes
     # 5d vs 1m: si el ultra-corto y el mensual se contradicen → -0.15

@@ -47,6 +47,14 @@ ACTIVOS: dict[str, str] = {
     "Costco": "COST",
     # Energía adicional
     "Occidental": "OXY",
+    # iter28: DIVERSIFICACIÓN cross-sector — el backtest mostró que el momentum
+    # diverso (Sharpe 1.20) le gana al tech-concentrado (0.68, DD -41%). Sumamos
+    # defensivos/value de baja correlación con tech para que el scorer elija amplio.
+    "UnitedHealth": "UNH", "Pfizer": "PFE",            # Healthcare defensivo
+    "BankOfAmerica": "BAC", "Mastercard": "MA",        # Financials
+    "Procter_Gamble": "PG", "CocaCola": "KO",          # Consumer staples
+    "HomeDepot": "HD", "Walmart": "WMT",               # Consumer
+    "NextEra": "NEE", "Deere": "DE", "Honeywell": "HON",  # Utility / Industrials
     # AI infraestructura / Cloud
     "Datadog": "DDOG", "Cloudflare": "NET", "Uber": "UBER",
     # Crypto proxy
@@ -103,23 +111,29 @@ CP_SUB_SECTORS: dict[str, str] = {
 # Universo focalizado para sleeve CP — 25 tickers de alta beta/momentum.
 # Solo estos entran al scoring CP; el resto del universo aplica solo a LP/options.
 # Lógica: z-scores relativos entre 25 nombres concentrados > z-scores entre 49 heterogéneos.
+# iter28: universo CP DIVERSO cross-sector (~36). El backtest mostró que el
+# momentum diverso (Sharpe 1.20, DD -21%) le gana al tech-concentrado (0.68, DD
+# -41%). Tech baja de 72% a ~36% del universo; el scorer de momentum elige entre
+# todos los sectores (menos correlación, mejor Sharpe). Reversible vía git.
 CP_UNIVERSE: frozenset[str] = frozenset({
-    # Tech AI / Semis — lideran cada rally (alta beta, FOMO institucional)
-    "NVDA", "AMD", "ARM", "MU", "ASML", "TSM",
-    # Mega-cap tech con momentum extendido
-    "META", "TSLA", "AMZN", "GOOGL",
-    # AI infra / Cloud / SaaS growth
-    "CRWD", "PLTR", "NET", "DDOG",
-    # Crypto proxy — máxima beta en risk-on
-    "COIN", "MSTR",
-    # Growth de alta convicción
-    "NFLX", "AVGO",
+    # Tech AI / Semis (~36% del universo, no 72%)
+    "NVDA", "AMD", "ARM", "MU", "AVGO",
+    "META", "AMZN", "GOOGL", "MSFT",
+    "PLTR", "CRWD", "DDOG",
+    # Healthcare defensivo
+    "LLY", "ABBV", "MRK", "UNH", "PFE",
+    # Financials
+    "JPM", "GS", "V", "MA", "BAC",
+    # Consumer staples / retail
+    "COST", "PG", "KO", "HD", "WMT",
+    # Industrials / Utility
+    "CAT", "GE", "DE", "HON", "NEE",
+    # Energía
+    "XOM", "CVX", "OXY", "VIST",
     # Argentina (alpha genuino: baja cobertura institucional)
-    "GGAL", "BMA", "MELI", "VIST",
-    # Defensa (momentum ciclo geopolítico)
+    "GGAL", "BMA", "MELI",
+    # Defensa
     "LMT", "GD",
-    # Energía selectiva alta beta
-    "OXY",
 })
 
 # Núcleo protegido: líderes líquidos que la rotación automática NUNCA saca solo
