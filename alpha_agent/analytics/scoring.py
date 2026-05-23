@@ -254,9 +254,15 @@ def build_scores(
     fear_greed: int | None = None,
     held_lp: set[str] | None = None,
     market_prediction=None,  # PredictionResult | None
+    backtest_mode: bool = False,
 ) -> dict[str, pd.DataFrame]:
     """
     Devuelve {'long_term': df, 'short_term': df} con rankings mejorados.
+
+    backtest_mode=True (iter25): apaga los overlays que leen trade_db (segundo
+    cerebro + stop-out cooldown). En un backtest a la fecha t, trade_db tiene TODOS
+    los trades (incluido el futuro) → look-ahead que infla el resultado. Apagarlos
+    da un número honesto.
     """
     df = capm.join(technical, how="inner")
 
@@ -616,34 +622,38 @@ def build_scores(
     # ── Stop-out cooldown ──────────────────────────────────────────────────────
     # Ticker que fue detenido por stop-loss en las últimas 36h no vuelve a entrar.
     # Evita el "revenge trade" — volver a entrar en un activo que ya falló.
-    try:
-        from alpha_agent.analytics.trade_db import get_recent_stopouts
-        stopout_tickers = get_recent_stopouts(hours=36)
-        if stopout_tickers:
-            logger.warning("Stop-out cooldown (36h) activo: %s", sorted(stopout_tickers))
-            st.loc[st.index.isin(stopout_tickers), "score_st"] -= 2.0
-            lp.loc[lp.index.isin(stopout_tickers), "score_lp"] -= 1.5
-    except Exception as exc:
-        logger.debug("Stop-out cooldown no disponible: %s", exc)
+    # iter25: en backtest se apaga (lee trade_db = look-ahead).
+    if not backtest_mode:
+        try:
+            from alpha_agent.analytics.trade_db import get_recent_stopouts
+            stopout_tickers = get_recent_stopouts(hours=36)
+            if stopout_tickers:
+                logger.warning("Stop-out cooldown (36h) activo: %s", sorted(stopout_tickers))
+                st.loc[st.index.isin(stopout_tickers), "score_st"] -= 2.0
+                lp.loc[lp.index.isin(stopout_tickers), "score_lp"] -= 1.5
+        except Exception as exc:
+            logger.debug("Stop-out cooldown no disponible: %s", exc)
 
     # ── Segundo cerebro: memoria por ticker (iter13) ───────────────────────────
     # El sistema aprende de cómo le fue históricamente operando CADA ticker.
     # favorable (≥60% win, +pnl, ≥3 trades) → +0.25 | adverso (≤34% win, -pnl) → -0.50.
     # Aditivo (no multiplicativo) para no invertir el signo de scores negativos.
-    try:
-        from alpha_agent.analytics.trade_db import get_ticker_memory
-        _BIAS_ADJ = {"favorable": 0.25, "adverso": -0.50}
-        mem_adjusted = []
-        for _tkr in st.nlargest(15, "score_st").index.tolist():
-            mem = get_ticker_memory(_tkr)
-            adj = _BIAS_ADJ.get(mem["bias"], 0.0)
-            if adj != 0.0 and _tkr in st.index:
-                st.loc[_tkr, "score_st"] += adj
-                mem_adjusted.append(f"{_tkr} {mem['bias']} {adj:+.2f}")
-        if mem_adjusted:
-            logger.info("Segundo cerebro (memoria ticker): %s", ", ".join(mem_adjusted))
-    except Exception as exc:
-        logger.debug("memoria ticker no disponible: %s", exc)
+    # iter25: en backtest se apaga (lee trade_db = look-ahead).
+    if not backtest_mode:
+        try:
+            from alpha_agent.analytics.trade_db import get_ticker_memory
+            _BIAS_ADJ = {"favorable": 0.25, "adverso": -0.50}
+            mem_adjusted = []
+            for _tkr in st.nlargest(15, "score_st").index.tolist():
+                mem = get_ticker_memory(_tkr)
+                adj = _BIAS_ADJ.get(mem["bias"], 0.0)
+                if adj != 0.0 and _tkr in st.index:
+                    st.loc[_tkr, "score_st"] += adj
+                    mem_adjusted.append(f"{_tkr} {mem['bias']} {adj:+.2f}")
+            if mem_adjusted:
+                logger.info("Segundo cerebro (memoria ticker): %s", ", ".join(mem_adjusted))
+        except Exception as exc:
+            logger.debug("memoria ticker no disponible: %s", exc)
 
     # ── Market Predictor boost ────────────────────────────────────────────────
     if market_prediction is not None:

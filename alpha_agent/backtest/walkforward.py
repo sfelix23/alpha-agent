@@ -176,7 +176,7 @@ def _build_target_weights(
     if capm.empty:
         return pd.Series(dtype=float)
 
-    scores = build_scores(capm, technical_snapshot, closes=closes_window)
+    scores = build_scores(capm, technical_snapshot, closes=closes_window, backtest_mode=True)
     cp_df = scores.get("short_term")
     if cp_df is None or cp_df.empty:
         return pd.Series(dtype=float)
