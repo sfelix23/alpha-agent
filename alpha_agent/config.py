@@ -286,7 +286,7 @@ class FinancialParams:
 
     # Growth: 2 LP + n CP (el allocation_agent fija n_cp dinámico: 2 concentrado / 3 difuso)
     top_n_long_term: int = 2
-    top_n_short_term: int = 2             # fallback; decide_allocation manda (2-3 según VIX)
+    top_n_short_term: int = 5             # iter29: 2→5 (diversificar sizing); decide_allocation manda (5-6)
 
     # Bucket options — iter14: más leverage cuando hay convicción (riesgo = prima, definido)
     top_n_bearish: int = 1                # máx 1 put direccional

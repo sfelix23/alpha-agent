@@ -305,13 +305,12 @@ def build_signals(
     # Ajuste por convicción CP (antes del floor para no perder la calibración)
     sig.short_term = _apply_conviction_weights(sig.short_term)
 
-    # Floor DESPUÉS del conviction reweighting: cada posición CP recibe al menos 20%
-    # del sleeve (iter14 AGRESIVO: 0.30→0.20). Bajar el floor deja que la convicción
-    # concentre más en la mejor idea (con n=2 el top puede llegar a ~64% del sleeve;
-    # con n=3, ~55%) en vez de forzar igualdad. El floor evita que un nombre quede
-    # como polvo, pero no impone diversificación cuando hay una idea claramente mejor.
+    # Floor por posición CP. iter29: 0.20→0.12 para acomodar 5-6 posiciones
+    # (con floor 0.20 y 5 nombres da 100% sin margen para que la convicción
+    # concentre). 0.12 deja que el top llegue a ~0.30-0.40 vía conviction y los
+    # otros ~0.12-0.15 — diversificado pero con tilt a las mejores ideas.
     if len(sig.short_term) >= 2:
-        _MIN_W = 0.20
+        _MIN_W = 0.12
         ws = [s.weight_target for s in sig.short_term]
         ws = [max(w, _MIN_W) for w in ws]
         _total = sum(ws) or 1.0

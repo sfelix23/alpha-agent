@@ -63,8 +63,8 @@ def _rule_default(regime: str, vix: float, win_rate: float | None, recent_pnl: f
     # NEUTRAL: base (iter14 agresivo sube exposición; 3 nombres = diversifica incertidumbre)
     if vix > 22 or reg == "NEUTRAL":
         cp = 0.84 if winning_streak else 0.72
-        n  = 3
-        reason = f"NEUTRAL/VIX {vix:.0f}: CP {cp:.0%} en top-3, {'racha ganadora → más exposición.' if winning_streak else 'posición moderada.'}"
+        n  = 5  # iter29: diversificar sizing
+        reason = f"NEUTRAL/VIX {vix:.0f}: CP {cp:.0%} en top-5 (diversificado), {'racha ganadora.' if winning_streak else 'moderado.'}"
         return AllocationDecision(0.0, cp, 0.10, n, 8, reason, level=2)
 
     # BULL — el caso principal
@@ -77,9 +77,13 @@ def _rule_default(regime: str, vix: float, win_rate: float | None, recent_pnl: f
         # las 2 mejores ideas = más beta al edge) o 3 si VIX>=18 (diversificar cuando
         # hay más incertidumbre). El piramidado de la equity curve (HOT 1.35x) puede
         # llevar el sleeve hasta ~0.95 en racha.
-        n_cp = 2 if vix < 18 else 3
+        # iter29: 2→5/6 posiciones. El backtest mostró que concentrar en top-2 da
+        # -41% drawdown / Sharpe 0.68; diversificar el SIZING (no solo el universo)
+        # baja el DD y sube el Sharpe. 5-6 nombres sigue siendo agresivo pero reparte
+        # el riesgo idiosincrático que con 2 nombres te hundía el mes.
+        n_cp = 5 if vix < 18 else 6
         return AllocationDecision(0.0, 0.90, 0.08, n_cp, 10,
-            f"BULL + racha ganadora ({win_rate:.0%} WR): CP 90% en top-{n_cp} (agresivo edge-driven), hold 10d max.", level=1)
+            f"BULL + racha ganadora ({win_rate:.0%} WR): CP 90% en top-{n_cp} (diversificado), hold 10d max.", level=1)
     elif losing_streak:
         # ya cubierto arriba pero por si acá
         return AllocationDecision(0.0, 0.55, 0.05, 2, 4,
@@ -87,9 +91,9 @@ def _rule_default(regime: str, vix: float, win_rate: float | None, recent_pnl: f
     else:
         # NIVEL 2: BULL sin historial suficiente → base sólida pero agresiva.
         cp = 0.88 if vix < 18 else 0.80
-        n_cp = 2 if vix < 18 else 3
+        n_cp = 5 if vix < 18 else 6  # iter29: diversificar sizing (no top-2)
         return AllocationDecision(0.0, cp, 0.10, n_cp, 8,
-            f"BULL + VIX {vix:.1f}: CP {cp:.0%} en top-{n_cp}, hold 8d max (agresivo edge-driven).", level=2)
+            f"BULL + VIX {vix:.1f}: CP {cp:.0%} en top-{n_cp} (diversificado), hold 8d max.", level=2)
 
 
 def _get_recent_performance() -> tuple[float | None, float | None]:
