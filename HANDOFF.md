@@ -34,49 +34,58 @@ gcloud config set project alpha-agent-2025
 1. **Usuario = Santino Felix** (antes alias "NAF" — misma persona; la cuenta NAF fue la flageada por Anthropic). Prefiere **modificar archivos existentes a crear nuevos**.
 2. **Anthropic OFF salvo `ENABLE_ANTHROPIC=true`**. Kill switches en 6 archivos. NUNCA llamar Anthropic por default. Cascada free: Groq → Gemini → DeepSeek → OpenRouter.
 3. **Corre en Google Cloud Run** (`alpha-agent-2025`, us-central1). Daily 10:40 ART, monitor c/30min, weekly viernes. NO es local.
-4. **Perfil de riesgo AGGRESSIVE** (`config.risk_appetite`): Kelly 0.65, bandas drawdown anchas (kill -13%), anti-martingala, concentración alta. Es paper, objetivo = estrategia sólida para pasar a real.
-5. **`dashboard/app.py` NO está en el repo** (local en `D:/Agente/`). DT y scalping **desactivados** (`enable_daytrading/enable_scalping=False`).
-6. **Tests: 27** (`tests/test_llm_gateway.py`, `test_universe.py`, `test_exits.py`). scoring/monitor sin tests profundos — cuidado.
+4. **Perfil AGGRESSIVE pero DIVERSIFICADO** (`config.risk_appetite`): Kelly 0.65, bandas anchas (kill -13%), anti-martingala. iter29: **5-6 posiciones** (no 2 — ver hallazgo abajo). Es paper, objetivo = estrategia sólida para pasar a real.
+5. **`dashboard/app.py` NO está en el repo** (local en `D:/Agente/`). DT y scalping **desactivados**.
+6. **Tests: 27** (`test_llm_gateway.py`, `test_universe.py`, `test_exits.py`). scoring/monitor sin tests profundos — cuidado.
 
 ---
 
-## 🎯 Estado al cierre (iter22, 2026-05-21) — TODO OPERANDO
+## 🧠 HALLAZGO CENTRAL (iter25-29) — leé esto antes de tocar la estrategia
+El backtester debiasado reveló la verdad del edge. **Cada sesgo que se saca, el número baja a la realidad:**
+- 118% CAGR / Sharpe 2.07 (25 tech curados + look-ahead) → puro sesgo
+- 75% / 1.63 (sin look-ahead)
+- 30% / **0.68** (universo tech-heavy, top-2) → ¡PEOR que SPY 0.94!
+- **53% / Sharpe 1.13 / DD -33% / win 73% (top-5 diversificado)** ← config actual ✅ supera SPY
 
-- ✅ Equity **$1.711 (+7.0%)** desde baseline $1600.
-- ✅ Capital desplegado **~76%** (tras fix del cash drag iter19).
-- ✅ Cloud Run: daily + monitor verdes hoy. Schedulers activos.
-- ✅ Win rate CP 67%. LLM 100% free ($0, Anthropic intacto).
-- ✅ Sistema autónomo: stops, trailing, rotación de universo, winner protection, dust sweep, PDT-safe.
+**La lección #1: diversificar el SIZING (5-8 posiciones) es la mejora risk-adjusted más grande — NO concentrar en 2.** Concentrar en top-2 daba -41% DD / Sharpe 0.68. Subir a top-5 mejoró TODO a la vez (CAGR, Sharpe, DD, win rate). Diversificar el *universo* solo no alcanza (momentum igual elige los 2 más volátiles); la palanca es el N° de posiciones. **NO vuelvas a concentrar en 2-3 sin re-backtestear.**
 
-### Lo hecho esta sesión (iter11→22, todo en master + deployado)
+---
+
+## 🎯 Estado al cierre (iter29, 2026-05-23) — TODO OPERANDO
+
+- ✅ Equity ~$1.72k (+7-8%). Cloud Run + schedulers activos. LLM 100% free.
+- ✅ **iter29 deployado**: 5-6 posiciones diversificadas, universo CP diverso (41, tech 29%).
+- ⚠️ **Verificar el daily del LUNES**: que opere con 5-6 posiciones + mantenga despliegue alto (el fix de cash drag iter24 es nuevo).
+
+### Lo hecho esta sesión (iter11→29, todo en master + deployado)
 | Iter | Cambio |
 |---|---|
-| 11-12 | Botones dashboard (Flask /api/cmd) + benchmark race vs SPY/QQQ/Buffett |
-| 13 | Segundo cerebro (memoria por ticker → scorer) |
-| 14 | Perfil AGRESIVO edge-driven (Kelly 0.65, bandas anchas, anti-martingala) |
-| 15 | DT/scalp OFF + dashboard observable (despliegue, riesgo/pos, calidad salidas) |
-| 16 | scale-in 85% + fallback opciones→equity |
-| 17 | universo recortado + **rotación automática** + gate liquidez |
-| 18 | winner protection + fix reconciliación hold_days |
-| 19 | **fix cash drag** (headroom doble-resta → 44%→76% desplegado) |
-| 20 | SELL qty clamp + PDT grácil |
-| 21 | dust sweep + panel universo + **backtester apuntado al sleeve CP** |
-| 22 | fix falsas alarmas health_check + watchdog (umbral 26h) |
+| 11-15 | dashboard botones/observable, segundo cerebro, perfil AGRESIVO, DT/scalp OFF |
+| 16-17 | scale-in 85% + opt fallback · universo recortado + rotación auto + gate liquidez |
+| 18-19 | winner protection + fix reconciliación · **fix cash drag headroom** (44%→76%) |
+| 20-22 | SELL clamp + PDT grácil · dust sweep + panel universo · fix falsas alarmas health/watchdog |
+| 23-24 | spam MSTR dust + backfill holds · **no rotar no-perdedores a cash** + dashboard DT/scalp banners |
+| 25 | **backtester debiasado** (look-ahead off + universo amplio + `--broad` S&P500) |
+| 28 | universo CP diverso (tech 72%→29%) + tech boost 0.65→0.15 |
+| 29 | **diversificar sizing 2→5/6 posiciones** → Sharpe 0.68→1.13 (supera SPY) |
 
 ---
 
 ## 🔴 Pendientes (backlog priorizado)
 
-### #1 — Backtester debiasing (el grande, para validar antes de real money)
-`run_backtest.py` YA corre (iter21 lo apuntó al sleeve CP). PERO el resultado (+118% CAGR) **NO es creíble** — sesgos: (1) universo curado de ganadores recientes = selection bias, (2) look-ahead del segundo cerebro/stopouts en `build_scores`, (3) muestra mínima (2 pos, 12 rebal), (4) costos optimistas. **Pasos**: universo point-in-time/amplio, apagar look-ahead en modo backtest, 3-5y + top-3, slippage real. Sin esto no hay validación estadística para dinero real.
+### #1 — Reducir turnover (787%/año es altísimo)
+Con slippage real (20bps+) el turnover erosiona el +53%. Probar rebalanceo menos frecuente / más histéresis en la rotación (el winner-protection iter24 ya ayuda). Backtest en curso: `--rebalance 42 --cost-bps 20`. El live corre daily; bajar churn = más hold-protection o rebalance menos seguido.
 
-### #2 — Webhook Telegram en Cloud Run (control remoto sin PC prendida)
+### #2 — Verificar daily del lunes (cash deploy + 5 posiciones live)
+El fix de cash drag (iter24) + 5 posiciones (iter29) son nuevos. Confirmar en el daily del lunes que despliega ~90% en 5-6 nombres diversos (no vuelve a 33% ni a 2 posiciones).
+
+### #3 — Webhook Telegram en Cloud Run (control remoto sin PC prendida)
 Hoy el bot = Flask local + ngrok → necesita la PC encendida. Un mini Cloud Run Service que reciba el webhook de Telegram haría que el bot ande 24/7. Reusar `_dispatch_command` de `dashboard/app.py`.
 
-### #3 — Guard PDT proactivo
+### #4 — Guard PDT proactivo
 Cuenta <$25k → Alpaca bloquea >3 day-trades/5d. Ya se maneja grácil (iter20, no spamea), pero un guard que cuente `account.daytrade_count` y evite intentar el day-trade sería más limpio.
 
-### #4 — Confiabilidad sleeve opciones
+### #5 — Confiabilidad sleeve opciones
 GOOGL falla seguido en encontrar contrato (se redirige a equity, pero se pierde convexidad). Mejorar selección strike/expiry.
 
 ### Menores: tail hedge sistemático · modelado de costos en live · más tests del core.
