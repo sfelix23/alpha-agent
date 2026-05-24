@@ -35,8 +35,10 @@ from .portfolio import (
     build_target_portfolio,
     check_capital_headroom,
     diff_against_current,
+    record_entry_rotation,
     total_invested_notional,
 )
+from .portfolio import entry_window_open as portfolio_entry_window_open
 
 logger = logging.getLogger(__name__)
 
@@ -243,7 +245,12 @@ def execute(broker: BrokerBase, *, dry_run: bool = True, max_capital: float | No
     target = build_target_portfolio(signals, capital_adj)
     positions = broker.get_positions()
     invested = total_invested_notional(positions)
-    equity_intents = diff_against_current(target, positions)
+    # iter31: gate de entrada ~mensual. El daily gestiona salidas/stops siempre;
+    # los NOMBRES NUEVOS solo entran 1×/mes (salvo libro sub-desplegado → backfill).
+    _entry_open = portfolio_entry_window_open()
+    if not _entry_open:
+        logger.info("Entry gate: ventana mensual CERRADA — daily gestiona salidas, sin nombres nuevos salvo backfill")
+    equity_intents = diff_against_current(target, positions, entry_open=_entry_open)
     # iter19: headroom = min(buying_power, equity - invested). Pasamos EQUITY (no el
     # capital ya capeado por bp) + bp por separado para evitar la doble resta de
     # invested que dejaba 56% en cash. Sin margen: tope al equity y al bp real.
@@ -395,10 +402,23 @@ def execute(broker: BrokerBase, *, dry_run: bool = True, max_capital: float | No
         logger.debug("event_calendar no disponible (%s)", _mcg_exc)
         upcoming = []
 
+    # iter31: ¿hay entradas de NOMBRES NUEVOS en este plan? (no holdeados antes)
+    _new_name_entry = any(
+        i.side.upper() == "BUY" and i.ticker not in held_tickers
+        for i in equity_intents
+    )
+
     fills.extend(_submit_equity_intents(
         broker, equity_intents, dry_run=dry_run,
         regime=regime, vix=vix,
     ))
+
+    # iter31: si se ejecutó (live) una rotación de entradas nuevas, registrar la
+    # fecha para cerrar la ventana mensual. El backfill de un libro sub-desplegado
+    # también la consume (arranca el hold mensual del libro completo). Las salidas
+    # y scale-in NO la tocan (no son nombres nuevos).
+    if (not dry_run) and _entry_open and _new_name_entry:
+        record_entry_rotation()
 
     # ── Opciones (direccionales + hedge) ────────────────────────────
     option_intents = build_option_intents(signals, capital_adj)

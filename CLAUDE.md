@@ -149,6 +149,10 @@ done
 
 **Implementado recientemente (mayo 2026):**
 
+Iter 30-31 (2026-05-23/24) — **cadencia de rebalanceo mensual (gate de entradas)**:
+- **Análisis (iter30)**: barrido de frecuencia @30bps (universo amplio, top-5, 2y OOS). Semanal Sharpe 1.62/turnover ~1900%/DD -24%; **mensual 1.50/720%/-19%**; trimestral 0.75. **Mensual = óptimo** (Sharpe ≈ semanal, 1/2.5 turnover, mejor DD). El live corría DAILY = sobre-operaba.
+- **iter31 GATE DE ENTRADA ~MENSUAL**: `portfolio.entry_window_open()` / `record_entry_rotation()` (estado en `signals/entry_gate.json`, persistido vía entrypoint pull/push). En `diff_against_current(..., entry_open)`: las **SALIDAS/recortes/dust siguen DIARIAS**; los **NOMBRES NUEVOS solo entran 1×/mes (21d)** salvo libro sub-desplegado → **backfill** (anti cash-drag). Scale-in a holdeados siempre permitido. `record_entry_rotation()` se llama tras ejecución live con nombres nuevos. Fail-safe: sin archivo → ventana abierta. Observable en `--health` (🟢 abierta / 🔵 cerrada + días). 31 tests (4 nuevos del gate).
+
 Iter 25-29 (2026-05-22/23) — **backtester debiasado + diversificación del sizing (HALLAZGO CLAVE)**:
 - **Backtester honesto**: `build_scores(backtest_mode=True)` apaga look-ahead + filtro CP curado; `run_backtest.py --broad` (S&P500 diverso). Reveló que el +118% era sesgo.
 - **HALLAZGO**: concentrar en top-2 = Sharpe 0.68/DD -41% (peor que SPY); **diversificar el SIZING a top-5 = Sharpe 1.13/DD -33% (supera SPY 0.94)** — mejora CAGR+Sharpe+DD+win a la vez. iter29: `n_cp` 2→**5/6** (allocation_agent + `top_n_short_term=5` + `_MIN_W` floor 0.12). **NO volver a concentrar en 2-3 sin re-backtestear.**

@@ -3762,6 +3762,25 @@ def _print_health_snapshot() -> int:
     except Exception as e:
         print(f"\nEquity: error ({e})")
 
+    # iter31: estado del gate de rotación de entradas (~mensual)
+    try:
+        import json as _json
+        from datetime import date as _date, datetime as _dt
+        from pathlib import Path as _Path
+        gate_path = _Path(__file__).resolve().parent / "signals" / "entry_gate.json"
+        if gate_path.exists():
+            last = _json.loads(gate_path.read_text(encoding="utf-8")).get("last_entry_date")
+            if last:
+                days = (_date.today() - _dt.fromisoformat(last).date()).days
+                if days >= 21:
+                    print(f"\nEntry gate 🟢 ABIERTA: última rotación hace {days}d (≥21) — toca re-seleccionar el libro")
+                else:
+                    print(f"\nEntry gate 🔵 cerrada: última rotación hace {days}d — faltan {21 - days}d (solo salidas/backfill)")
+        else:
+            print("\nEntry gate 🟢 ABIERTA: sin rotación previa (bootstrap)")
+    except Exception as e:
+        print(f"\nEntry gate: error ({e})")
+
     print()  # newline final
     return exit_code
 

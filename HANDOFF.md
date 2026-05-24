@@ -75,7 +75,10 @@ El backtester debiasado reveló la verdad del edge. **Cada sesgo que se saca, el
 
 ## 🔴 Pendientes (backlog priorizado)
 
-### #1 — Bajar la cadencia de rotación de entradas a ~MENSUAL (RESUELTO el análisis, falta implementar)
+### #1 — Cadencia de rotación de entradas ~MENSUAL ✅ IMPLEMENTADO (iter31) — verificar en vivo
+**iter31 deployado:** gate de entrada en `portfolio.diff_against_current(entry_open=...)`. Las salidas/recortes/dust siguen diarias; los **nombres nuevos solo entran 1×/mes (21d)** salvo libro sub-desplegado → backfill (anti cash-drag). Estado en `signals/entry_gate.json` (persiste vía entrypoint). Observable en `python run_dashboard.py --health` (🟢 abierta / 🔵 cerrada + días restantes). **A verificar en vivo:** que el 1er daily post-deploy haga la rotación + registre la fecha, y que los ~21 días siguientes solo gestionen salidas/backfill (no rote nombres nuevos por movimientos marginales de momentum). Si querés afinar la ventana, `_ENTRY_ROTATION_DAYS` en portfolio.py.
+
+<details><summary>Datos que lo respaldan (iter30)</summary>
 **Barrido de frecuencia validado (universo amplio, top-5, 2y OOS, costo realista 30bps):**
 | Cadencia | Sharpe @10bps | Sharpe @30bps | Turnover | Max DD |
 |---|---|---|---|---|
@@ -83,8 +86,8 @@ El backtester debiasado reveló la verdad del edge. **Cada sesgo que se saca, el
 | Mensual (21d) | 1.13 | **1.50** | ~720-790% | **-19%** |
 | Trimestral (63d) | 0.75 | — | 292% | — |
 
-**Conclusión:** mensual ≈ semanal en Sharpe (1.50 vs 1.62) pero con **1/2.5 del turnover Y mejor drawdown (-19% vs -24%)**. Trimestral mata el edge (el momentum decae). **El live corre DAILY → sobre-opera**: paga turnover de semanal-plus sin ganar Sharpe, y en cuenta <$25k el spread real erosiona más que los 30bps modelados.
-**Implementar (próxima sesión):** gate de "última rotación de entradas" (~21 días hábiles) — el daily sigue gestionando salidas/stops/losers todos los días, pero **solo ENTRA nombres nuevos ~1 vez/mes**. El winner/hold-protection (iter24) ya reduce churn; esto lo completa. Riesgo: tocar `portfolio.diff_against_current` / cadencia del analyst → testear bien antes de deployar. NO deployar sin backtest del flujo live con el gate puesto.
+**Conclusión:** mensual ≈ semanal en Sharpe (1.50 vs 1.62) pero con **1/2.5 del turnover Y mejor drawdown (-19% vs -24%)**. Trimestral mata el edge (el momentum decae). **El live corría DAILY → sobre-operaba**: pagaba turnover de semanal-plus sin ganar Sharpe, y en cuenta <$25k el spread real erosiona más que los 30bps modelados. Por eso iter31 puso el gate mensual.
+</details>
 
 ### #2 — Verificar daily del lunes (cash deploy + 5 posiciones live)
 El fix de cash drag (iter24) + 5 posiciones (iter29) son nuevos. Confirmar en el daily del lunes que despliega ~90% en 5-6 nombres diversos (no vuelve a 33% ni a 2 posiciones).

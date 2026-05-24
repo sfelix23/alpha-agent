@@ -12,8 +12,11 @@ Las señales de opciones se expresan como OptionIntent (contracts a comprar).
 
 from __future__ import annotations
 
+import json
 import logging
 from dataclasses import dataclass
+from datetime import date, datetime
+from pathlib import Path
 
 from alpha_agent.config import PARAMS
 from alpha_agent.reporting.signals import Signal, Signals
@@ -21,6 +24,50 @@ from alpha_agent.reporting.signals import Signal, Signals
 from .brokers.base import Position
 
 logger = logging.getLogger(__name__)
+
+# ── iter31: gate de rotación de entradas ~mensual ───────────────────────────
+# El backtest @30bps (universo amplio, top-5, 2y OOS) mostró que rebalanceo
+# MENSUAL ≈ semanal en Sharpe (1.50 vs 1.62) pero con 1/2.5 del turnover y
+# mejor drawdown (-19% vs -24%). El live corre DAILY → sobre-opera: rota el
+# nombre #5 por el nuevo #5 cada día que el momentum se mueve un pelo, pagando
+# turnover sin ganar Sharpe (y en cuenta <$25k el spread real erosiona más).
+# Solución: las SALIDAS (stops, perdedores, dust) siguen siendo DIARIAS; solo
+# la ENTRADA de NOMBRES NUEVOS se limita a ~1 vez/mes (21 días hábiles), salvo
+# que el libro esté sub-desplegado (backfill → evita cash drag).
+_ENTRY_GATE_PATH = Path(__file__).resolve().parents[1] / "signals" / "entry_gate.json"
+_ENTRY_ROTATION_DAYS = 21  # días CALENDARIO mínimos entre rotaciones de entrada
+
+
+def entry_window_open(min_days: int = _ENTRY_ROTATION_DAYS) -> bool:
+    """True si pasaron ≥min_days desde la última rotación de entradas.
+
+    Fail-safe: si el archivo no existe o no parsea → True (no bloquea).
+    """
+    try:
+        if not _ENTRY_GATE_PATH.exists():
+            return True
+        data = json.loads(_ENTRY_GATE_PATH.read_text(encoding="utf-8"))
+        last = data.get("last_entry_date")
+        if not last:
+            return True
+        last_d = datetime.fromisoformat(last).date()
+        return (date.today() - last_d).days >= min_days
+    except Exception as exc:  # pragma: no cover - defensivo
+        logger.debug("entry_window_open fail-safe (%s) → True", exc)
+        return True
+
+
+def record_entry_rotation() -> None:
+    """Persiste hoy como la última rotación de entradas (atomic write)."""
+    try:
+        _ENTRY_GATE_PATH.parent.mkdir(parents=True, exist_ok=True)
+        payload = {"last_entry_date": date.today().isoformat()}
+        tmp = _ENTRY_GATE_PATH.with_suffix(".json.tmp")
+        tmp.write_text(json.dumps(payload, indent=2), encoding="utf-8")
+        tmp.replace(_ENTRY_GATE_PATH)
+        logger.info("Entry gate: rotación de entradas registrada para %s", payload["last_entry_date"])
+    except Exception as exc:  # pragma: no cover - defensivo
+        logger.warning("No se pudo registrar entry rotation: %s", exc)
 
 
 @dataclass
@@ -139,6 +186,7 @@ def diff_against_current(
     positions: list[Position],
     *,
     threshold: float = 25.0,
+    entry_open: bool = True,
 ) -> list[TradeIntent]:
     """
     Compara target vs posiciones actuales de equity y devuelve órdenes a enviar.
@@ -146,6 +194,12 @@ def diff_against_current(
 
     Guard de capital: el notional de cada BUY está limitado al target minus
     lo que ya está invertido. Nunca envía más de lo que el target permite.
+
+    iter31 — gate de entrada mensual: si ``entry_open`` es False (no pasó el mes
+    desde la última rotación), NO se abren NOMBRES NUEVOS cuando el libro ya está
+    lleno (≥ tamaño del target). Las salidas/recortes y los scale-in a nombres ya
+    holdeados siguen siempre activos; y si el libro está sub-desplegado se permite
+    backfill para no dejar cash ocioso (anti cash-drag).
     """
     current = {
         p.ticker: p.market_value
@@ -204,11 +258,29 @@ def diff_against_current(
         if getattr(p, "asset_class", "equity") == "equity":
             _lp_held.add(p.ticker)
 
+    # iter31: ¿el libro está lleno? Si ya holdeamos ≥ tamaño del target, abrir un
+    # nombre nuevo = rotación (churn) → solo se permite con la ventana mensual
+    # abierta. Si está sub-desplegado (menos nombres que el target), se permite
+    # backfill aunque la ventana esté cerrada (evita cash drag).
+    _held_names = set(current.keys())
+    _book_full = len(_held_names) >= max(1, len(target))
+    _new_entries_blocked = (not entry_open) and _book_full
+    if _new_entries_blocked:
+        logger.info(
+            "Entry gate CERRADO: libro lleno (%d/%d) y no toca rotación mensual "
+            "— se gestionan salidas/scale-in pero NO nombres nuevos",
+            len(_held_names), len(target),
+        )
+
     # Tickers en target que necesitan BUY (delta positivo)
     MIN_NOTIONAL = 150.0  # posiciones menores a $150 no mueven la aguja
     for t, info in target.items():
         if t in _bought_today:
             continue  # ya compramos hoy, no duplicar
+        # iter31: gate de entrada mensual — bloquear SOLO nombres nuevos
+        # (no holdeados). Scale-in a posiciones existentes sigue permitido.
+        if _new_entries_blocked and t not in _held_names:
+            continue
         horizon = info["horizon"]
         # LP: si ya hay posición abierta en este ticker, no acumular
         if horizon == "LP" and t in _lp_held:

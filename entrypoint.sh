@@ -36,7 +36,7 @@ _pull_state() {
     for f in latest.json trades.db allocation.json equity_snapshots.json \
              workflow_status.json last_run.json sentiment_cache.json \
              discovery.json capital_baseline.json capital_reservations.json \
-             cp_universe_overrides.json; do
+             cp_universe_overrides.json entry_gate.json; do
       [ -f "$PULL_DIR/signals/$f" ] && cp "$PULL_DIR/signals/$f" "/app/signals/$f" 2>/dev/null
     done
     rm -rf "$PULL_DIR"
@@ -93,6 +93,7 @@ _push_results() {
   cp /app/signals/capital_baseline.json    "$PUSH_DIR/signals/" 2>/dev/null || true
   cp /app/signals/capital_reservations.json "$PUSH_DIR/signals/" 2>/dev/null || true
   cp /app/signals/cp_universe_overrides.json "$PUSH_DIR/signals/" 2>/dev/null || true
+  cp /app/signals/entry_gate.json          "$PUSH_DIR/signals/" 2>/dev/null || true
   cp /app/docs/index.html                  "$PUSH_DIR/docs/"    2>/dev/null || true
   cd "$PUSH_DIR"
   git config user.name  "alpha-bot"
