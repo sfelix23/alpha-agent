@@ -51,13 +51,14 @@ El backtester debiasado reveló la verdad del edge. **Cada sesgo que se saca, el
 
 ---
 
-## 🎯 Estado al cierre (iter30, 2026-05-23) — TODO OPERANDO
+## 🎯 Estado al cierre (iter32, 2026-05-25) — TODO OPERANDO
 
-- ✅ Equity ~$1.72k (+7-8%). Cloud Run + schedulers activos. LLM 100% free.
-- ✅ **iter29 deployado y validado**: 5-6 posiciones diversificadas, universo CP diverso (41, tech 29%). Backtest @30bps confirma Sharpe **1.50** (mensual) vs SPY 0.94.
-- ✅ **iter30 (análisis, no deploy)**: barrido de cadencia de rebalanceo (ver pendiente #1). Conclusión: **mensual es el óptimo** (Sharpe casi = semanal, 1/2.5 turnover, mejor DD). El live corre daily = sobre-opera → implementar gate de entrada mensual (próxima sesión).
-- ⚠️ **Verificar el daily del LUNES**: que opere con 5-6 posiciones + mantenga despliegue alto (el fix de cash drag iter24 es nuevo).
-- ℹ️ **Nota de workspace**: el worktree `trusting-moser-f5f2d8` está VIEJO (iter10). Todo el código real/deployado vive en **master `D:/Agente`**. Editar siempre ahí (`git -C "D:/Agente"`), nunca en el worktree.
+- ✅ Equity ~$1.72k (+8%). Cloud Run + schedulers activos. LLM 100% free. CP live 73% win rate (= backtest).
+- ✅ **iter29 validado**: 5-6 posiciones diversificadas, universo CP diverso (41, tech 29%). Backtest @30bps Sharpe **1.50** vs SPY 0.94.
+- ✅ **iter31 deployado**: gate de rotación de entradas ~mensual (ver #1). Baja el sobre-trading del daily. Build+deploy 3 jobs OK, smoke alpha-monitor exit 0.
+- ✅ **iter32 (no cambia live)**: (a) multi-factor vol-penalty REFUTADO en universo curado → momentum puro gana (Sharpe 1.50 vs 1.34); palanca `cp_vol_penalty=0.0` dormida. (b) fix `_get_sp500_tickers` 403 → 503 tickers (backtests `--broad` ahora sí diversos). (c) **40 tests** (cobertura nueva del core: allocation + scoring + gate). Re-test diverso del vol-penalty deferido (yfinance throttling; solo importa si se expande el universo).
+- ⚠️ **Verificar el daily de HOY (lunes 05-25)**: 1er run con el gate iter31. Que opere 5-6 posiciones, despliegue alto, registre `signals/entry_gate.json`. `python run_dashboard.py --health` muestra el gate.
+- ℹ️ **Workspace**: el worktree `trusting-moser-f5f2d8` está VIEJO (iter10). El código real/deployado vive en **master `D:/Agente`** (`git -C "D:/Agente"`). NO editar el worktree.
 
 ### Lo hecho esta sesión (iter11→29, todo en master + deployado)
 | Iter | Cambio |
