@@ -51,14 +51,16 @@ El backtester debiasado reveló la verdad del edge. **Cada sesgo que se saca, el
 
 ---
 
-## 🎯 Estado al cierre (iter32, 2026-05-25) — TODO OPERANDO
+## 🎯 Estado al cierre (iter33, 2026-05-25) — TODO OPERANDO
 
 - ✅ Equity ~$1.72k (+8%). Cloud Run + schedulers activos. LLM 100% free. CP live 73% win rate (= backtest).
 - ✅ **iter29 validado**: 5-6 posiciones diversificadas, universo CP diverso (41, tech 29%). Backtest @30bps Sharpe **1.50** vs SPY 0.94.
-- ✅ **iter31 deployado**: gate de rotación de entradas ~mensual (ver #1). Baja el sobre-trading del daily. Build+deploy 3 jobs OK, smoke alpha-monitor exit 0.
-- ✅ **iter32 (no cambia live)**: (a) multi-factor vol-penalty REFUTADO en universo curado → momentum puro gana (Sharpe 1.50 vs 1.34); palanca `cp_vol_penalty=0.0` dormida. (b) fix `_get_sp500_tickers` 403 → 503 tickers (backtests `--broad` ahora sí diversos). (c) **40 tests** (cobertura nueva del core: allocation + scoring + gate). Re-test diverso del vol-penalty deferido (yfinance throttling; solo importa si se expande el universo).
-- ⚠️ **Verificar el daily de HOY (lunes 05-25)**: 1er run con el gate iter31. Que opere 5-6 posiciones, despliegue alto, registre `signals/entry_gate.json`. `python run_dashboard.py --health` muestra el gate.
-- ℹ️ **Workspace**: el worktree `trusting-moser-f5f2d8` está VIEJO (iter10). El código real/deployado vive en **master `D:/Agente`** (`git -C "D:/Agente"`). NO editar el worktree.
+- ✅ **iter31 deployado**: gate de rotación de entradas ~mensual (ver #1). Baja el sobre-trading del daily.
+- ✅ **iter32**: (a) vol-penalty REFUTADO (momentum puro gana, Sharpe 1.50 vs 1.34); palanca `cp_vol_penalty=0.0` dormida. (b) fix `_get_sp500_tickers` 403 → 503 tickers (mejora la discovery semanal live). (c) tests del core.
+- ✅ **iter33 deployado**: **backstop de pérdida por trade** `PARAMS.max_loss_per_trade_pct=0.08`. Diagnóstico live (15 CP cerrados): selección buena (73% win) pero realizado -$22 por asimetría de salidas — ganadores cortados por ROTACIÓN (0.6d, ya tapado por iter31) + 1 outlier MU -9.6% por stop ATR muy ancho. El cap corta solo la cola catastrófica (≤-8%), no toca perdedores normales (-4.3% el peor). Helper `max_loss_breached()` + test. **41 tests**.
+- ✅ **Daily de hoy (lunes 05-25) corrió clean (exit 0)** PERO **era Memorial Day → mercado cerrado → no operó** ("Mercado cerrado, abortando ejecución"). Todo lo no-trading OK (analyst, signals, dashboard, push). **El gate iter31 NO se ejerció aún** — su 1er test real es el **martes 05-26**.
+- ⚠️ **MARTES 05-26 — verificar el 1er daily con trading real**: que el gate iter31 abra 5-6 posiciones + escriba `signals/entry_gate.json`, despliegue alto (sin cash drag), y que el backstop iter33 esté activo en el monitor. `python run_dashboard.py --health`.
+- ℹ️ **Workspace**: worktree `trusting-moser-f5f2d8` VIEJO (iter10). Código real/deployado en **master `D:/Agente`** (`git -C "D:/Agente"`). NO editar el worktree.
 
 ### Lo hecho esta sesión (iter11→29, todo en master + deployado)
 | Iter | Cambio |
