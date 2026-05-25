@@ -35,26 +35,53 @@ N_FINAL        = 5    # top-N que Claude selecciona para notificar
 
 
 def _get_sp500_tickers() -> list[str]:
-    """Descarga la lista del S&P 500 desde Wikipedia via pandas."""
+    """Descarga la lista del S&P 500. iter32: Wikipedia 403ea sin User-Agent (pandas
+    read_html directo falla) → bajamos el HTML con header de browser y, si falla,
+    probamos un CSV público en GitHub. Último recurso: fallback hardcodeado amplio."""
+    import pandas as pd
+
+    # Fuente 1: Wikipedia con User-Agent (read_html directo da 403)
     try:
-        import pandas as pd
+        import io
+        import urllib.request
         url = "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies"
-        tables = pd.read_html(url)
+        req = urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0 (compatible; AlphaAgent/1.0)"})
+        with urllib.request.urlopen(req, timeout=20) as resp:
+            html = resp.read().decode("utf-8", errors="ignore")
+        tables = pd.read_html(io.StringIO(html))
         df = tables[0]
-        tickers = df["Symbol"].str.replace(".", "-", regex=False).tolist()
-        logger.info("S&P 500: %d tickers descargados", len(tickers))
-        return tickers
+        tickers = df["Symbol"].astype(str).str.replace(".", "-", regex=False).tolist()
+        if len(tickers) >= 400:
+            logger.info("S&P 500: %d tickers descargados (Wikipedia)", len(tickers))
+            return tickers
     except Exception as e:
-        logger.warning("No se pudo descargar S&P 500: %s", e)
-        # Fallback: lista reducida de large-caps no cubiertas
-        return [
-            "BRK-B", "JNJ", "UNH", "PG", "KO", "PEP", "WMT", "HD", "DIS",
-            "NFLX", "ADBE", "CRM", "INTC", "QCOM", "MU", "TXN", "AVGO",
-            "GE", "CAT", "DE", "HON", "MMM", "UPS", "FDX",
-            "GS", "MS", "BAC", "WFC", "C", "AXP",
-            "PFE", "MRK", "ABBV", "BMY", "GILD",
-            "NEE", "D", "SO", "DUK",
-        ]
+        logger.warning("S&P 500 Wikipedia falló (%s) — probando GitHub", e)
+
+    # Fuente 2: CSV público en GitHub (datasets/s-and-p-500-companies)
+    try:
+        csv_url = ("https://raw.githubusercontent.com/datasets/"
+                   "s-and-p-500-companies/main/data/constituents.csv")
+        df = pd.read_csv(csv_url)
+        col = "Symbol" if "Symbol" in df.columns else df.columns[0]
+        tickers = df[col].astype(str).str.replace(".", "-", regex=False).tolist()
+        if len(tickers) >= 400:
+            logger.info("S&P 500: %d tickers descargados (GitHub CSV)", len(tickers))
+            return tickers
+    except Exception as e:
+        logger.warning("S&P 500 GitHub CSV falló (%s) — usando fallback hardcodeado", e)
+
+    # Fallback: lista amplia diversa de large-caps (no solo ACTIVOS) para que el
+    # backtest --broad siga siendo razonablemente diverso aún sin red.
+    return [
+        "BRK-B", "JNJ", "UNH", "PG", "KO", "PEP", "WMT", "HD", "DIS", "MCD",
+        "NFLX", "ADBE", "CRM", "INTC", "QCOM", "MU", "TXN", "AVGO", "ORCL", "IBM",
+        "GE", "CAT", "DE", "HON", "MMM", "UPS", "FDX", "LMT", "RTX", "BA",
+        "GS", "MS", "BAC", "WFC", "C", "AXP", "BLK", "SCHW", "SPGI",
+        "PFE", "MRK", "ABBV", "BMY", "GILD", "TMO", "DHR", "ABT", "CVS",
+        "NEE", "D", "SO", "DUK", "XOM", "CVX", "COP", "SLB",
+        "PM", "MO", "CL", "KMB", "GIS", "TGT", "LOW", "SBUX", "NKE",
+        "T", "VZ", "CMCSA", "CSCO", "ACN", "NOW", "INTU", "AMAT", "LRCX",
+    ]
 
 
 def _quick_score(ticker: str) -> dict | None:
