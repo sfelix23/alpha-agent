@@ -149,6 +149,10 @@ done
 
 **Implementado recientemente (mayo 2026):**
 
+Iter 32 (2026-05-24) — **multi-factor CP: resultado NEGATIVo (momentum puro gana)**:
+- Hipótesis: penalizar volatilidad (`sigma_anual`) en el score CP mejora el riesgo-ajustado (el momentum elige los nombres más volátiles). **A/B @30bps (universo curado 41, top-5, 2y OOS) lo REFUTÓ**: pen 0.0 → Sharpe **1.50**/Sortino 2.72/CAGR 50%/DD -19%; pen 0.20 → Sharpe 1.34/CAGR 42%/DD -16%; pen 0.35 → Sharpe 1.24/DD -14%. Baja el DD pero **empeora Sharpe/Sortino** (mala proporción).
+- **Conclusión honesta**: en universo ya curado de calidad, el momentum puro **es** la mejor selección risk-adjusted. La palanca real fue el *sizing* (iter29) y la *cadencia* (iter31), no factores de *selección*. Palanca `PARAMS.cp_vol_penalty` queda DORMIDA (0.0, guardada, testeada) por si se revisita en universo amplio. **NO redeployado** (0.0 = no-op, comportamiento idéntico a iter31).
+
 Iter 30-31 (2026-05-23/24) — **cadencia de rebalanceo mensual (gate de entradas)**:
 - **Análisis (iter30)**: barrido de frecuencia @30bps (universo amplio, top-5, 2y OOS). Semanal Sharpe 1.62/turnover ~1900%/DD -24%; **mensual 1.50/720%/-19%**; trimestral 0.75. **Mensual = óptimo** (Sharpe ≈ semanal, 1/2.5 turnover, mejor DD). El live corría DAILY = sobre-operaba.
 - **iter31 GATE DE ENTRADA ~MENSUAL**: `portfolio.entry_window_open()` / `record_entry_rotation()` (estado en `signals/entry_gate.json`, persistido vía entrypoint pull/push). En `diff_against_current(..., entry_open)`: las **SALIDAS/recortes/dust siguen DIARIAS**; los **NOMBRES NUEVOS solo entran 1×/mes (21d)** salvo libro sub-desplegado → **backfill** (anti cash-drag). Scale-in a holdeados siempre permitido. `record_entry_rotation()` se llama tras ejecución live con nombres nuevos. Fail-safe: sin archivo → ventana abierta. Observable en `--health` (🟢 abierta / 🔵 cerrada + días). 31 tests (4 nuevos del gate).

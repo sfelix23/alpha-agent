@@ -288,6 +288,18 @@ class FinancialParams:
     top_n_long_term: int = 2
     top_n_short_term: int = 5             # iter29: 2→5 (diversificar sizing); decide_allocation manda (5-6)
 
+    # iter32: penalización de volatilidad en el score CP (palanca DORMIDA, default 0.0).
+    # Hipótesis: penalizar sigma_anual tiltea hacia momentum "suave" y mejora el
+    # riesgo-ajustado. A/B @30bps (universo curado 41, top-5, 2y OOS) lo REFUTÓ:
+    #   pen 0.00 → Sharpe 1.50 / Sortino 2.72 / CAGR 50% / DD -19%
+    #   pen 0.20 → Sharpe 1.34 / Sortino 2.37 / CAGR 42% / DD -16%
+    #   pen 0.35 → Sharpe 1.24 / Sortino 2.18 / CAGR 37% / DD -14%
+    # Baja el DD pero EMPEORA Sharpe/Sortino (cambia retorno por menos riesgo en mala
+    # proporción). En universo ya curado de calidad, el momentum puro es la mejor
+    # selección risk-adjusted. Se deja en 0.0 (= momentum puro). Subir solo si se
+    # re-testea en un universo MÁS AMPLIO (S&P500 diverso) y ahí sí ayuda.
+    cp_vol_penalty: float = 0.0
+
     # Bucket options — iter14: más leverage cuando hay convicción (riesgo = prima, definido)
     top_n_bearish: int = 1                # máx 1 put direccional
     max_contracts_per_trade: int = 3      # iter14: 1→3 contratos (convexidad en alta convicción)

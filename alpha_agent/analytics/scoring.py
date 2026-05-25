@@ -430,6 +430,16 @@ def build_scores(
         - 0.05 * _zscore(-high_penalty)
     )
 
+    # iter32: penalización de volatilidad realizada. El momentum puro rankea más
+    # alto a los nombres más volátiles (suben más en términos absolutos) → más
+    # drawdown. Restamos el z-score de sigma_anual para preferir momentum "suave"
+    # (riesgo-ajustado). Peso tunable (PARAMS.cp_vol_penalty); 0.0 = momentum puro.
+    _vol_pen = getattr(PARAMS, "cp_vol_penalty", 0.0)
+    if _vol_pen and "sigma_anual" in st.columns:
+        _sig = st["sigma_anual"].astype(float)
+        _sig = _sig.fillna(_sig.median())
+        score_st -= _vol_pen * _zscore(_sig)
+
     # 5-day momentum: captura el impulso muy reciente (más relevante que 1m para hold 4-18d)
     if "ret_5d" in st.columns:
         score_st += 0.10 * _zscore(st["ret_5d"].fillna(0))
