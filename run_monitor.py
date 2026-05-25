@@ -93,6 +93,16 @@ def pnl_pct_from_position(pos) -> float:
     return 0.0
 
 
+def max_loss_breached(pnl_pct: float, avg_entry: float, cap_pct: float) -> bool:
+    """iter33: True si la pérdida del trade supera el hard cap por trade.
+
+    pnl_pct en porcentaje (ej -9.6), cap_pct en fracción (ej 0.08 = -8%).
+    Backstop para cuando el stop ATR de la señal quedó muy ancho en un nombre
+    volátil. cap_pct=0 → desactivado. Solo corta la cola catastrófica.
+    """
+    return bool(cap_pct and avg_entry > 0 and pnl_pct <= -(cap_pct * 100))
+
+
 def _update_trailing_stop(
     broker,
     ticker: str,
@@ -941,11 +951,24 @@ def _main_locked(args):
                 else:
                     logger.warning("CP %s: sin fecha de entrada en trade_db ni broker — max hold no verificado", ticker)
 
+            # iter33: backstop de pérdida por trade. El stop ATR×2.5 de la señal queda
+            # muy ancho en nombres volátiles (MU salió a -9.6% con SL a -10%). Este hard
+            # cap corta SOLO la cola catastrófica (≤ -8%); no toca perdedores normales
+            # (el peor "normal" fue -4.3%) ni pelea con el "dejar respirar". Reversible
+            # vía PARAMS.max_loss_per_trade_pct (0.0 = off). Per-trade, no portfolio.
+            _max_loss = getattr(PARAMS, "max_loss_per_trade_pct", 0.0)
+            _max_loss_hit = max_loss_breached(pnl_pct, avg_entry, _max_loss)
             # Check stop loss
             stop_loss_hit = bool(stop_loss and current <= stop_loss)
-            if stop_loss_hit:
+            if stop_loss_hit or _max_loss_hit:
                 action = "CLOSE"
-                reason = f"STOP LOSS tocado (${current:.2f} <= SL ${stop_loss:.2f})"
+                if _max_loss_hit and not stop_loss_hit:
+                    reason = (
+                        f"MAX LOSS por trade ({pnl_pct:.1f}% <= -{_max_loss*100:.0f}%) "
+                        f"— backstop catastrófico (stop de señal demasiado ancho)"
+                    )
+                else:
+                    reason = f"STOP LOSS tocado (${current:.2f} <= SL ${stop_loss:.2f})"
 
             # Check take profit
             elif take_profit and current >= take_profit:

@@ -91,3 +91,22 @@ def test_cp_vol_penalty_zero_is_noop(monkeypatch):
     object.__setattr__(PARAMS, "cp_vol_penalty", 0.0)
     s2 = scoring.build_scores(capm, tech, regime="BULL", backtest_mode=True)["short_term"]
     assert (s2["score_st"] - base).abs().max() < 1e-9, "0.0 debe reproducir el score sin penalty"
+
+
+# ── run_monitor: backstop de pérdida por trade (iter33) ─────────────────────
+
+def test_max_loss_backstop():
+    from run_monitor import max_loss_breached
+    cap = 0.08  # -8%
+    # Cola catastrófica → corta
+    assert max_loss_breached(-9.6, 100.0, cap) is True
+    assert max_loss_breached(-8.0, 100.0, cap) is True
+    # Perdedores normales → NO toca (el peor "normal" observado fue -4.3%)
+    assert max_loss_breached(-4.3, 100.0, cap) is False
+    assert max_loss_breached(-1.0, 100.0, cap) is False
+    # Ganadores → nunca
+    assert max_loss_breached(6.5, 100.0, cap) is False
+    # Desactivado (0.0) → nunca corta
+    assert max_loss_breached(-50.0, 100.0, 0.0) is False
+    # Sin avg_entry válido → no corta (evita falsos positivos en dust/datos malos)
+    assert max_loss_breached(-20.0, 0.0, cap) is False

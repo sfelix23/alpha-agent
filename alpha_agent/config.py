@@ -283,6 +283,12 @@ class FinancialParams:
     rsi_oversold: float = 35.0
     rsi_overbought: float = 80.0          # iter14: 75→80 — no castigar momentum fuerte tan temprano
     atr_stop_multiple: float = 2.5        # iter14: 2.0→2.5 — stops más anchos, dejar respirar la vol
+    # iter33: backstop de pérdida por trade. El stop ATR×2.5 en nombres volátiles
+    # queda muy ancho (MU salió a -9.6% con stop a -10%). Este hard cap corta SOLO
+    # la cola catastrófica — no toca perdedores normales (el peor "normal" fue -4.3%)
+    # ni pelea con el "dejar respirar". Per-trade, NO portfolio (el kill sigue -13%).
+    # 0.0 = off (reversible). 0.08 = ningún trade sangra más de -8%.
+    max_loss_per_trade_pct: float = 0.08
 
     # Growth: 2 LP + n CP (el allocation_agent fija n_cp dinámico: 2 concentrado / 3 difuso)
     top_n_long_term: int = 2
