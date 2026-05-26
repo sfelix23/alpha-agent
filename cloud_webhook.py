@@ -41,6 +41,8 @@ ALLOWED_CHAT = os.getenv("TELEGRAM_CHAT_ID", "")
 # está vacío, no se filtra (recomendado para no bloquear).
 ALLOWED_WA = os.getenv("MY_PHONE_NUMBER", "")
 RAW_REPO = "https://raw.githubusercontent.com/sfelix23/alpha-agent/master"
+GCP_PROJECT = "alpha-agent-2025"
+GCP_REGION = "us-central1"
 
 
 def _fetch_repo_json(path: str):
@@ -52,6 +54,41 @@ def _fetch_repo_json(path: str):
     except Exception as e:
         log.warning("fetch %s falló: %s", path, e)
         return None
+
+
+def _trigger_cloud_run_job(job_name: str) -> tuple[bool, str]:
+    """iter37: dispara un Cloud Run Job via REST API usando el OAuth token del
+    metadata server (Cloud Run Service expone el SA default).
+
+    Necesita IAM `roles/run.invoker` para el SA sobre el job target. No requiere
+    ninguna librería extra (urllib + el token del metadata server).
+    Retorna (ok, mensaje).
+    """
+    try:
+        # 1. Obtener access token del metadata server
+        md_url = "http://metadata.google.internal/computeMetadata/v1/instance/service-accounts/default/token"
+        req = urllib.request.Request(md_url, headers={"Metadata-Flavor": "Google"})
+        with urllib.request.urlopen(req, timeout=10) as r:
+            token = json.loads(r.read())["access_token"]
+        # 2. POST al endpoint :run del job
+        exec_url = (
+            f"https://run.googleapis.com/v2/projects/{GCP_PROJECT}/locations/"
+            f"{GCP_REGION}/jobs/{job_name}:run"
+        )
+        req2 = urllib.request.Request(
+            exec_url, method="POST",
+            headers={"Authorization": f"Bearer {token}", "Content-Type": "application/json"},
+            data=b"{}",
+        )
+        with urllib.request.urlopen(req2, timeout=15) as r:
+            resp = json.loads(r.read())
+        exec_id = resp.get("metadata", {}).get("name", "?").split("/")[-1]
+        return True, f"✅ {job_name} disparado — execution: {exec_id}"
+    except urllib.error.HTTPError as e:
+        body = e.read().decode("utf-8", errors="ignore")[:200]
+        return False, f"❌ {job_name} HTTP {e.code}: {body}"
+    except Exception as e:
+        return False, f"❌ {job_name} error: {e}"
 
 
 def _alpaca_account():
@@ -204,14 +241,19 @@ def _cmd_universo() -> str:
 def _help() -> str:
     return (
         "*ALPHA BOT — cloud edition*\n"
+        "*Lectura:*\n"
         "estado — equity + posiciones + último daily\n"
         "cartera — posiciones con P&L abierto\n"
         "equity — capital, retorno, despliegue\n"
         "health — snapshot completo del sistema\n"
         "llm — costos LLM hoy\n"
         "universo — CP universe efectivo + rotaciones\n"
-        "ayuda — este menú\n\n"
-        "_Comandos PC-específicos (shutdown/wake/run) siguen en el bot local._"
+        "\n*Disparar jobs (iter37):*\n"
+        "run / correr — fuerza el analyst+trader (~2-5 min)\n"
+        "monitor — corre el monitor (stops/TPs)\n"
+        "weekly — corre la discovery semanal\n"
+        "\nayuda — este menú\n\n"
+        "_Comandos PC-específicos (shutdown/wake) siguen en el bot local._"
     )
 
 
@@ -229,6 +271,16 @@ def _dispatch(text: str) -> str:
         return _cmd_llm()
     if t in ("universo", "universe"):
         return _cmd_universo()
+    # iter37: triggers de Cloud Run Jobs
+    if t in ("run", "correr", "force daily", "daily", "analyst", "analizar"):
+        ok, msg = _trigger_cloud_run_job("alpha-daily")
+        return msg + ("\n_Recibirás el brief cuando termine (~2-5 min)._" if ok else "")
+    if t in ("monitor", "force monitor", "vigilar"):
+        ok, msg = _trigger_cloud_run_job("alpha-monitor")
+        return msg
+    if t in ("weekly", "discovery", "force weekly"):
+        ok, msg = _trigger_cloud_run_job("alpha-weekly")
+        return msg
     if t in ("ayuda", "help", "?", "start", "comandos"):
         return _help()
     return f"No entendí '{t}'. Envía *ayuda* para ver comandos."

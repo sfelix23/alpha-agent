@@ -99,9 +99,23 @@ def main() -> None:
             except Exception:
                 pass
 
-    capital = args.capital if args.capital else PARAMS.paper_capital_usd
+    # iter36: usar equity LIVE de Alpaca (no baseline $1600). El sizing real del
+    # trader ya usaba live (broker.get_equity()); este cambio solo asegura que la
+    # observabilidad (latest.json, brief WhatsApp, dashboard) refleje el equity
+    # real para no confundir. Fail-safe: si Alpaca no responde, cae al baseline.
+    if args.capital:
+        capital = args.capital
+    else:
+        try:
+            from trader_agent.brokers.alpaca_broker import AlpacaBroker
+            capital = float(AlpacaBroker().get_equity())
+        except Exception as _e:
+            logging.getLogger("alpha_agent").warning(
+                "No pude leer equity live (%s) — fallback baseline $%.0f", _e, PARAMS.paper_capital_usd
+            )
+            capital = PARAMS.paper_capital_usd
     log.info("INICIANDO AGENTE ALPHA — %s", datetime.now().isoformat(timespec="seconds"))
-    log.info("Capital paper: $%.2f USD", capital)
+    log.info("Capital (equity live o baseline): $%.2f USD", capital)
 
     # Cargar sentiment cache del run anterior para carry + delta
     # Delta = cambio en sentimiento entre runs consecutivos → predice momentum mejor que el nivel
