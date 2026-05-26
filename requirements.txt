@@ -14,4 +14,5 @@ feedparser>=6.0
 requests>=2.31
 filelock>=3.13
 lxml
+flask>=3.0
 pytest>=7.4
