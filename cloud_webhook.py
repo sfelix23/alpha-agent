@@ -25,7 +25,9 @@ import logging
 import os
 import urllib.request
 
-from flask import Flask, request
+from html import escape as _xml_escape
+
+from flask import Flask, Response, request
 
 from alpha_agent.notifications.telegram import send_telegram
 
@@ -35,6 +37,9 @@ logging.basicConfig(level=logging.INFO, format="[%(asctime)s] %(levelname)s %(na
 app = Flask(__name__)
 
 ALLOWED_CHAT = os.getenv("TELEGRAM_CHAT_ID", "")
+# Whitelist WhatsApp por número (formato Twilio: "whatsapp:+5491134567890"). Si
+# está vacío, no se filtra (recomendado para no bloquear).
+ALLOWED_WA = os.getenv("MY_PHONE_NUMBER", "")
 RAW_REPO = "https://raw.githubusercontent.com/sfelix23/alpha-agent/master"
 
 
@@ -237,6 +242,30 @@ def root():
 @app.route("/health", methods=["GET"])
 def health_probe():
     return ("ok\n", 200)
+
+
+@app.route("/webhook/whatsapp", methods=["POST"])
+def whatsapp_webhook():
+    """Twilio WhatsApp webhook. Recibe form-encoded, responde con TwiML."""
+    body = request.form.get("Body", "")
+    from_num = request.form.get("From", "")  # ej: "whatsapp:+5491134567890"
+
+    # Whitelist por número (si ALLOWED_WA está configurado)
+    if ALLOWED_WA and ALLOWED_WA not in from_num:
+        log.warning("WhatsApp inbound de número no autorizado: %s text=%r", from_num, body[:80])
+        return Response(
+            '<?xml version="1.0" encoding="UTF-8"?><Response></Response>',
+            mimetype="application/xml",
+        )
+
+    log.info("WhatsApp cmd from %s: %r", from_num, body[:100])
+    resp_text = _dispatch(body)
+    # TwiML reply (Twilio espera XML; escapamos < > & en el texto)
+    twiml = (
+        '<?xml version="1.0" encoding="UTF-8"?>'
+        f'<Response><Message>{_xml_escape(resp_text)}</Message></Response>'
+    )
+    return Response(twiml, mimetype="application/xml")
 
 
 @app.route("/webhook/telegram", methods=["POST"])
