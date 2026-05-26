@@ -29,6 +29,33 @@ def test_winner_in_target_still_trims_overexposure():
     assert sells and abs(sells[0].notional - 400.0) < 1e-6  # vende el exceso 500-100
 
 
+def test_dust_does_not_block_backfill_when_gate_closed():
+    """iter35: dust (mv<$5) NO debe contar como slots ocupados en book_full.
+
+    Sin el fix: con 6 dust + 1 real holding + target 5 → len(held)=7 >= 5
+    → gate cerrado bloquea backfill → cash drag permanente.
+    Con el fix: solo cuenta los reales (1) → book sub-desplegado → backfill OK.
+    """
+    # 1 real holding ($200) + 6 dust (<$1 c/u). Target tiene 5 nombres nuevos.
+    real = _Pos("HELD", 200.0, 20.0, 10.0)
+    dust = [_Pos(f"DUST{i}", 0.5, 100.0, 0.005) for i in range(6)]
+    positions = [real, *dust]
+    target = {
+        "HELD": {"notional": 200.0, "horizon": "CP"},
+        "NEW1": {"notional": 180.0, "horizon": "CP", "stop_loss": 10, "take_profit": 30},
+        "NEW2": {"notional": 180.0, "horizon": "CP", "stop_loss": 10, "take_profit": 30},
+        "NEW3": {"notional": 180.0, "horizon": "CP", "stop_loss": 10, "take_profit": 30},
+        "NEW4": {"notional": 180.0, "horizon": "CP", "stop_loss": 10, "take_profit": 30},
+    }
+    # Ventana CERRADA (entry_open=False): solo backfill si libro sub-desplegado.
+    intents = diff_against_current(target, positions, threshold=25.0, entry_open=False)
+    buys = {i.ticker for i in intents if i.side == "BUY"}
+    # Los 4 nombres nuevos deben recibir BUY (backfill, NO bloqueados por dust)
+    assert {"NEW1", "NEW2", "NEW3", "NEW4"}.issubset(buys), (
+        f"dust no debe bloquear backfill — got buys={buys}"
+    )
+
+
 def test_headroom_no_double_subtraction(tmp_path):
     # iter19: equity 1722, bp 970, invertido 751 → headroom ~970 (no 219).
     pos = [_Pos("HELD", 751.0, 751.0, 1.0)]

@@ -290,6 +290,15 @@ class FinancialParams:
     # 0.0 = off (reversible). 0.08 = ningún trade sangra más de -8%.
     max_loss_per_trade_pct: float = 0.08
 
+    # iter35: deployment / anti-cash-drag.
+    # Diagnóstico live: el sistema operaba al ~30% del equity (vs target 90%) porque
+    # 1 nombre de alta convicción absorbía ~48% del sleeve CP (concentración por
+    # score + ×1.8 ALTA conviction) → las otras 4 quedaban a ~$140 c/u y el filtro
+    # MIN_NOTIONAL=150 las descartaba → no se compraban → cash drag estructural.
+    # Fix: cap por nombre 35% + bajar MIN_NOTIONAL a $75 (~4% de $1700 vs 9% antes).
+    cp_max_weight_per_position: float = 0.35
+    min_notional_per_trade: float = 75.0
+
     # Growth: 2 LP + n CP (el allocation_agent fija n_cp dinámico: 2 concentrado / 3 difuso)
     top_n_long_term: int = 2
     top_n_short_term: int = 5             # iter29: 2→5 (diversificar sizing); decide_allocation manda (5-6)

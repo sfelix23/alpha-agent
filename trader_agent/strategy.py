@@ -186,14 +186,15 @@ def execute(broker: BrokerBase, *, dry_run: bool = True, max_capital: float | No
     else:
         _stale_signals = False
 
-    # Capital seguro: usamos min(equity, buying_power) para no operar con margen.
-    # Alpaca paper habilita margen 2x → buying_power puede ser 2× equity.
-    # Además respetamos max_capital (pasado por run_autonomous.ps1 como el equity
-    # real leído antes de correr el analyst, para consistencia).
+    # iter35: capital de PLANIFICACIÓN = equity. El bp queda atado por T+1 settlement
+    # tras una SELL (cuenta cash) → si usábamos min(equity,bp) se subdesplegaba.
+    # El bp restringe DOWNSTREAM via check_capital_headroom (iter19) que hace
+    # min(equity-invested, bp) sobre los intents. Así el target se construye con el
+    # equity completo (sin cash drag artificial) y el headroom regula lo que se ejecuta.
+    # Si bp > equity (margen 2x en Alpaca paper) → seguimos limitando a equity.
     equity = broker.get_equity()
     bp = broker.get_buying_power()
-    safe_bp = min(equity, bp)   # nunca usar más que el equity real
-    capital = min(safe_bp, max_capital) if max_capital else safe_bp
+    capital = min(max_capital if max_capital else equity, equity)
     logger.info(
         "Capital: $%.2f (equity=$%.2f, bp=$%.2f, cap_arg=%s)",
         capital, equity, bp, str(max_capital),

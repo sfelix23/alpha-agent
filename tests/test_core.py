@@ -93,6 +93,44 @@ def test_cp_vol_penalty_zero_is_noop(monkeypatch):
     assert (s2["score_st"] - base).abs().max() < 1e-9, "0.0 debe reproducir el score sin penalty"
 
 
+# ── signals: cap_floor_weights (iter35) ─────────────────────────────────────
+
+def test_cap_floor_weights_basic():
+    """5 pesos donde 1 absorbe 50% → cap 0.35 + floor 0.12, suma 1.0."""
+    from alpha_agent.reporting.signals import cap_floor_weights
+    # ALTA gana 50%, otras 4 a 12.5% c/u
+    ws = cap_floor_weights([0.50, 0.125, 0.125, 0.125, 0.125], cap=0.35, floor=0.12)
+    assert abs(sum(ws) - 1.0) < 0.01, f"suma debe ser ~1: {sum(ws)}"
+    assert max(ws) <= 0.35 + 1e-6, f"cap violado: max={max(ws)}"
+    assert min(ws) >= 0.12 - 1e-6, f"floor violado: min={min(ws)}"
+
+
+def test_cap_floor_redistributes_excess():
+    """Excess de un cap debe ir a los no-capeados, no quedarse en el aire."""
+    from alpha_agent.reporting.signals import cap_floor_weights
+    ws = cap_floor_weights([0.80, 0.05, 0.05, 0.05, 0.05], cap=0.35, floor=0.12)
+    assert abs(sum(ws) - 1.0) < 0.01
+    assert ws[0] <= 0.35 + 1e-6
+    # Los otros 4 subieron del floor (0.12) por la redistribución
+    assert all(w >= 0.12 - 1e-6 for w in ws[1:])
+
+
+def test_cap_floor_no_op_when_balanced():
+    """Si los pesos ya están en rango [floor, cap], la función no los altera."""
+    from alpha_agent.reporting.signals import cap_floor_weights
+    initial = [0.25, 0.20, 0.20, 0.20, 0.15]
+    ws = cap_floor_weights(initial, cap=0.35, floor=0.12)
+    for a, b in zip(initial, ws):
+        assert abs(a - b) < 0.01, f"se modificó un peso ya balanceado: {a} -> {b}"
+
+
+def test_cap_floor_degraded_when_floor_too_high():
+    """Si floor * n > 1, retorna equal-weight (no se puede cumplir el floor)."""
+    from alpha_agent.reporting.signals import cap_floor_weights
+    ws = cap_floor_weights([0.5, 0.3, 0.2], cap=0.35, floor=0.50)
+    assert all(abs(w - 1/3) < 1e-6 for w in ws), f"esperaba equal-weight: {ws}"
+
+
 # ── run_monitor: backstop de pérdida por trade (iter33) ─────────────────────
 
 def test_max_loss_backstop():

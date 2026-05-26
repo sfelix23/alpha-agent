@@ -262,7 +262,13 @@ def diff_against_current(
     # nombre nuevo = rotación (churn) → solo se permite con la ventana mensual
     # abierta. Si está sub-desplegado (menos nombres que el target), se permite
     # backfill aunque la ventana esté cerrada (evita cash drag).
-    _held_names = set(current.keys())
+    # iter35 fix: NO contar dust (mv < $5) como slots ocupados. Antes, 6 dust
+    # pennies (MSTR $0.64, TSM $0.50, etc.) inflaban len(held) y hacían ver el
+    # libro "lleno" cuando solo había 3 posiciones reales → gate bloqueaba
+    # backfill innecesariamente. $5 es bien bajo: cualquier posición legítima
+    # arriba; el dust de cuentas chicas típicamente vive en <$1.
+    _DUST_THRESHOLD = 5.0
+    _held_names = {t for t, mv in current.items() if mv >= _DUST_THRESHOLD}
     _book_full = len(_held_names) >= max(1, len(target))
     _new_entries_blocked = (not entry_open) and _book_full
     if _new_entries_blocked:
@@ -273,7 +279,10 @@ def diff_against_current(
         )
 
     # Tickers en target que necesitan BUY (delta positivo)
-    MIN_NOTIONAL = 150.0  # posiciones menores a $150 no mueven la aguja
+    # iter35: 150→75. El 150 era demasiado alto para una cuenta de ~$1700:
+    # con 5 nombres y un ALTA absorbiendo 35% (post-cap), los otros quedan a
+    # ~$130-180 — el filtro 150 podía descartar mitad y dejar el book sub-desplegado.
+    MIN_NOTIONAL = float(getattr(PARAMS, "min_notional_per_trade", 75.0))
     for t, info in target.items():
         if t in _bought_today:
             continue  # ya compramos hoy, no duplicar

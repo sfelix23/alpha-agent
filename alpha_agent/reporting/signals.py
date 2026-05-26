@@ -305,19 +305,62 @@ def build_signals(
     # Ajuste por convicción CP (antes del floor para no perder la calibración)
     sig.short_term = _apply_conviction_weights(sig.short_term)
 
-    # Floor por posición CP. iter29: 0.20→0.12 para acomodar 5-6 posiciones
-    # (con floor 0.20 y 5 nombres da 100% sin margen para que la convicción
-    # concentre). 0.12 deja que el top llegue a ~0.30-0.40 vía conviction y los
-    # otros ~0.12-0.15 — diversificado pero con tilt a las mejores ideas.
+    # iter35: cap por nombre + floor. El diagnóstico live mostró que 1 nombre
+    # ALTA con score muy alto absorbía ~48% del sleeve → las otras 4 quedaban
+    # debajo de MIN_NOTIONAL → cash drag estructural (30% deployment).
+    # Cap MAX_W (0.35) + floor MIN_W (0.12) → 5 nombres a [0.12, 0.35] cada uno.
     if len(sig.short_term) >= 2:
+        _MAX_W = float(getattr(PARAMS, "cp_max_weight_per_position", 0.35))
         _MIN_W = 0.12
-        ws = [s.weight_target for s in sig.short_term]
-        ws = [max(w, _MIN_W) for w in ws]
-        _total = sum(ws) or 1.0
+        ws = cap_floor_weights(
+            [s.weight_target for s in sig.short_term],
+            cap=_MAX_W, floor=_MIN_W,
+        )
         for s, w in zip(sig.short_term, ws):
-            s.weight_target = round(w / _total, 4)
+            s.weight_target = round(w, 4)
 
     return sig
+
+
+def cap_floor_weights(
+    weights: list[float], cap: float = 0.35, floor: float = 0.12, max_iter: int = 10
+) -> list[float]:
+    """iter35: aplica cap + floor a una lista de pesos y renormaliza a suma 1.
+
+    Algoritmo water-filling: en cada iter, clamp a [floor, cap]; si la suma no
+    es 1, redistribuye el delta entre los pesos que TIENEN espacio para moverse
+    en la dirección necesaria (si delta>0 → los no-capeados; si delta<0 → los
+    no-floor'eados). Helper puro y testeable. Llamado desde build_signals.
+    """
+    if not weights:
+        return weights
+    ws = [float(w) for w in weights]
+    n = len(ws)
+    # Imposibles → degradar gracefully
+    if floor * n > 1.0 + 1e-9:
+        return [1.0 / n] * n
+    if cap * n < 1.0 - 1e-9:
+        return [cap] * n
+
+    for _ in range(max_iter):
+        ws = [min(max(w, floor), cap) for w in ws]
+        total = sum(ws)
+        if abs(total - 1.0) < 1e-3:
+            return ws
+        delta = 1.0 - total
+        if delta > 0:
+            # Necesitamos MÁS peso → distribuir entre los que NO están en cap
+            free = [i for i, w in enumerate(ws) if w < cap - 1e-9]
+        else:
+            # Necesitamos MENOS peso → distribuir entre los que NO están en floor
+            free = [i for i, w in enumerate(ws) if w > floor + 1e-9]
+        if not free:
+            return ws  # no se puede ajustar más; mejor esfuerzo
+        sum_free = sum(ws[i] for i in free) or 1.0
+        for i in free:
+            share = ws[i] / sum_free
+            ws[i] = ws[i] + delta * share
+    return [min(max(w, floor), cap) for w in ws]
 
 
 def _apply_conviction_weights(signals: list[Signal]) -> list[Signal]:

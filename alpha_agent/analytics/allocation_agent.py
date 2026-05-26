@@ -203,6 +203,12 @@ def decide_allocation(
             # Cap duro: CP ≤ 0.95 (deja ≥5% cash operativo aun piramidando), OPT ≤ 0.25
             adjusted_cp = max(0.0, min(0.95, base.cp_pct * modulator))
             adjusted_opt = max(0.0, min(0.25, base.opt_pct * modulator))
+            # iter35: cuando ec_mult=HOT (1.30+) modula AMBOS sleeves, la suma podía
+            # exceder 1.0 (ej. 0.95+0.104). Cap de la suma para preservar el invariante
+            # lp+cp+opt ≤ 1.0. Si excede, achicamos opt primero (CP es el core).
+            total = base.lp_pct + adjusted_cp + adjusted_opt
+            if total > 1.0:
+                adjusted_opt = max(0.0, 1.0 - base.lp_pct - adjusted_cp)
             log.info(
                 "Sleeve modulator: drawdown_mult=%.2f ec_mult=%.2f (ec=%s) → %.2f | CP %.0f%%→%.0f%% OPT %.0f%%→%.0f%%",
                 drawdown_mult, ec_mult_capped, ec_regime, modulator,

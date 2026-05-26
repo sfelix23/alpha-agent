@@ -195,6 +195,13 @@ def _build_target_weights(
     if sc.sum() <= 0:
         return pd.Series(dtype=float)
     w = sc / sc.sum()
+    # iter35: aplicar el mismo cap + floor que el live (signals.py) para que el
+    # backtest sea representativo. Sin esto, el backtest produce pesos sin tope y
+    # el live operaba diferente → backtest no validaba el comportamiento real.
+    from alpha_agent.reporting.signals import cap_floor_weights
+    cap = float(getattr(PARAMS, "cp_max_weight_per_position", 0.35))
+    capped = cap_floor_weights(w.tolist(), cap=cap, floor=0.12)
+    w = pd.Series(capped, index=w.index)
     return w * float(PARAMS.weight_short_term)
 
 
