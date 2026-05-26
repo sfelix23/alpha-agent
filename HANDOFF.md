@@ -51,16 +51,23 @@ El backtester debiasado reveló la verdad del edge. **Cada sesgo que se saca, el
 
 ---
 
-## 🎯 Estado al cierre (iter33, 2026-05-25) — TODO OPERANDO
+## 🎯 Estado al cierre (iter35, 2026-05-26) — TODO OPERANDO
 
-- ✅ Equity ~$1.72k (+8%). Cloud Run + schedulers activos. LLM 100% free. CP live 73% win rate (= backtest).
-- ✅ **iter29 validado**: 5-6 posiciones diversificadas, universo CP diverso (41, tech 29%). Backtest @30bps Sharpe **1.50** vs SPY 0.94.
-- ✅ **iter31 deployado**: gate de rotación de entradas ~mensual (ver #1). Baja el sobre-trading del daily.
-- ✅ **iter32**: (a) vol-penalty REFUTADO (momentum puro gana, Sharpe 1.50 vs 1.34); palanca `cp_vol_penalty=0.0` dormida. (b) fix `_get_sp500_tickers` 403 → 503 tickers (mejora la discovery semanal live). (c) tests del core.
-- ✅ **iter33 deployado**: **backstop de pérdida por trade** `PARAMS.max_loss_per_trade_pct=0.08`. Diagnóstico live (15 CP cerrados): selección buena (73% win) pero realizado -$22 por asimetría de salidas — ganadores cortados por ROTACIÓN (0.6d, ya tapado por iter31) + 1 outlier MU -9.6% por stop ATR muy ancho. El cap corta solo la cola catastrófica (≤-8%), no toca perdedores normales (-4.3% el peor). Helper `max_loss_breached()` + test. **41 tests**.
-- ✅ **Daily de hoy (lunes 05-25) corrió clean (exit 0)** PERO **era Memorial Day → mercado cerrado → no operó** ("Mercado cerrado, abortando ejecución"). Todo lo no-trading OK (analyst, signals, dashboard, push). **El gate iter31 NO se ejerció aún** — su 1er test real es el **martes 05-26**.
-- ⚠️ **MARTES 05-26 — verificar el 1er daily con trading real**: que el gate iter31 abra 5-6 posiciones + escriba `signals/entry_gate.json`, despliegue alto (sin cash drag), y que el backstop iter33 esté activo en el monitor. `python run_dashboard.py --health`.
-- ℹ️ **Workspace**: worktree `trusting-moser-f5f2d8` VIEJO (iter10). Código real/deployado en **master `D:/Agente`** (`git -C "D:/Agente"`). NO editar el worktree.
+- ✅ Equity $1,745 (+9%). Cloud Run + schedulers activos. LLM 100% free. CP live **76% win rate** (sube de 73% post-rotación de hoy = match backtest).
+- ✅ **iter29 validado**: 5-6 posiciones diversificadas, universo CP diverso (41, tech 29%). Backtest @30bps Sharpe **1.45-1.50** vs SPY 0.94.
+- ✅ **iter31 deployado**: gate de rotación de entradas ~mensual. Hoy se ejerció por 1ra vez (`entry_gate.json` escrito 2026-05-26) → cerrado por 20d. El daily ejecutó BUY MU + SELL DDOG; el resto de los días gestiona salidas/backfill, sin churn.
+- ✅ **iter32**: vol-penalty REFUTADO (momentum puro gana). Palanca `cp_vol_penalty=0.0` dormida. Fix S&P500 fetch → 503 tickers. Tests core.
+- ✅ **iter33 deployado**: backstop pérdida/trade -8% (`max_loss_per_trade_pct`). Corta cola catastrófica, no toca perdedores normales. Helper testeable.
+- ✅ **iter34 deployado**: **Cloud Run Service `alpha-bot`** (https://alpha-bot-105138865282.us-central1.run.app) — Telegram + WhatsApp 24/7 SIN PC del usuario. Webhook de Twilio cambiado al cloud (WhatsApp local desconectado por diseño). Comandos cloud-safe: estado/cartera/equity/health/llm/universo/ayuda. PC-específicos (shutdown/wake/run) siguen en dashboard local si se quieren.
+- ✅ **iter35 deployado**: **fix del cash drag** (era ~30% deployment vs target 90%). 4 cambios surgicales:
+  - `signals.py cap_floor_weights()`: cap por nombre 0.35 (evita que 1 nombre absorba 48% del sleeve) + floor 0.12. Water-filling algorithm, 4 tests.
+  - `portfolio.py`: MIN_NOTIONAL 150→75 ($75 es ~4% del equity actual) + dust filter (mv<$5 no cuenta como slot en gate.book_full).
+  - `strategy.py`: capital de planificación = equity (no `min(equity,bp)`). bp atado por T+1 settlement subdesplegaba; iter19 headroom sigue regulando downstream.
+  - `allocation_agent.py`: cap de la SUMA de sleeves (bug pre-existente: con ec_mult=HOT, cp+opt podían sumar >1).
+  - Backtest A/B: Sharpe 1.42 → **1.45**, CAGR +42 → **+43**, Sortino 1.93 → 2.00, DD igual. El cap MEJORA risk-adjusted además de fijar el cash drag. **46 tests**.
+- ⚠️ **MIÉRCOLES 05-27 — verificar el 1er daily con iter35**: que despliegue 80-90% (no 30%), 5-6 posiciones reales con notional similar. `python run_dashboard.py --health`.
+- ℹ️ **Workspace**: worktree VIEJO (iter10). Código real/deployado en **master `D:/Agente`** (`git -C "D:/Agente"`). NO editar el worktree.
+- ℹ️ **Bot URL**: https://alpha-bot-105138865282.us-central1.run.app (Telegram + WhatsApp). Probado y respondiendo.
 
 ### Lo hecho esta sesión (iter11→29, todo en master + deployado)
 | Iter | Cambio |
