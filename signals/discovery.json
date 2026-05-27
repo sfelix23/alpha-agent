@@ -1,23 +1,32 @@
 {
-  "generated_at": "2026-05-26T13:42:20.459418",
+  "generated_at": "2026-05-27T13:42:14.395756",
   "n_scanned": 118,
   "candidates": [
     {
-      "ticker": "AMBA",
-      "score": 40.9,
-      "ret_1m": 39.2,
-      "ret_3m": 28.5,
+      "ticker": "EDIT",
+      "score": 74.0,
+      "ret_1m": 18.1,
+      "ret_3m": 65.8,
       "prioridad": "MEDIA",
-      "razon": "Score técnico 41/100",
+      "razon": "Score técnico 74/100",
       "riesgo": ""
     },
     {
-      "ticker": "MRVL",
-      "score": 40.4,
-      "ret_1m": 34.6,
-      "ret_3m": 163.4,
+      "ticker": "LUNR",
+      "score": 42.9,
+      "ret_1m": 49.1,
+      "ret_3m": 107.5,
       "prioridad": "MEDIA",
-      "razon": "Score técnico 40/100",
+      "razon": "Score técnico 43/100",
+      "riesgo": ""
+    },
+    {
+      "ticker": "MCHP",
+      "score": 41.5,
+      "ret_1m": 15.8,
+      "ret_3m": 30.1,
+      "prioridad": "MEDIA",
+      "razon": "Score técnico 41/100",
       "riesgo": ""
     }
   ],
