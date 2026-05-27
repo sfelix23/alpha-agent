@@ -133,6 +133,30 @@ def test_cap_floor_degraded_when_floor_too_high():
 
 # ── run_monitor: backstop de pérdida por trade (iter33) ─────────────────────
 
+def test_position_at_risk_iter41():
+    """iter41: la alerta dispara a -6% pero no antes."""
+    from run_monitor import position_at_risk
+    assert position_at_risk(-7.5) is True   # cerca del backstop
+    assert position_at_risk(-6.0) is True   # exact threshold
+    assert position_at_risk(-5.9) is False  # justo arriba
+    assert position_at_risk(-4.0) is False  # perdedor normal, no alerta
+    assert position_at_risk(2.0) is False   # ganador
+    assert position_at_risk(-6.0, threshold_pct=-8.0) is False  # threshold custom
+
+
+def test_order_age_minutes_iter40():
+    """iter40: edad de orden — maneja tz-aware y tz-naive."""
+    from datetime import datetime, timezone, timedelta
+    from run_monitor import order_age_minutes
+    now = datetime.now(timezone.utc)
+    # Order de hace 20 min (tz-aware)
+    sub_aware = now - timedelta(minutes=20)
+    assert 19.5 < order_age_minutes(sub_aware, now) < 20.5
+    # Order de hace 5 min (tz-naive — debe asumir UTC)
+    sub_naive = (now - timedelta(minutes=5)).replace(tzinfo=None)
+    assert 4.5 < order_age_minutes(sub_naive, now) < 5.5
+
+
 def test_max_loss_backstop():
     from run_monitor import max_loss_breached
     cap = 0.08  # -8%

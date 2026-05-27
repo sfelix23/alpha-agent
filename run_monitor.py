@@ -93,6 +93,27 @@ def pnl_pct_from_position(pos) -> float:
     return 0.0
 
 
+def position_at_risk(pnl_pct: float, threshold_pct: float = -6.0) -> bool:
+    """iter41: True si la posición está cerca del backstop iter33 (-8%).
+    threshold -6% da margen para que vos veas la alerta antes que el monitor
+    cierre solo a -8%. Helper puro para test.
+    """
+    return pnl_pct <= threshold_pct
+
+
+def order_age_minutes(submitted_at, now=None) -> float:
+    """iter40: edad de una orden en minutos. submitted_at puede ser tz-aware o naive.
+    Helper puro para test del retry-stuck logic.
+    """
+    from datetime import datetime, timezone
+    if now is None:
+        now = datetime.now(timezone.utc)
+    sub = submitted_at
+    if hasattr(sub, "tzinfo") and sub.tzinfo is None:
+        sub = sub.replace(tzinfo=timezone.utc)
+    return (now - sub).total_seconds() / 60.0
+
+
 def max_loss_breached(pnl_pct: float, avg_entry: float, cap_pct: float) -> bool:
     """iter33: True si la pérdida del trade supera el hard cap por trade.
 
@@ -654,6 +675,50 @@ def _main_locked(args):
     alerts: list[str] = []
     closes: list[str] = []
 
+    # iter40: rescatar órdenes BUY que quedaron stuck en "new" >15min (limit del
+    # daily no aguantó el movimiento del mercado). Cancela + re-emite como MARKET.
+    # Belt-and-suspenders sobre iter39 (buffer +2%): si por un movimiento extremo
+    # el +2% no aguantó, esta función desbloquea el capital. Solo BUYs (vender al
+    # market en stuck = entregás margen sin necesidad).
+    try:
+        from datetime import datetime as _dt, timezone as _tz
+        from alpaca.trading.requests import GetOrdersRequest, MarketOrderRequest  # type: ignore
+        from alpaca.trading.enums import QueryOrderStatus, OrderSide, TimeInForce  # type: ignore
+        _tc = getattr(broker, "_trading", None)
+        if _tc and args.live and not args.dry_run:
+            _now = _dt.now(_tz.utc)
+            _open = _tc.get_orders(filter=GetOrdersRequest(status=QueryOrderStatus.OPEN, limit=20))
+            _retried = 0
+            for _o in _open:
+                if _o.side.value != "buy":
+                    continue
+                if _o.status.value not in ("new", "accepted", "pending_new"):
+                    continue
+                _age = order_age_minutes(_o.submitted_at, _now)
+                if _age < 15:
+                    continue
+                # Cancel + market re-submit con misma qty
+                try:
+                    _tc.cancel_order_by_id(_o.id)
+                    _qty = float(_o.qty or 0)
+                    if _qty <= 0:
+                        continue
+                    _mreq = MarketOrderRequest(
+                        symbol=_o.symbol, qty=_qty,
+                        side=OrderSide.BUY, time_in_force=TimeInForce.DAY,
+                    )
+                    _tc.submit_order(_mreq)
+                    _retried += 1
+                    _msg = f"🔄 RETRY {_o.symbol}: limit stuck {_age:.0f}min → MARKET ({_qty:.4f})"
+                    logger.warning(_msg)
+                    alerts.append(_msg)
+                except Exception as _ce:
+                    logger.warning("retry %s falló: %s", _o.symbol, _ce)
+            if _retried:
+                logger.info("iter40: %d órdenes recicladas como MARKET", _retried)
+    except Exception as _re:
+        logger.debug("retry_stuck_orders no aplicado (%s)", _re)
+
     try:
         from alpha_agent.analytics.kelly import risk_action_for_drawdown
         risk_band = risk_action_for_drawdown(drawdown_pct)
@@ -849,6 +914,16 @@ def _main_locked(args):
             current = current_price_from_position(pos)
             unrealized_pnl = pos.unrealized_pl
             pnl_pct = pnl_pct_from_position(pos)
+
+            # iter41: alerta posición at-risk antes que el backstop iter33 (-8%)
+            # la cierre. -6% da margen para que veas la situación. Sólo alertamos
+            # 1 vez por día por ticker (anti-spam) usando partial_exit registry.
+            if position_at_risk(pnl_pct, threshold_pct=-6.0) and not _was_partially_exited_today(f"AT_RISK_{ticker}"):
+                _log_partial_exit(f"AT_RISK_{ticker}", 0, 0, 0)  # marca anti-spam
+                alerts.append(
+                    f"⚠️ *{ticker}* en zona de riesgo: P&L {pnl_pct:.1f}% "
+                    f"(backstop iter33 cierra a -8%)"
+                )
 
             signal = get_signal_for_ticker(signals_data, ticker)
 
