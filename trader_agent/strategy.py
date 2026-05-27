@@ -87,7 +87,21 @@ def _kill_switch_check(broker: BrokerBase) -> tuple[bool, str]:
     Devuelve (ok_to_trade, reason).
     Si el equity de hoy bajó más que PARAMS.max_daily_drawdown respecto al
     anchor del día → False.
+
+    iter38: también chequea el flag `signals/paused.flag` (escrito por el bot
+    cloud o el dashboard). Si existe, aborta trading sin órdenes. Permite cortar
+    el sistema desde Telegram/WhatsApp en cualquier lado.
     """
+    # iter38: pause flag (bot cloud) tiene precedencia absoluta — corta antes que el kill switch.
+    try:
+        from pathlib import Path as _Path
+        _pause = _Path("signals/paused.flag")
+        if _pause.exists():
+            reason_txt = _pause.read_text(encoding="utf-8").strip()[:120] if _pause.stat().st_size > 0 else "sin razón"
+            return False, f"⏸ PAUSED via signals/paused.flag — {reason_txt}"
+    except Exception:
+        pass
+
     today = date.today().isoformat()
     state = _load_day_state()
     try:

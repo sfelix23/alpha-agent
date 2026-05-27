@@ -56,6 +56,75 @@ def _fetch_repo_json(path: str):
         return None
 
 
+def _github_put_file(path: str, content: str, message: str) -> tuple[bool, str]:
+    """iter38: crea/actualiza un archivo en el repo via GitHub API. Usa GH_TOKEN.
+    Devuelve (ok, mensaje). Path es relativo a la raíz del repo (ej signals/paused.flag).
+    """
+    import base64
+    token = os.getenv("GH_TOKEN", "")
+    if not token:
+        return False, "GH_TOKEN no configurado en el Service"
+    api = f"https://api.github.com/repos/sfelix23/alpha-agent/contents/{path}"
+    headers = {"Authorization": f"token {token}", "Accept": "application/vnd.github+json"}
+    sha = None
+    try:
+        req = urllib.request.Request(api, headers=headers)
+        with urllib.request.urlopen(req, timeout=10) as r:
+            sha = json.loads(r.read()).get("sha")
+    except urllib.error.HTTPError as e:
+        if e.code != 404:
+            return False, f"GET error {e.code}: {e.reason}"
+    body = {
+        "message": message,
+        "content": base64.b64encode(content.encode("utf-8")).decode(),
+        "branch": "master",
+    }
+    if sha:
+        body["sha"] = sha
+    try:
+        req2 = urllib.request.Request(
+            api, method="PUT",
+            headers={**headers, "Content-Type": "application/json"},
+            data=json.dumps(body).encode("utf-8"),
+        )
+        with urllib.request.urlopen(req2, timeout=15):
+            pass
+        return True, "ok"
+    except urllib.error.HTTPError as e:
+        return False, f"PUT error {e.code}: {e.read().decode('utf-8',errors='ignore')[:100]}"
+    except Exception as e:
+        return False, f"PUT exception: {e}"
+
+
+def _github_delete_file(path: str, message: str) -> tuple[bool, str]:
+    """iter38: borra un archivo del repo via GitHub API. Idempotente: si no existe, OK."""
+    token = os.getenv("GH_TOKEN", "")
+    if not token:
+        return False, "GH_TOKEN no configurado"
+    api = f"https://api.github.com/repos/sfelix23/alpha-agent/contents/{path}"
+    headers = {"Authorization": f"token {token}", "Accept": "application/vnd.github+json"}
+    try:
+        req = urllib.request.Request(api, headers=headers)
+        with urllib.request.urlopen(req, timeout=10) as r:
+            sha = json.loads(r.read()).get("sha")
+    except urllib.error.HTTPError as e:
+        if e.code == 404:
+            return True, "ya no existía (idempotente)"
+        return False, f"GET error {e.code}"
+    body = {"message": message, "sha": sha, "branch": "master"}
+    try:
+        req2 = urllib.request.Request(
+            api, method="DELETE",
+            headers={**headers, "Content-Type": "application/json"},
+            data=json.dumps(body).encode("utf-8"),
+        )
+        with urllib.request.urlopen(req2, timeout=15):
+            pass
+        return True, "borrado"
+    except Exception as e:
+        return False, f"DELETE error: {e}"
+
+
 def _trigger_cloud_run_job(job_name: str) -> tuple[bool, str]:
     """iter37: dispara un Cloud Run Job via REST API usando el OAuth token del
     metadata server (Cloud Run Service expone el SA default).
@@ -252,6 +321,9 @@ def _help() -> str:
         "run / correr — fuerza el analyst+trader (~2-5 min)\n"
         "monitor — corre el monitor (stops/TPs)\n"
         "weekly — corre la discovery semanal\n"
+        "\n*Control (iter38):*\n"
+        "pause — frena trading (escribe signals/paused.flag)\n"
+        "resume — reanuda trading (borra el flag)\n"
         "\nayuda — este menú\n\n"
         "_Comandos PC-específicos (shutdown/wake) siguen en el bot local._"
     )
@@ -281,6 +353,28 @@ def _dispatch(text: str) -> str:
     if t in ("weekly", "discovery", "force weekly"):
         ok, msg = _trigger_cloud_run_job("alpha-weekly")
         return msg
+    # iter38: pause / resume (escribe/borra signals/paused.flag via GitHub API)
+    if t in ("pause", "pausar", "stop", "frenar"):
+        from datetime import datetime as _dt
+        ts = _dt.utcnow().isoformat(timespec="seconds")
+        ok, msg = _github_put_file(
+            "signals/paused.flag",
+            f"paused via bot at {ts}Z",
+            f"chore: pause trading via bot ({ts})",
+        )
+        if ok:
+            return ("⏸ *PAUSED* — el próximo daily/monitor abortará trading.\n"
+                    "El kill_switch_check lee signals/paused.flag.\n"
+                    "Para reanudar: envía *resume*.")
+        return f"❌ pause falló: {msg}"
+    if t in ("resume", "reanudar", "play", "continuar"):
+        ok, msg = _github_delete_file(
+            "signals/paused.flag",
+            "chore: resume trading via bot",
+        )
+        if ok:
+            return "▶️ *RESUMED* — el próximo daily/monitor opera normalmente."
+        return f"❌ resume falló: {msg}"
     if t in ("ayuda", "help", "?", "start", "comandos"):
         return _help()
     return f"No entendí '{t}'. Envía *ayuda* para ver comandos."
