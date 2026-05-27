@@ -59,6 +59,8 @@ El backtester debiasado reveló la verdad del edge. **Cada sesgo que se saca, el
 - ✅ **iter32**: vol-penalty REFUTADO (momentum puro gana). Palanca `cp_vol_penalty=0.0` dormida. Fix S&P500 fetch → 503 tickers. Tests core.
 - ✅ **iter33 deployado**: backstop pérdida/trade -8% (`max_loss_per_trade_pct`). Corta cola catastrófica, no toca perdedores normales. Helper testeable.
 - ✅ **iter34 deployado**: **Cloud Run Service `alpha-bot`** (https://alpha-bot-105138865282.us-central1.run.app) — Telegram + WhatsApp 24/7 SIN PC del usuario. Webhook de Twilio cambiado al cloud (WhatsApp local desconectado por diseño). Comandos cloud-safe: estado/cartera/equity/health/llm/universo/ayuda. PC-específicos (shutdown/wake/run) siguen en dashboard local si se quieren.
+- ✅ **iter36 deployado (cosmético)**: `run_analyst.py` ahora lee equity LIVE de Alpaca para `latest.json` (antes baseline $1600). NO era bug de trading (el trader ya usaba live) — solo observabilidad. Fail-safe al baseline si Alpaca no responde.
+- ✅ **iter37 deployado**: bot cloud con **poder de ejecución** — comandos `run`/`correr`/`monitor`/`weekly` disparan los Cloud Run Jobs vía REST API + OAuth del metadata server. SA recibió `roles/run.developer`. Ya podés forzar el daily desde Telegram/WhatsApp en cualquier lado, sin la PC.
 - ✅ **iter35 deployado**: **fix del cash drag** (era ~30% deployment vs target 90%). 4 cambios surgicales:
   - `signals.py cap_floor_weights()`: cap por nombre 0.35 (evita que 1 nombre absorba 48% del sleeve) + floor 0.12. Water-filling algorithm, 4 tests.
   - `portfolio.py`: MIN_NOTIONAL 150→75 ($75 es ~4% del equity actual) + dust filter (mv<$5 no cuenta como slot en gate.book_full).
