@@ -651,12 +651,22 @@ def _apply_risk_debate(
 def _limit_price(price: float, side: str) -> float:
     """
     Precio límite para reducir slippage vs market orders.
-    BUY: 0.15% sobre el mid → casi siempre se ejecuta en segundos.
-    SELL: 0.15% bajo el mid.
-    Esto captura mejor spread en stocks poco líquidos (VIST, YPF, AVAV).
+
+    iter39: BUY buffer 0.15% → **2.0%** (marketable limit con margen real).
+    Diagnóstico live del daily 05-27: 3 de 4 órdenes stuck — buffer +0.15%
+    no aguantó un movimiento intradiario de +1.47% (DDOG en 10 min). Las
+    órdenes quedaron atrás del bid → no fillearon → deployment 58% en lugar
+    de 95%. El +2.0% catch incluso movimientos rápidos (raro >2% en 10 min)
+    sin renunciar al control de precio. En la práctica fillea al ASK (no al
+    +2% nominal) cuando el mercado está flat → slippage típico 0.1-0.3%.
+    Slippage MÁXIMO 2% × $250 = $5; el costo del cash drag (capital ocioso)
+    es mucho mayor.
+
+    SELL queda en -0.15%: vender un poco bajo el mid asegura fill (bid suele
+    estar a 0.1%) sin regalar margen.
     """
     if side.upper() in ("BUY",):
-        return round(price * 1.0015, 2)
+        return round(price * 1.020, 2)
     return round(price * 0.9985, 2)
 
 
