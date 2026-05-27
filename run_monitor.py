@@ -915,14 +915,16 @@ def _main_locked(args):
             unrealized_pnl = pos.unrealized_pl
             pnl_pct = pnl_pct_from_position(pos)
 
-            # iter41: alerta posición at-risk antes que el backstop iter33 (-8%)
-            # la cierre. -6% da margen para que veas la situación. Sólo alertamos
-            # 1 vez por día por ticker (anti-spam) usando partial_exit registry.
-            if position_at_risk(pnl_pct, threshold_pct=-6.0) and not _was_partially_exited_today(f"AT_RISK_{ticker}"):
+            # iter41 + iter42: alerta posición at-risk SOLO si NO es dust.
+            # iter42 fix: dust positions (mv<$5) muestran P&L% catastrófico pero
+            # la pérdida en USD es trivial (centavos) y el backstop iter33 no puede
+            # cerrarlas (Alpaca rechaza órdenes sub-$1) → era alert spam puro.
+            _mv = pos.market_value or 0
+            if _mv >= 5.0 and position_at_risk(pnl_pct, threshold_pct=-6.0) and not _was_partially_exited_today(f"AT_RISK_{ticker}"):
                 _log_partial_exit(f"AT_RISK_{ticker}", 0, 0, 0)  # marca anti-spam
                 alerts.append(
                     f"⚠️ *{ticker}* en zona de riesgo: P&L {pnl_pct:.1f}% "
-                    f"(backstop iter33 cierra a -8%)"
+                    f"(mv ${_mv:.0f} · backstop iter33 cierra a -8%)"
                 )
 
             signal = get_signal_for_ticker(signals_data, ticker)
@@ -942,12 +944,18 @@ def _main_locked(args):
                 continue
 
             if not signal:
-                # iter23: dust invendible (sub-$1). Alpaca no deja vender <$1 notional,
-                # así que el orphan stop intentaba cerrar MSTR ($0.64) cada 30min, fallaba
-                # y RE-DISPARABA la alerta → spam. Lo ignoramos: ni alerta ni intento de
-                # cierre (no se puede). Solo log debug.
+                # iter42: dust sub-$1 sin señal — intentar close_position() best-effort
+                # (Alpaca a veces lo permite porque es close, no new order). 1×/día por
+                # ticker (anti-spam si falla). Si falla → log debug, sin alerta.
                 if _mv < 1.0:
-                    logger.debug("Dust invendible %s ($%.2f) sin señal — ignorado (sub-$1)", ticker, _mv)
+                    if args.live and not args.dry_run and not _was_partially_exited_today(f"DUST_TRY_{ticker}"):
+                        _log_partial_exit(f"DUST_TRY_{ticker}", 0, 0, 0)  # marca anti-retry
+                        try:
+                            broker.close_position(ticker)
+                            logger.info("iter42 dust cleanup: %s ($%.2f) cerrado", ticker, _mv)
+                            alerts.append(f"🧹 Dust limpio: {ticker} (${_mv:.2f}) cerrado")
+                        except Exception as _dc:
+                            logger.debug("iter42 dust %s ($%.2f) no cerrable: %s — ignoro", ticker, _mv, _dc)
                     continue
                 # Sin señal en latest.json: posición huérfana (LP o DT abierta sin signal activo).
                 # Aplicar stop de emergencia: -12% LP / -8% DT para evitar pérdidas ilimitadas.
