@@ -3,11 +3,11 @@
   "providers": {
     "groq": {
       "cache_hits": 5,
-      "calls": 49,
+      "calls": 48,
       "cost_usd": 0.0,
       "fallbacks_in": 0,
-      "tokens_in": 9423,
-      "tokens_out": 841
+      "tokens_in": 9159,
+      "tokens_out": 817
     }
   }
 }
