@@ -177,6 +177,30 @@ def _alpaca_account():
         return None
 
 
+def _alpaca_full():
+    """iter44: devuelve dict con equity + last_equity + cash + bp + positions.
+    Usado por _cmd_resumen para mostrar daily P&L correctamente.
+    """
+    try:
+        from alpaca.trading.client import TradingClient
+        client = TradingClient(
+            os.getenv("ALPACA_API_KEY"),
+            os.getenv("ALPACA_SECRET_KEY"),
+            paper=True,
+        )
+        acc = client.get_account()
+        return {
+            "equity": float(acc.equity),
+            "last_equity": float(acc.last_equity),
+            "buying_power": float(acc.buying_power),
+            "cash": float(acc.cash),
+            "positions": client.get_all_positions(),
+        }
+    except Exception as e:
+        log.error("Alpaca full falló: %s", e)
+        return None
+
+
 def _cmd_estado() -> str:
     res = _alpaca_account()
     if not res:
@@ -307,10 +331,75 @@ def _cmd_universo() -> str:
     return "\n".join(lines)
 
 
+def _cmd_resumen() -> str:
+    """iter44: resumen completo del día en una respuesta.
+    P&L total, posiciones, deployment, gate iter31, capas defensivas — todo.
+    """
+    d = _alpaca_full()
+    if not d:
+        return "❌ Error consultando Alpaca."
+    eq = d["equity"]; last_eq = d["last_equity"]; cash = d["cash"]; pos = d["positions"]
+    daily_chg = eq - last_eq
+    daily_pct = (daily_chg / last_eq * 100) if last_eq > 0 else 0
+    real = sorted([p for p in pos if float(p.market_value) >= 5], key=lambda p: -float(p.market_value))
+    total_mv = sum(float(p.market_value) for p in real)
+    open_pl = sum(float(p.unrealized_pl) for p in real)
+    baseline = 1600.0
+    total_ret = (eq - baseline) / baseline * 100
+
+    daily_emoji = "🟢" if daily_chg >= 0 else "🔴"
+    open_emoji = "🟢" if open_pl >= 0 else "🔴"
+
+    lines = [
+        "*📊 RESUMEN DEL DÍA*",
+        "",
+        f"*Equity*: ${eq:,.2f}  (total {total_ret:+.2f}% desde inicio)",
+        f"{daily_emoji} *Daily*: ${daily_chg:+,.2f}  ({daily_pct:+.2f}%)",
+        f"{open_emoji} *P&L abierto*: ${open_pl:+,.2f}",
+        f"*Deployment*: {total_mv/eq*100:.0f}%  (cash ${cash:,.0f})",
+        "",
+        "*Posiciones:*",
+    ]
+    worst_pct = 0.0
+    for p in real:
+        mv = float(p.market_value); plpc = float(p.unrealized_plpc) * 100
+        emoji = "🟢" if plpc > 0.3 else ("🔴" if plpc < -0.3 else "⚪")
+        lines.append(f"{emoji} {p.symbol}: ${mv:,.0f} ({mv/eq*100:.0f}%) — {plpc:+.1f}%")
+        if plpc < worst_pct:
+            worst_pct = plpc
+    if not real:
+        lines.append("_(sin posiciones reales)_")
+
+    # Capas defensivas — margen al backstop
+    margin_backstop = abs(-8.0 - worst_pct)
+    lines.append("")
+    lines.append(f"*Riesgo:* peor pos {worst_pct:+.1f}%  ·  margen al backstop iter33: {margin_backstop:.1f}pp")
+
+    # Gate iter31
+    gate = _fetch_repo_json("signals/entry_gate.json")
+    if gate and gate.get("last_entry_date"):
+        from datetime import date as _date
+        try:
+            ge = _date.fromisoformat(gate["last_entry_date"])
+            days = (_date.today() - ge).days
+            remaining = max(0, 21 - days)
+            lines.append(f"*Gate iter31:* cerrada · faltan {remaining}d para próxima rotación")
+        except Exception:
+            pass
+
+    # Último daily
+    ws = _fetch_repo_json("signals/workflow_status.json") or {}
+    daily_ws = ws.get("alpha_daily", {})
+    if daily_ws.get("ts"):
+        lines.append(f"*Último daily:* {daily_ws['ts']}  ok={daily_ws.get('ok')}")
+    return "\n".join(lines)
+
+
 def _help() -> str:
     return (
         "*ALPHA BOT — cloud edition*\n"
         "*Lectura:*\n"
+        "resumen / hoy — *RESUMEN COMPLETO del día* (iter44)\n"
         "estado — equity + posiciones + último daily\n"
         "cartera — posiciones con P&L abierto\n"
         "equity — capital, retorno, despliegue\n"
@@ -375,6 +464,9 @@ def _dispatch(text: str) -> str:
         if ok:
             return "▶️ *RESUMED* — el próximo daily/monitor opera normalmente."
         return f"❌ resume falló: {msg}"
+    # iter44: resumen completo del día
+    if t in ("resumen", "hoy", "dia", "día", "summary"):
+        return _cmd_resumen()
     if t in ("ayuda", "help", "?", "start", "comandos"):
         return _help()
     return f"No entendí '{t}'. Envía *ayuda* para ver comandos."
