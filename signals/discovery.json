@@ -1,32 +1,41 @@
 {
-  "generated_at": "2026-05-27T13:42:14.395756",
+  "generated_at": "2026-05-28T13:42:06.139927",
   "n_scanned": 118,
   "candidates": [
     {
-      "ticker": "EDIT",
-      "score": 74.0,
-      "ret_1m": 18.1,
-      "ret_3m": 65.8,
+      "ticker": "RCAT",
+      "score": 51.0,
+      "ret_1m": 20.2,
+      "ret_3m": 14.2,
       "prioridad": "MEDIA",
-      "razon": "Score técnico 74/100",
+      "razon": "Score técnico 51/100",
       "riesgo": ""
     },
     {
-      "ticker": "LUNR",
-      "score": 42.9,
-      "ret_1m": 49.1,
-      "ret_3m": 107.5,
+      "ticker": "SNOW",
+      "score": 41.8,
+      "ret_1m": 63.5,
+      "ret_3m": 37.1,
       "prioridad": "MEDIA",
-      "razon": "Score técnico 43/100",
+      "razon": "Score técnico 42/100",
       "riesgo": ""
     },
     {
-      "ticker": "MCHP",
-      "score": 41.5,
-      "ret_1m": 15.8,
-      "ret_3m": 30.1,
+      "ticker": "MRVL",
+      "score": 41.1,
+      "ret_1m": 29.4,
+      "ret_3m": 148.1,
       "prioridad": "MEDIA",
       "razon": "Score técnico 41/100",
+      "riesgo": ""
+    },
+    {
+      "ticker": "TBLA",
+      "score": 40.3,
+      "ret_1m": 30.1,
+      "ret_3m": 53.9,
+      "prioridad": "MEDIA",
+      "razon": "Score técnico 40/100",
       "riesgo": ""
     }
   ],
