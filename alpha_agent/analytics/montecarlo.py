@@ -140,8 +140,18 @@ def run_from_portfolio_history(
         equities = np.array([h["equity"] for h in history], dtype=float)
         daily_returns = np.diff(equities) / equities[:-1]
         daily_returns = daily_returns[np.isfinite(daily_returns)]
-        if len(daily_returns) < 5:
+        # iter45: mínimo 20 retornos diarios para una proyección creíble. Con menos,
+        # extrapolar 252 días daba retornos absurdos (531% mediano desde ~21 días de
+        # un tramo excepcional). Mismo problema que el Sharpe inflado.
+        if len(daily_returns) < 20:
             return None
+        # Cap del drift: anualizado no puede exceder 40% (proyección conservadora).
+        # El mean diario de un buen tramo reciente, compuesto 252 días, explota.
+        # Re-centramos los retornos a un drift máximo defendible, manteniendo la vol real.
+        mean_d = float(daily_returns.mean())
+        cap_d = (1.40) ** (1 / 252) - 1   # ~0.00134/día = 40% anual
+        if mean_d > cap_d:
+            daily_returns = daily_returns - mean_d + cap_d
         return run_simulation(daily_returns, initial_capital=initial_capital)
     except Exception as e:
         logger.warning("Monte Carlo failed: %s", e)
