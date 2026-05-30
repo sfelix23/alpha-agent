@@ -47,15 +47,23 @@ def _spy_returns(days: int) -> float | None:
         return None
 
 
-def _sharpe(pnl_list: list[float], risk_free_daily: float = 4.5 / 252 / 100) -> float | None:
-    if len(pnl_list) < 3:
+def _sharpe(pnl_list: list[float], min_n: int = 20) -> float | None:
+    """Sharpe ratio PER-TRADE (no anualizado).
+
+    iter45 fix: la versión anterior (a) exigía solo n>=3 y (b) anualizaba con
+    √252 asumiendo 1 trade/día → con 3 ganadores daba Sharpe 16.87 (basura
+    estadística que engañaba al usuario). Ahora: mínimo 20 trades para tener
+    significancia, y SIN anualización falsa (reporta el ratio per-trade real,
+    que es interpretable: >0.5 es bueno, >1 excelente para trades discretos).
+    """
+    if len(pnl_list) < min_n:
         return None
     import statistics
     mean = statistics.mean(pnl_list)
     std  = statistics.stdev(pnl_list)
     if std == 0:
         return None
-    return round((mean - risk_free_daily) / std * (252 ** 0.5), 2)
+    return round(mean / std, 2)
 
 
 def main() -> None:
@@ -175,7 +183,9 @@ def main() -> None:
         lines.append(f"  Trades cerrados: {len(week_closed)}")
         lines.append(f"  Win rate: {week_wr:.0%}" if week_wr is not None else "  Win rate: N/A")
         if week_sharpe is not None:
-            lines.append(f"  Sharpe (anualizado): {week_sharpe:.2f}")
+            lines.append(f"  Sharpe per-trade: {week_sharpe:.2f}")
+        else:
+            lines.append(f"  Sharpe: muestra insuficiente (n<20)")
         avg_hold = sum(t.get("hold_days") or 0 for t in week_closed) / len(week_closed)
         lines.append(f"  Hold medio: {avg_hold:.1f} días")
     else:

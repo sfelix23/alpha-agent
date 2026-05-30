@@ -631,15 +631,25 @@ def _main_locked(args):
     except Exception:
         pass
 
-    # Sync fills + reconcile DB con Alpaca — mantiene P&L real actualizado
+    # iter45: rebuild COMPLETO del ledger desde actividades de Alpaca (fuente de
+    # verdad). Reemplaza el sync parcial que solo capturaba ~26% de los sells
+    # (stops/TPs/rebalancer/retries iban directo a Alpaca sin loguear) → el P&L
+    # realizado estaba sub-contado ~95%. El rebuild es idempotente (dedup por
+    # order_id/activity_id) y auto-repara el ledger en cada corrida del monitor.
     try:
-        from alpha_agent.analytics.trade_db import sync_fills_from_alpaca, reconcile_buy_sell_pairs
-        sync_fills_from_alpaca(broker)
-        _closed = reconcile_buy_sell_pairs()
-        if _closed:
-            logger.info("reconcile: %d pares BUY/SELL cerrados automáticamente", _closed)
+        from alpha_agent.analytics.trade_db import rebuild_ledger_from_alpaca
+        _rb = rebuild_ledger_from_alpaca(broker)
+        if _rb.get("inserted"):
+            logger.info("ledger rebuild: +%d fills, %d cerrados, realizado=$%.2f",
+                        _rb["inserted"], _rb["closed"], _rb["realized_pnl"])
     except Exception as _re:
-        logger.debug("trade_db sync error: %s", _re)
+        logger.warning("ledger rebuild error: %s — fallback sync parcial", _re)
+        try:
+            from alpha_agent.analytics.trade_db import sync_fills_from_alpaca, reconcile_buy_sell_pairs
+            sync_fills_from_alpaca(broker)
+            reconcile_buy_sell_pairs()
+        except Exception:
+            pass
 
     # Guardar snapshot diario de equity para el gráfico del dashboard
     try:

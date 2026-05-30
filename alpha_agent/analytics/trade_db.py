@@ -268,6 +268,86 @@ def sync_fills_from_alpaca(broker) -> int:
     return updated
 
 
+def rebuild_ledger_from_alpaca(broker) -> dict:
+    """iter45: reconstruye el ledger completo desde las actividades de Alpaca
+    (fuente de verdad). El problema: stops/TPs/rebalancer/iter40-retries mandan
+    órdenes directo a Alpaca SIN loguear a trade_db → solo ~26% de los sells
+    quedaban registrados → P&L realizado sub-contado en ~95%.
+
+    Estrategia: trae TODOS los fills, inserta los que faltan (dedup por order_id,
+    preservando la metadata de las filas que el sistema ya logueó), resetea la
+    reconciliación y re-corre el FIFO sobre el set completo. Idempotente.
+
+    Retorna {'inserted': n, 'closed': n, 'realized_pnl': float}.
+    """
+    fills = broker.list_fill_activities()
+    if not fills:
+        logger.warning("rebuild_ledger: Alpaca no devolvió fills")
+        return {"inserted": 0, "closed": 0, "realized_pnl": 0.0}
+
+    with _conn() as con:
+        # Columna activity_id para dedup (defensivo: ignora si ya existe)
+        try:
+            con.execute("ALTER TABLE trades ADD COLUMN activity_id TEXT")
+        except Exception:
+            pass
+        existing_oids = {
+            r["order_id"] for r in con.execute(
+                "SELECT DISTINCT order_id FROM trades WHERE order_id IS NOT NULL"
+            ).fetchall()
+        }
+        existing_acts = {
+            r["activity_id"] for r in con.execute(
+                "SELECT DISTINCT activity_id FROM trades WHERE activity_id IS NOT NULL"
+            ).fetchall()
+        }
+        inserted = 0
+        for f in fills:
+            oid = f.get("order_id")
+            aid = f.get("id")
+            if oid in existing_oids or aid in existing_acts:
+                continue  # ya registrado por el sistema o por un rebuild previo
+            try:
+                qty = float(f.get("qty") or 0)
+                price = float(f.get("price") or 0)
+            except (TypeError, ValueError):
+                continue
+            if qty <= 0 or price <= 0:
+                continue
+            side = "BUY" if str(f.get("side", "")).lower().startswith("buy") else "SELL"
+            tx = str(f.get("transaction_time", ""))
+            ts = tx.replace("Z", "")[:19] if tx else datetime.now().isoformat(timespec="seconds")
+            date_str = ts[:10]
+            con.execute(
+                """INSERT INTO trades
+                   (ts, date, ticker, side, qty, price, notional, status, order_id, activity_id)
+                   VALUES (?,?,?,?,?,?,?,?,?,?)""",
+                (ts, date_str, f.get("symbol"), side, qty, price, qty * price,
+                 "filled", oid, aid),
+            )
+            existing_oids.add(oid)
+            existing_acts.add(aid)
+            inserted += 1
+
+        # Reset de reconciliación → recomputar FIFO limpio sobre el set completo
+        con.execute(
+            "UPDATE trades SET closed_at=NULL, exit_price=NULL, pnl_usd=NULL, "
+            "pnl_pct=NULL, hold_days=NULL WHERE side='BUY'"
+        )
+
+    closed = reconcile_buy_sell_pairs()
+    realized = sum(
+        (t.get("pnl_usd") or 0)
+        for t in get_trades(limit=1000)
+        if t.get("side") == "BUY" and t.get("pnl_usd") is not None
+    )
+    logger.info(
+        "rebuild_ledger: +%d fills insertados, %d BUYs cerrados, realizado=$%.2f",
+        inserted, closed, realized,
+    )
+    return {"inserted": inserted, "closed": closed, "realized_pnl": round(realized, 2)}
+
+
 def reconcile_buy_sell_pairs() -> int:
     """
     Matches unprocessed SELL rows to open BUY rows (FIFO per ticker).

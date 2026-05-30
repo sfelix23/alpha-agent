@@ -323,6 +323,38 @@ class AlpacaBroker(BrokerBase):
             logger.debug("list_filled_orders: %s", e)
             return []
 
+    def list_fill_activities(self, max_records: int = 1000) -> list[dict]:
+        """iter45: trae TODAS las actividades de FILL de Alpaca (fuente de verdad),
+        paginado. Cada fill es un dict con: id, symbol, side, qty, price,
+        transaction_time, order_id. Usado para reconstruir el ledger completo
+        (trade_db solo capturaba ~26% de los sells porque stops/TPs/rebalancer
+        van directo a Alpaca sin loguearse).
+        """
+        import os, json, urllib.request
+        key = os.getenv("ALPACA_API_KEY"); sec = os.getenv("ALPACA_SECRET_KEY")
+        base = "https://paper-api.alpaca.markets/v2/account/activities/FILL"
+        out: list[dict] = []
+        page_token = None
+        try:
+            while len(out) < max_records:
+                url = f"{base}?page_size=100"
+                if page_token:
+                    url += f"&page_token={page_token}"
+                req = urllib.request.Request(
+                    url, headers={"APCA-API-KEY-ID": key, "APCA-API-SECRET-KEY": sec}
+                )
+                with urllib.request.urlopen(req, timeout=20) as r:
+                    batch = json.loads(r.read())
+                if not batch:
+                    break
+                out.extend(batch)
+                if len(batch) < 100:
+                    break
+                page_token = batch[-1].get("id")
+        except Exception as e:
+            logger.warning("list_fill_activities: %s", e)
+        return out
+
     def update_stop_loss(self, ticker: str, new_stop: float, qty: float) -> str | None:
         """
         Cancela órdenes stop abiertas para el ticker y envía una nueva stop-sell.
