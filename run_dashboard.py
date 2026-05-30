@@ -420,101 +420,61 @@ def _learnings_panel() -> str:
 
 
 def _control_center_panel() -> str:
-    """Iter11: card "Control Center" con botones que ejecutan via Flask fetch().
+    """iter46: panel de CONTROL — read-only + cloud-aware.
 
-    Antes (iter10) usaba links t.me/bot?text= pero Telegram BLOQUEA pre-llenar
-    mensajes a bots. Ahora los botones llaman a /api/cmd/<action> del Flask
-    local (mismo que sirve el bot). Funciona desde http://localhost:5050/dashboard
-    o desde file:/// (con CORS). Resultado se muestra en un panel inline.
+    Antes (iter11) tenía botones que llamaban a localhost:5050 (Flask local en
+    la PC). Eso ataba el dashboard a la PC encendida y los botones no funcionaban
+    desde GitHub Pages/file:// (se quejaba el usuario). Arquitectura profesional:
+    el dashboard es READ-ONLY (informativo, servible desde la nube sin PC) y el
+    CONTROL va por el bot Telegram/WhatsApp (cloud 24/7, autenticado por whitelist).
+    Exponer botones de acción en una página pública sería un agujero de seguridad.
     """
-    import os as _os
     _is_paused = (BASE_DIR / "signals" / "paused.flag").exists()
-    _anthropic_on = _os.getenv("ENABLE_ANTHROPIC", "").lower() in ("true", "1", "yes")
-
     pause_status = "⏸️ PAUSADO" if _is_paused else "▶️ ACTIVO"
     pause_color = "#f85149" if _is_paused else "#3fb950"
-    pause_action = "resume" if _is_paused else "pause"
-    pause_label = "▶️ Reanudar trading" if _is_paused else "⏸️ Pausar trading"
 
-    anthropic_status = "🟢 ON" if _anthropic_on else "🔴 OFF"
-    anthropic_color = "#3fb950" if _anthropic_on else "#6e7681"
-    anthropic_action = "anthropic_off" if _anthropic_on else "anthropic_on"
-    anthropic_label = "🔴 Apagar Anthropic" if _anthropic_on else "🟢 Activar Anthropic"
-
-    _btn = ("margin:6px 6px 0 0;padding:8px 14px;border-radius:4px;"
-            "font-size:.74rem;font-family:var(--mono);border:1px solid;"
-            "cursor:pointer;background:transparent")
-
-    # JS helper: detecta origin (file:// vs http) y hace fetch al Flask.
-    js = """<script>
-(function(){
-  if (window.__alphaCmdDefined) return;
-  window.__alphaCmdDefined = true;
-  const API = (location.protocol === 'file:') ? 'http://localhost:5050' : '';
-  window.alphaCmd = async function(action, confirmMsg){
-    if (confirmMsg && !confirm(confirmMsg)) return;
-    const out = document.getElementById('cc-result');
-    if (out){ out.style.display='block'; out.textContent='Ejecutando '+action+'...'; }
-    try {
-      const r = await fetch(API + '/api/cmd/' + action, {method:'POST'});
-      const d = await r.json();
-      if (out){ out.textContent = d.result || d.error || 'OK'; }
-    } catch(e) {
-      if (out){
-        out.textContent = 'No se pudo conectar al dashboard Flask.\\n' +
-          'Abri http://localhost:5050/dashboard en vez de file://, o asegurate ' +
-          'que start_dashboard.ps1 este corriendo.\\nError: ' + e;
-      }
-    }
-  };
-})();
-</script>"""
+    _cmd = ("display:inline-block;margin:3px 6px 3px 0;padding:4px 10px;"
+            "border-radius:4px;font-size:.72rem;font-family:var(--mono);"
+            "background:var(--s2);border:1px solid var(--bd);color:var(--tx)")
 
     return f"""<div class="card">
-  {js}
   <div class="card-head">
     <div>
-      <div class="card-title">🎮 CONTROL CENTER</div>
-      <div class="card-sub">Botones ejecutan directo via Flask local (sin Telegram)</div>
+      <div class="card-title">🎮 CONTROL DEL SISTEMA</div>
+      <div class="card-sub">Read-only · el control va por el bot (cloud 24/7, sin PC)</div>
     </div>
-    <div style="text-align:right;display:flex;flex-direction:column;gap:4px">
+    <div style="text-align:right">
       <div style="font-family:var(--mono);font-size:.78rem">
         Trading: <span style="color:{pause_color};font-weight:600">{pause_status}</span>
       </div>
-      <div style="font-family:var(--mono);font-size:.78rem">
-        Anthropic (local): <span style="color:{anthropic_color};font-weight:600">{anthropic_status}</span>
-      </div>
     </div>
   </div>
 
+  <div style="margin-top:12px;font-size:.78rem;color:var(--tx);line-height:1.6">
+    Mandá estos comandos al bot por <b>Telegram</b> o <b>WhatsApp</b> (responde 24/7
+    desde Cloud Run, no necesita tu compu encendida):
+  </div>
+
   <div style="margin-top:10px">
-    <div style="font-size:.66rem;color:var(--mt);margin-bottom:6px;text-transform:uppercase;letter-spacing:.5px">Trading control</div>
-    <button onclick="alphaCmd('{pause_action}')" style="{_btn};color:{pause_color};border-color:{pause_color}">{pause_label}</button>
-    <button onclick="alphaCmd('force_daily','Forzar un alpha-daily extra ahora?')" style="{_btn};color:#3b82f6;border-color:#3b82f6">🚀 Forzar daily ahora</button>
-    <button onclick="alphaCmd('liquidate_orphans','Liquidar TODAS las huerfanas con P&L negativo?')" style="{_btn};color:#f85149;border-color:#f85149">🔴 Liquidar huerfanas negativas</button>
+    <div style="font-size:.66rem;color:var(--mt);margin-bottom:6px;text-transform:uppercase;letter-spacing:.5px">Consulta</div>
+    <span style="{_cmd}">resumen</span><span style="{_cmd}">estado</span>
+    <span style="{_cmd}">cartera</span><span style="{_cmd}">equity</span>
+    <span style="{_cmd}">health</span><span style="{_cmd}">llm</span>
+    <span style="{_cmd}">universo</span>
   </div>
 
-  <div style="margin-top:14px">
-    <div style="font-size:.66rem;color:var(--mt);margin-bottom:6px;text-transform:uppercase;letter-spacing:.5px">LLM</div>
-    <button onclick="alphaCmd('{anthropic_action}','Cambiar estado de Anthropic?')" style="{_btn};color:{anthropic_color};border-color:{anthropic_color}">{anthropic_label}</button>
-    <button onclick="alphaCmd('llm')" style="{_btn};color:#d29922;border-color:#d29922">📊 Ver costos LLM hoy</button>
-    <button onclick="alphaCmd('health')" style="{_btn};color:#3fb950;border-color:#3fb950">🟢 Health snapshot</button>
+  <div style="margin-top:12px">
+    <div style="font-size:.66rem;color:var(--mt);margin-bottom:6px;text-transform:uppercase;letter-spacing:.5px">Acción (autenticada)</div>
+    <span style="{_cmd};border-color:#3b82f6;color:#3b82f6">run</span>
+    <span style="{_cmd};border-color:#3b82f6;color:#3b82f6">monitor</span>
+    <span style="{_cmd};border-color:#3b82f6;color:#3b82f6">weekly</span>
+    <span style="{_cmd};border-color:#f85149;color:#f85149">pause</span>
+    <span style="{_cmd};border-color:#3fb950;color:#3fb950">resume</span>
   </div>
-
-  <div style="margin-top:14px">
-    <div style="font-size:.66rem;color:var(--mt);margin-bottom:6px;text-transform:uppercase;letter-spacing:.5px">PC remoto</div>
-    <button onclick="alphaCmd('sleep','Poner la PC en sleep?')" style="{_btn};color:#6e7681;border-color:#6e7681">💤 Dormir PC (suspend)</button>
-    <button onclick="alphaCmd('apagar','APAGAR la PC en 60s? (mandá cancelar para abortar)')" style="{_btn};color:#f85149;border-color:#f85149">🔴 Apagar PC (60s)</button>
-    <button onclick="alphaCmd('cancelar')" style="{_btn};color:#d29922;border-color:#d29922">✋ Cancelar shutdown</button>
-  </div>
-
-  <pre id="cc-result" style="display:none;margin-top:12px;padding:10px;background:var(--s2);
-       border-radius:4px;font-size:.72rem;color:var(--tx);white-space:pre-wrap;
-       border-left:3px solid var(--ac);max-height:200px;overflow:auto"></pre>
 
   <div style="margin-top:12px;padding-top:8px;border-top:1px solid var(--bd);font-size:.66rem;color:var(--mt)">
-    💡 Para que los botones funcionen, abrí <b>http://localhost:5050/dashboard</b> (no file://).
-    El comando <code>apagar</code> da 60s de gracia.
+    🤖 Bot: <code>alpha-bot</code> en Cloud Run · whitelist por chat/teléfono ·
+    el trading corre solo en la nube (daily 10:40, monitor c/30min, weekly viernes).
   </div>
 </div>"""
 
