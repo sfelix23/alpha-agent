@@ -157,6 +157,41 @@ def test_order_age_minutes_iter40():
     assert 4.5 < order_age_minutes(sub_naive, now) < 5.5
 
 
+def test_rebuild_ledger_from_alpaca(tmp_path, monkeypatch):
+    """iter45/47: el rebuild del ledger desde fills de Alpaca computa el
+    P&L realizado correctamente (FIFO) y es idempotente."""
+    from alpha_agent.analytics import trade_db as tdb
+
+    # DB aislada en tmp
+    monkeypatch.setattr(tdb, "_DB_PATH", tmp_path / "trades.db")
+    tdb.init_db()
+
+    class _MockBroker:
+        def list_fill_activities(self, max_records=1000):
+            return [
+                {"id": "a1", "order_id": "o1", "symbol": "AAA", "side": "buy",
+                 "qty": "1", "price": "100", "transaction_time": "2026-05-01T14:00:00Z"},
+                {"id": "a2", "order_id": "o2", "symbol": "AAA", "side": "sell",
+                 "qty": "1", "price": "110", "transaction_time": "2026-05-03T14:00:00Z"},
+                {"id": "a3", "order_id": "o3", "symbol": "BBB", "side": "buy",
+                 "qty": "2", "price": "50", "transaction_time": "2026-05-02T14:00:00Z"},
+                {"id": "a4", "order_id": "o4", "symbol": "BBB", "side": "sell",
+                 "qty": "2", "price": "45", "transaction_time": "2026-05-05T14:00:00Z"},
+            ]
+
+    broker = _MockBroker()
+    res = tdb.rebuild_ledger_from_alpaca(broker)
+    # AAA: +$10 (1×(110-100)), BBB: -$10 (2×(45-50)) → realizado neto $0
+    assert res["inserted"] == 4
+    assert res["closed"] == 2
+    assert abs(res["realized_pnl"] - 0.0) < 0.01, f"realizado: {res['realized_pnl']}"
+
+    # Idempotente: segundo rebuild no inserta duplicados
+    res2 = tdb.rebuild_ledger_from_alpaca(broker)
+    assert res2["inserted"] == 0, "no debe insertar duplicados (dedup order_id/activity_id)"
+    assert abs(res2["realized_pnl"] - 0.0) < 0.01
+
+
 def test_max_loss_backstop():
     from run_monitor import max_loss_breached
     cap = 0.08  # -8%

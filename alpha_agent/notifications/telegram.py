@@ -47,6 +47,21 @@ def send_telegram(text: str, *, parse_mode: str = "Markdown") -> bool:
         if resp.status_code == 200:
             log.info("Telegram OK (%d chars)", len(text))
             return True
+        # iter47: si Markdown no parsea (error 400 "can't parse entities" — pasa con
+        # _ o * desbalanceados tipo 'entry_gate', 'alpha_daily', 'MIN_NOTIONAL'),
+        # reintentar como TEXTO PLANO. Antes el mensaje se perdía silenciosamente
+        # (lo vimos con /health). Garantiza entrega.
+        if resp.status_code == 400 and parse_mode:
+            resp2 = requests.post(
+                _API.format(token=token),
+                json={"chat_id": chat_id, "text": text},  # sin parse_mode
+                timeout=_TIMEOUT,
+            )
+            if resp2.status_code == 200:
+                log.info("Telegram OK (%d chars, plain fallback)", len(text))
+                return True
+            log.warning("Telegram error %d (plain): %s", resp2.status_code, resp2.text[:200])
+            return False
         log.warning("Telegram error %d: %s", resp.status_code, resp.text[:200])
         return False
     except Exception as exc:
