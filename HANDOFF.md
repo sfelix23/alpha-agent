@@ -51,7 +51,28 @@ El backtester debiasado reveló la verdad del edge. **Cada sesgo que se saca, el
 
 ---
 
-## 🎯 Estado al cierre (iter35, 2026-05-26) — TODO OPERANDO
+## 🎯 Estado al cierre (iter46, 2026-05-30) — TODO OPERANDO + AUTÓNOMO EN LA NUBE
+
+### 🔴 AUDITORÍA iter45 — el hallazgo que cambia cómo se leen las métricas
+- **trade_db estaba incompleto (~26% de sells)**. Stops/TPs/rebalancer/iter40-retries mandan órdenes directo a Alpaca SIN loguear → P&L realizado sub-contado: **$7.23 reportado vs $157.70 real**.
+- Fix: `trade_db.rebuild_ledger_from_alpaca()` + `alpaca_broker.list_fill_activities()` — trae TODOS los fills via activities API, dedup order_id/activity_id, reset + FIFO completo. Idempotente. Wired al monitor → auto-repara c/30min. La plata SIEMPRE fue real (verificado vs Alpaca portfolio history base $1599→$1877); solo el LEDGER interno estaba mal.
+- **Verdades que el bug escondía (con ledger completo):**
+  - **Win rate real 51%** (no 73% — el 73% era ficción de datos incompletos).
+  - **Win/Loss ratio 2.73x** (avg ganador +$11.77 vs avg perdedor -$4.31). El sistema **YA deja correr ganadores y corta losers** — el warning viejo "cortás winners" era MENTIRA de datos malos.
+  - Expectancy +$3.91/trade. Perfil sano: 51% WR × 2.73x asimetría = expectativa fuerte.
+- **Sharpe reporte**: era n>=3 + anualización √252 falsa → 16.87 basura. Ahora n>=20 + ratio per-trade real.
+- **Monte Carlo**: extrapolaba 252d desde ~21d → 531% mediano. Ahora cap 40% anual + min 20 datos → 36%.
+- **Concentración (backtest A/B 0.35/0.45/0.55/0.70)**: cap 0.35 es ÓPTIMO. Subir da +0.8pp CAGR pero PEOR Sharpe/Sortino/DD. NO concentrar más. La estrategia ya está bien tuneada.
+
+### 🌐 iter46 — AUTONOMÍA TOTAL EN LA NUBE (sin PC)
+- **Dashboard read-only + cloud**: el Control Center tenía botones a localhost:5050 (ataba a la PC). Ahora read-only informativo (servible desde GitHub Pages) + control por bot. 0 ocurrencias de localhost en el HTML.
+- **GitHub Pages LIVE**: https://sfelix23.github.io/alpha-agent/ — dashboard desde cualquier lado sin PC.
+- **Tareas locales DESHABILITADAS** (el user corrió el comando admin): Analyst/Monitor/Rebalancer (duplicaban cloud), Health (spam STALE), Dashboard/DuckDNS (bot viejo), Wake/Midday/PreMarket/Portfolio/Email. Solo el cloud opera ahora.
+- ⚠️ **Pendiente deploy**: iter46 dashboard necesita rebuild+deploy a los jobs (si no, el monitor del lunes regenera el dashboard viejo). EN CURSO al cierre de esta sesión.
+
+---
+
+## 🎯 Estado previo (iter35, 2026-05-26)
 
 - ✅ Equity $1,745 (+9%). Cloud Run + schedulers activos. LLM 100% free. CP live **76% win rate** (sube de 73% post-rotación de hoy = match backtest).
 - ✅ **iter29 validado**: 5-6 posiciones diversificadas, universo CP diverso (41, tech 29%). Backtest @30bps Sharpe **1.45-1.50** vs SPY 0.94.
