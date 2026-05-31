@@ -141,7 +141,16 @@ def _update_trailing_stop(
         if oid:
             alerts.append(f"  ✅ Stop order enviado (id={oid})")
         else:
-            alerts.append(f"  ⚠️ No se pudo enviar stop order")
+            # iter43: Alpaca rechaza stop orders en posiciones FRACCIONALES (limitación
+            # conocida, no un error). NO es problema: el monitor gestiona el stop en
+            # software — cada corrida (c/30min) chequea pnl vs stop y hace market-sell
+            # si se rompe. Antes el "⚠️ No se pudo enviar" asustaba sin razón.
+            is_fractional = round(abs(qty), 6) % 1 != 0
+            if is_fractional:
+                logger.info("Stop %s en software (qty fraccional, Alpaca no acepta stop nativo)", ticker)
+                alerts.append(f"  ℹ️ Stop ${new_stop:.2f} gestionado por el monitor (qty fraccional)")
+            else:
+                alerts.append(f"  ⚠️ No se pudo enviar stop order — el monitor lo gestiona igual")
     else:
         alerts.append("  _(dry-run: stop no enviado a Alpaca)_")
 
