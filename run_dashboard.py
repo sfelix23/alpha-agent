@@ -623,11 +623,18 @@ def _orphan_positions_panel(positions, signals_data: dict) -> str:
                 tickers_with_signal.add(t)
 
     orphans = []
+    dust_count = 0
     for p in positions:
         is_option = any(c in p.ticker for c in ("C0", "P0")) and len(p.ticker) > 10
         if is_option:
             continue
         if p.ticker not in tickers_with_signal:
+            # iter48: el dust (<$5) NO es huérfana de riesgo — es residual invendible
+            # que el dust-sweep del monitor gestiona. Antes inflaba el conteo a "10"
+            # cuando solo había 3 posiciones reales sin señal → alarma falsa.
+            if (p.market_value or 0) < 5.0:
+                dust_count += 1
+                continue
             orphans.append(p)
 
     if not orphans:
@@ -715,7 +722,7 @@ def _orphan_positions_panel(positions, signals_data: dict) -> str:
   <div class="card-head">
     <div>
       <div class="card-title">⚠️ POSICIONES HUÉRFANAS ({len(orphans)})</div>
-      <div class="card-sub">Sin signal activa · Iter8: auto-handler las gestiona ahora</div>
+      <div class="card-sub">Sin signal activa · auto-handler las gestiona{f" · +{dust_count} dust (&lt;$5, residual)" if dust_count else ""}</div>
     </div>
     <div style="text-align:right">
       <div style="font-family:var(--mono);font-size:1.2rem;font-weight:600;color:{total_color}">
