@@ -331,6 +331,29 @@ def _cmd_universo() -> str:
     return "\n".join(lines)
 
 
+def _cmd_analisis() -> str:
+    """iter52: atribución — qué nombres/sectores generan el alfa. Lee attribution.json."""
+    d = _fetch_repo_json("signals/attribution.json")
+    if not d or not d.get("best"):
+        return "📊 Atribución sin datos (se refresca con el monitor)."
+    lines = [f"📊 *ATRIBUCIÓN* — qué genera tu alfa",
+             f"P&L realizado: ${d.get('total_pnl',0):+.0f} en {d.get('n_closed',0)} trades", ""]
+    lines.append("🏆 *Top contribuidores:*")
+    for b in d["best"]:
+        lines.append(f"  {b['ticker']}: ${b['total_pnl']:+.0f} ({b['n']}tr, WR {b['win_rate']*100:.0f}%, {b['avg_hold']:.0f}d)")
+    worst = d.get("worst", [])
+    if worst:
+        lines.append("\n📉 *Peores:*")
+        for w in worst[:3]:
+            lines.append(f"  {w['ticker']}: ${w['total_pnl']:+.0f} ({w['n']}tr)")
+    secs = list(d.get("sectors", {}).items())[:4]
+    if secs:
+        lines.append("\n*Por sector:*")
+        for s, m in secs:
+            lines.append(f"  {s}: ${m['total_pnl']:+.0f} (WR {m['win_rate']*100:.0f}%)")
+    return "\n".join(lines)
+
+
 def _cmd_oportunidades() -> str:
     """iter50: radar de oportunidades del mercado amplio (read-only).
     Lee opportunities.json (refrescado por el job semanal). No auto-opera."""
@@ -433,6 +456,7 @@ def _help() -> str:
         "llm — costos LLM hoy\n"
         "universo — CP universe efectivo + rotaciones\n"
         "oportunidades — radar del mercado amplio (research)\n"
+        "analisis — qué nombres/sectores generan tu alfa\n"
         "\n*Disparar jobs (iter37):*\n"
         "run / correr — fuerza el analyst+trader (~2-5 min)\n"
         "monitor — corre el monitor (stops/TPs)\n"
@@ -497,6 +521,9 @@ def _dispatch(text: str) -> str:
     # iter50: radar de oportunidades (read-only)
     if t in ("oportunidades", "radar", "opps", "oportunidad"):
         return _cmd_oportunidades()
+    # iter52: atribución de performance (qué genera el alfa)
+    if t in ("analisis", "análisis", "atribucion", "atribución", "alfa"):
+        return _cmd_analisis()
     if t in ("ayuda", "help", "?", "start", "comandos"):
         return _help()
     return f"No entendí '{t}'. Envía *ayuda* para ver comandos."

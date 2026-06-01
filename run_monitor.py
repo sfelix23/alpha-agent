@@ -651,6 +651,15 @@ def _main_locked(args):
         if _rb.get("inserted"):
             logger.info("ledger rebuild: +%d fills, %d cerrados, realizado=$%.2f",
                         _rb["inserted"], _rb["closed"], _rb["realized_pnl"])
+        # iter52: atribución por ticker/sector → attribution.json (research desk).
+        try:
+            import json as _aj
+            from alpha_agent.analytics.trade_db import get_performance_attribution
+            _attr = get_performance_attribution()
+            (BASE_DIR / "signals" / "attribution.json").write_text(
+                _aj.dumps(_attr, indent=2), encoding="utf-8")
+        except Exception as _ae:
+            logger.debug("attribution write error: %s", _ae)
     except Exception as _re:
         logger.warning("ledger rebuild error: %s — fallback sync parcial", _re)
         try:

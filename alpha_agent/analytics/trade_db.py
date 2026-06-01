@@ -453,6 +453,63 @@ def get_attribution() -> dict:
     return result
 
 
+def get_performance_attribution() -> dict:
+    """iter52: atribución por TICKER y SECTOR sobre el ledger COMPLETO.
+
+    Responde "qué nombres/sectores generan mi alfa" — la mitad del research desk
+    que mira hacia ADENTRO (complementa el opportunity radar que mira afuera).
+    Funciona en todas las filas (a diferencia de get_attribution que agrupa por
+    regime/sleeve, vacíos en los fills reconstruidos de Alpaca iter45).
+    """
+    from collections import defaultdict
+    try:
+        from alpha_agent.config import SECTOR_MAP
+    except Exception:
+        SECTOR_MAP = {}
+    with _conn() as con:
+        rows = con.execute(
+            "SELECT ticker, pnl_usd, pnl_pct, hold_days FROM trades "
+            "WHERE side='BUY' AND pnl_usd IS NOT NULL"
+        ).fetchall()
+
+    by_ticker: dict[str, list] = defaultdict(list)
+    by_sector: dict[str, list] = defaultdict(list)
+    for r in rows:
+        t = r["ticker"] or "?"
+        pnl = r["pnl_usd"] or 0.0
+        by_ticker[t].append((pnl, r["pnl_pct"] or 0.0, r["hold_days"] or 0.0))
+        by_sector[SECTOR_MAP.get(t, "Other")].append(pnl)
+
+    def _agg(items):
+        n = len(items)
+        pnls = [x[0] for x in items]
+        wins = sum(1 for p in pnls if p > 0)
+        return {
+            "n": n,
+            "win_rate": round(wins / n, 2) if n else 0.0,
+            "total_pnl": round(sum(pnls), 2),
+            "avg_pnl": round(sum(pnls) / n, 2) if n else 0.0,
+            "avg_hold": round(sum(x[2] for x in items) / n, 1) if n else 0.0,
+        }
+
+    tickers = {t: _agg(v) for t, v in by_ticker.items()}
+    sectors = {
+        s: {"n": len(v), "total_pnl": round(sum(v), 2),
+            "win_rate": round(sum(1 for p in v if p > 0) / len(v), 2) if v else 0.0}
+        for s, v in by_sector.items()
+    }
+    ranked = sorted(tickers.items(), key=lambda kv: -kv[1]["total_pnl"])
+    return {
+        "tickers": dict(ranked),
+        "sectors": dict(sorted(sectors.items(), key=lambda kv: -kv[1]["total_pnl"])),
+        "best": [{"ticker": t, **m} for t, m in ranked[:5]],
+        "worst": [{"ticker": t, **m} for t, m in ranked[-5:][::-1] if m["total_pnl"] < 0],
+        "n_closed": len(rows),
+        "total_pnl": round(sum(m["total_pnl"] for m in tickers.values()), 2),
+        "generated_at": datetime.now().isoformat(timespec="seconds"),
+    }
+
+
 def get_summary() -> dict:
     """Win-rate, P&L promedio y estadísticas de trades cerrados."""
     with _conn() as con:
