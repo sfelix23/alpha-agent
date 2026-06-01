@@ -157,6 +157,45 @@ def test_order_age_minutes_iter40():
     assert 4.5 < order_age_minutes(sub_naive, now) < 5.5
 
 
+def test_entry_window_gate(tmp_path, monkeypatch):
+    """iter31: gate de rotación de entradas — abierto sin archivo, cerrado
+    dentro de 21d, abierto después."""
+    import json as _json
+    from datetime import date, timedelta
+    from trader_agent import portfolio as pf
+
+    gate_path = tmp_path / "entry_gate.json"
+    monkeypatch.setattr(pf, "_ENTRY_GATE_PATH", gate_path)
+
+    # Sin archivo → ventana ABIERTA (fail-safe / bootstrap)
+    assert pf.entry_window_open() is True
+
+    # Rotación hace 5 días → CERRADA (< 21d)
+    gate_path.write_text(_json.dumps({
+        "last_entry_date": (date.today() - timedelta(days=5)).isoformat()
+    }), encoding="utf-8")
+    assert pf.entry_window_open() is False
+
+    # Rotación hace 25 días → ABIERTA (>= 21d)
+    gate_path.write_text(_json.dumps({
+        "last_entry_date": (date.today() - timedelta(days=25)).isoformat()
+    }), encoding="utf-8")
+    assert pf.entry_window_open() is True
+
+    # JSON corrupto → fail-safe ABIERTA (no bloquea trading)
+    gate_path.write_text("{corrupto", encoding="utf-8")
+    assert pf.entry_window_open() is True
+
+
+def test_limit_price_buffer():
+    """iter39: BUY +2% (marketable), SELL -0.15%."""
+    from trader_agent.strategy import _limit_price
+    assert _limit_price(100.0, "BUY") == 102.0    # +2%
+    assert _limit_price(100.0, "SELL") == 99.85   # -0.15%
+    # Caso real DDOG: submit $220.91 → limit $225.33 (catch +2% intradiario)
+    assert _limit_price(220.91, "BUY") == 225.33
+
+
 def test_rebuild_ledger_from_alpaca(tmp_path, monkeypatch):
     """iter45/47: el rebuild del ledger desde fills de Alpaca computa el
     P&L realizado correctamente (FIFO) y es idempotente."""
