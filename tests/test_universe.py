@@ -85,3 +85,41 @@ def test_rotation_skips_when_no_repeated(tmp_path, monkeypatch):
     _stub_scores(monkeypatch)
     disc = {"candidates": [{"ticker": "STRONG"}], "repeated_alerts": []}
     assert not us._rotate_universe(disc, broker=_FakeBroker())  # no repetido → sin swap
+
+
+# ── iter53: radar ampliado (S&P 500 completo + ETFs, descarga en chunks) ─────
+def test_scan_opportunities_includes_full_universe_and_etfs(tmp_path, monkeypatch):
+    """El radar escanea S&P 500 completo + ETFs, no solo los primeros 160."""
+    import numpy as np
+    import pandas as pd
+    import alpha_agent.data.market_data as md
+
+    # S&P 500 "completo" simulado: nombres de TODO el abecedario (incl. los que
+    # el cap de 160 alfabético dejaba afuera: NVDA, TSLA, WMT).
+    sp500 = [f"AA{i}" for i in range(200)] + ["NVDA", "TSLA", "WMT"]
+    monkeypatch.setattr(us, "_get_sp500_tickers", lambda: sp500)
+
+    idx = pd.date_range("2024-01-01", periods=260, freq="B")
+    requested_chunks = []
+
+    def _fake_dl(tickers, label):
+        requested_chunks.append(list(tickers))
+        # serie con tendencia alcista suave para que pase los filtros de len>=60
+        data = {t: np.linspace(100, 130, len(idx)) for t in tickers}
+        return pd.DataFrame(data, index=idx)
+
+    monkeypatch.setattr(md, "_download_close", _fake_dl)
+    monkeypatch.setattr(us, "OPPORTUNITIES_PATH", tmp_path / "opp.json")
+
+    r = us.scan_opportunities()  # None = todo
+    all_requested = {t for chunk in requested_chunks for t in chunk}
+
+    # nombres del final del abecedario AHORA se escanean (antes excluidos por [:160])
+    assert {"NVDA", "TSLA", "WMT"} <= all_requested
+    # los ETFs entran al universo del radar
+    assert {"SMH", "XLK", "ITA"} <= all_requested
+    # se descargó en más de un chunk (>100 tickers → chunking activo)
+    assert len(requested_chunks) >= 2
+    # los ETFs se etiquetan como sector "ETF"
+    etf_opps = [o for o in r["opportunities"] if o.get("is_etf")]
+    assert all(o["sector"] == "ETF" for o in etf_opps)

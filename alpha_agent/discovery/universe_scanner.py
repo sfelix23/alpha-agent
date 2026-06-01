@@ -457,6 +457,16 @@ def format_whatsapp_discovery(result: dict) -> str:
 
 OPPORTUNITIES_PATH = BASE_DIR / "signals" / "opportunities.json"
 
+# iter53 — ETFs sectoriales + temáticos para detección de ROTACIÓN a nivel tema
+# (no solo nombres individuales). Read-only, surface en el radar.
+_RADAR_ETFS = [
+    # Sectores SPDR (de dónde rota el dinero)
+    "XLK", "XLE", "XLF", "XLV", "XLI", "XLY", "XLP", "XLU", "XLB", "XLRE", "XLC",
+    # Temáticos / industria (semis, IA, defensa, uranio, litio, biotech, fintech)
+    "SMH", "SOXX", "ARKK", "ITA", "XAR", "URA", "LIT", "XBI", "FINX", "IGV",
+    "TAN", "ICLN", "GDX", "XME", "KWEB", "IBB", "HACK", "BOTZ", "DRIV",
+]
+
 
 def _rsi(series, period: int = 14) -> float:
     """RSI simple sobre una serie de cierres."""
@@ -472,13 +482,19 @@ def _rsi(series, period: int = 14) -> float:
         return 50.0
 
 
-def scan_opportunities(max_tickers: int = 160) -> dict:
-    """iter50: scanner READ-ONLY de oportunidades del mercado amplio.
+def scan_opportunities(max_tickers: int | None = None) -> dict:
+    """iter50/53: scanner READ-ONLY de oportunidades del mercado amplio.
 
-    Escanea el S&P 500 (+ benchmark) buscando momentum/tendencias emergentes y
-    los clasifica por tipo de setup. SEPARADO de scan_for_candidates() — NO
-    alimenta la rotación del universo ni el trading. Es puro research: surface
-    oportunidades para que el usuario las VEA y decida. Escribe opportunities.json.
+    Escanea el S&P 500 COMPLETO + ETFs sectoriales/temáticos (+ benchmark)
+    buscando momentum/tendencias emergentes y los clasifica por tipo de setup.
+    SEPARADO de scan_for_candidates() — NO alimenta la rotación del universo ni
+    el trading. Es puro research: surface oportunidades para que el usuario las
+    VEA y decida. Escribe opportunities.json.
+
+    iter53: removido el cap de 160 (que cortaba ~A–G alfabético y dejaba ciego
+    al radar a NVDA/TSLA/V/WMT etc.) → escanea los ~503 nombres del S&P 500.
+    `max_tickers=None` escanea todo; un entero limita (para tests). La descarga
+    se hace en chunks para no chocar con el timeout de yfinance.
 
     Factores: momentum multi-timeframe (1s/1m/3m), fuerza relativa vs SPY,
     tendencia (precio vs SMA50/SMA200), distancia al máximo 52s, RSI.
@@ -496,15 +512,36 @@ def scan_opportunities(max_tickers: int = 160) -> dict:
     except Exception:
         in_universe = set()
 
-    tickers = _get_sp500_tickers()[:max_tickers]
-    if BENCHMARK_TICKER not in tickers:
-        tickers = [BENCHMARK_TICKER, *tickers]
+    sp500 = _get_sp500_tickers()
+    if max_tickers:
+        sp500 = sp500[:max_tickers]
+    # Universo del radar: benchmark + ETFs (rotación de temas) + S&P 500 completo,
+    # deduplicado preservando orden.
+    seen: set[str] = set()
+    universe: list[str] = []
+    for t in [BENCHMARK_TICKER, *_RADAR_ETFS, *sp500]:
+        if t and t not in seen:
+            seen.add(t)
+            universe.append(t)
 
-    try:
-        closes = _md._download_close(tickers, "opportunities")
-    except Exception as e:
-        logger.warning("scan_opportunities: download falló %s", e)
+    # Descarga en chunks de 100 — evita el timeout de 45s del download único de
+    # yfinance con ~520 tickers (cada chunk queda holgado bajo el límite). Cada
+    # chunk usa su propio cache (label distinto), estable día a día.
+    frames = []
+    _chunk = 100
+    for _i in range(0, len(universe), _chunk):
+        part = universe[_i:_i + _chunk]
+        try:
+            df_part = _md._download_close(part, f"opportunities_{_i // _chunk}")
+            if df_part is not None and not df_part.empty:
+                frames.append(df_part)
+        except Exception as e:
+            logger.warning("scan_opportunities: chunk %d falló %s", _i // _chunk, e)
+    if not frames:
+        logger.warning("scan_opportunities: sin datos de ningún chunk")
         return {"opportunities": [], "sectors": {}, "generated_at": datetime.now(timezone.utc).isoformat()}
+    closes = pd.concat(frames, axis=1)
+    closes = closes.loc[:, ~closes.columns.duplicated()]  # dedup columnas entre chunks
 
     def _pct(s, n):
         return float((s.iloc[-1] / s.iloc[-1 - n] - 1) * 100) if len(s) > n else 0.0
@@ -565,7 +602,8 @@ def scan_opportunities(max_tickers: int = 160) -> dict:
             "rel_strength": round(rel_strength, 1),
             "dist_52w_high": round(dist_hi, 1),
             "rsi": rsi,
-            "sector": SECTOR_MAP.get(t, "Other"),
+            "sector": "ETF" if t in _RADAR_ETFS else SECTOR_MAP.get(t, "Other"),
+            "is_etf": t in _RADAR_ETFS,
             "in_universe": t in in_universe,
         })
 
@@ -584,7 +622,7 @@ def scan_opportunities(max_tickers: int = 160) -> dict:
 
     result = {
         "opportunities": opps[:25],
-        "fresh": [o for o in opps[:25] if not o["in_universe"]][:10],  # nuevas (fuera del universo)
+        "fresh": [o for o in opps[:25] if not o["in_universe"] and not o.get("is_etf")][:10],  # nombres nuevos (no ETFs)
         "sectors": sectors,
         "generated_at": datetime.now(timezone.utc).isoformat(),
         "scanned": len(closes.columns),
