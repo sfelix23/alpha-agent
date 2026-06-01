@@ -51,7 +51,19 @@ El backtester debiasado reveló la verdad del edge. **Cada sesgo que se saca, el
 
 ---
 
-## 🎯 Estado al cierre (iter46, 2026-05-30) — TODO OPERANDO + AUTÓNOMO EN LA NUBE
+## 🎯 Estado al cierre (iter51, 2026-06-01) — OPERANDO + RESEARCH DESK
+
+### 🆕 iter47-51 — pulido post-auditoría + research desk
+- **iter47**: `send_telegram` fallback a texto plano si Markdown da error 400 (mensajes ya no se pierden) + test del ledger rebuild.
+- **iter43**: alerta de stop en fraccionales reframeada (info "gestionado por monitor", no alarma falsa — Alpaca no acepta stop nativo en fraccional, el monitor lo gestiona en software).
+- **iter48**: dashboard separa dust (<$5) de huérfanas reales (mostraba 10, son 3).
+- **iter49**: tests del gate iter31 + limit buffer iter39. **51 tests**.
+- **iter50 OPPORTUNITY RADAR (read-only)**: `universe_scanner.scan_opportunities()` escanea el S&P500, multi-factor (momentum multi-TF, fuerza relativa vs SPY, tendencia SMA50/200, dist 52w, RSI), clasifica setup, agrega por sector, flag de nombres frescos. Escribe `signals/opportunities.json`. Corre en el job SEMANAL (no toca el daily/trading). Comando bot `oportunidades`/`radar`.
+- **iter51 ETAPA del trend**: el radar distingue 🟢 temprana (trend joven: cruzó SMA50, RSI 45-68, no extendido) de 🔴 tardía (RSI>75 o +40% o parabólico). Score bonifica temprana (+12), penaliza tardía (-15) → anti-chase. Es el "llegar temprano" real.
+- ⚠️ **NO probado/revertido**: intento de fills parciales en FIFO reconciliaba PEOR ($338 vs $278 equity) → revertido, la versión simple es la precisa.
+
+### 🔭 PENDIENTE EXPLÍCITO — auto-entrada del radar (necesita backtest ANTES)
+El usuario quiere que el sistema DECIDA entrar a las oportunidades tempranas. El mecanismo existe (`_rotate_universe`, gated: 1 swap/sem, persistencia, liquidez, nunca saca posiciones abiertas). **Conectar el radar a la rotación requiere backtestear primero** si mejora el Sharpe — el hallazgo iter28-29 advierte que ampliar el universo hacia momentum amplio puede EMPEORAR el risk-adjusted (curado Sharpe 1.45 > broad 0.68). Plan: feed solo nombres 🟢temprana + frescos + líquidos a la rotación gated + guard anti-tardía, y BACKTEST A/B antes de activar. NO activar a ciegas.
 
 ### 🔴 AUDITORÍA iter45 — el hallazgo que cambia cómo se leen las métricas
 - **trade_db estaba incompleto (~26% de sells)**. Stops/TPs/rebalancer/iter40-retries mandan órdenes directo a Alpaca SIN loguear → P&L realizado sub-contado: **$7.23 reportado vs $157.70 real**.
