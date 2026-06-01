@@ -51,7 +51,13 @@ El backtester debiasado reveló la verdad del edge. **Cada sesgo que se saca, el
 
 ---
 
-## 🎯 Estado al cierre (iter51, 2026-06-01) — OPERANDO + RESEARCH DESK
+## 🎯 Estado al cierre (iter53, 2026-06-01) — OPERANDO + RESEARCH DESK
+
+### 🆕 iter53 — radar ampliado (S&P 500 COMPLETO + ETFs)
+- **Bug encontrado**: `scan_opportunities` tenía cap de 160 tickers. La lista de Wikipedia es **alfabética**, así que `[:160]` cortaba ~A–G → el radar estaba **CIEGO a NVDA/TSLA/V/WMT/UNH/PG** y todo el medio/final del abecedario (los líderes de momentum que más importan).
+- **Fix**: removido el cap (`max_tickers=None` escanea los ~503 del S&P 500; entero opcional para tests). Descarga en **chunks de 100** para esquivar el timeout de 45s de yfinance (cada chunk con su cache, estable día a día). ~490 tickers en 41s.
+- **+30 ETFs** sectoriales (XLK/XLE/XLF...) + temáticos (SMH/SOXX/ITA/URA/XBI/TAN/KWEB...) para detectar **rotación a nivel TEMA**, no solo nombres. Etiquetados `sector="ETF"`; excluidos de la lista `fresh` (que es para nombres-candidatos individuales).
+- Sigue **READ-ONLY** (no toca rotación ni trading). Validado: encontró DELL/SNDK/HPE/PANW/FTNT/STX fuera del universo — el cluster storage/networking que el cap alfabético ocultaba. **52 tests**. Commit `7f28e4b`. Corre en el job SEMANAL (viernes) — rebuild+deploy hecho.
 
 ### 🆕 iter47-51 — pulido post-auditoría + research desk
 - **iter47**: `send_telegram` fallback a texto plano si Markdown da error 400 (mensajes ya no se pierden) + test del ledger rebuild.
@@ -63,7 +69,7 @@ El backtester debiasado reveló la verdad del edge. **Cada sesgo que se saca, el
 - ⚠️ **NO probado/revertido**: intento de fills parciales en FIFO reconciliaba PEOR ($338 vs $278 equity) → revertido, la versión simple es la precisa.
 
 ### 🔭 PENDIENTE EXPLÍCITO — auto-entrada del radar (necesita backtest ANTES)
-El usuario quiere que el sistema DECIDA entrar a las oportunidades tempranas. El mecanismo existe (`_rotate_universe`, gated: 1 swap/sem, persistencia, liquidez, nunca saca posiciones abiertas). **Conectar el radar a la rotación requiere backtestear primero** si mejora el Sharpe — el hallazgo iter28-29 advierte que ampliar el universo hacia momentum amplio puede EMPEORAR el risk-adjusted (curado Sharpe 1.45 > broad 0.68). Plan: feed solo nombres 🟢temprana + frescos + líquidos a la rotación gated + guard anti-tardía, y BACKTEST A/B antes de activar. NO activar a ciegas.
+El usuario quiere que el sistema DECIDA entrar a las oportunidades tempranas. El mecanismo existe (`_rotate_universe`, gated: 1 swap/sem, persistencia, liquidez, nunca saca posiciones abiertas). **Conectar el radar a la rotación requiere backtestear primero** si mejora el Sharpe — el hallazgo iter28-29 advierte que ampliar el universo hacia momentum amplio puede EMPEORAR el risk-adjusted (curado Sharpe 1.45 > broad 0.68). Plan: feed solo nombres 🟢temprana + frescos + líquidos a la rotación gated + guard anti-tardía, y BACKTEST A/B antes de activar. NO activar a ciegas. (iter53 ya amplió la COBERTURA del radar a 490 tickers + ETFs, así que el feed candidato ahora ve todo el S&P 500 — pero sigue read-only.) **Nota IPOs**: el radar/trading NO opera listados nuevos (sin historia para momentum); un nombre post-IPO aparece naturalmente como 🟢temprana recién con ~2-3 meses de historia + trend real. Capturar nuevos ganadores = esperar historia, NO comprar el día 1.
 
 ### 🔴 AUDITORÍA iter45 — el hallazgo que cambia cómo se leen las métricas
 - **trade_db estaba incompleto (~26% de sells)**. Stops/TPs/rebalancer/iter40-retries mandan órdenes directo a Alpaca SIN loguear → P&L realizado sub-contado: **$7.23 reportado vs $157.70 real**.
