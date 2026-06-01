@@ -541,14 +541,24 @@ def scan_opportunities(max_tickers: int = 160) -> dict:
         else:
             continue  # no es oportunidad
 
+        # iter51: ETAPA del trend — "llegar temprano" vs perseguir el techo.
+        dist_sma50 = (price / sma50 - 1) * 100 if sma50 > 0 else 0
+        if rsi >= 75 or ret_1m >= 40 or dist_sma50 > 25:
+            etapa = "🔴 tardía"        # parabólico — NO perseguir, riesgo reversión
+        elif uptrend and dist_sma50 < 8 and 45 <= rsi <= 68:
+            etapa = "🟢 temprana"      # trend joven — lo ideal
+        else:
+            etapa = "🟡 madura"        # en curso
+        etapa_adj = {"🟢 temprana": 12, "🟡 madura": 0, "🔴 tardía": -15}[etapa]
         score = round(
             0.35 * ret_1m + 0.25 * ret_3m + 0.15 * ret_1w + 0.15 * rel_strength
-            + (8 if uptrend else 0) + (6 if dist_hi > -5 else 0), 1
+            + (8 if uptrend else 0) + (6 if dist_hi > -5 else 0) + etapa_adj, 1
         )
         opps.append({
             "ticker": t,
             "score": score,
             "setup": setup,
+            "etapa": etapa,
             "ret_1w": round(ret_1w, 1),
             "ret_1m": round(ret_1m, 1),
             "ret_3m": round(ret_3m, 1),
@@ -601,7 +611,8 @@ def format_opportunities_digest(result: dict, top: int = 8) -> str:
     lines.append("")
     for o in opps[:top]:
         tag = "" if o["in_universe"] else " 🆕"
-        lines.append(f"{o['setup']} *{o['ticker']}*{tag} — 1m {o['ret_1m']:+.0f}% · vs SPY {o['rel_strength']:+.0f}% · score {o['score']:.0f}")
+        et = o.get("etapa", "")
+        lines.append(f"{et} *{o['ticker']}*{tag} — 1m {o['ret_1m']:+.0f}% · vs SPY {o['rel_strength']:+.0f}% · {o.get('setup','')}")
     fresh = result.get("fresh", [])
     if fresh:
         lines.append(f"\n🆕 Fuera del universo: {', '.join(o['ticker'] for o in fresh[:6])}")

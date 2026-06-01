@@ -348,8 +348,9 @@ def _cmd_oportunidades() -> str:
     lines.append("")
     for o in opps[:10]:
         tag = "" if o.get("in_universe") else " 🆕"
-        lines.append(f"{o.get('setup','')} {o['ticker']}{tag} — 1m {o.get('ret_1m',0):+.0f}% · "
-                     f"vs SPY {o.get('rel_strength',0):+.0f}% · score {o.get('score',0):.0f}")
+        lines.append(f"{o.get('etapa','')} {o['ticker']}{tag} — 1m {o.get('ret_1m',0):+.0f}% · "
+                     f"vs SPY {o.get('rel_strength',0):+.0f}% · {o.get('setup','')}")
+    lines.append("\n🟢 temprana = trend joven · 🔴 tardía = ya corrió (riesgo)")
     fresh = d.get("fresh", [])
     if fresh:
         lines.append(f"\n🆕 Fuera del universo: {', '.join(o['ticker'] for o in fresh[:6])}")
