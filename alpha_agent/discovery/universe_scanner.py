@@ -84,6 +84,44 @@ def _get_sp500_tickers() -> list[str]:
     ]
 
 
+def _get_index_tickers(url: str, label: str, min_count: int = 50) -> list[str]:
+    """iter54: baja constituyentes de un índice desde Wikipedia (genérico).
+
+    Busca la primera tabla con columna 'Symbol' o 'Ticker'. Robusto a cambios
+    de orden de tablas en la página. Devuelve [] ante cualquier fallo (un índice
+    caído NO debe tumbar el scan completo)."""
+    import io
+    import urllib.request
+    import pandas as pd
+    try:
+        req = urllib.request.Request(
+            url, headers={"User-Agent": "Mozilla/5.0 (compatible; AlphaAgent/1.0)"})
+        with urllib.request.urlopen(req, timeout=25) as resp:
+            html = resp.read().decode("utf-8", errors="ignore")
+        tables = pd.read_html(io.StringIO(html))
+        for t in tables:
+            cols = [str(c) for c in t.columns]
+            for sc in ("Symbol", "Ticker"):
+                if sc in cols:
+                    syms = t[sc].astype(str).str.replace(".", "-", regex=False).tolist()
+                    syms = [s.strip().upper() for s in syms if s and s.strip() and s != "nan"]
+                    if len(syms) >= min_count:
+                        logger.info("%s: %d tickers (Wikipedia)", label, len(syms))
+                        return syms
+        logger.warning("%s: no encontré tabla de símbolos", label)
+    except Exception as e:
+        logger.warning("%s falló (%s) — se omite del radar", label, e)
+    return []
+
+
+# iter54 — universos extendidos para el radar (más allá del S&P 500).
+_INDEX_URLS = {
+    "sp400": ("https://en.wikipedia.org/wiki/List_of_S%26P_400_companies", "S&P MidCap 400"),
+    "sp600": ("https://en.wikipedia.org/wiki/List_of_S%26P_600_companies", "S&P SmallCap 600"),
+    "nasdaq100": ("https://en.wikipedia.org/wiki/Nasdaq-100", "Nasdaq-100"),
+}
+
+
 def _quick_score(ticker: str) -> dict | None:
     """
     Calcula Sharpe 3M, momentum 1M y avg dollar volume para un ticker.
@@ -483,18 +521,22 @@ def _rsi(series, period: int = 14) -> float:
 
 
 def scan_opportunities(max_tickers: int | None = None) -> dict:
-    """iter50/53: scanner READ-ONLY de oportunidades del mercado amplio.
+    """iter50/53/54: scanner READ-ONLY de oportunidades del mercado amplio.
 
-    Escanea el S&P 500 COMPLETO + ETFs sectoriales/temáticos (+ benchmark)
-    buscando momentum/tendencias emergentes y los clasifica por tipo de setup.
-    SEPARADO de scan_for_candidates() — NO alimenta la rotación del universo ni
-    el trading. Es puro research: surface oportunidades para que el usuario las
-    VEA y decida. Escribe opportunities.json.
+    Escanea el S&P COMPOSITE 1500 (500 large + 400 mid + 600 small) + Nasdaq-100
+    + ETFs sectoriales/temáticos (+ benchmark), ~1440 tickers, buscando
+    momentum/tendencias emergentes y los clasifica por tipo de setup y TIER
+    (large/mid/small/etf). SEPARADO de scan_for_candidates() — NO alimenta la
+    rotación del universo ni el trading. Es puro research: surface oportunidades
+    para que el usuario las VEA y decida. Escribe opportunities.json.
 
     iter53: removido el cap de 160 (que cortaba ~A–G alfabético y dejaba ciego
-    al radar a NVDA/TSLA/V/WMT etc.) → escanea los ~503 nombres del S&P 500.
-    `max_tickers=None` escanea todo; un entero limita (para tests). La descarga
-    se hace en chunks para no chocar con el timeout de yfinance.
+    al radar a NVDA/TSLA/V/WMT etc.). iter54: ampliado más allá del S&P 500 a
+    mid/small caps (donde los ganadores arrancan ANTES de entrar al índice
+    grande) + Nasdaq-100, con filtro de precio ≥$5 (anti-penny). `max_tickers`
+    (entero) limita a solo S&P 500 sin tocar la red de los otros índices (tests);
+    None = universo completo. La descarga va en chunks para esquivar el timeout
+    de yfinance.
 
     Factores: momentum multi-timeframe (1s/1m/3m), fuerza relativa vs SPY,
     tendencia (precio vs SMA50/SMA200), distancia al máximo 52s, RSI.
@@ -513,13 +555,35 @@ def scan_opportunities(max_tickers: int | None = None) -> dict:
         in_universe = set()
 
     sp500 = _get_sp500_tickers()
+    tier_map: dict[str, str] = {}
+    for t in sp500:
+        tier_map.setdefault(t, "large")
+    # iter54: universos extendidos (S&P MidCap 400 + SmallCap 600 + Nasdaq-100)
+    # para captar tendencias FUERA del S&P 500 — donde los ganadores arrancan
+    # antes de entrar al índice grande. Modo limitado (max_tickers, p/ tests):
+    # solo S&P 500, sin tocar la red de los otros índices.
     if max_tickers:
         sp500 = sp500[:max_tickers]
-    # Universo del radar: benchmark + ETFs (rotación de temas) + S&P 500 completo,
-    # deduplicado preservando orden.
+        extended: list[str] = []
+    else:
+        sp400 = _get_index_tickers(*_INDEX_URLS["sp400"])
+        sp600 = _get_index_tickers(*_INDEX_URLS["sp600"])
+        ndx = _get_index_tickers(*_INDEX_URLS["nasdaq100"])
+        for t in sp400:
+            tier_map.setdefault(t, "mid")
+        for t in sp600:
+            tier_map.setdefault(t, "small")
+        for t in ndx:
+            tier_map.setdefault(t, "large")   # growth/tech, mayormente large
+        extended = [*sp400, *sp600, *ndx]
+    for t in _RADAR_ETFS:
+        tier_map[t] = "etf"
+
+    # Universo del radar: benchmark + ETFs + S&P 1500 + Nasdaq-100, deduplicado
+    # preservando orden.
     seen: set[str] = set()
     universe: list[str] = []
-    for t in [BENCHMARK_TICKER, *_RADAR_ETFS, *sp500]:
+    for t in [BENCHMARK_TICKER, *_RADAR_ETFS, *sp500, *extended]:
         if t and t not in seen:
             seen.add(t)
             universe.append(t)
@@ -557,6 +621,8 @@ def scan_opportunities(max_tickers: int | None = None) -> dict:
         if len(s) < 60:
             continue
         price = float(s.iloc[-1])
+        if price < 5.0:   # iter54: filtro penny — mid/small caps ilíquidas baratas
+            continue
         ret_1w, ret_1m, ret_3m = _pct(s, 5), _pct(s, 21), _pct(s, 63)
         sma50 = float(s.tail(50).mean())
         sma200 = float(s.tail(200).mean()) if len(s) >= 200 else float(s.mean())
@@ -604,6 +670,7 @@ def scan_opportunities(max_tickers: int | None = None) -> dict:
             "rsi": rsi,
             "sector": "ETF" if t in _RADAR_ETFS else SECTOR_MAP.get(t, "Other"),
             "is_etf": t in _RADAR_ETFS,
+            "tier": tier_map.get(t, "large"),   # iter54: large/mid/small/etf
             "in_universe": t in in_universe,
         })
 
@@ -620,10 +687,17 @@ def scan_opportunities(max_tickers: int | None = None) -> dict:
     }
     sectors = dict(sorted(sectors.items(), key=lambda kv: -kv[1]["avg_mom_1m"]))
 
+    # iter54: cuántas oportunidades surgieron por tier (large/mid/small/etf) —
+    # confirma que el radar ve más allá del S&P 500.
+    tier_counts: dict[str, int] = defaultdict(int)
+    for o in opps:
+        tier_counts[o.get("tier", "large")] += 1
+
     result = {
         "opportunities": opps[:25],
         "fresh": [o for o in opps[:25] if not o["in_universe"] and not o.get("is_etf")][:10],  # nombres nuevos (no ETFs)
         "sectors": sectors,
+        "by_tier": dict(tier_counts),
         "generated_at": datetime.now(timezone.utc).isoformat(),
         "scanned": len(closes.columns),
     }
@@ -653,6 +727,12 @@ def format_opportunities_digest(result: dict, top: int = 8) -> str:
         lines.append(f"{et} *{o['ticker']}*{tag} — 1m {o['ret_1m']:+.0f}% · vs SPY {o['rel_strength']:+.0f}% · {o.get('setup','')}")
     fresh = result.get("fresh", [])
     if fresh:
-        lines.append(f"\n🆕 Fuera del universo: {', '.join(o['ticker'] for o in fresh[:6])}")
-    lines.append("\n_Read-only. El sistema NO compra esto solo — vos decidís._")
+        _tl = {"large": "L", "mid": "M", "small": "S"}
+        lines.append("\n🆕 Fuera del universo: " + ", ".join(
+            f"{o['ticker']}({_tl.get(o.get('tier','large'),'L')})" for o in fresh[:6]))
+    bt = result.get("by_tier", {})
+    if bt:
+        lines.append("Cobertura: " + " · ".join(
+            f"{k} {v}" for k, v in bt.items() if k != "etf"))
+    lines.append("\n_Read-only. El sistema NO compra esto solo — vos decidís. M/S = mid/small cap (trend más temprano)._")
     return "\n".join(lines)

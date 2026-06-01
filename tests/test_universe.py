@@ -99,6 +99,15 @@ def test_scan_opportunities_includes_full_universe_and_etfs(tmp_path, monkeypatc
     sp500 = [f"AA{i}" for i in range(200)] + ["NVDA", "TSLA", "WMT"]
     monkeypatch.setattr(us, "_get_sp500_tickers", lambda: sp500)
 
+    # iter54: índices extendidos mockeados (sin red). mid/small caps de prueba.
+    def _fake_index(url, label, min_count=50):
+        if "400" in url:
+            return ["MIDA", "MIDB"]
+        if "600" in url:
+            return ["SMLA", "SMLB"]
+        return ["NDXONLY"]  # nasdaq-100 con un nombre no-S&P
+    monkeypatch.setattr(us, "_get_index_tickers", _fake_index)
+
     idx = pd.date_range("2024-01-01", periods=260, freq="B")
     requested_chunks = []
 
@@ -118,8 +127,15 @@ def test_scan_opportunities_includes_full_universe_and_etfs(tmp_path, monkeypatc
     assert {"NVDA", "TSLA", "WMT"} <= all_requested
     # los ETFs entran al universo del radar
     assert {"SMH", "XLK", "ITA"} <= all_requested
+    # iter54: mid/small caps + nasdaq-only también se escanean
+    assert {"MIDA", "SMLA", "NDXONLY"} <= all_requested
     # se descargó en más de un chunk (>100 tickers → chunking activo)
     assert len(requested_chunks) >= 2
     # los ETFs se etiquetan como sector "ETF"
     etf_opps = [o for o in r["opportunities"] if o.get("is_etf")]
     assert all(o["sector"] == "ETF" for o in etf_opps)
+    # iter54: tiers contabilizados (by_tier cuenta sobre TODOS los opps, no el top-25)
+    assert "by_tier" in r
+    assert r["by_tier"].get("mid", 0) >= 2     # MIDA, MIDB
+    assert r["by_tier"].get("small", 0) >= 2   # SMLA, SMLB
+    assert r["by_tier"].get("etf", 0) >= 1
