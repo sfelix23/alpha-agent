@@ -250,6 +250,14 @@ def main() -> None:
             disc_result = scan_for_candidates(macro_context=macro_for_scan)
             discovery_lines = format_whatsapp_discovery(disc_result)
             logger.info("Discovery: %d picks", len(disc_result.get("candidates", [])))
+            # iter50: opportunity radar READ-ONLY (escribe opportunities.json). NO
+            # alimenta la rotación ni el trading — solo research para el bot/dashboard.
+            try:
+                from alpha_agent.discovery.universe_scanner import scan_opportunities
+                _opp = scan_opportunities()
+                logger.info("Opportunity radar: %d oportunidades", len(_opp.get("opportunities", [])))
+            except Exception as _oe:
+                logger.warning("opportunity radar error: %s", _oe)
             # iter17: rotación automática del CP_UNIVERSE (guardarraíles dentro).
             try:
                 rot_msg = _rotate_universe(disc_result, broker=broker)

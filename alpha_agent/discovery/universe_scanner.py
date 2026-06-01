@@ -449,3 +449,161 @@ def format_whatsapp_discovery(result: dict) -> str:
         lines.append(f"\n⚠️ *2DA SEMANA CONSECUTIVA*: {', '.join(repeated)} — considerar incorporar al universo")
 
     return "\n".join(lines)
+
+
+# ════════════════════════════════════════════════════════════════════════════
+# iter50 — OPPORTUNITY RADAR (read-only, NO alimenta rotación ni trading)
+# ════════════════════════════════════════════════════════════════════════════
+
+OPPORTUNITIES_PATH = BASE_DIR / "signals" / "opportunities.json"
+
+
+def _rsi(series, period: int = 14) -> float:
+    """RSI simple sobre una serie de cierres."""
+    try:
+        delta = series.diff().dropna()
+        gain = delta.clip(lower=0).rolling(period).mean().iloc[-1]
+        loss = (-delta.clip(upper=0)).rolling(period).mean().iloc[-1]
+        if loss == 0:
+            return 100.0
+        rs = gain / loss
+        return round(100 - 100 / (1 + rs), 1)
+    except Exception:
+        return 50.0
+
+
+def scan_opportunities(max_tickers: int = 160) -> dict:
+    """iter50: scanner READ-ONLY de oportunidades del mercado amplio.
+
+    Escanea el S&P 500 (+ benchmark) buscando momentum/tendencias emergentes y
+    los clasifica por tipo de setup. SEPARADO de scan_for_candidates() — NO
+    alimenta la rotación del universo ni el trading. Es puro research: surface
+    oportunidades para que el usuario las VEA y decida. Escribe opportunities.json.
+
+    Factores: momentum multi-timeframe (1s/1m/3m), fuerza relativa vs SPY,
+    tendencia (precio vs SMA50/SMA200), distancia al máximo 52s, RSI.
+    """
+    import pandas as pd  # noqa
+    from alpha_agent.data import market_data as _md
+    from alpha_agent.config import BENCHMARK_TICKER
+    try:
+        from alpha_agent.config import SECTOR_MAP
+    except Exception:
+        SECTOR_MAP = {}
+    try:
+        from alpha_agent.config import get_effective_cp_universe
+        in_universe = set(get_effective_cp_universe())
+    except Exception:
+        in_universe = set()
+
+    tickers = _get_sp500_tickers()[:max_tickers]
+    if BENCHMARK_TICKER not in tickers:
+        tickers = [BENCHMARK_TICKER, *tickers]
+
+    try:
+        closes = _md._download_close(tickers, "opportunities")
+    except Exception as e:
+        logger.warning("scan_opportunities: download falló %s", e)
+        return {"opportunities": [], "sectors": {}, "generated_at": datetime.now(timezone.utc).isoformat()}
+
+    def _pct(s, n):
+        return float((s.iloc[-1] / s.iloc[-1 - n] - 1) * 100) if len(s) > n else 0.0
+
+    spy = closes[BENCHMARK_TICKER].dropna() if BENCHMARK_TICKER in closes.columns else None
+    spy_1m = _pct(spy, 21) if spy is not None else 0.0
+
+    opps = []
+    for t in closes.columns:
+        if t == BENCHMARK_TICKER:
+            continue
+        s = closes[t].dropna()
+        if len(s) < 60:
+            continue
+        price = float(s.iloc[-1])
+        ret_1w, ret_1m, ret_3m = _pct(s, 5), _pct(s, 21), _pct(s, 63)
+        sma50 = float(s.tail(50).mean())
+        sma200 = float(s.tail(200).mean()) if len(s) >= 200 else float(s.mean())
+        uptrend = price > sma50 > sma200
+        hi_52w = float(s.tail(252).max())
+        dist_hi = (price / hi_52w - 1) * 100 if hi_52w > 0 else -100
+        rel_strength = ret_1m - spy_1m   # vs SPY
+        rsi = _rsi(s)
+
+        # Clasificación de setup (solo surface oportunidades reales)
+        if dist_hi > -3 and ret_1m > 0:
+            setup = "🚀 breakout"
+        elif uptrend and ret_1m > 5:
+            setup = "📈 momentum"
+        elif rsi < 35 and ret_1w > 1:
+            setup = "🔄 rebote"
+        elif uptrend and rel_strength > 0:
+            setup = "📊 tendencia"
+        else:
+            continue  # no es oportunidad
+
+        score = round(
+            0.35 * ret_1m + 0.25 * ret_3m + 0.15 * ret_1w + 0.15 * rel_strength
+            + (8 if uptrend else 0) + (6 if dist_hi > -5 else 0), 1
+        )
+        opps.append({
+            "ticker": t,
+            "score": score,
+            "setup": setup,
+            "ret_1w": round(ret_1w, 1),
+            "ret_1m": round(ret_1m, 1),
+            "ret_3m": round(ret_3m, 1),
+            "rel_strength": round(rel_strength, 1),
+            "dist_52w_high": round(dist_hi, 1),
+            "rsi": rsi,
+            "sector": SECTOR_MAP.get(t, "Other"),
+            "in_universe": t in in_universe,
+        })
+
+    opps.sort(key=lambda x: -x["score"])
+
+    # Agregación sectorial: fuerza promedio por sector
+    from collections import defaultdict
+    sec_scores = defaultdict(list)
+    for o in opps:
+        sec_scores[o["sector"]].append(o["ret_1m"])
+    sectors = {
+        sec: {"avg_mom_1m": round(sum(v) / len(v), 1), "n": len(v)}
+        for sec, v in sec_scores.items()
+    }
+    sectors = dict(sorted(sectors.items(), key=lambda kv: -kv[1]["avg_mom_1m"]))
+
+    result = {
+        "opportunities": opps[:25],
+        "fresh": [o for o in opps[:25] if not o["in_universe"]][:10],  # nuevas (fuera del universo)
+        "sectors": sectors,
+        "generated_at": datetime.now(timezone.utc).isoformat(),
+        "scanned": len(closes.columns),
+    }
+    try:
+        OPPORTUNITIES_PATH.write_text(json.dumps(result, indent=2), encoding="utf-8")
+    except Exception as e:
+        logger.debug("no se pudo escribir opportunities.json: %s", e)
+    logger.info("scan_opportunities: %d oportunidades de %d escaneados", len(opps), len(closes.columns))
+    return result
+
+
+def format_opportunities_digest(result: dict, top: int = 8) -> str:
+    """Digest read-only de oportunidades para Telegram/WhatsApp."""
+    opps = result.get("opportunities", [])
+    if not opps:
+        return "📡 Sin oportunidades destacadas hoy."
+    sectors = result.get("sectors", {})
+    lines = ["📡 *RADAR DE OPORTUNIDADES* (research, no auto-opera)"]
+    top_sec = list(sectors.items())[:3]
+    if top_sec:
+        lines.append("Sectores fuertes: " + " · ".join(
+            f"{s} {d['avg_mom_1m']:+.0f}%" for s, d in top_sec))
+    lines.append("")
+    for o in opps[:top]:
+        tag = "" if o["in_universe"] else " 🆕"
+        lines.append(f"{o['setup']} *{o['ticker']}*{tag} — 1m {o['ret_1m']:+.0f}% · vs SPY {o['rel_strength']:+.0f}% · score {o['score']:.0f}")
+    fresh = result.get("fresh", [])
+    if fresh:
+        lines.append(f"\n🆕 Fuera del universo: {', '.join(o['ticker'] for o in fresh[:6])}")
+    lines.append("\n_Read-only. El sistema NO compra esto solo — vos decidís._")
+    return "\n".join(lines)

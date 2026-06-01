@@ -331,6 +331,31 @@ def _cmd_universo() -> str:
     return "\n".join(lines)
 
 
+def _cmd_oportunidades() -> str:
+    """iter50: radar de oportunidades del mercado amplio (read-only).
+    Lee opportunities.json (refrescado por el job semanal). No auto-opera."""
+    d = _fetch_repo_json("signals/opportunities.json")
+    if not d or not d.get("opportunities"):
+        return "📡 Radar sin oportunidades cacheadas (se refresca el viernes)."
+    opps = d["opportunities"]
+    sectors = d.get("sectors", {})
+    gen = (d.get("generated_at", "") or "")[:10]
+    lines = [f"📡 *RADAR DE OPORTUNIDADES* ({gen})", "_Research, NO auto-opera — vos decidís._"]
+    top_sec = list(sectors.items())[:3]
+    if top_sec:
+        lines.append("Sectores fuertes: " + " · ".join(
+            f"{s} {dd['avg_mom_1m']:+.0f}%" for s, dd in top_sec))
+    lines.append("")
+    for o in opps[:10]:
+        tag = "" if o.get("in_universe") else " 🆕"
+        lines.append(f"{o.get('setup','')} {o['ticker']}{tag} — 1m {o.get('ret_1m',0):+.0f}% · "
+                     f"vs SPY {o.get('rel_strength',0):+.0f}% · score {o.get('score',0):.0f}")
+    fresh = d.get("fresh", [])
+    if fresh:
+        lines.append(f"\n🆕 Fuera del universo: {', '.join(o['ticker'] for o in fresh[:6])}")
+    return "\n".join(lines)
+
+
 def _cmd_resumen() -> str:
     """iter44: resumen completo del día en una respuesta.
     P&L total, posiciones, deployment, gate iter31, capas defensivas — todo.
@@ -406,6 +431,7 @@ def _help() -> str:
         "health — snapshot completo del sistema\n"
         "llm — costos LLM hoy\n"
         "universo — CP universe efectivo + rotaciones\n"
+        "oportunidades — radar del mercado amplio (research)\n"
         "\n*Disparar jobs (iter37):*\n"
         "run / correr — fuerza el analyst+trader (~2-5 min)\n"
         "monitor — corre el monitor (stops/TPs)\n"
@@ -467,6 +493,9 @@ def _dispatch(text: str) -> str:
     # iter44: resumen completo del día
     if t in ("resumen", "hoy", "dia", "día", "summary"):
         return _cmd_resumen()
+    # iter50: radar de oportunidades (read-only)
+    if t in ("oportunidades", "radar", "opps", "oportunidad"):
+        return _cmd_oportunidades()
     if t in ("ayuda", "help", "?", "start", "comandos"):
         return _help()
     return f"No entendí '{t}'. Envía *ayuda* para ver comandos."
