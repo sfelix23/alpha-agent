@@ -68,7 +68,14 @@ El backtester debiasado reveló la verdad del edge. **Cada sesgo que se saca, el
 - **iter51 ETAPA del trend**: el radar distingue 🟢 temprana (trend joven: cruzó SMA50, RSI 45-68, no extendido) de 🔴 tardía (RSI>75 o +40% o parabólico). Score bonifica temprana (+12), penaliza tardía (-15) → anti-chase. Es el "llegar temprano" real.
 - ⚠️ **NO probado/revertido**: intento de fills parciales en FIFO reconciliaba PEOR ($338 vs $278 equity) → revertido, la versión simple es la precisa.
 
-### ✅ RESUELTO (iter54, backtest A/B) — auto-entrada del radar: NO conectar
+### ✅ iter56 — radar → ROTACIÓN SELECTIVA conectada (autonomía con guardas)
+El A/B #2 (curado vs curado+large/mid) corrigió al A/B #1: incorporar SELECTIVAMENTE calidad SÍ mejora (Sharpe 2.13→2.25, alpha +39%→+44%, DD igual). Lo bruto (incl small) era lo que dañaba. Implementado:
+- `_radar_rotation_candidates()` filtra opportunities.json: SOLO tier large/mid + etapa 🟢temprana + no-ETF + no-en-universo. Se suma a los candidatos de discovery en `_rotate_universe` (TODOS los guardarraíles intactos: 1 swap/sem, nunca saca abiertas/PROTECTED_CP, margen 20%, gate liquidez, veto).
+- Corre SEMANAL (viernes), tras scan_opportunities. NO toca el daily. Reversible: `PARAMS.radar_rotation_enabled/tiers/early_only/max_candidates`. 54 tests.
+- ⚠️ CAVEAT: el A/B es bull + survivorship-biased y margen modesto (Sharpe +0.12). Los primeros swaps se monitorean como **A/B en vivo** (medir aporte de los rotados). Si degradan → `radar_rotation_enabled=False`.
+- 1er efecto real: **viernes** (cuando el weekly regenere opportunities.json con tiers — el de ahora es stale pre-iter53).
+
+### ✅ RESUELTO (iter54, backtest A/B #1) — operar TODO el universo amplio: NO
 Se corrió el A/B que faltaba (large-only vs all-cap con mid/small, mismo strategy: top-5, mensual, 30bps, 2y OOS):
 - **A · LARGE-ONLY (S&P 500)**: alpha **+23.95%/año**, MaxDD -10.61%, win 81.8%, profit factor 19.32.
 - **B · ALL-CAP (S&P 500+400+600)**: Sharpe 0.76, CAGR +20.24%, alpha **-1.17%/año** (¡no le ganó ni a SPY!), MaxDD -15.27%, win 72.7%, PF 4.51.
