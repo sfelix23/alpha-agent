@@ -71,6 +71,13 @@ def _vix_info(v: float) -> tuple[str, str]:
     if v > 18: return "Moderado — sizing 100%", "#d29922"
     return "Tranquilo — sizing 110%", "#3fb950"
 
+# iter55: muestras mínimas para NO inflar métricas anualizadas/extrapoladas.
+# Con pocos snapshots, anualizar ×252 o extrapolar a un año da fantasía
+# (Sortino 9, ARR +11.000%). Mismo principio que iter45 (Sharpe n>=20).
+_MIN_RATIO_N = 20   # mín. retornos diarios para anualizar un ratio (Sortino/Info)
+_MIN_ARR_N   = 60   # mín. snapshots para extrapolar un retorno a anual (ARR/Calmar)
+
+
 def _calc_metrics(history: list[dict], spy_history: list[dict], qqq_history: list[dict] | None = None) -> dict:
     if len(history) < 3:
         return {}
@@ -79,10 +86,18 @@ def _calc_metrics(history: list[dict], spy_history: list[dict], qqq_history: lis
     if not daily_rets:
         return {}
 
-    mean_daily = sum(daily_rets) / len(daily_rets)
+    n_obs = len(daily_rets)
+    mean_daily = sum(daily_rets) / n_obs
     neg_rets = [r for r in daily_rets if r < 0]
-    downside_dev = (sum(r**2 for r in neg_rets) / len(neg_rets)) ** 0.5 if neg_rets else 0.001
-    sortino = (mean_daily * 252) / (downside_dev * (252 ** 0.5))
+    # Sortino: SOLO con muestra suficiente. Sin floor absoluto trucho (0.001 hacía
+    # explotar el ratio cuando había pocos días negativos). >5 sobre data diaria
+    # es casi siempre artefacto → se oculta.
+    sortino = None
+    if n_obs >= _MIN_RATIO_N and neg_rets:
+        downside_dev = (sum(r**2 for r in neg_rets) / len(neg_rets)) ** 0.5
+        if downside_dev > 0:
+            _s = (mean_daily * 252) / (downside_dev * (252 ** 0.5))
+            sortino = _s if -5 <= _s <= 5 else None
 
     peak, max_dd = vals[0], 0.0
     for v in vals:
@@ -92,12 +107,14 @@ def _calc_metrics(history: list[dict], spy_history: list[dict], qqq_history: lis
 
     port_ret = (vals[-1] - vals[0]) / vals[0] if vals[0] > 0 else 0
 
-    # ARR (Annualized Return Rate)
+    # ARR (Annualized Return Rate) — SOLO si hay historia suficiente; extrapolar
+    # 9 días a 252 daba +11.000%. Por debajo del umbral → None (se muestra el
+    # retorno del período en su lugar).
     n_days = max(len(vals), 1)
-    arr = ((1 + port_ret) ** (252 / n_days) - 1) if port_ret > -1 else -1.0
+    arr = ((1 + port_ret) ** (252 / n_days) - 1) if (port_ret > -1 and n_days >= _MIN_ARR_N) else None
 
-    # Win Rate
-    win_rate = len([r for r in daily_rets if r >= 0]) / len(daily_rets) * 100 if daily_rets else 0
+    # % de días positivos (NO es el win-rate de trades — eso vive en el historial)
+    win_rate = len([r for r in daily_rets if r >= 0]) / n_obs * 100 if daily_rets else 0
 
     spy_ret = None
     if spy_history and len(spy_history) >= 2:
@@ -110,10 +127,11 @@ def _calc_metrics(history: list[dict], spy_history: list[dict], qqq_history: lis
         qqq_ret = (q_vals[-1] - q_vals[0]) / q_vals[0] if q_vals[0] > 0 else 0
 
     return {
-        "sortino": round(sortino, 2),
+        "sortino": round(sortino, 2) if sortino is not None else None,
         "max_dd": round(max_dd * 100, 2),
+        "n_snapshots": len(vals),
         "port_ret_1m": round(port_ret * 100, 2),
-        "arr": round(arr * 100, 2),
+        "arr": round(arr * 100, 2) if arr is not None else None,
         "win_rate": round(win_rate, 1),
         "spy_ret_1m": round(spy_ret * 100, 2) if spy_ret is not None else None,
         "qqq_ret_1m": round(qqq_ret * 100, 2) if qqq_ret is not None else None,
@@ -202,12 +220,15 @@ def _advanced_metrics_panel(history, qqq_history, spy_history, brk_history=None)
     # Calmar: retorno anualizado / max drawdown del portfolio
     vals = [h.get("equity", h.get("v")) for h in history if h.get("equity", h.get("v")) is not None]
     total_ret = (vals[-1] - vals[0]) / vals[0] if vals and vals[0] > 0 else 0
-    arr = ((1 + total_ret) ** (252 / max(len(vals), 1)) - 1) if total_ret > -1 else -1
+    # iter55: anualizar el retorno SOLO con historia suficiente (extrapolar pocos
+    # días daba ARR/Calmar fantasía). Por debajo del umbral → None.
+    arr = (((1 + total_ret) ** (252 / max(len(vals), 1)) - 1)
+           if (total_ret > -1 and len(vals) >= _MIN_ARR_N) else None)
     peak, max_dd = vals[0], 0.0
     for v in vals:
         peak = max(peak, v)
         max_dd = max(max_dd, (peak - v) / peak if peak > 0 else 0)
-    calmar = (arr / max_dd) if max_dd > 0.001 else 0
+    calmar = (arr / max_dd) if (arr is not None and max_dd > 0.001) else None
 
     # Beta vs QQQ
     mean_p = sum(port_r) / n
@@ -224,11 +245,12 @@ def _advanced_metrics_panel(history, qqq_history, spy_history, brk_history=None)
     up_cap = (sum(up_p) / sum(up_q) * 100) if up_q and sum(up_q) != 0 else 0
     dn_cap = (sum(dn_p) / sum(dn_q) * 100) if dn_q and sum(dn_q) != 0 else 0
 
-    # Information Ratio: alpha vs QQQ / tracking error
+    # Information Ratio: alpha vs QQQ / tracking error — anualizado SOLO con
+    # muestra suficiente (n>=20); si no, None (no inventar consistencia con 8 días).
     active = [port_r[i] - qqq_r[i] for i in range(n)]
     mean_active = sum(active) / n
     te = (sum((a - mean_active) ** 2 for a in active) / n) ** 0.5
-    info_ratio = (mean_active / te * (252 ** 0.5)) if te > 0 else 0
+    info_ratio = (mean_active / te * (252 ** 0.5)) if (te > 0 and n >= _MIN_RATIO_N) else None
 
     # Batting average: % de días que port > qqq
     batting = sum(1 for i in range(n) if port_r[i] > qqq_r[i]) / n * 100
@@ -241,12 +263,17 @@ def _advanced_metrics_panel(history, qqq_history, spy_history, brk_history=None)
           <div style="font-size:.64rem;color:var(--mt)">{sub}</div>
         </div>"""
 
+    _na = "muestra insuficiente"
+    calmar_cell = (_cell("Calmar Ratio", f"{calmar:.2f}", calmar > 1.0, "ret anual / max DD · >1 bueno")
+                   if calmar is not None else _cell("Calmar Ratio", "n/a", None, f"{_na} (n&lt;{_MIN_ARR_N})"))
+    info_cell = (_cell("Information Ratio", f"{info_ratio:.2f}", info_ratio > 0, "alpha/TE vs QQQ · >0.5 bueno")
+                 if info_ratio is not None else _cell("Information Ratio", "n/a", None, f"{_na} (n&lt;{_MIN_RATIO_N})"))
     cells = "".join([
-        _cell("Calmar Ratio", f"{calmar:.2f}", calmar > 1.0, "ret anual / max DD · >1 bueno"),
+        calmar_cell,
         _cell("Beta vs QQQ", f"{beta:.2f}", None, "1.0=igual Nasdaq · <1 defensivo"),
         _cell("Up Capture", f"{up_cap:.0f}%", up_cap > 80, "de las subidas de QQQ"),
         _cell("Down Capture", f"{dn_cap:.0f}%", dn_cap < 80, "de las bajadas (menor=mejor)"),
-        _cell("Information Ratio", f"{info_ratio:.2f}", info_ratio > 0, "alpha/TE vs QQQ · >0.5 bueno"),
+        info_cell,
         _cell("Batting Avg", f"{batting:.0f}%", batting > 50, "% dias que supera QQQ"),
     ])
 
@@ -1026,8 +1053,9 @@ def _tab_resumen(equity, initial, regime, vix, wti, gold, dxy,
     alpha_v   = metrics.get("alpha_1m")
     spy_r     = metrics.get("spy_ret_1m")
     port_r    = metrics.get("port_ret_1m", 0) or 0
-    arr_v     = metrics.get("arr", 0) or 0
+    arr_v     = metrics.get("arr")   # None si historia insuficiente
     win_rate  = metrics.get("win_rate", 0) or 0
+    nsnap_m   = metrics.get("n_snapshots", 0) or 0
 
     spy_badge = ""
     if spy_r is not None:
@@ -1064,19 +1092,18 @@ def _tab_resumen(equity, initial, regime, vix, wti, gold, dxy,
     <div class="kpi-sub">{vl}</div>
   </div>
   <div class="kpi">
-    <div class="kpi-lbl">Sharpe del Portfolio</div>
+    <div class="kpi-lbl">Sharpe esperado (ex-ante)</div>
     <div class="kpi-val" style="color:{'#3fb950'if sharpe>0.5 else'#d29922'if sharpe>0 else'#f85149'}">{sharpe:.2f}</div>
-    <div class="kpi-sub">Retorno esperado {_pct(ret_exp)}</div>
+    <div class="kpi-sub">Markowitz · proyección, no realizado · ret esp {_pct(ret_exp)}</div>
   </div>
   <div class="kpi">
     <div class="kpi-lbl">ARR (Anualizado)</div>
-    <div class="kpi-val" style="color:{'#3fb950'if arr_v>10 else'#d29922'if arr_v>0 else'#f85149'}">{_pct(arr_v)}</div>
-    <div class="kpi-sub">Retorno anualizado estimado</div>
+    {('<div class="kpi-val" style="color:'+('#3fb950'if arr_v>10 else'#d29922'if arr_v>0 else'#f85149')+f'">{_pct(arr_v)}</div><div class="kpi-sub">Retorno anualizado</div>') if arr_v is not None else f'<div class="kpi-val" style="color:#7d8590">n/a</div><div class="kpi-sub">histórico corto (n&lt;{_MIN_ARR_N}) — no se extrapola</div>'}
   </div>
   <div class="kpi">
-    <div class="kpi-lbl">Win Rate</div>
+    <div class="kpi-lbl">Días positivos %</div>
     <div class="kpi-val" style="color:{'#3fb950'if win_rate>55 else'#d29922'if win_rate>45 else'#f85149'}">{win_rate:.1f}%</div>
-    <div class="kpi-sub">Dias con P&L positivo</div>
+    <div class="kpi-sub">% días con P&L+ (NO es win-rate de trades)</div>
   </div>
   <div class="kpi">
     <div class="kpi-lbl">Petroleo WTI</div>
@@ -1088,37 +1115,47 @@ def _tab_resumen(equity, initial, regime, vix, wti, gold, dxy,
     # Advanced metrics row
     adv_kpis = ""
     if metrics:
-        sortino_v = metrics.get("sortino", 0) or 0
+        sortino_v = metrics.get("sortino")   # None si muestra insuficiente
         max_dd_v  = metrics.get("max_dd", 0) or 0
         alpha_v   = metrics.get("alpha_1m")
         alpha_qqq = metrics.get("alpha_vs_qqq")
         spy_r     = metrics.get("spy_ret_1m")
         qqq_r     = metrics.get("qqq_ret_1m")
         port_r    = metrics.get("port_ret_1m", 0) or 0
+        nsnap     = metrics.get("n_snapshots", 0) or 0
+        win_lbl   = f"ventana · {nsnap} snapshots"  # honesto: NO es "1 mes"
 
         alpha_html = (
-            f'<div class="kpi"><div class="kpi-lbl">Alpha vs SPY (1M)</div>'
+            f'<div class="kpi"><div class="kpi-lbl">Alpha vs SPY ({win_lbl})</div>'
             f'<div class="kpi-val" style="color:{_c(alpha_v)}">{_pct(alpha_v)}</div>'
             f'<div class="kpi-sub">Portfolio {_pct(port_r)} · SPY {_pct(spy_r)}</div></div>'
         ) if alpha_v is not None else ""
 
         qqq_html = (
-            f'<div class="kpi"><div class="kpi-lbl">Alpha vs QQQ (1M)</div>'
+            f'<div class="kpi"><div class="kpi-lbl">Alpha vs QQQ ({win_lbl})</div>'
             f'<div class="kpi-val" style="color:{_c(alpha_qqq)}">{_pct(alpha_qqq)}</div>'
             f'<div class="kpi-sub">QQQ {_pct(qqq_r)}</div></div>'
         ) if alpha_qqq is not None else ""
 
+        # Sortino: si no hay muestra suficiente, decirlo en vez de inventar un 9.14
+        if sortino_v is not None:
+            sortino_cell = (
+                f'<div class="kpi-val" style="color:{"#3fb950"if sortino_v>1 else"#d29922"if sortino_v>0 else"#f85149"}">{sortino_v:.2f}</div>'
+                f'<div class="kpi-sub">Riesgo / retorno a la baja</div>')
+        else:
+            sortino_cell = ('<div class="kpi-val" style="color:#7d8590">n/a</div>'
+                            f'<div class="kpi-sub">muestra insuficiente (n&lt;{_MIN_RATIO_N})</div>')
+
         adv_kpis = f"""
 <div class="kpi-row kpi-row-adv">
   <div class="kpi">
-    <div class="kpi-lbl">Sortino Ratio (1M)</div>
-    <div class="kpi-val" style="color:{'#3fb950'if sortino_v>1 else'#d29922'if sortino_v>0 else'#f85149'}">{sortino_v:.2f}</div>
-    <div class="kpi-sub">Riesgo / retorno ajustado baja</div>
+    <div class="kpi-lbl">Sortino Ratio</div>
+    {sortino_cell}
   </div>
   <div class="kpi">
-    <div class="kpi-lbl">Max Drawdown (1M)</div>
+    <div class="kpi-lbl">Max Drawdown ({nsnap} snapshots)</div>
     <div class="kpi-val" style="color:{'#3fb950'if max_dd_v<3 else'#d29922'if max_dd_v<7 else'#f85149'}">-{max_dd_v:.2f}%</div>
-    <div class="kpi-sub">Caida maxima desde pico</div>
+    <div class="kpi-sub">Caida maxima · ventana corta, no anualizada</div>
   </div>
   {alpha_html}
   {qqq_html}
@@ -3479,9 +3516,11 @@ def generate() -> None:
     # Metrics
     metrics = _calc_metrics(history, spy_history, qqq_history)
     if metrics:
-        logger.info("Metricas: Sortino=%.2f MaxDD=%.2f%% Alpha1M=%s",
-                    metrics.get("sortino",0), metrics.get("max_dd",0),
-                    metrics.get("alpha_1m","N/A"))
+        _sv = metrics.get("sortino")
+        logger.info("Metricas: Sortino=%s MaxDD=%.2f%% Alpha=%s (n=%s)",
+                    f"{_sv:.2f}" if _sv is not None else "n/a",
+                    metrics.get("max_dd", 0) or 0,
+                    metrics.get("alpha_1m", "N/A"), metrics.get("n_snapshots", "?"))
 
     # Signals
     signals_data: dict = {}
