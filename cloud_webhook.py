@@ -195,6 +195,9 @@ def _alpaca_full():
             "buying_power": float(acc.buying_power),
             "cash": float(acc.cash),
             "positions": client.get_all_positions(),
+            # iter58: visibilidad PDT (cuenta <$25k: 4 day-trades/5d rolling)
+            "daytrade_count": int(getattr(acc, "daytrade_count", 0) or 0),
+            "pattern_day_trader": bool(getattr(acc, "pattern_day_trader", False)),
         }
     except Exception as e:
         log.error("Alpaca full falló: %s", e)
@@ -285,15 +288,20 @@ def _cmd_llm() -> str:
 
 def _cmd_health() -> str:
     """Snapshot completo tipo --health."""
-    res = _alpaca_account()
-    if not res:
+    d = _alpaca_full()
+    if not d:
         return "❌ Error consultando Alpaca."
-    eq, _, pos = res
+    eq = d["equity"]; pos = d["positions"]
     ws = _fetch_repo_json("signals/workflow_status.json") or {}
     gate = _fetch_repo_json("signals/entry_gate.json")
     llm = _fetch_repo_json("signals/llm_budget.json") or {}
     lines = ["*HEALTH SNAPSHOT*"]
-    lines.append(f"Equity: ${eq:,.2f}  |  Open: {len(pos)}")
+    real = sum(1 for p in pos if float(p.market_value) >= 5)
+    lines.append(f"Equity: ${eq:,.2f}  |  Open: {real} reales (+{len(pos)-real} dust)")
+    # iter58: proximidad al límite PDT (cuenta <$25k)
+    dtc = d.get("daytrade_count", 0)
+    pdt_icon = "🟢" if dtc <= 2 else ("🟡" if dtc == 3 else "🔴")
+    lines.append(f"{pdt_icon} PDT: {dtc}/4 day-trades (5d)" + (" ⚠️ FLAGGED" if d.get("pattern_day_trader") else ""))
     for job in ("alpha_daily", "alpha_monitor"):
         j = ws.get(job, {})
         ok = "🟢" if j.get("ok") else "🔴"
