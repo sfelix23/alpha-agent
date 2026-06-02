@@ -258,7 +258,7 @@ tr:hover td{background:var(--s2)}
 <div class="topbar">
   <div class="logo">ALPHA<span>&nbsp;/&nbsp;TERMINAL</span></div>
   <div class="topbar-meta">
-    <span><span class="live"></span>&nbsp;02 de June de 2026 — 01:38</span>
+    <span><span class="live"></span>&nbsp;02 de June de 2026 — 02:01</span>
     <span style="color:var(--bd)">|</span>
     <span>Paper</span>
     <span style="color:var(--bd)">|</span>
@@ -298,10 +298,10 @@ tr:hover td{background:var(--s2)}
   <p class="ts">Senales actualizadas: 2026-06-01 13:44 &nbsp;|&nbsp; Paper Trading</p>
   
 <div class="kpi-row">
-  <div class="kpi kpi-hero" data-countup="2006.32">
+  <div class="kpi kpi-hero" data-countup="1996.70">
     <div class="kpi-lbl">Patrimonio Total</div>
-    <div class="kpi-val kpi-hero-val" style="color:#3fb950" id="kpi-equity">$2,006.32</div>
-    <div class="kpi-tag" style="background:rgba(63,185,80,.15);color:#3fb950">$68.76 &nbsp; +3.55% total&nbsp;&middot;&nbsp;<span style="color:#7d8590">SPY +5.64%</span></div>
+    <div class="kpi-val kpi-hero-val" style="color:#3fb950" id="kpi-equity">$1,996.70</div>
+    <div class="kpi-tag" style="background:rgba(63,185,80,.15);color:#3fb950">$59.14 &nbsp; +3.05% total&nbsp;&middot;&nbsp;<span style="color:#7d8590">SPY +5.64%</span></div>
   </div>
   
   <div class="kpi" style="border-left:3px solid #3fb950;padding-left:12px">
@@ -320,19 +320,18 @@ tr:hover td{background:var(--s2)}
     <div class="kpi-sub">Tranquilo — sizing 110%</div>
   </div>
   <div class="kpi">
-    <div class="kpi-lbl">Sharpe del Portfolio</div>
+    <div class="kpi-lbl">Sharpe esperado (ex-ante)</div>
     <div class="kpi-val" style="color:#f85149">0.00</div>
-    <div class="kpi-sub">Retorno esperado +0.00%</div>
+    <div class="kpi-sub">Markowitz · proyección, no realizado · ret esp +0.00%</div>
   </div>
   <div class="kpi">
     <div class="kpi-lbl">ARR (Anualizado)</div>
-    <div class="kpi-val" style="color:#3fb950">+612.72%</div>
-    <div class="kpi-sub">Retorno anualizado estimado</div>
+    <div class="kpi-val" style="color:#7d8590">n/a</div><div class="kpi-sub">histórico corto (n&lt;60) — no se extrapola</div>
   </div>
   <div class="kpi">
-    <div class="kpi-lbl">Win Rate</div>
+    <div class="kpi-lbl">Días positivos %</div>
     <div class="kpi-val" style="color:#3fb950">84.2%</div>
-    <div class="kpi-sub">Dias con P&L positivo</div>
+    <div class="kpi-sub">% días con P&L+ (NO es win-rate de trades)</div>
   </div>
   <div class="kpi">
     <div class="kpi-lbl">Petroleo WTI</div>
@@ -343,17 +342,16 @@ tr:hover td{background:var(--s2)}
   
 <div class="kpi-row kpi-row-adv">
   <div class="kpi">
-    <div class="kpi-lbl">Sortino Ratio (1M)</div>
-    <div class="kpi-val" style="color:#3fb950">9.14</div>
-    <div class="kpi-sub">Riesgo / retorno ajustado baja</div>
+    <div class="kpi-lbl">Sortino Ratio</div>
+    <div class="kpi-val" style="color:#7d8590">n/a</div><div class="kpi-sub">muestra insuficiente (n&lt;20)</div>
   </div>
   <div class="kpi">
-    <div class="kpi-lbl">Max Drawdown (1M)</div>
+    <div class="kpi-lbl">Max Drawdown (20 snapshots)</div>
     <div class="kpi-val" style="color:#d29922">-3.16%</div>
-    <div class="kpi-sub">Caida maxima desde pico</div>
+    <div class="kpi-sub">Caida maxima · ventana corta, no anualizada</div>
   </div>
-  <div class="kpi"><div class="kpi-lbl">Alpha vs SPY (1M)</div><div class="kpi-val" style="color:#3fb950">+11.22%</div><div class="kpi-sub">Portfolio +16.87% · SPY +5.64%</div></div>
-  <div class="kpi"><div class="kpi-lbl">Alpha vs QQQ (1M)</div><div class="kpi-val" style="color:#3fb950">+6.48%</div><div class="kpi-sub">QQQ +10.38%</div></div>
+  <div class="kpi"><div class="kpi-lbl">Alpha vs SPY (ventana · 20 snapshots)</div><div class="kpi-val" style="color:#3fb950">+11.22%</div><div class="kpi-sub">Portfolio +16.87% · SPY +5.64%</div></div>
+  <div class="kpi"><div class="kpi-lbl">Alpha vs QQQ (ventana · 20 snapshots)</div><div class="kpi-val" style="color:#3fb950">+6.48%</div><div class="kpi-sub">QQQ +10.38%</div></div>
 </div>
   <div class="section-gap"></div>
   <div class="card">
@@ -410,7 +408,7 @@ tr:hover td{background:var(--s2)}
         NORMAL
       </div>
       <div style="font-family:var(--mono);font-size:.84rem;color:#3fb950">
-        +3.55%
+        +3.05%
       </div>
     </div>
   </div>
@@ -518,7 +516,7 @@ tr:hover td{background:var(--s2)}
     <div style="width:89%;height:100%;background:#3fb950;opacity:.85"></div>
     <div style="position:absolute;top:0;left:97%;height:100%;width:2px;background:#fff"></div>
     <div style="position:absolute;top:3px;left:8px;font-size:.7rem;color:#fff;font-family:var(--mono)">
-      $1,795 invertido · $210 cash (10%)
+      $1,785 invertido · $209 cash (10%)
     </div>
   </div>
   <div style="display:flex;justify-content:space-between;font-size:.64rem;color:var(--mt);margin-top:3px">
@@ -579,8 +577,8 @@ tr:hover td{background:var(--s2)}
   <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin-top:8px">
     <div style="padding:12px;background:var(--s2);border-radius:4px">
           <div style="font-size:.62rem;color:var(--mt);text-transform:uppercase;letter-spacing:.6px">Calmar Ratio</div>
-          <div style="font-family:var(--mono);font-size:1.3rem;font-weight:600;color:#3fb950">193.82</div>
-          <div style="font-size:.64rem;color:var(--mt)">ret anual / max DD · >1 bueno</div>
+          <div style="font-family:var(--mono);font-size:1.3rem;font-weight:600;color:#d29922">n/a</div>
+          <div style="font-size:.64rem;color:var(--mt)">muestra insuficiente (n&lt;60)</div>
         </div><div style="padding:12px;background:var(--s2);border-radius:4px">
           <div style="font-size:.62rem;color:var(--mt);text-transform:uppercase;letter-spacing:.6px">Beta vs QQQ</div>
           <div style="font-family:var(--mono);font-size:1.3rem;font-weight:600;color:#d29922">0.19</div>
@@ -595,8 +593,8 @@ tr:hover td{background:var(--s2)}
           <div style="font-size:.64rem;color:var(--mt)">de las bajadas (menor=mejor)</div>
         </div><div style="padding:12px;background:var(--s2);border-radius:4px">
           <div style="font-size:.62rem;color:var(--mt);text-transform:uppercase;letter-spacing:.6px">Information Ratio</div>
-          <div style="font-family:var(--mono);font-size:1.3rem;font-weight:600;color:#3fb950">2.82</div>
-          <div style="font-size:.64rem;color:var(--mt)">alpha/TE vs QQQ · >0.5 bueno</div>
+          <div style="font-family:var(--mono);font-size:1.3rem;font-weight:600;color:#d29922">n/a</div>
+          <div style="font-size:.64rem;color:var(--mt)">muestra insuficiente (n&lt;20)</div>
         </div><div style="padding:12px;background:var(--s2);border-radius:4px">
           <div style="font-size:.62rem;color:var(--mt);text-transform:uppercase;letter-spacing:.6px">Batting Avg</div>
           <div style="font-family:var(--mono);font-size:1.3rem;font-weight:600;color:#3fb950">53%</div>
@@ -720,7 +718,7 @@ tr:hover td{background:var(--s2)}
                 text-overflow:ellipsis" id="wf-desc-alpha_monitor">Stops/TPs cada 30 min · 11:00-16:00 ART</div>
   </div>
   <div style="font-size:.72rem;flex-shrink:0" id="wf-age-alpha_monitor"
-       style="color:#3fb950">hace 7h</div>
+       style="color:#3fb950">hace 23min</div>
 </div><div style="display:flex;align-items:center;gap:10px;padding:8px 0;
   border-bottom:1px solid var(--bd)" id="wf-row-alpha_weekly">
   <span style="font-size:1rem;color:#6e7681;width:16px;text-align:center;flex-shrink:0"
@@ -999,11 +997,11 @@ tr:hover td{background:var(--s2)}
     </div>
     <div class="kpi">
       <div class="kpi-lbl">Valor de mercado total</div>
-      <div class="kpi-val">$1,794.97</div>
+      <div class="kpi-val">$1,785.36</div>
     </div>
     <div class="kpi">
       <div class="kpi-lbl">P&amp;L no realizado</div>
-      <div class="kpi-val" style="color:#3fb950">+$174.72</div>
+      <div class="kpi-val" style="color:#3fb950">+$165.11</div>
     </div>
   </div>
   <div class="pos-layout">
@@ -1018,7 +1016,7 @@ tr:hover td{background:var(--s2)}
   <div class="pos-top">
     <div>
       <div class="pos-ticker" style="color:#58a6ff">BMA</div>
-      <div class="pos-sub">14.6% del portfolio &middot; 2.4913 acc.</div>
+      <div class="pos-sub">14.7% del portfolio &middot; 2.4913 acc.</div>
     </div>
     <div style="text-align:right">
       <div class="pos-pnl" style="color:#3fb950">▲ $30.29</div>
@@ -1031,7 +1029,7 @@ tr:hover td{background:var(--s2)}
     <span>Valor actual <b>$261.59</b></span>
     <span>P&L <b style="color:#3fb950">+$30.29</b></span>
   </div>
-  <div class="pos-meta" style="margin-top:4px;border-top:1px dashed var(--bd);padding-top:5px"><span>Stop <b style="color:#f85149">$84.65</b></span><span>Dist. stop <b style="color:#3fb950">+19.4%</b></span><span>$ en riesgo <b>$50.70</b></span><span>TP <b style="color:#3fb950">$110.41</b></span><span>Hold <b>0d</b></span></div>
+  <div class="pos-meta" style="margin-top:4px;border-top:1px dashed var(--bd);padding-top:5px"><span>Stop <b style="color:#f85149">$84.65</b></span><span>Dist. stop <b style="color:#3fb950">+19.4%</b></span><span>$ en riesgo <b>$50.70</b></span><span>TP <b style="color:#3fb950">$110.41</b></span><span>Hold <b>1d</b></span></div>
 </div>
 <div class="pos-card" style="border-top:3px solid #3fb950">
   <div class="pos-top">
@@ -1040,17 +1038,17 @@ tr:hover td{background:var(--s2)}
       <div class="pos-sub">39.9% del portfolio &middot; 2.6042 acc.</div>
     </div>
     <div style="text-align:right">
-      <div class="pos-pnl" style="color:#3fb950">▲ $92.67</div>
-      <div class="pos-pnl-pct" style="color:#3fb950">+14.9%</div>
+      <div class="pos-pnl" style="color:#3fb950">▲ $89.21</div>
+      <div class="pos-pnl-pct" style="color:#3fb950">+14.3%</div>
     </div>
   </div>
-  <div class="pos-bar-track"><div style="width:74%;height:100%;background:#3fb950;border-radius:2px;opacity:.8"></div></div>
+  <div class="pos-bar-track"><div style="width:72%;height:100%;background:#3fb950;border-radius:2px;opacity:.8"></div></div>
   <div class="pos-meta">
     <span>Entrada <b>$239.12</b></span>
-    <span>Valor actual <b>$715.40</b></span>
-    <span>P&L <b style="color:#3fb950">+$92.67</b></span>
+    <span>Valor actual <b>$711.94</b></span>
+    <span>P&L <b style="color:#3fb950">+$89.21</b></span>
   </div>
-  <div class="pos-meta" style="margin-top:4px;border-top:1px dashed var(--bd);padding-top:5px"><span>Stop <b style="color:#f85149">$240.32</b></span><span>Dist. stop <b style="color:#3fb950">+12.5%</b></span><span>$ en riesgo <b>$89.56</b></span><span>TP <b style="color:#3fb950">$308.54</b></span><span>Hold <b>0d</b></span></div>
+  <div class="pos-meta" style="margin-top:4px;border-top:1px dashed var(--bd);padding-top:5px"><span>Stop <b style="color:#f85149">$240.32</b></span><span>Dist. stop <b style="color:#3fb950">+12.1%</b></span><span>$ en riesgo <b>$86.09</b></span><span>TP <b style="color:#3fb950">$308.54</b></span><span>Hold <b>1d</b></span></div>
 </div>
 <div class="pos-card" style="border-top:3px solid #d29922">
   <div class="pos-top">
@@ -1094,20 +1092,20 @@ tr:hover td{background:var(--s2)}
   <div class="pos-top">
     <div>
       <div class="pos-ticker" style="color:#bc8cff">MU</div>
-      <div class="pos-sub">41.2% del portfolio &middot; 0.7241 acc.</div>
+      <div class="pos-sub">41.1% del portfolio &middot; 0.7241 acc.</div>
     </div>
     <div style="text-align:right">
-      <div class="pos-pnl" style="color:#3fb950">▲ $51.55</div>
-      <div class="pos-pnl-pct" style="color:#3fb950">+7.5%</div>
+      <div class="pos-pnl" style="color:#3fb950">▲ $45.42</div>
+      <div class="pos-pnl-pct" style="color:#3fb950">+6.6%</div>
     </div>
   </div>
-  <div class="pos-bar-track"><div style="width:37%;height:100%;background:#3fb950;border-radius:2px;opacity:.8"></div></div>
+  <div class="pos-bar-track"><div style="width:33%;height:100%;background:#3fb950;border-radius:2px;opacity:.8"></div></div>
   <div class="pos-meta">
     <span>Entrada <b>$950.09</b></span>
-    <span>Valor actual <b>$739.51</b></span>
-    <span>P&L <b style="color:#3fb950">+$51.55</b></span>
+    <span>Valor actual <b>$733.38</b></span>
+    <span>P&L <b style="color:#3fb950">+$45.42</b></span>
   </div>
-  <div class="pos-meta" style="margin-top:4px;border-top:1px dashed var(--bd);padding-top:5px"><span>Stop <b style="color:#f85149">$954.84</b></span><span>Dist. stop <b style="color:#d29922">+6.5%</b></span><span>$ en riesgo <b>$48.11</b></span><span>TP <b style="color:#3fb950">$1,234.34</b></span><span>Hold <b>0d</b></span></div>
+  <div class="pos-meta" style="margin-top:4px;border-top:1px dashed var(--bd);padding-top:5px"><span>Stop <b style="color:#f85149">$954.84</b></span><span>Dist. stop <b style="color:#d29922">+5.7%</b></span><span>$ en riesgo <b>$41.98</b></span><span>TP <b style="color:#3fb950">$1,234.34</b></span><span>Hold <b>1d</b></span></div>
 </div>
 <div class="pos-card" style="border-top:3px solid #ffa657">
   <div class="pos-top">
@@ -1116,15 +1114,15 @@ tr:hover td{background:var(--s2)}
       <div class="pos-sub">0.2% del portfolio &middot; 0.0758 acc.</div>
     </div>
     <div style="text-align:right">
-      <div class="pos-pnl" style="color:#3fb950">▲ $1.05</div>
-      <div class="pos-pnl-pct" style="color:#3fb950">+35.8%</div>
+      <div class="pos-pnl" style="color:#3fb950">▲ $1.02</div>
+      <div class="pos-pnl-pct" style="color:#3fb950">+35.1%</div>
     </div>
   </div>
   <div class="pos-bar-track"><div style="width:100%;height:100%;background:#3fb950;border-radius:2px;opacity:.8"></div></div>
   <div class="pos-meta">
     <span>Entrada <b>$38.50</b></span>
-    <span>Valor actual <b>$3.96</b></span>
-    <span>P&L <b style="color:#3fb950">+$1.05</b></span>
+    <span>Valor actual <b>$3.94</b></span>
+    <span>P&L <b style="color:#3fb950">+$1.02</b></span>
   </div>
   <div class="pos-meta" style="margin-top:4px;border-top:1px dashed var(--bd);padding-top:5px"><span class="muted">sin stop en señal (huérfana)</span></div>
 </div>
@@ -1172,7 +1170,7 @@ tr:hover td{background:var(--s2)}
   <td><span style="color:#8b949e;font-weight:600">TSM</span></td>
   <td class="muted">$403.79</td>
   <td><span style="color:#f85149">$0.00</span></td>
-  <td><span style="color:#3fb950;font-weight:600">+$0.04</span></td>
+  <td><span style="color:#3fb950;font-weight:600">+$0.03</span></td>
   <td><span style="font-size:.72rem;background:#21262d;color:#8b949e;padding:2px 8px;border-radius:10px">Expirada</span></td>
 </tr></tbody>
     </table>
@@ -1182,7 +1180,7 @@ tr:hover td{background:var(--s2)}
 <script>
 (function(){
   const labels=["BMA", "DDOG", "GD", "LLY", "MU", "WOLF"];
-  const values=[261.59, 715.4, 1.03, 73.48, 739.51, 3.96];
+  const values=[261.59, 711.94, 1.03, 73.48, 733.38, 3.94];
   const colors=["#58a6ff", "#3fb950", "#d29922", "#f85149", "#bc8cff", "#ffa657"];
   window._charts = window._charts||{};
   window._charts.alloc = new Chart(document.getElementById('allocChart'),{
