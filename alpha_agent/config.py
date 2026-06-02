@@ -348,6 +348,14 @@ class FinancialParams:
     rotation_enabled: bool = True               # auto-incorporar candidatos fuertes
     rotation_margin: float = 0.20               # candidato debe superar al más flojo por 20%
     rotation_max_per_week: int = 1              # máx 1 swap/semana (anti-churn)
+    # iter56: alimentar la rotación con el radar amplio (S&P 1500 + Nasdaq). El A/B
+    # mostró que incorporar SELECTIVAMENTE large/mid de calidad mejora el
+    # risk-adjusted, pero meter small caps o etapa tardía lo empeora. Por eso solo
+    # entran tier large/mid + etapa 🟢temprana. Reversible (flag=False lo apaga).
+    radar_rotation_enabled: bool = True         # el radar nutre la rotación del universo
+    radar_rotation_max_candidates: int = 5      # top-N del radar a evaluar por semana
+    radar_rotation_tiers: tuple = ("large", "mid")  # NO small (A/B: empeora)
+    radar_rotation_early_only: bool = True      # solo etapa temprana (anti-chase)
     min_days_to_expiry: int = 30          # evita theta decay brutal y PDT en cuentas <$25k
     max_days_to_expiry: int = 45          # evita gamma muerta (bajé de 60 a 45)
     target_delta_directional: float = 0.35  # puts/calls direccionales delta 0.35 (más OTM = más barato)

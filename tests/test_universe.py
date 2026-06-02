@@ -139,3 +139,35 @@ def test_scan_opportunities_includes_full_universe_and_etfs(tmp_path, monkeypatc
     assert r["by_tier"].get("mid", 0) >= 2     # MIDA, MIDB
     assert r["by_tier"].get("small", 0) >= 2   # SMLA, SMLB
     assert r["by_tier"].get("etf", 0) >= 1
+
+
+# ── iter56: radar → rotación selectiva (large/mid + temprana, gated) ─────────
+def test_radar_rotation_candidates_filters(tmp_path, monkeypatch):
+    """Solo entran large/mid + etapa temprana; se excluyen small/etf/tardía/in_universe."""
+    opp = tmp_path / "opp.json"
+    opp.write_text(json.dumps({"opportunities": [
+        {"ticker": "GOODL", "tier": "large", "etapa": "🟢 temprana", "is_etf": False, "in_universe": False},
+        {"ticker": "GOODM", "tier": "mid",   "etapa": "🟢 temprana", "is_etf": False, "in_universe": False},
+        {"ticker": "BADS",  "tier": "small", "etapa": "🟢 temprana", "is_etf": False, "in_universe": False},  # small → fuera
+        {"ticker": "BADL",  "tier": "large", "etapa": "🔴 tardía",   "is_etf": False, "in_universe": False},  # tardía → fuera
+        {"ticker": "BADE",  "tier": "large", "etapa": "🟢 temprana", "is_etf": True,  "in_universe": False},  # ETF → fuera
+        {"ticker": "BADU",  "tier": "large", "etapa": "🟢 temprana", "is_etf": False, "in_universe": True},   # ya en universo → fuera
+    ]}))
+    monkeypatch.setattr(us, "OPPORTUNITIES_PATH", opp)
+    cands = us._radar_rotation_candidates()
+    assert cands == ["GOODL", "GOODM"]
+
+
+def test_radar_rotation_disabled_returns_empty(tmp_path, monkeypatch):
+    """Con el flag apagado, el radar NO alimenta la rotación (reversible)."""
+    import types
+    import alpha_agent.config as cfg
+    opp = tmp_path / "opp.json"
+    opp.write_text(json.dumps({"opportunities": [
+        {"ticker": "GOODL", "tier": "large", "etapa": "🟢 temprana", "is_etf": False, "in_universe": False},
+    ]}))
+    monkeypatch.setattr(us, "OPPORTUNITIES_PATH", opp)
+    # PARAMS es frozen dataclass → se reemplaza por un stub con el flag apagado
+    stub = types.SimpleNamespace(radar_rotation_enabled=False)
+    monkeypatch.setattr(cfg, "PARAMS", stub)
+    assert us._radar_rotation_candidates() == []

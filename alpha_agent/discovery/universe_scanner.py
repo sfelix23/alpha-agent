@@ -377,13 +377,54 @@ def _save_overrides(data: dict) -> None:
     tmp.replace(_OVERRIDES_PATH)
 
 
-def _rotate_universe(disc_result: dict, broker=None) -> str:
-    """Rotación automática del CP_UNIVERSE con guardarraíles (iter17).
+def _radar_rotation_candidates() -> list[str]:
+    """iter56: candidatos del RADAR amplio (S&P 1500 + Nasdaq) para la rotación.
 
-    Si un candidato de discovery repite 2 semanas, pasa el gate de liquidez y supera
-    claramente (margen) al miembro más flojo del universo efectivo, lo INCORPORA y saca
-    al flojo. Guardarraíles: 1 swap/semana, nunca saca posiciones abiertas ni el núcleo
-    protegido, respeta la lista de veto. Devuelve un resumen para WhatsApp (o "").
+    El A/B mostró que incorporar selectivamente nombres de CALIDAD mejora el
+    risk-adjusted, pero meter small caps o etapa tardía lo EMPEORA. Por eso el
+    filtro es estricto: solo tier large/mid (config.radar_rotation_tiers), solo
+    etapa 🟢temprana (anti-chase), no ETFs, no nombres ya en el universo.
+    Lee opportunities.json (lo escribe scan_opportunities en el job semanal).
+    Devuelve los top-N por score. NO opera nada — solo propone a la rotación
+    gated, que mantiene todos los guardarraíles (1 swap/sem, margen, etc.).
+    """
+    from alpha_agent.config import PARAMS
+    if not getattr(PARAMS, "radar_rotation_enabled", False):
+        return []
+    try:
+        data = json.loads(OPPORTUNITIES_PATH.read_text(encoding="utf-8"))
+    except Exception:
+        return []
+    tiers = set(getattr(PARAMS, "radar_rotation_tiers", ("large", "mid")))
+    early_only = getattr(PARAMS, "radar_rotation_early_only", True)
+    max_n = int(getattr(PARAMS, "radar_rotation_max_candidates", 5))
+    out: list[str] = []
+    for o in data.get("opportunities", []):  # ya vienen ordenados por score
+        if o.get("is_etf") or o.get("in_universe"):
+            continue
+        if o.get("tier") not in tiers:
+            continue
+        if early_only and "temprana" not in (o.get("etapa") or ""):
+            continue
+        t = o.get("ticker")
+        if t:
+            out.append(t)
+        if len(out) >= max_n:
+            break
+    if out:
+        logger.info("Radar→rotación: %d candidatos elegibles (large/mid+temprana): %s", len(out), out)
+    return out
+
+
+def _rotate_universe(disc_result: dict, broker=None) -> str:
+    """Rotación automática del CP_UNIVERSE con guardarraíles (iter17 + iter56).
+
+    Candidatos de DOS fuentes: (a) discovery repetido 2 semanas, (b) iter56: el
+    radar amplio (large/mid + etapa temprana). Si un candidato pasa el gate de
+    liquidez y supera claramente (margen) al miembro más flojo del universo
+    efectivo, lo INCORPORA y saca al flojo. Guardarraíles: 1 swap/semana, nunca
+    saca posiciones abiertas ni el núcleo protegido, respeta veto. Devuelve un
+    resumen para WhatsApp (o "").
     """
     from alpha_agent.config import (
         PARAMS, PROTECTED_CP, get_effective_cp_universe,
@@ -398,9 +439,18 @@ def _rotate_universe(disc_result: dict, broker=None) -> str:
         logger.info("Rotación: ya hubo swap esta semana (%s) — skip", week)
         return ""
 
-    # 1. Candidatos elegibles: repetidos 2da semana, no vetados
-    repeated = [t for t in disc_result.get("repeated_alerts", []) if t not in vetoed]
-    if not repeated:
+    # 1. Candidatos elegibles: repetidos 2da semana (discovery) + radar amplio
+    #    (iter56: large/mid + etapa temprana). Dedup preservando orden, sin vetados.
+    repeated = list(disc_result.get("repeated_alerts", []))
+    radar_cands = _radar_rotation_candidates()
+    _seen: set[str] = set()
+    eligible: list[str] = []
+    for t in (repeated + radar_cands):
+        if t in vetoed or t in _seen:
+            continue
+        _seen.add(t)
+        eligible.append(t)
+    if not eligible:
         return ""
 
     effective = set(get_effective_cp_universe())
@@ -415,7 +465,7 @@ def _rotate_universe(disc_result: dict, broker=None) -> str:
 
     # 3. Scorear candidatos elegibles (re-aplica gate de liquidez)
     cand_scores = []
-    for t in repeated:
+    for t in eligible:
         if t in effective:
             continue
         s = _quick_score(t)
