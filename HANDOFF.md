@@ -68,7 +68,13 @@ El backtester debiasado reveló la verdad del edge. **Cada sesgo que se saca, el
 - **iter51 ETAPA del trend**: el radar distingue 🟢 temprana (trend joven: cruzó SMA50, RSI 45-68, no extendido) de 🔴 tardía (RSI>75 o +40% o parabólico). Score bonifica temprana (+12), penaliza tardía (-15) → anti-chase. Es el "llegar temprano" real.
 - ⚠️ **NO probado/revertido**: intento de fills parciales en FIFO reconciliaba PEOR ($338 vs $278 equity) → revertido, la versión simple es la precisa.
 
-### 🔭 PENDIENTE EXPLÍCITO — auto-entrada del radar (necesita backtest ANTES)
+### ✅ RESUELTO (iter54, backtest A/B) — auto-entrada del radar: NO conectar
+Se corrió el A/B que faltaba (large-only vs all-cap con mid/small, mismo strategy: top-5, mensual, 30bps, 2y OOS):
+- **A · LARGE-ONLY (S&P 500)**: alpha **+23.95%/año**, MaxDD -10.61%, win 81.8%, profit factor 19.32.
+- **B · ALL-CAP (S&P 500+400+600)**: Sharpe 0.76, CAGR +20.24%, alpha **-1.17%/año** (¡no le ganó ni a SPY!), MaxDD -15.27%, win 72.7%, PF 4.51.
+- **Veredicto**: meter mid/small caps al TRADING **empeora todo** (B no batió SPY; A generó +24% de alpha). Confirma iter28-29. → **El radar queda READ-ONLY. NO se conecta a la rotación/auto-entrada.** Su valor es surface oportunidades para que el usuario decida a mano; el motor automático sigue sobre el universo curado de calidad. (La cobertura ampliada iter53-54 sirve para VER el mercado, no para operarlo.)
+
+### 🔭 PENDIENTE (histórico) — auto-entrada del radar (necesitaba backtest ANTES → ya hecho, ver arriba)
 El usuario quiere que el sistema DECIDA entrar a las oportunidades tempranas. El mecanismo existe (`_rotate_universe`, gated: 1 swap/sem, persistencia, liquidez, nunca saca posiciones abiertas). **Conectar el radar a la rotación requiere backtestear primero** si mejora el Sharpe — el hallazgo iter28-29 advierte que ampliar el universo hacia momentum amplio puede EMPEORAR el risk-adjusted (curado Sharpe 1.45 > broad 0.68). Plan: feed solo nombres 🟢temprana + frescos + líquidos a la rotación gated + guard anti-tardía, y BACKTEST A/B antes de activar. NO activar a ciegas. (iter53 ya amplió la COBERTURA del radar a 490 tickers + ETFs, así que el feed candidato ahora ve todo el S&P 500 — pero sigue read-only.) **Nota IPOs**: el radar/trading NO opera listados nuevos (sin historia para momentum); un nombre post-IPO aparece naturalmente como 🟢temprana recién con ~2-3 meses de historia + trend real. Capturar nuevos ganadores = esperar historia, NO comprar el día 1.
 
 ### 🔴 AUDITORÍA iter45 — el hallazgo que cambia cómo se leen las métricas
