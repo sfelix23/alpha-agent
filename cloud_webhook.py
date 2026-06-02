@@ -226,10 +226,15 @@ def _cmd_cartera() -> str:
     _, _, pos = res
     if not pos:
         return "Sin posiciones abiertas."
+    # iter57: separar dust (<$5) de posiciones reales — así la cartera del bot
+    # coincide con lo que ves en Alpaca (4 reales, no 11 con residuos de $0.50).
+    DUST = 5.0
+    real = [p for p in pos if float(p.market_value) >= DUST]
+    dust = [p for p in pos if float(p.market_value) < DUST]
     lines = ["*CARTERA*"]
     total_mv = 0.0
     total_pl = 0.0
-    for p in pos:
+    for p in sorted(real, key=lambda x: -float(x.market_value)):
         mv = float(p.market_value)
         pl = float(p.unrealized_pl)
         pl_pct = float(p.unrealized_plpc) * 100
@@ -238,6 +243,9 @@ def _cmd_cartera() -> str:
         emoji = "🟢" if pl > 0 else ("🔴" if pl < 0 else "⚪")
         lines.append(f"{emoji} {p.symbol}: ${mv:,.0f} ({pl_pct:+.1f}%, ${pl:+.0f})")
     lines.append(f"\nTotal MV: ${total_mv:,.0f}  |  P&L abierto: ${total_pl:+,.0f}")
+    if dust:
+        dust_mv = sum(float(p.market_value) for p in dust)
+        lines.append(f"_+{len(dust)} residual(es) dust: ${dust_mv:,.2f} ({', '.join(p.symbol for p in dust)})_")
     return "\n".join(lines)
 
 
