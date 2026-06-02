@@ -49,6 +49,9 @@ def _stub_scores(monkeypatch):
         return {"ticker": t, "sharpe_3m": s, "mom_1m_pct": 1.0, "price": 50.0,
                 "avg_dollar_vol": 5e8, "combined_score": s}
     monkeypatch.setattr(us, "_quick_score", fake)
+    # iter59: aislar del radar (lee opportunities.json real) — estos tests cubren
+    # solo el path de discovery. El radar tiene sus propios tests dedicados.
+    monkeypatch.setattr(us, "_radar_rotation_candidates", lambda: [])
 
 
 def test_rotation_swaps_strong_candidate(tmp_path, monkeypatch):
@@ -156,6 +159,26 @@ def test_radar_rotation_candidates_filters(tmp_path, monkeypatch):
     monkeypatch.setattr(us, "OPPORTUNITIES_PATH", opp)
     cands = us._radar_rotation_candidates()
     assert cands == ["GOODL", "GOODM"]
+
+
+def test_radar_rotation_reads_early_candidates(tmp_path, monkeypatch):
+    """iter59: usa la lista dedicada early_candidates (no el top-25 por score, que
+    está dominado por etapa tardía → daba siempre [])."""
+    opp = tmp_path / "opp.json"
+    opp.write_text(json.dumps({
+        # opportunities top-25 TODOS tardía (como en la realidad) → el filtro viejo daría []
+        "opportunities": [
+            {"ticker": "BIGRUN", "tier": "large", "etapa": "🔴 tardía", "is_etf": False, "in_universe": False},
+        ],
+        # early_candidates dedicada (lo que de verdad debe rotar)
+        "early_candidates": [
+            {"ticker": "VRSN", "tier": "large", "etapa": "🟢 temprana"},
+            {"ticker": "CYTK", "tier": "mid", "etapa": "🟢 temprana"},
+        ],
+    }))
+    monkeypatch.setattr(us, "OPPORTUNITIES_PATH", opp)
+    cands = us._radar_rotation_candidates()
+    assert cands == ["VRSN", "CYTK"]   # NO "BIGRUN" (tardía)
 
 
 def test_radar_rotation_disabled_returns_empty(tmp_path, monkeypatch):

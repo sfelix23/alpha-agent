@@ -399,18 +399,31 @@ def _radar_rotation_candidates() -> list[str]:
     early_only = getattr(PARAMS, "radar_rotation_early_only", True)
     max_n = int(getattr(PARAMS, "radar_rotation_max_candidates", 5))
     out: list[str] = []
-    for o in data.get("opportunities", []):  # ya vienen ordenados por score
-        if o.get("is_etf") or o.get("in_universe"):
-            continue
-        if o.get("tier") not in tiers:
-            continue
-        if early_only and "temprana" not in (o.get("etapa") or ""):
-            continue
-        t = o.get("ticker")
-        if t:
-            out.append(t)
-        if len(out) >= max_n:
-            break
+    # iter59: leer la lista DEDICADA early_candidates (computada sobre TODO el scan,
+    # no el top-25 por score que está dominado por etapa tardía). Fallback al filtro
+    # sobre 'opportunities' por compatibilidad si el JSON es viejo (pre-iter59).
+    early = data.get("early_candidates")
+    if early is not None:
+        for o in early:
+            if o.get("tier") in tiers and not o.get("is_etf"):
+                if early_only and "temprana" not in (o.get("etapa") or ""):
+                    continue
+                if o.get("ticker"):
+                    out.append(o["ticker"])
+                if len(out) >= max_n:
+                    break
+    else:
+        for o in data.get("opportunities", []):  # fallback (JSON pre-iter59)
+            if o.get("is_etf") or o.get("in_universe"):
+                continue
+            if o.get("tier") not in tiers:
+                continue
+            if early_only and "temprana" not in (o.get("etapa") or ""):
+                continue
+            if o.get("ticker"):
+                out.append(o["ticker"])
+            if len(out) >= max_n:
+                break
     if out:
         logger.info("Radar→rotación: %d candidatos elegibles (large/mid+temprana): %s", len(out), out)
     return out
@@ -743,9 +756,24 @@ def scan_opportunities(max_tickers: int | None = None) -> dict:
     for o in opps:
         tier_counts[o.get("tier", "large")] += 1
 
+    # iter59: lista DEDICADA de candidatos tempranos para la rotación. El top-25
+    # por score está dominado por etapa TARDÍA (los que más subieron scorean más
+    # alto) → filtrar tempranos sobre el top-25 daba siempre []. Acá filtramos
+    # sobre TODA la lista: large/mid + 🟢temprana + fresco + no-ETF, ordenado por
+    # score. Esto es lo que alimenta _radar_rotation_candidates (la rotación gated).
+    early_candidates = [
+        {"ticker": o["ticker"], "tier": o["tier"], "score": o["score"],
+         "etapa": o["etapa"], "ret_1m": o["ret_1m"]}
+        for o in opps
+        if o.get("tier") in ("large", "mid")
+        and "temprana" in (o.get("etapa") or "")
+        and not o.get("in_universe") and not o.get("is_etf")
+    ][:15]
+
     result = {
         "opportunities": opps[:25],
         "fresh": [o for o in opps[:25] if not o["in_universe"] and not o.get("is_etf")][:10],  # nombres nuevos (no ETFs)
+        "early_candidates": early_candidates,  # iter59: alimenta la rotación selectiva
         "sectors": sectors,
         "by_tier": dict(tier_counts),
         "generated_at": datetime.now(timezone.utc).isoformat(),
