@@ -68,6 +68,14 @@ El backtester debiasado reveló la verdad del edge. **Cada sesgo que se saca, el
 - **iter51 ETAPA del trend**: el radar distingue 🟢 temprana (trend joven: cruzó SMA50, RSI 45-68, no extendido) de 🔴 tardía (RSI>75 o +40% o parabólico). Score bonifica temprana (+12), penaliza tardía (-15) → anti-chase. Es el "llegar temprano" real.
 - ⚠️ **NO probado/revertido**: intento de fills parciales en FIFO reconciliaba PEOR ($338 vs $278 equity) → revertido, la versión simple es la precisa.
 
+### ✅ iter57-59 — pulido + auditoría de pérdidas + fix rotación muerta (dry-run)
+- **iter55 (dashboard honesto)**: métricas infladas por muestra chica neutralizadas — Sortino 9.14→"n/a si n<20", ARR +11.800%→"n/a si n<60 snapshots", Calmar/Info gated, "Win Rate"→"Días positivos %" (el real de trades es 54%), "Sharpe"→"ex-ante". Equity dashboard==Alpaca (era solo lag de regen, no dato falso).
+- **iter57**: bot `cartera` separa dust <$5 (4 reales +N dust) → consistente con Alpaca/dashboard.
+- **iter58**: `health` del bot muestra PDT (daytrade_count/4) + dust. PDT actual = reactivo (defiere cierre a mañana), daytrade_count típico 1/4, lejos del límite. Scalp huérfanas: YA cerradas (cuenta SCALP en 0). #46 cerrado.
+- **iter59 (CRÍTICO, hallazgo dry-run)**: la rotación radar (iter56) estaba MUERTA — `_radar_rotation_candidates` leía `opportunities[:25]` (todos etapa TARDÍA por score) → siempre []. Fix: `scan_opportunities` persiste `early_candidates` (large/mid+temprana+fresco sobre TODO el scan). Validado: trae VRSN/FCX/MPC/EXPD/GM. La rotación del viernes YA tiene candidatos. 55 tests.
+- **Auditoría de pérdidas (sin bugs)**: órdenes idempotentes (client_order_id) + retry solo 5xx + SELL clamp + monitor usa submit directo sin retry (no dobla); stop duro inviolable (Claude no veta); kill -13% signo OK desde equity del día; headroom anti-sobreasignación; earnings guard pre-BUY; opciones LONG-ONLY (no naked); rotación nunca saca posiciones abiertas. **Credenciales gitignored.**
+- ⚠️ **Gotcha entorno**: sin `cd /d/Agente`, los comandos corren el worktree VIEJO (iter10). Producción OK (nube buildeaea de master); afecta solo testing local.
+
 ### ✅ iter56 — radar → ROTACIÓN SELECTIVA conectada (autonomía con guardas)
 El A/B #2 (curado vs curado+large/mid) corrigió al A/B #1: incorporar SELECTIVAMENTE calidad SÍ mejora (Sharpe 2.13→2.25, alpha +39%→+44%, DD igual). Lo bruto (incl small) era lo que dañaba. Implementado:
 - `_radar_rotation_candidates()` filtra opportunities.json: SOLO tier large/mid + etapa 🟢temprana + no-ETF + no-en-universo. Se suma a los candidatos de discovery en `_rotate_universe` (TODOS los guardarraíles intactos: 1 swap/sem, nunca saca abiertas/PROTECTED_CP, margen 20%, gate liquidez, veto).
