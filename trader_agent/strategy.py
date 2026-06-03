@@ -662,12 +662,18 @@ def _limit_price(price: float, side: str) -> float:
     Slippage MÁXIMO 2% × $250 = $5; el costo del cash drag (capital ocioso)
     es mucho mayor.
 
-    SELL queda en -0.15%: vender un poco bajo el mid asegura fill (bid suele
-    estar a 0.1%) sin regalar margen.
+    iter60: SELL buffer -0.15% → **-2.0%** (espejo del BUY). Diagnóstico live
+    Jun-03: el sistema decidió EXITear BMA (momentum muerto) con limit @ $87.87,
+    pero BMA (ADR argentino volátil) cayó >0.6% en segundos → la limit quedó
+    ARRIBA del mercado → no filleó → quedó atrapado en la posición que quería
+    cortar. El -0.15% no aguanta un nombre volátil cayendo. El -2.0% es
+    marketable (fillea al bid, slippage típico 0.1-0.3%) y garantiza la SALIDA
+    cuando más importa. Máx slippage 2% × $250 = $5 — trivial vs quedar atrapado
+    en un nombre cuyo trend murió. Simétrico con el BUY.
     """
     if side.upper() in ("BUY",):
         return round(price * 1.020, 2)
-    return round(price * 0.9985, 2)
+    return round(price * 0.980, 2)
 
 
 def _submit_equity_intents(

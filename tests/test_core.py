@@ -188,12 +188,14 @@ def test_entry_window_gate(tmp_path, monkeypatch):
 
 
 def test_limit_price_buffer():
-    """iter39: BUY +2% (marketable), SELL -0.15%."""
+    """iter39/iter60: BUY +2% y SELL -2% (ambos marketable, simétricos)."""
     from trader_agent.strategy import _limit_price
     assert _limit_price(100.0, "BUY") == 102.0    # +2%
-    assert _limit_price(100.0, "SELL") == 99.85   # -0.15%
+    assert _limit_price(100.0, "SELL") == 98.0    # iter60: -2% (era -0.15%, se trababa)
     # Caso real DDOG: submit $220.91 → limit $225.33 (catch +2% intradiario)
     assert _limit_price(220.91, "BUY") == 225.33
+    # Caso real BMA: el exit @ -0.15% quedó arriba del mercado al caer; -2% lo evita
+    assert _limit_price(88.0, "SELL") == 86.24
 
 
 def test_rebuild_ledger_from_alpaca(tmp_path, monkeypatch):
