@@ -1,7 +1,7 @@
 {
-  "generated_at": "2026-06-02T13:44:03",
+  "generated_at": "2026-06-03T13:44:12",
   "horizon": "medium_long_70_30_high_conviction",
-  "capital_usd": 1951.64,
+  "capital_usd": 1920.08,
   "params": {
     "weight_long_term": 0.0,
     "weight_short_term": 0.95,
@@ -21,30 +21,30 @@
     "regime": "bull",
     "regime_reason": "SPY +11.3% sobre SMA200 con pendiente positiva",
     "prices": {
-      "oil_wti": 92.23,
-      "oil_brent": 94.92,
-      "gold": 4539.6,
-      "dxy": 99.104,
-      "vix": 16.18,
-      "us10y": 4.437
+      "oil_wti": 94.83,
+      "oil_brent": 97.13,
+      "gold": 4480.3,
+      "dxy": 99.438,
+      "vix": 16.23,
+      "us10y": 4.491
     },
     "changes_1d": {
-      "oil_wti": 0.0008,
-      "oil_brent": -0.0006,
-      "gold": 0.0144,
-      "dxy": -0.001,
-      "vix": 0.0081,
-      "us10y": -0.0085
+      "oil_wti": 0.0114,
+      "oil_brent": 0.0118,
+      "gold": -0.002,
+      "dxy": 0.0022,
+      "vix": 0.0292,
+      "us10y": 0.0081
     },
     "changes_1m": {
-      "oil_wti": -0.0953,
-      "oil_brent": -0.1225,
-      "gold": -0.0195,
-      "dxy": 0.0091,
-      "vix": -0.1154,
-      "us10y": 0.0135
+      "oil_wti": -0.1089,
+      "oil_brent": -0.1513,
+      "gold": -0.0087,
+      "dxy": 0.0098,
+      "vix": -0.0662,
+      "us10y": 0.0101
     },
-    "spy_vs_sma200": 0.1134
+    "spy_vs_sma200": 0.1132
   },
   "long_term": [],
   "short_term": [
@@ -52,58 +52,58 @@
       "ticker": "MU",
       "side": "BUY",
       "horizon": "CP",
-      "price": 1031.23,
-      "stop_loss": 974.99,
-      "take_profit": 1237.48,
-      "weight_target": 0.32,
+      "price": 1058.68,
+      "stop_loss": 973.99,
+      "take_profit": 1270.41,
+      "weight_target": 0.3343,
       "thesis": {
         "ticker": "MU",
         "horizon": "CP",
-        "conviction": "MEDIA",
+        "conviction": "ALTA",
         "quant": {
-          "mu_anual": 3.016797165472598,
-          "sigma_anual": 0.6522782224937884,
-          "beta": 2.3363352217697924,
-          "alpha_jensen": 2.37194541029627,
-          "sharpe": 4.556026957501096,
-          "expected_return_capm": 0.6448517551763275
+          "mu_anual": 3.0552008280958227,
+          "sigma_anual": 0.6518391357754075,
+          "beta": 2.3365579801219947,
+          "alpha_jensen": 2.41469196607756,
+          "sharpe": 4.618011811326704,
+          "expected_return_capm": 0.6405088620182627
         },
         "technical": {
-          "price": 1031.23,
-          "rsi": 74.09,
-          "atr": 61.3421,
-          "stop_loss_atr": 908.55,
-          "ret_1m": 0.7889321860199479,
-          "ret_3m": 1.5742028058989637,
-          "dist_52w_high": -0.0041236306434089265
+          "price": 1058.68,
+          "rsi": 73.53,
+          "atr": 62.6786,
+          "stop_loss_atr": 933.32,
+          "ret_1m": 0.6536707802632407,
+          "ret_3m": 1.667484706542548,
+          "dist_52w_high": -0.0050934329474217055
         },
         "fundamental": {
-          "sentiment_score": 0.167,
+          "sentiment_score": 0.333,
           "n_headlines": 6,
           "positive": 3,
-          "negative": 2,
+          "negative": 1,
           "sample_titles": [
-            "Intel’s $9 Billion Regret: The Business Sale Haunting It Today",
-            "Raymond James Doubles Micron Stock Price Target on Booming AI Demand",
-            "Analysis: How a nudge from Nvidia propelled frugal Micron into the AI boom and a $1 trillion market cap"
+            "Marvell stock extends gains after a 32% pop as Nvidia CEO calls chipmaker 'the next trillion-dollar company'",
+            "Geopolitical tensions impact AI, energy, and defense stocks",
+            "AI Chips Today - ABB Expands NVIDIA Partnership to Boost AI Data Centers"
           ]
         },
         "macro": {
           "regime": "bull",
           "regime_reason": "SPY +11.3% sobre SMA200 con pendiente positiva",
-          "vix": 16.18,
-          "oil_wti": 92.23,
-          "dxy_1m": 0.0091,
-          "gold_1m": -0.0195
+          "vix": 16.23,
+          "oil_wti": 94.83,
+          "dxy_1m": 0.0098,
+          "gold_1m": -0.0087
         },
         "risk": {
-          "dollars_allocated": 995.8,
-          "weight_of_total_portfolio": 0.5102,
-          "max_loss_usd_if_stop_hit": 118.47,
-          "max_loss_pct_of_capital": 0.0607,
-          "stop_loss": 908.55
+          "dollars_allocated": 980.95,
+          "weight_of_total_portfolio": 0.5109,
+          "max_loss_usd_if_stop_hit": 116.16,
+          "max_loss_pct_of_capital": 0.0605,
+          "stop_loss": 933.32
         },
-        "thesis_text": "MU — horizonte CORTO PLAZO. Convicción MEDIA. Setup técnico: RSI 74, momentum 1m +78.9%, momentum 3m +157.4%. ⚠️ RSI en sobrecompra → riesgo de reversión a la media. Stop loss ATR en $908.55 (riesgo ≈ 11.9% desde entrada).",
+        "thesis_text": "MU — horizonte CORTO PLAZO. Convicción ALTA. Setup técnico: RSI 74, momentum 1m +65.4%, momentum 3m +166.7%. ⚠️ RSI en sobrecompra → riesgo de reversión a la media. Stop loss ATR en $933.32 (riesgo ≈ 11.8% desde entrada). Sentiment de noticias refuerza el setup.",
         "key_risks": [
           "Sin riesgos macro mayores detectados; el riesgo principal es idiosincrático del activo."
         ],
@@ -112,7 +112,7 @@
           "size_factor": 0.0,
           "reasoning": "Meta-LP heuristico (LLM OFF): EV=+ 4 NO-GO → SKIP",
           "go_count": 0,
-          "ev": 1509.04,
+          "ev": 1504.97,
           "ev_positive": true,
           "opinions": [
             {
@@ -144,7 +144,7 @@
               "cot": "→ Anthropic deshabilitado por flag (ENABLE_ANTHROPIC OFF)."
             }
           ],
-          "debate_id": "MU-CP-1780407847"
+          "debate_id": "MU-CP-1780494257"
         }
       },
       "option": null
@@ -153,58 +153,58 @@
       "ticker": "DDOG",
       "side": "BUY",
       "horizon": "CP",
-      "price": 266.39,
-      "stop_loss": 245.08,
-      "take_profit": 319.66,
-      "weight_target": 0.32,
+      "price": 251.15,
+      "stop_loss": 231.06,
+      "take_profit": 301.38,
+      "weight_target": 0.3057,
       "thesis": {
         "ticker": "DDOG",
         "horizon": "CP",
         "conviction": "ALTA",
         "quant": {
-          "mu_anual": 1.7384024822876245,
-          "sigma_anual": 0.5253719622469015,
-          "beta": 1.294494229657319,
-          "alpha_jensen": 1.3610423703952215,
-          "sharpe": 3.22324487025404,
-          "expected_return_capm": 0.37736011189240315
+          "mu_anual": 1.5585021428991752,
+          "sigma_anual": 0.5268128546837183,
+          "beta": 1.296463116655418,
+          "alpha_jensen": 1.1830779540640202,
+          "sharpe": 2.8729407975586203,
+          "expected_return_capm": 0.37542418883515494
         },
         "technical": {
-          "price": 266.39,
-          "rsi": 82.23,
-          "atr": 12.2256,
-          "stop_loss_atr": 241.94,
-          "ret_1m": 0.8160405247800067,
-          "ret_3m": 1.251288641016135,
-          "dist_52w_high": -0.039983428632261675
+          "price": 251.15,
+          "rsi": 70.29,
+          "atr": 12.9236,
+          "stop_loss_atr": 225.31,
+          "ret_1m": 0.7234269274862493,
+          "ret_3m": 1.0525906957052547,
+          "dist_52w_high": -0.09490429342274631
         },
         "fundamental": {
-          "sentiment_score": 0.833,
+          "sentiment_score": 0.667,
           "n_headlines": 6,
           "positive": 5,
-          "negative": 0,
+          "negative": 1,
           "sample_titles": [
-            "Datadog FedRAMP High Win Puts Government Growth Story In Focus",
-            "Datadog (DDOG) Shares Skyrocket, What You Need To Know",
-            "Stocks Rally on Easing Geopolitical Tensions and AI Enthusiasm"
+            "1 Unpopular Stock That Should Get More Attention and 2 We Avoid",
+            "Stock Indexes Post New Record Highs Amid AI Enthusiasm",
+            "Stocks Push Higher on US Labor Market Strength and AI Spending"
           ]
         },
         "macro": {
           "regime": "bull",
           "regime_reason": "SPY +11.3% sobre SMA200 con pendiente positiva",
-          "vix": 16.18,
-          "oil_wti": 92.23,
-          "dxy_1m": 0.0091,
-          "gold_1m": -0.0195
+          "vix": 16.23,
+          "oil_wti": 94.83,
+          "dxy_1m": 0.0098,
+          "gold_1m": -0.0087
         },
         "risk": {
-          "dollars_allocated": 664.92,
-          "weight_of_total_portfolio": 0.3407,
-          "max_loss_usd_if_stop_hit": 61.03,
-          "max_loss_pct_of_capital": 0.0313,
-          "stop_loss": 241.94
+          "dollars_allocated": 579.57,
+          "weight_of_total_portfolio": 0.3018,
+          "max_loss_usd_if_stop_hit": 59.63,
+          "max_loss_pct_of_capital": 0.0311,
+          "stop_loss": 225.31
         },
-        "thesis_text": "DDOG — horizonte CORTO PLAZO. Convicción ALTA. Setup técnico: RSI 82, momentum 1m +81.6%, momentum 3m +125.1%. ⚠️ RSI en sobrecompra → riesgo de reversión a la media. Stop loss ATR en $241.94 (riesgo ≈ 9.2% desde entrada). Sentiment de noticias refuerza el setup.",
+        "thesis_text": "DDOG — horizonte CORTO PLAZO. Convicción ALTA. Setup técnico: RSI 70, momentum 1m +72.3%, momentum 3m +105.3%. ⚠️ RSI en sobrecompra → riesgo de reversión a la media. Stop loss ATR en $225.31 (riesgo ≈ 10.3% desde entrada). Sentiment de noticias refuerza el setup.",
         "key_risks": [
           "Sin riesgos macro mayores detectados; el riesgo principal es idiosincrático del activo."
         ],
@@ -213,7 +213,7 @@
           "size_factor": 0.0,
           "reasoning": "Meta-LP heuristico (LLM OFF): EV=+ 4 NO-GO → SKIP",
           "go_count": 0,
-          "ev": 839.64,
+          "ev": 730.88,
           "ev_positive": true,
           "opinions": [
             {
@@ -245,519 +245,445 @@
               "cot": "→ Anthropic deshabilitado por flag (ENABLE_ANTHROPIC OFF)."
             }
           ],
-          "debate_id": "DDOG-CP-1780407847"
+          "debate_id": "DDOG-CP-1780494257"
         }
       },
       "option": null
     },
     {
-      "ticker": "BMA",
+      "ticker": "VIST",
       "side": "BUY",
       "horizon": "CP",
-      "price": 88.78,
-      "stop_loss": 81.68,
-      "take_profit": 106.53,
+      "price": 77.08,
+      "stop_loss": 70.91,
+      "take_profit": 92.5,
       "weight_target": 0.12,
       "thesis": {
-        "ticker": "BMA",
+        "ticker": "VIST",
         "horizon": "CP",
-        "conviction": "MEDIA",
-        "quant": {
-          "mu_anual": 0.44521997554031145,
-          "sigma_anual": 0.6625479078341476,
-          "beta": 1.5386119883513232,
-          "alpha_jensen": 0.005182870784108395,
-          "sharpe": 0.6040619414958541,
-          "expected_return_capm": 0.44003710475620306
-        },
-        "technical": {
-          "price": 88.78,
-          "rsi": 70.62,
-          "atr": 4.2681,
-          "stop_loss_atr": 80.24,
-          "ret_1m": 0.2898788065682596,
-          "ret_3m": 0.21801807761479486,
-          "dist_52w_high": -0.1322103133628717
-        },
-        "fundamental": {
-          "sentiment_score": 0.167,
-          "n_headlines": 6,
-          "positive": 2,
-          "negative": 1,
-          "sample_titles": [
-            "Do Options Traders Know Something About Banco Macro Stock We Don't?",
-            "Banco Comercial Portugues (BPCGY) Soars 7.3%: Is Further Upside Left in the Stock?",
-            "Banco Macro CEO Juan Parma on How It’s Helping Customers Across Argentina"
-          ]
-        },
-        "macro": {
-          "regime": "bull",
-          "regime_reason": "SPY +11.3% sobre SMA200 con pendiente positiva",
-          "vix": 16.18,
-          "oil_wti": 92.23,
-          "dxy_1m": 0.0091,
-          "gold_1m": -0.0195
-        },
-        "risk": {
-          "dollars_allocated": 107.42,
-          "weight_of_total_portfolio": 0.055,
-          "max_loss_usd_if_stop_hit": 10.33,
-          "max_loss_pct_of_capital": 0.0053,
-          "stop_loss": 80.24
-        },
-        "thesis_text": "BMA — horizonte CORTO PLAZO. Convicción MEDIA. Setup técnico: RSI 71, momentum 1m +29.0%, momentum 3m +21.8%. ⚠️ RSI en sobrecompra → riesgo de reversión a la media. Stop loss ATR en $80.24 (riesgo ≈ 9.6% desde entrada).",
-        "key_risks": [
-          "Sin riesgos macro mayores detectados; el riesgo principal es idiosincrático del activo."
-        ],
-        "swarm": {
-          "go": false,
-          "size_factor": 0.0,
-          "reasoning": "Meta-LP heuristico (LLM OFF): EV=+ 4 NO-GO → SKIP",
-          "go_count": 0,
-          "ev": 39.84,
-          "ev_positive": true,
-          "opinions": [
-            {
-              "agent": "TechnicalCP",
-              "stance": "NO-GO",
-              "confidence": 0,
-              "reasoning": "llm_disabled",
-              "cot": "→ Anthropic deshabilitado por flag (ENABLE_ANTHROPIC OFF)."
-            },
-            {
-              "agent": "MacroLP",
-              "stance": "NO-GO",
-              "confidence": 0,
-              "reasoning": "llm_disabled",
-              "cot": "→ Anthropic deshabilitado por flag (ENABLE_ANTHROPIC OFF)."
-            },
-            {
-              "agent": "SentimentLP",
-              "stance": "NO-GO",
-              "confidence": 0,
-              "reasoning": "llm_disabled",
-              "cot": "→ Anthropic deshabilitado por flag (ENABLE_ANTHROPIC OFF)."
-            },
-            {
-              "agent": "RiskAuditorLP",
-              "stance": "NO-GO",
-              "confidence": 0,
-              "reasoning": "llm_disabled",
-              "cot": "→ Anthropic deshabilitado por flag (ENABLE_ANTHROPIC OFF)."
-            }
-          ],
-          "debate_id": "BMA-CP-1780407847"
-        }
-      },
-      "option": null
-    },
-    {
-      "ticker": "DE",
-      "side": "BUY",
-      "horizon": "CP",
-      "price": 564.09,
-      "stop_loss": 532.25,
-      "take_profit": 643.69,
-      "weight_target": 0.12,
-      "thesis": {
-        "ticker": "DE",
-        "horizon": "CP",
-        "conviction": "MEDIA",
-        "quant": {
-          "mu_anual": 0.15150275213507358,
-          "sigma_anual": 0.2884094171140741,
-          "beta": 0.698330174388642,
-          "alpha_jensen": -0.0727928287800238,
-          "sharpe": 0.3692762642800555,
-          "expected_return_capm": 0.22429558091509738
-        },
-        "technical": {
-          "price": 564.09,
-          "rsi": 38.07,
-          "atr": 15.92,
-          "stop_loss_atr": 532.25,
-          "ret_1m": -0.024715232945370702,
-          "ret_3m": -0.07865145689023689,
-          "dist_52w_high": -0.14603261957266755
-        },
-        "fundamental": {
-          "sentiment_score": 0.5,
-          "n_headlines": 6,
-          "positive": 4,
-          "negative": 1,
-          "sample_titles": [
-            "US Lowers Tariffs to Boost Investment in Industrial Economy",
-            "Deere & Company Stock: Is DE Underperforming the Industrials Sector?",
-            "Is Caterpillar Stock Outperforming the Nasdaq?"
-          ]
-        },
-        "macro": {
-          "regime": "bull",
-          "regime_reason": "SPY +11.3% sobre SMA200 con pendiente positiva",
-          "vix": 16.18,
-          "oil_wti": 92.23,
-          "dxy_1m": 0.0091,
-          "gold_1m": -0.0195
-        },
-        "risk": {
-          "dollars_allocated": 45.0,
-          "weight_of_total_portfolio": 0.0231,
-          "max_loss_usd_if_stop_hit": 2.54,
-          "max_loss_pct_of_capital": 0.0013,
-          "stop_loss": 532.25
-        },
-        "thesis_text": "DE — horizonte CORTO PLAZO. Convicción MEDIA. Setup técnico: RSI 38, momentum 1m -2.5%, momentum 3m -7.9%. Stop loss ATR en $532.25 (riesgo ≈ 5.6% desde entrada). Sentiment de noticias refuerza el setup.",
-        "key_risks": [
-          "Sin riesgos macro mayores detectados; el riesgo principal es idiosincrático del activo."
-        ],
-        "swarm": {
-          "go": false,
-          "size_factor": 0.0,
-          "reasoning": "Meta-LP heuristico (LLM OFF): EV=- 4 NO-GO → SKIP",
-          "go_count": 0,
-          "ev": -9.09,
-          "ev_positive": false,
-          "opinions": [
-            {
-              "agent": "TechnicalCP",
-              "stance": "NO-GO",
-              "confidence": 0,
-              "reasoning": "llm_disabled",
-              "cot": "→ Anthropic deshabilitado por flag (ENABLE_ANTHROPIC OFF)."
-            },
-            {
-              "agent": "MacroLP",
-              "stance": "NO-GO",
-              "confidence": 0,
-              "reasoning": "llm_disabled",
-              "cot": "→ Anthropic deshabilitado por flag (ENABLE_ANTHROPIC OFF)."
-            },
-            {
-              "agent": "SentimentLP",
-              "stance": "NO-GO",
-              "confidence": 0,
-              "reasoning": "llm_disabled",
-              "cot": "→ Anthropic deshabilitado por flag (ENABLE_ANTHROPIC OFF)."
-            },
-            {
-              "agent": "RiskAuditorLP",
-              "stance": "NO-GO",
-              "confidence": 0,
-              "reasoning": "llm_disabled",
-              "cot": "→ Anthropic deshabilitado por flag (ENABLE_ANTHROPIC OFF)."
-            }
-          ],
-          "debate_id": "DE-CP-1780407847"
-        }
-      },
-      "option": null
-    },
-    {
-      "ticker": "BAC",
-      "side": "BUY",
-      "horizon": "CP",
-      "price": 52.62,
-      "stop_loss": 50.62,
-      "take_profit": 57.62,
-      "weight_target": 0.12,
-      "thesis": {
-        "ticker": "BAC",
-        "horizon": "CP",
-        "conviction": "BAJA",
-        "quant": {
-          "mu_anual": 0.1132838607593786,
-          "sigma_anual": 0.25533752317581215,
-          "beta": 0.9523932049003826,
-          "alpha_jensen": -0.17624215171272803,
-          "sharpe": 0.2674258757979801,
-          "expected_return_capm": 0.28952601247210663
-        },
-        "technical": {
-          "price": 52.62,
-          "rsi": 63.29,
-          "atr": 0.9993,
-          "stop_loss_atr": 50.62,
-          "ret_1m": 0.008239132333598631,
-          "ret_3m": 0.05203718505276189,
-          "dist_52w_high": -0.0756774269635967
-        },
-        "fundamental": {
-          "sentiment_score": 0.167,
-          "n_headlines": 6,
-          "positive": 2,
-          "negative": 1,
-          "sample_titles": [
-            "Wall Street Analysts Turn Skeptical After Two-Month Stocks Rally",
-            "Nvidia expands AI platform with new CPU and PC offerings, shares jump",
-            "Amazon’s satellite internet project seen as significant revenue opportunity by Bank of America"
-          ]
-        },
-        "macro": {
-          "regime": "bull",
-          "regime_reason": "SPY +11.3% sobre SMA200 con pendiente positiva",
-          "vix": 16.18,
-          "oil_wti": 92.23,
-          "dxy_1m": 0.0091,
-          "gold_1m": -0.0195
-        },
-        "risk": {
-          "dollars_allocated": 40.91,
-          "weight_of_total_portfolio": 0.021,
-          "max_loss_usd_if_stop_hit": 1.55,
-          "max_loss_pct_of_capital": 0.0008,
-          "stop_loss": 50.62
-        },
-        "thesis_text": "BAC — horizonte CORTO PLAZO. Convicción BAJA. Setup técnico: RSI 63, momentum 1m +0.8%, momentum 3m +5.2%. Stop loss ATR en $50.62 (riesgo ≈ 3.8% desde entrada).",
-        "key_risks": [
-          "Sin riesgos macro mayores detectados; el riesgo principal es idiosincrático del activo."
-        ],
-        "swarm": {
-          "go": false,
-          "size_factor": 0.0,
-          "reasoning": "Meta-LP heuristico (LLM OFF): EV=- 4 NO-GO → SKIP",
-          "go_count": 0,
-          "ev": -18.2,
-          "ev_positive": false,
-          "opinions": [
-            {
-              "agent": "TechnicalCP",
-              "stance": "NO-GO",
-              "confidence": 0,
-              "reasoning": "llm_disabled",
-              "cot": "→ Anthropic deshabilitado por flag (ENABLE_ANTHROPIC OFF)."
-            },
-            {
-              "agent": "MacroLP",
-              "stance": "NO-GO",
-              "confidence": 0,
-              "reasoning": "llm_disabled",
-              "cot": "→ Anthropic deshabilitado por flag (ENABLE_ANTHROPIC OFF)."
-            },
-            {
-              "agent": "SentimentLP",
-              "stance": "NO-GO",
-              "confidence": 0,
-              "reasoning": "llm_disabled",
-              "cot": "→ Anthropic deshabilitado por flag (ENABLE_ANTHROPIC OFF)."
-            },
-            {
-              "agent": "RiskAuditorLP",
-              "stance": "NO-GO",
-              "confidence": 0,
-              "reasoning": "llm_disabled",
-              "cot": "→ Anthropic deshabilitado por flag (ENABLE_ANTHROPIC OFF)."
-            }
-          ],
-          "debate_id": "BAC-CP-1780407847"
-        }
-      },
-      "option": null
-    }
-  ],
-  "options_book": [
-    {
-      "ticker": "HPE",
-      "side": "BUY_CALL",
-      "horizon": "DERIV",
-      "price": 58.98,
-      "stop_loss": null,
-      "take_profit": null,
-      "weight_target": 1.0,
-      "thesis": {
-        "ticker": "HPE",
-        "horizon": "DERIV",
         "conviction": "ALTA",
         "quant": {
-          "mu_anual": 2.4337479254120704,
-          "sigma_anual": 0.48646807815606524,
-          "beta": 1.637842269393006,
-          "alpha_jensen": 1.9682335442381433,
-          "sharpe": 4.9103898748434,
-          "expected_return_capm": 0.4655143811739271
+          "mu_anual": 0.7824457147942064,
+          "sigma_anual": 0.5046823096831953,
+          "beta": 0.8883147787145975,
+          "alpha_jensen": 0.5110446036355117,
+          "sharpe": 1.4612077749606953,
+          "expected_return_capm": 0.2714011111586947
         },
         "technical": {
-          "price": 58.98,
-          "rsi": 92.93,
-          "atr": 3.4299,
-          "stop_loss_atr": 52.12,
-          "ret_1m": 1.0543470144246316,
-          "ret_3m": 1.7545527266119247,
-          "dist_52w_high": 0.0
+          "price": 77.08,
+          "rsi": 70.24,
+          "atr": 3.3462,
+          "stop_loss_atr": 70.39,
+          "ret_1m": 0.06892249589011468,
+          "ret_3m": 0.2665133266190651,
+          "dist_52w_high": -0.02738168036524058
         },
         "fundamental": {
-          "sentiment_score": 0.5,
+          "sentiment_score": 0.667,
           "n_headlines": 6,
-          "positive": 4,
+          "positive": 5,
           "negative": 1,
           "sample_titles": [
-            "HPE stock soars on record backlog, booming AI server business",
-            "Wall Street Set to Open Lower in Tuesday Trading as Investors Look for Signs of Middle East Peace Deal, Await Key Labor Data",
-            "HPE Stock Set For Another Record High Following Strong AI-Driven Quarter – This Analyst Says Shares Deserve Higher Multiple"
+            "What Makes Vista Energy, S.A.B. de C.V. (VIST) an Investment Bet?",
+            "Is Vista Energy, S.A.B. de C.V. - Sponsored ADR (VIST) Stock Undervalued Right Now?",
+            "Global Growth Stocks With Up To 29% Insider Ownership"
           ]
         },
         "macro": {
           "regime": "bull",
           "regime_reason": "SPY +11.3% sobre SMA200 con pendiente positiva",
-          "vix": 16.18,
-          "oil_wti": 92.23,
-          "dxy_1m": 0.0091,
-          "gold_1m": -0.0195
+          "vix": 16.23,
+          "oil_wti": 94.83,
+          "dxy_1m": 0.0098,
+          "gold_1m": -0.0087
         },
         "risk": {
-          "dollars_allocated": 68.31,
-          "weight_of_total_portfolio": 0.2375,
-          "max_loss_usd_if_stop_hit": 7.94,
-          "max_loss_pct_of_capital": 0.0041,
-          "stop_loss": 52.12
+          "dollars_allocated": 168.31,
+          "weight_of_total_portfolio": 0.0877,
+          "max_loss_usd_if_stop_hit": 14.61,
+          "max_loss_pct_of_capital": 0.0076,
+          "stop_loss": 70.39
         },
-        "thesis_text": "HPE — apuesta alcista vía CALL (riesgo limitado a la prima). Strike $63.7, expiry 2026-07-09 (~37d), prima estimada $1.97/share = $197/contrato. Breakeven $65.67. Delta objetivo 0.35. Backup: HPE — horizonte CORTO PLAZO. Convicción ALTA. Setup técnico: RSI 93, momentum 1m +105.4%, momentum 3m +175.5%. ⚠️ RSI en sobrecompra → riesgo de reversión a la media. Stop loss ATR en $52.12 (riesgo ≈ 11.6% desde entrada). Sentiment de noticias refuerza el setup.",
+        "thesis_text": "VIST — horizonte CORTO PLAZO. Convicción ALTA. Setup técnico: RSI 70, momentum 1m +6.9%, momentum 3m +26.7%. ⚠️ RSI en sobrecompra → riesgo de reversión a la media. Stop loss ATR en $70.39 (riesgo ≈ 8.7% desde entrada). Sentiment de noticias refuerza el setup.",
+        "key_risks": [
+          "WTI -10.9% 1m: caída fuerte impacta directamente la tesis."
+        ],
+        "swarm": {
+          "go": false,
+          "size_factor": 0.0,
+          "reasoning": "Meta-LP heuristico (LLM OFF): EV=+ 4 NO-GO → SKIP",
+          "go_count": 0,
+          "ev": 323.98,
+          "ev_positive": true,
+          "opinions": [
+            {
+              "agent": "TechnicalCP",
+              "stance": "NO-GO",
+              "confidence": 0,
+              "reasoning": "llm_disabled",
+              "cot": "→ Anthropic deshabilitado por flag (ENABLE_ANTHROPIC OFF)."
+            },
+            {
+              "agent": "MacroLP",
+              "stance": "NO-GO",
+              "confidence": 0,
+              "reasoning": "llm_disabled",
+              "cot": "→ Anthropic deshabilitado por flag (ENABLE_ANTHROPIC OFF)."
+            },
+            {
+              "agent": "SentimentLP",
+              "stance": "NO-GO",
+              "confidence": 0,
+              "reasoning": "llm_disabled",
+              "cot": "→ Anthropic deshabilitado por flag (ENABLE_ANTHROPIC OFF)."
+            },
+            {
+              "agent": "RiskAuditorLP",
+              "stance": "NO-GO",
+              "confidence": 0,
+              "reasoning": "llm_disabled",
+              "cot": "→ Anthropic deshabilitado por flag (ENABLE_ANTHROPIC OFF)."
+            }
+          ],
+          "debate_id": "VIST-CP-1780494257"
+        }
+      },
+      "option": null
+    },
+    {
+      "ticker": "CAT",
+      "side": "BUY",
+      "horizon": "CP",
+      "price": 924.64,
+      "stop_loss": 869.25,
+      "take_profit": 1063.12,
+      "weight_target": 0.12,
+      "thesis": {
+        "ticker": "CAT",
+        "horizon": "CP",
+        "conviction": "ALTA",
+        "quant": {
+          "mu_anual": 0.9433738322545864,
+          "sigma_anual": 0.32228476414855517,
+          "beta": 1.2279198497007298,
+          "alpha_jensen": 0.5854189821863082,
+          "sharpe": 2.787515676169186,
+          "expected_return_capm": 0.3579548500682782
+        },
+        "technical": {
+          "price": 924.64,
+          "rsi": 54.56,
+          "atr": 27.6938,
+          "stop_loss_atr": 869.25,
+          "ret_1m": 0.0221647234633644,
+          "ret_3m": 0.31203307549612935,
+          "dist_52w_high": -0.002470497281820916
+        },
+        "fundamental": {
+          "sentiment_score": 0.333,
+          "n_headlines": 6,
+          "positive": 4,
+          "negative": 2,
+          "sample_titles": [
+            "SpaceX Stock Will Cost Less Than You Think. It’s a Red Flag for Markets.",
+            "Dow Jones Futures Fall, Oil Prices Rise As Trump Sets New Hormuz Target Date; Palo Alto, Marvell Are Early Movers",
+            "Stock Indexes Post New Record Highs Amid AI Enthusiasm"
+          ]
+        },
+        "macro": {
+          "regime": "bull",
+          "regime_reason": "SPY +11.3% sobre SMA200 con pendiente positiva",
+          "vix": 16.23,
+          "oil_wti": 94.83,
+          "dxy_1m": 0.0098,
+          "gold_1m": -0.0087
+        },
+        "risk": {
+          "dollars_allocated": 64.72,
+          "weight_of_total_portfolio": 0.0337,
+          "max_loss_usd_if_stop_hit": 3.88,
+          "max_loss_pct_of_capital": 0.002,
+          "stop_loss": 869.25
+        },
+        "thesis_text": "CAT — horizonte CORTO PLAZO. Convicción ALTA. Setup técnico: RSI 55, momentum 1m +2.2%, momentum 3m +31.2%. Stop loss ATR en $869.25 (riesgo ≈ 6.0% desde entrada). Sentiment de noticias refuerza el setup.",
         "key_risks": [
           "Sin riesgos macro mayores detectados; el riesgo principal es idiosincrático del activo."
-        ]
+        ],
+        "swarm": {
+          "go": false,
+          "size_factor": 0.0,
+          "reasoning": "Meta-LP heuristico (LLM OFF): EV=+ 4 NO-GO → SKIP",
+          "go_count": 0,
+          "ev": 432.59,
+          "ev_positive": true,
+          "opinions": [
+            {
+              "agent": "TechnicalCP",
+              "stance": "NO-GO",
+              "confidence": 0,
+              "reasoning": "llm_disabled",
+              "cot": "→ Anthropic deshabilitado por flag (ENABLE_ANTHROPIC OFF)."
+            },
+            {
+              "agent": "MacroLP",
+              "stance": "NO-GO",
+              "confidence": 0,
+              "reasoning": "llm_disabled",
+              "cot": "→ Anthropic deshabilitado por flag (ENABLE_ANTHROPIC OFF)."
+            },
+            {
+              "agent": "SentimentLP",
+              "stance": "NO-GO",
+              "confidence": 0,
+              "reasoning": "llm_disabled",
+              "cot": "→ Anthropic deshabilitado por flag (ENABLE_ANTHROPIC OFF)."
+            },
+            {
+              "agent": "RiskAuditorLP",
+              "stance": "NO-GO",
+              "confidence": 0,
+              "reasoning": "llm_disabled",
+              "cot": "→ Anthropic deshabilitado por flag (ENABLE_ANTHROPIC OFF)."
+            }
+          ],
+          "debate_id": "CAT-CP-1780494257"
+        }
       },
-      "option": {
-        "type": "call",
-        "strike": 63.7,
-        "expiry": "2026-07-09",
-        "days_to_expiry": 37,
-        "premium_per_share_est": 1.97,
-        "contract_cost_est": 196.7,
-        "breakeven": 65.67,
-        "delta_est": 0.35,
-        "sigma_used": 0.486,
-        "max_loss_usd": 196.7
-      }
+      "option": null
+    },
+    {
+      "ticker": "UNH",
+      "side": "BUY",
+      "horizon": "CP",
+      "price": 384.35,
+      "stop_loss": 367.57,
+      "take_profit": 426.3,
+      "weight_target": 0.12,
+      "thesis": {
+        "ticker": "UNH",
+        "horizon": "CP",
+        "conviction": "MEDIA",
+        "quant": {
+          "mu_anual": 0.408959640947485,
+          "sigma_anual": 0.4395604801991543,
+          "beta": 0.2970698146212134,
+          "alpha_jensen": 0.28824668678581744,
+          "sharpe": 0.828008106603632,
+          "expected_return_capm": 0.12071295416166754
+        },
+        "technical": {
+          "price": 384.35,
+          "rsi": 34.98,
+          "atr": 8.3893,
+          "stop_loss_atr": 367.57,
+          "ret_1m": 0.056283868582602814,
+          "ret_3m": 0.3413376269607311,
+          "dist_52w_high": -0.041903473439871
+        },
+        "fundamental": {
+          "sentiment_score": -0.167,
+          "n_headlines": 6,
+          "positive": 2,
+          "negative": 3,
+          "sample_titles": [
+            "UnitedHealth Group (UNH) Hit by Medicare Reimbursement Concerns",
+            "Cigna Stock: Is CI Underperforming the Healthcare Sector?",
+            "Beyond the AI Boom: 3 Forgotten Sectors to Buy Amid Historic Market Disconnect"
+          ]
+        },
+        "macro": {
+          "regime": "bull",
+          "regime_reason": "SPY +11.3% sobre SMA200 con pendiente positiva",
+          "vix": 16.23,
+          "oil_wti": 94.83,
+          "dxy_1m": 0.0098,
+          "gold_1m": -0.0087
+        },
+        "risk": {
+          "dollars_allocated": 30.52,
+          "weight_of_total_portfolio": 0.0159,
+          "max_loss_usd_if_stop_hit": 1.33,
+          "max_loss_pct_of_capital": 0.0007,
+          "stop_loss": 367.57
+        },
+        "thesis_text": "UNH — horizonte CORTO PLAZO. Convicción MEDIA. Setup técnico: RSI 35, momentum 1m +5.6%, momentum 3m +34.1%. RSI en sobreventa → setup de rebote táctico. Stop loss ATR en $367.57 (riesgo ≈ 4.4% desde entrada).",
+        "key_risks": [
+          "Sin riesgos macro mayores detectados; el riesgo principal es idiosincrático del activo."
+        ],
+        "swarm": {
+          "go": false,
+          "size_factor": 0.0,
+          "reasoning": "Meta-LP heuristico (LLM OFF): EV=+ 4 NO-GO → SKIP",
+          "go_count": 0,
+          "ev": 63.81,
+          "ev_positive": true,
+          "opinions": [
+            {
+              "agent": "TechnicalCP",
+              "stance": "NO-GO",
+              "confidence": 0,
+              "reasoning": "llm_disabled",
+              "cot": "→ Anthropic deshabilitado por flag (ENABLE_ANTHROPIC OFF)."
+            },
+            {
+              "agent": "MacroLP",
+              "stance": "NO-GO",
+              "confidence": 0,
+              "reasoning": "llm_disabled",
+              "cot": "→ Anthropic deshabilitado por flag (ENABLE_ANTHROPIC OFF)."
+            },
+            {
+              "agent": "SentimentLP",
+              "stance": "NO-GO",
+              "confidence": 0,
+              "reasoning": "llm_disabled",
+              "cot": "→ Anthropic deshabilitado por flag (ENABLE_ANTHROPIC OFF)."
+            },
+            {
+              "agent": "RiskAuditorLP",
+              "stance": "NO-GO",
+              "confidence": 0,
+              "reasoning": "llm_disabled",
+              "cot": "→ Anthropic deshabilitado por flag (ENABLE_ANTHROPIC OFF)."
+            }
+          ],
+          "debate_id": "UNH-CP-1780494257"
+        }
+      },
+      "option": null
     }
   ],
+  "options_book": [],
   "hedge_book": [],
   "portfolio": {},
   "radar": {
     "entries": [
       {
-        "ticker": "HPE",
-        "sector": "Other",
-        "price": 59.23,
-        "pct_1d": 0.2602,
-        "pct_1w": 0.5562,
-        "pct_1m": 1.0732,
-        "action": "CALL",
-        "headline": "Stock market today: Dow drifts higher, S&P 500 and Nasdaq slip as US-Ira...",
-        "sentiment": 0.5,
-        "n_headlines": 6
-      },
-      {
         "ticker": "DDOG",
         "sector": "Tech",
-        "price": 266.49,
-        "pct_1d": -0.0396,
-        "pct_1w": 0.1915,
-        "pct_1m": 0.8963,
+        "price": 251.48,
+        "pct_1d": -0.0656,
+        "pct_1w": 0.1338,
+        "pct_1m": 0.7144,
         "action": "BUY_CP",
-        "headline": "Datadog FedRAMP High Win Puts Government Growth Story In Focus",
-        "sentiment": 0.833,
+        "headline": "1 Unpopular Stock That Should Get More Attention and 2 We Avoid",
+        "sentiment": 0.667,
         "n_headlines": 6
       },
       {
-        "ticker": "DE",
-        "sector": "Other",
-        "price": 564.21,
-        "pct_1d": 0.0402,
-        "pct_1w": 0.0663,
-        "pct_1m": -0.0226,
+        "ticker": "VIST",
+        "sector": "Energy",
+        "price": 77.08,
+        "pct_1d": 0.0047,
+        "pct_1w": 0.0473,
+        "pct_1m": 0.0519,
         "action": "BUY_CP",
-        "headline": "US Lowers Tariffs to Boost Investment in Industrial Economy",
-        "sentiment": 0.5,
-        "n_headlines": 6
-      },
-      {
-        "ticker": "BMA",
-        "sector": "Financials",
-        "price": 88.78,
-        "pct_1d": -0.0305,
-        "pct_1w": 0.112,
-        "pct_1m": 0.2994,
-        "action": "BUY_CP",
-        "headline": "Macro Bank Q1 Earnings Call Highlights",
-        "sentiment": 0.167,
+        "headline": "What Makes Vista Energy, S.A.B. de C.V. (VIST) an Investment Bet?",
+        "sentiment": 0.667,
         "n_headlines": 6
       },
       {
         "ticker": "MU",
         "sector": "Tech",
-        "price": 1029.88,
-        "pct_1d": -0.0054,
-        "pct_1w": 0.1496,
-        "pct_1m": 0.8994,
+        "price": 1057.22,
+        "pct_1d": -0.0065,
+        "pct_1w": 0.1387,
+        "pct_1m": 0.834,
         "action": "BUY_CP",
-        "headline": "Are AI stocks getting too expensive?",
-        "sentiment": 0.167,
+        "headline": "Marvell stock extends gains after a 32% pop as Nvidia CEO calls chipmake...",
+        "sentiment": 0.333,
         "n_headlines": 6
       },
       {
-        "ticker": "BAC",
+        "ticker": "CAT",
+        "sector": "Industrials",
+        "price": 924.66,
+        "pct_1d": 0.0163,
+        "pct_1w": 0.0162,
+        "pct_1m": 0.057,
+        "action": "BUY_CP",
+        "headline": "SpaceX Stock Will Cost Less Than You Think. It’s a Red Flag for Markets.",
+        "sentiment": 0.333,
+        "n_headlines": 6
+      },
+      {
+        "ticker": "UNH",
         "sector": "Other",
-        "price": 52.62,
-        "pct_1d": 0.0215,
-        "pct_1w": 0.008,
-        "pct_1m": -0.0117,
+        "price": 383.99,
+        "pct_1d": 0.0161,
+        "pct_1w": -0.0001,
+        "pct_1m": 0.0357,
         "action": "BUY_CP",
-        "headline": "Best mortgage lenders for low or no down payments of June 2026",
-        "sentiment": 0.167,
-        "n_headlines": 6
-      },
-      {
-        "ticker": "LAC",
-        "sector": "Materials",
-        "price": 6.28,
-        "pct_1d": 0.1388,
-        "pct_1w": 0.2575,
-        "pct_1m": 0.0989,
-        "action": "—",
-        "headline": "Drone Stocks Jump As Trump Administration Pursues Funding Deals",
-        "sentiment": 0.167,
-        "n_headlines": 6
-      },
-      {
-        "ticker": "FCX",
-        "sector": "Materials",
-        "price": 70.03,
-        "pct_1d": 0.0445,
-        "pct_1w": 0.088,
-        "pct_1m": 0.2383,
-        "action": "—",
-        "headline": "Watch These 5 Non-Tech Stocks Thriving in 2026 on AI Data Center Boom",
-        "sentiment": 1.0,
+        "headline": "Berkshire Hathaway Made Some Major Portfolio Moves, but This One Was a H...",
+        "sentiment": -0.167,
         "n_headlines": 6
       },
       {
         "ticker": "NET",
         "sector": "Tech",
-        "price": 265.08,
-        "pct_1d": -0.0212,
-        "pct_1w": 0.2185,
-        "pct_1m": 0.2187,
+        "price": 264.39,
+        "pct_1d": -0.0303,
+        "pct_1w": 0.2637,
+        "pct_1m": 0.1794,
         "action": "—",
-        "headline": "Software stocks whipsaw amid AI fears, as Anthropic IPO looms",
-        "sentiment": 0.833,
+        "headline": "The 'Lifeboat Effect': Money Moving From Seat To Stack",
+        "sentiment": 0.5,
         "n_headlines": 6
       },
       {
-        "ticker": "PLTR",
-        "sector": "Defense",
-        "price": 153.91,
-        "pct_1d": -0.0419,
-        "pct_1w": 0.1268,
-        "pct_1m": 0.0683,
+        "ticker": "ETHE",
+        "sector": "Crypto",
+        "price": 15.09,
+        "pct_1d": -0.0239,
+        "pct_1w": -0.0931,
+        "pct_1m": -0.2102,
         "action": "—",
-        "headline": "Software stocks whipsaw amid AI fears, as Anthropic IPO looms",
+        "headline": "Beyond Bitcoin: Crypto ETFs to Watch Amid Ethereum's Momentum",
+        "sentiment": 1.0,
+        "n_headlines": 6
+      },
+      {
+        "ticker": "FCX",
+        "sector": "Materials",
+        "price": 70.43,
+        "pct_1d": -0.0179,
+        "pct_1w": 0.1069,
+        "pct_1m": 0.2675,
+        "action": "—",
+        "headline": "Rare Earth Stocks, Copper Plays Surging; FCX, MP Near Buy Points",
+        "sentiment": 1.0,
+        "n_headlines": 6
+      },
+      {
+        "ticker": "SQM",
+        "sector": "Materials",
+        "price": 79.12,
+        "pct_1d": -0.0213,
+        "pct_1w": -0.0574,
+        "pct_1m": -0.1084,
+        "action": "—",
+        "headline": "Meta Platforms upgraded, Okta downgraded: Wall Street's top analyst calls",
+        "sentiment": 1.0,
+        "n_headlines": 6
+      },
+      {
+        "ticker": "CCJ",
+        "sector": "Materials",
+        "price": 117.99,
+        "pct_1d": -0.0209,
+        "pct_1w": 0.0982,
+        "pct_1m": -0.0023,
+        "action": "—",
+        "headline": "Nuclear Stocks Jump on Multibillion-Dollar Uranium Growth Project",
         "sentiment": 0.833,
         "n_headlines": 6
       }
     ],
-    "n_up": 38,
-    "n_down": 38,
-    "biggest_winner": "HPE +26.0%",
-    "biggest_loser": "MSTR -6.1%"
+    "n_up": 27,
+    "n_down": 47,
+    "biggest_winner": "AMD +2.8%",
+    "biggest_loser": "DDOG -6.6%"
   },
   "edgar_alerts": []
 }

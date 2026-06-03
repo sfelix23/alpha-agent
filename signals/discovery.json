@@ -1,30 +1,12 @@
 {
-  "generated_at": "2026-06-02T13:42:12.091309",
+  "generated_at": "2026-06-03T13:42:24.966385",
   "n_scanned": 118,
   "candidates": [
     {
-      "ticker": "CRDO",
-      "score": 43.2,
-      "ret_1m": 20.5,
-      "ret_3m": 111.6,
-      "prioridad": "MEDIA",
-      "razon": "Score técnico 43/100",
-      "riesgo": ""
-    },
-    {
-      "ticker": "HPE",
-      "score": 42.3,
-      "ret_1m": 105.9,
-      "ret_3m": 176.1,
-      "prioridad": "MEDIA",
-      "razon": "Score técnico 42/100",
-      "riesgo": ""
-    },
-    {
       "ticker": "TBLA",
-      "score": 40.7,
-      "ret_1m": 27.6,
-      "ret_3m": 52.0,
+      "score": 40.8,
+      "ret_1m": 26.8,
+      "ret_3m": 42.1,
       "prioridad": "MEDIA",
       "razon": "Score técnico 41/100",
       "riesgo": ""
