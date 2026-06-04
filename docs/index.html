@@ -258,7 +258,7 @@ tr:hover td{background:var(--s2)}
 <div class="topbar">
   <div class="logo">ALPHA<span>&nbsp;/&nbsp;TERMINAL</span></div>
   <div class="topbar-meta">
-    <span><span class="live"></span>&nbsp;03 de June de 2026 — 18:38</span>
+    <span><span class="live"></span>&nbsp;04 de June de 2026 — 02:19</span>
     <span style="color:var(--bd)">|</span>
     <span>Paper</span>
     <span style="color:var(--bd)">|</span>
@@ -294,20 +294,20 @@ tr:hover td{background:var(--s2)}
 
 
 <div class="tab-content" id="tab-resumen">
-  
+  <div class="fresh-banner fresh-warn">⚠️ Senales de hace 13h — El dashboard puede no reflejar la sesion de hoy.</div>
   <p class="ts">Senales actualizadas: 2026-06-03 13:44 &nbsp;|&nbsp; Paper Trading</p>
   
 <div class="kpi-row">
-  <div class="kpi kpi-hero" data-countup="1919.32">
+  <div class="kpi kpi-hero" data-countup="1945.81">
     <div class="kpi-lbl">Patrimonio Total</div>
-    <div class="kpi-val kpi-hero-val" style="color:#f85149" id="kpi-equity">$1,919.32</div>
-    <div class="kpi-tag" style="background:rgba(248,81,73,.15);color:#f85149">$-0.76 &nbsp; -0.04% total&nbsp;&middot;&nbsp;<span style="color:#7d8590">SPY +5.27%</span></div>
+    <div class="kpi-val kpi-hero-val" style="color:#3fb950" id="kpi-equity">$1,945.81</div>
+    <div class="kpi-tag" style="background:rgba(63,185,80,.15);color:#3fb950">$25.73 &nbsp; +1.34% total&nbsp;&middot;&nbsp;<span style="color:#7d8590">SPY +5.05%</span></div>
   </div>
   
   <div class="kpi" style="border-left:3px solid #3fb950;padding-left:12px">
     <div class="kpi-lbl">Alpha vs SPY (1M)</div>
-    <div class="kpi-val" style="color:#3fb950">+16.59%</div>
-    <div class="kpi-sub">Port +21.86% · SPY +5.27%</div>
+    <div class="kpi-val" style="color:#3fb950">+16.81%</div>
+    <div class="kpi-sub">Port +21.86% · SPY +5.05%</div>
   </div>
   <div class="kpi">
     <div class="kpi-lbl">Regimen de Mercado</div>
@@ -350,8 +350,8 @@ tr:hover td{background:var(--s2)}
     <div class="kpi-val" style="color:#d29922">-3.16%</div>
     <div class="kpi-sub">Caida maxima · ventana corta, no anualizada</div>
   </div>
-  <div class="kpi"><div class="kpi-lbl">Alpha vs SPY (ventana · 20 snapshots)</div><div class="kpi-val" style="color:#3fb950">+16.59%</div><div class="kpi-sub">Portfolio +21.86% · SPY +5.27%</div></div>
-  <div class="kpi"><div class="kpi-lbl">Alpha vs QQQ (ventana · 20 snapshots)</div><div class="kpi-val" style="color:#3fb950">+11.16%</div><div class="kpi-sub">QQQ +10.69%</div></div>
+  <div class="kpi"><div class="kpi-lbl">Alpha vs SPY (ventana · 20 snapshots)</div><div class="kpi-val" style="color:#3fb950">+16.81%</div><div class="kpi-sub">Portfolio +21.86% · SPY +5.05%</div></div>
+  <div class="kpi"><div class="kpi-lbl">Alpha vs QQQ (ventana · 20 snapshots)</div><div class="kpi-val" style="color:#3fb950">+11.25%</div><div class="kpi-sub">QQQ +10.60%</div></div>
 </div>
   <div class="section-gap"></div>
   <div class="card">
@@ -402,13 +402,30 @@ tr:hover td{background:var(--s2)}
       <div class="card-sub">Sin signal activa · auto-handler las gestiona · +7 dust (&lt;$5, residual)</div>
     </div>
     <div style="text-align:right">
-      <div style="font-family:var(--mono);font-size:1.2rem;font-weight:600;color:#f85149">
-        $-17.81
+      <div style="font-family:var(--mono);font-size:1.2rem;font-weight:600;color:#3fb950">
+        $+29.73
       </div>
       <div style="font-size:.7rem;color:var(--mt)">P&L total huérfanas</div>
     </div>
   </div>
   
+        <div style="display:flex;justify-content:space-between;padding:8px 0;
+                    border-bottom:1px solid var(--bd);font-size:.78rem">
+          <div style="flex:1">
+            <div style="font-weight:700;font-family:var(--mono)">BMA</div>
+            <div style="font-size:.66rem;color:var(--mt)">
+              2.4913 shares · cost $231
+            </div>
+          </div>
+          <div style="text-align:right;flex:1">
+            <div style="font-family:var(--mono);color:#3fb950">
+              $+30.29 (+13.1%)
+            </div>
+            <div style="font-size:.66rem;color:var(--mt)">✅ Winner — auto-mantener</div>
+            
+          </div>
+        </div>
+
         <div style="display:flex;justify-content:space-between;padding:8px 0;
                     border-bottom:1px solid var(--bd);font-size:.78rem">
           <div style="flex:1">
@@ -419,27 +436,10 @@ tr:hover td{background:var(--s2)}
           </div>
           <div style="text-align:right;flex:1">
             <div style="font-family:var(--mono);color:#f85149">
-              $-0.21 (-0.3%)
+              $-0.56 (-0.8%)
             </div>
             <div style="font-size:.66rem;color:var(--mt)">⚠️ Zona neutra — monitoreando</div>
             <a href="https://t.me/sfelix23_alpha_bot?text=liquidate%20LLY" target="_blank" style="display:inline-block;margin-top:4px;padding:4px 10px;background:#d2992222;color:#d29922;border:1px solid #d29922;border-radius:3px;font-size:.66rem;text-decoration:none;font-family:var(--mono)">⚡ Liquidar manual</a>
-          </div>
-        </div>
-
-        <div style="display:flex;justify-content:space-between;padding:8px 0;
-                    border-bottom:1px solid var(--bd);font-size:.78rem">
-          <div style="flex:1">
-            <div style="font-weight:700;font-family:var(--mono)">BMA</div>
-            <div style="font-size:.66rem;color:var(--mt)">
-              2.4913 shares · cost $231
-            </div>
-          </div>
-          <div style="text-align:right;flex:1">
-            <div style="font-family:var(--mono);color:#f85149">
-              $-17.60 (-7.6%)
-            </div>
-            <div style="font-size:.66rem;color:var(--mt)">🔴 Auto-handler la cerrara en proxima corrida</div>
-            <a href="https://t.me/sfelix23_alpha_bot?text=liquidate%20BMA" target="_blank" style="display:inline-block;margin-top:4px;padding:4px 10px;background:#f8514922;color:#f85149;border:1px solid #f85149;border-radius:3px;font-size:.66rem;text-decoration:none;font-family:var(--mono)">⚡ LIQUIDAR YA</a>
           </div>
         </div>
   <div style="margin-top:10px;padding-top:8px;border-top:1px solid var(--bd);
@@ -479,7 +479,7 @@ tr:hover td{background:var(--s2)}
         NORMAL
       </div>
       <div style="font-family:var(--mono);font-size:.84rem;color:#3fb950">
-        -0.04%
+        +1.34%
       </div>
     </div>
   </div>
@@ -587,7 +587,7 @@ tr:hover td{background:var(--s2)}
     <div style="width:100%;height:100%;background:#3fb950;opacity:.85"></div>
     <div style="position:absolute;top:0;left:97%;height:100%;width:2px;background:#fff"></div>
     <div style="position:absolute;top:3px;left:8px;font-size:.7rem;color:#fff;font-family:var(--mono)">
-      $1,910 invertido · $8 cash (0%)
+      $1,936 invertido · $8 cash (0%)
     </div>
   </div>
   <div style="display:flex;justify-content:space-between;font-size:.64rem;color:var(--mt);margin-top:3px">
@@ -624,25 +624,25 @@ tr:hover td{background:var(--s2)}
                         min-width:2px;opacity:.85"></div>
           </div>
           <span style="width:64px;text-align:right;font-family:var(--mono);font-size:.78rem;
-                       font-weight:600;color:#bc8cff">+7.05%</span>
+                       font-weight:600;color:#bc8cff">+6.96%</span>
         </div>
         <div style="display:flex;align-items:center;gap:8px;margin:5px 0">
           <span style="width:120px;font-size:.72rem;color:var(--mt)">S&P 500 (SPY)</span>
           <div style="flex:1;background:var(--s2);border-radius:3px;height:18px;position:relative">
-            <div style="width:14%;background:#58a6ff;height:100%;border-radius:3px;
+            <div style="width:13%;background:#58a6ff;height:100%;border-radius:3px;
                         min-width:2px;opacity:.85"></div>
           </div>
           <span style="width:64px;text-align:right;font-family:var(--mono);font-size:.78rem;
-                       font-weight:600;color:#58a6ff">+3.00%</span>
+                       font-weight:600;color:#58a6ff">+2.78%</span>
         </div>
         <div style="display:flex;align-items:center;gap:8px;margin:5px 0">
           <span style="width:120px;font-size:.72rem;color:var(--mt)">Buffett (BRK-B)</span>
           <div style="flex:1;background:var(--s2);border-radius:3px;height:18px;position:relative">
-            <div style="width:7%;background:#d29922;height:100%;border-radius:3px;
+            <div style="width:5%;background:#d29922;height:100%;border-radius:3px;
                         min-width:2px;opacity:.85"></div>
           </div>
           <span style="width:64px;text-align:right;font-family:var(--mono);font-size:.78rem;
-                       font-weight:600;color:#d29922">+1.51%</span>
+                       font-weight:600;color:#d29922">+1.18%</span>
         </div>
     </div>
   <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin-top:8px">
@@ -660,7 +660,7 @@ tr:hover td{background:var(--s2)}
           <div style="font-size:.64rem;color:var(--mt)">de las subidas de QQQ</div>
         </div><div style="padding:12px;background:var(--s2);border-radius:4px">
           <div style="font-size:.62rem;color:var(--mt);text-transform:uppercase;letter-spacing:.6px">Down Capture</div>
-          <div style="font-family:var(--mono);font-size:1.3rem;font-weight:600;color:#3fb950">-50%</div>
+          <div style="font-family:var(--mono);font-size:1.3rem;font-weight:600;color:#3fb950">-49%</div>
           <div style="font-size:.64rem;color:var(--mt)">de las bajadas (menor=mejor)</div>
         </div><div style="padding:12px;background:var(--s2);border-radius:4px">
           <div style="font-size:.62rem;color:var(--mt);text-transform:uppercase;letter-spacing:.6px">Information Ratio</div>
@@ -683,6 +683,8 @@ tr:hover td{background:var(--s2)}
   <div style="display:flex;gap:8px;padding:6px 10px;font-size:.74rem;
                     border-left:3px solid #3fb950;background:#3fb95011;margin:4px 0">
           <span>🟢</span><span style="color:var(--mt)">VIST: histórico FAVORABLE — 83% win, +6.9% prom en 6 trades. Sistema lo opera bien.</span></div><div style="display:flex;gap:8px;padding:6px 10px;font-size:.74rem;
+                    border-left:3px solid #3fb950;background:#3fb95011;margin:4px 0">
+          <span>🟢</span><span style="color:var(--mt)">DDOG: histórico FAVORABLE — 60% win, +6.7% prom en 5 trades. Sistema lo opera bien.</span></div><div style="display:flex;gap:8px;padding:6px 10px;font-size:.74rem;
                     border-left:3px solid #3fb950;background:#3fb95011;margin:4px 0">
           <span>🟢</span><span style="color:var(--mt)">LLY: histórico FAVORABLE — 100% win, +10.2% prom en 4 trades. Sistema lo opera bien.</span></div>
   <div style="margin-top:10px;padding-top:8px;border-top:1px solid var(--bd);font-size:.7rem;color:var(--mt)">
@@ -709,13 +711,13 @@ tr:hover td{background:var(--s2)}
   border-left:3px solid #f59e0b;border-radius:8px;background:var(--bg)">
   <div style="font-size:.72rem;font-weight:700;color:#f59e0b;text-transform:uppercase;
     letter-spacing:.06em;margin-bottom:8px">LP / CP</div>
-  <div style="font-size:1.1rem;font-weight:700;color:#3fb950;margin-bottom:4px">+$342.45</div>
+  <div style="font-size:1.1rem;font-weight:700;color:#3fb950;margin-bottom:4px">+$347.96</div>
   <div style="font-size:.75rem;color:var(--mt);margin-bottom:6px">ALPACA_API_KEY · hold semanal</div>
   <div style="display:flex;gap:12px;font-size:.75rem">
     <div><span style="color:var(--mt)">Win rate</span>&nbsp;
-      <span style="color:#d29922;font-weight:700">53.1%</span></div>
+      <span style="color:#d29922;font-weight:700">54.0%</span></div>
     <div><span style="color:var(--mt)">Trades</span>&nbsp;
-      <span style="color:var(--tx)">49</span></div>
+      <span style="color:var(--tx)">50</span></div>
   </div>
 </div>
 <div style="flex:1;min-width:200px;padding:16px;border:1px solid #818cf833;
@@ -765,7 +767,7 @@ tr:hover td{background:var(--s2)}
                 text-overflow:ellipsis" id="wf-desc-alpha_daily">Analyst + Trader LP/CP · 10:40 ART</div>
   </div>
   <div style="font-size:.72rem;flex-shrink:0" id="wf-age-alpha_daily"
-       style="color:#3fb950">hace 5h</div>
+       style="color:#3fb950">hace 13h</div>
 </div><div style="display:flex;align-items:center;gap:10px;padding:8px 0;
   border-bottom:1px solid var(--bd)" id="wf-row-alpha_daytrader">
   <span style="font-size:1rem;color:#6e7681;width:16px;text-align:center;flex-shrink:0"
@@ -787,7 +789,7 @@ tr:hover td{background:var(--s2)}
                 text-overflow:ellipsis" id="wf-desc-alpha_monitor">Stops/TPs cada 30 min · 11:00-16:00 ART</div>
   </div>
   <div style="font-size:.72rem;flex-shrink:0" id="wf-age-alpha_monitor"
-       style="color:#3fb950">hace 31min</div>
+       style="color:#3fb950">hace 8h</div>
 </div><div style="display:flex;align-items:center;gap:10px;padding:8px 0;
   border-bottom:1px solid var(--bd)" id="wf-row-alpha_weekly">
   <span style="font-size:1rem;color:#6e7681;width:16px;text-align:center;flex-shrink:0"
@@ -858,9 +860,9 @@ tr:hover td{background:var(--s2)}
       <div class="card-sub">5 providers · cascada free-first · Anthropic OFF por flag (anti-flag)</div>
     </div>
     <div style="text-align:right">
-      <div style="font-family:var(--mono);font-size:.9rem;color:var(--ac)">48 calls</div>
-      <div style="font-family:var(--mono);font-size:.74rem;color:var(--mt)">$0.0000 · 10% cache hit</div>
-      <div style="font-size:.66rem;color:var(--mt)">fecha: 2026-05-27</div>
+      <div style="font-family:var(--mono);font-size:.9rem;color:var(--ac)">0 calls</div>
+      <div style="font-family:var(--mono);font-size:.74rem;color:var(--mt)">$0.0000 · 0% cache hit</div>
+      <div style="font-size:.66rem;color:var(--mt)">fecha: 2026-06-02</div>
     </div>
   </div>
   
@@ -870,7 +872,7 @@ tr:hover td{background:var(--s2)}
             <div style="font-size:.68rem;color:var(--mt)">Llama 3.3 70B</div>
           </div>
           <div style="text-align:right">
-            <div style="font-family:var(--mono)">48 calls · $0.0000</div>
+            <div style="font-family:var(--mono)">0 calls · $0.0000</div>
             <div style="font-size:.68rem"><span style="color:#3fb950">activo</span></div>
           </div>
         </div>
@@ -932,8 +934,8 @@ tr:hover td{background:var(--s2)}
       <div class="card-title">Retorno Acumulado — % vs benchmarks</div>
       <div class="card-sub" style="display:flex;gap:16px;align-items:center;flex-wrap:wrap">
         <span><span style="color:#3fb950;font-weight:700;font-size:.9rem">+21.86%</span> Portfolio</span>
-        <span style="font-size:.78rem;color:#58a6ff">&#9135;&#9135; SPY +5.27%</span>
-        <span style="font-size:.78rem;color:#e3b341">&#9135;&#9135; QQQ +10.69%</span>
+        <span style="font-size:.78rem;color:#58a6ff">&#9135;&#9135; SPY +5.05%</span>
+        <span style="font-size:.78rem;color:#e3b341">&#9135;&#9135; QQQ +10.60%</span>
       </div>
     </div>
     <div class="pill" style="color:#3fb950">$1,995.67</div>
@@ -955,11 +957,11 @@ tr:hover td{background:var(--s2)}
           borderColor:'#3fb950',backgroundColor:g,fill:true,tension:.4,
           pointRadius:2,pointHoverRadius:7,pointBackgroundColor:'#3fb950',borderWidth:2.5}
         ,
-    {data:[0.0, 0.802, 2.203, 1.89, 2.731, 2.965, 2.809, 3.384, 4.2, 2.947, 2.875, 2.189, 3.237, 3.441, 3.848, 4.538, 4.519, 5.096, 5.358, 5.645, 5.788, 5.269],label:'SPY',
+    {data:[0.0, 0.802, 2.203, 1.89, 2.731, 2.965, 2.809, 3.384, 4.2, 2.947, 2.875, 2.189, 3.237, 3.441, 3.848, 4.538, 4.519, 5.096, 5.358, 5.645, 5.788, 5.046],label:'SPY',
       borderColor:'#58a6ff',backgroundColor:'transparent',fill:false,
       tension:.4,pointRadius:0,borderWidth:1.5,borderDash:[5,3]}
         ,
-    {data:[0.0, 1.297, 3.402, 3.278, 5.699, 6.006, 5.106, 6.217, 6.972, 5.358, 4.904, 4.258, 5.985, 6.187, 6.637, 8.53, 8.407, 9.321, 9.724, 10.382, 10.89, 10.691],label:'QQQ',
+    {data:[0.0, 1.297, 3.402, 3.278, 5.699, 6.006, 5.106, 6.217, 6.972, 5.358, 4.904, 4.258, 5.985, 6.187, 6.637, 8.53, 8.407, 9.321, 9.724, 10.382, 10.89, 10.601],label:'QQQ',
       borderColor:'#e3b341',backgroundColor:'transparent',fill:false,
       tension:.4,pointRadius:0,borderWidth:1.5,borderDash:[3,3]}
       ]
@@ -1074,11 +1076,11 @@ tr:hover td{background:var(--s2)}
     </div>
     <div class="kpi">
       <div class="kpi-lbl">Valor de mercado total</div>
-      <div class="kpi-val">$1,909.86</div>
+      <div class="kpi-val">$1,936.41</div>
     </div>
     <div class="kpi">
       <div class="kpi-lbl">P&amp;L no realizado</div>
-      <div class="kpi-val" style="color:#3fb950">+$77.18</div>
+      <div class="kpi-val" style="color:#3fb950">+$103.72</div>
     </div>
   </div>
   <div class="pos-layout">
@@ -1093,18 +1095,18 @@ tr:hover td{background:var(--s2)}
   <div class="pos-top">
     <div>
       <div class="pos-ticker" style="color:#58a6ff">BMA</div>
-      <div class="pos-sub">11.2% del portfolio &middot; 2.4913 acc.</div>
+      <div class="pos-sub">13.5% del portfolio &middot; 2.4913 acc.</div>
     </div>
     <div style="text-align:right">
-      <div class="pos-pnl" style="color:#f85149">▼ $17.60</div>
-      <div class="pos-pnl-pct" style="color:#f85149">-7.6%</div>
+      <div class="pos-pnl" style="color:#3fb950">▲ $30.29</div>
+      <div class="pos-pnl-pct" style="color:#3fb950">+13.1%</div>
     </div>
   </div>
-  <div class="pos-bar-track"><div style="width:38%;height:100%;background:#f85149;border-radius:2px;opacity:.8"></div></div>
+  <div class="pos-bar-track"><div style="width:65%;height:100%;background:#3fb950;border-radius:2px;opacity:.8"></div></div>
   <div class="pos-meta">
     <span>Entrada <b>$92.84</b></span>
-    <span>Valor actual <b>$213.69</b></span>
-    <span>P&L <b style="color:#f85149">$-17.60</b></span>
+    <span>Valor actual <b>$261.59</b></span>
+    <span>P&L <b style="color:#3fb950">+$30.29</b></span>
   </div>
   <div class="pos-meta" style="margin-top:4px;border-top:1px dashed var(--bd);padding-top:5px"><span class="muted">sin stop en señal (huérfana)</span></div>
 </div>
@@ -1112,20 +1114,20 @@ tr:hover td{background:var(--s2)}
   <div class="pos-top">
     <div>
       <div class="pos-ticker" style="color:#3fb950">DDOG</div>
-      <div class="pos-sub">40.0% del portfolio &middot; 3.0760 acc.</div>
+      <div class="pos-sub">39.4% del portfolio &middot; 3.0760 acc.</div>
     </div>
     <div style="text-align:right">
-      <div class="pos-pnl" style="color:#3fb950">▲ $14.39</div>
-      <div class="pos-pnl-pct" style="color:#3fb950">+1.9%</div>
+      <div class="pos-pnl" style="color:#3fb950">▲ $12.21</div>
+      <div class="pos-pnl-pct" style="color:#3fb950">+1.6%</div>
     </div>
   </div>
-  <div class="pos-bar-track"><div style="width:10%;height:100%;background:#3fb950;border-radius:2px;opacity:.8"></div></div>
+  <div class="pos-bar-track"><div style="width:8%;height:100%;background:#3fb950;border-radius:2px;opacity:.8"></div></div>
   <div class="pos-meta">
     <span>Entrada <b>$243.83</b></span>
-    <span>Valor actual <b>$764.42</b></span>
-    <span>P&L <b style="color:#3fb950">+$14.39</b></span>
+    <span>Valor actual <b>$762.23</b></span>
+    <span>P&L <b style="color:#3fb950">+$12.21</b></span>
   </div>
-  <div class="pos-meta" style="margin-top:4px;border-top:1px dashed var(--bd);padding-top:5px"><span>Stop <b style="color:#f85149">$231.06</b></span><span>Dist. stop <b style="color:#d29922">+7.0%</b></span><span>$ en riesgo <b>$53.68</b></span><span>TP <b style="color:#3fb950">$301.38</b></span><span>Hold <b>1d</b></span></div>
+  <div class="pos-meta" style="margin-top:4px;border-top:1px dashed var(--bd);padding-top:5px"><span>Stop <b style="color:#f85149">$231.06</b></span><span>Dist. stop <b style="color:#d29922">+6.8%</b></span><span>$ en riesgo <b>$51.49</b></span><span>TP <b style="color:#3fb950">$301.38</b></span><span>Hold <b>2d</b></span></div>
 </div>
 <div class="pos-card" style="border-top:3px solid #d29922">
   <div class="pos-top">
@@ -1138,7 +1140,7 @@ tr:hover td{background:var(--s2)}
       <div class="pos-pnl-pct" style="color:#f85149">-1.7%</div>
     </div>
   </div>
-  <div class="pos-bar-track"><div style="width:9%;height:100%;background:#f85149;border-radius:2px;opacity:.8"></div></div>
+  <div class="pos-bar-track"><div style="width:8%;height:100%;background:#f85149;border-radius:2px;opacity:.8"></div></div>
   <div class="pos-meta">
     <span>Entrada <b>$345.84</b></span>
     <span>Valor actual <b>$1.01</b></span>
@@ -1150,18 +1152,18 @@ tr:hover td{background:var(--s2)}
   <div class="pos-top">
     <div>
       <div class="pos-ticker" style="color:#f85149">LLY</div>
-      <div class="pos-sub">3.9% del portfolio &middot; 0.0680 acc.</div>
+      <div class="pos-sub">3.8% del portfolio &middot; 0.0680 acc.</div>
     </div>
     <div style="text-align:right">
-      <div class="pos-pnl" style="color:#f85149">▼ $0.21</div>
-      <div class="pos-pnl-pct" style="color:#f85149">-0.3%</div>
+      <div class="pos-pnl" style="color:#f85149">▼ $0.56</div>
+      <div class="pos-pnl-pct" style="color:#f85149">-0.8%</div>
     </div>
   </div>
-  <div class="pos-bar-track"><div style="width:1%;height:100%;background:#f85149;border-radius:2px;opacity:.8"></div></div>
+  <div class="pos-bar-track"><div style="width:4%;height:100%;background:#f85149;border-radius:2px;opacity:.8"></div></div>
   <div class="pos-meta">
     <span>Entrada <b>$1,092.52</b></span>
-    <span>Valor actual <b>$74.11</b></span>
-    <span>P&L <b style="color:#f85149">$-0.21</b></span>
+    <span>Valor actual <b>$73.76</b></span>
+    <span>P&L <b style="color:#f85149">$-0.56</b></span>
   </div>
   <div class="pos-meta" style="margin-top:4px;border-top:1px dashed var(--bd);padding-top:5px"><span class="muted">sin stop en señal (huérfana)</span></div>
 </div>
@@ -1169,37 +1171,37 @@ tr:hover td{background:var(--s2)}
   <div class="pos-top">
     <div>
       <div class="pos-ticker" style="color:#bc8cff">MU</div>
-      <div class="pos-sub">44.6% del portfolio &middot; 0.7969 acc.</div>
+      <div class="pos-sub">43.0% del portfolio &middot; 0.7969 acc.</div>
     </div>
     <div style="text-align:right">
-      <div class="pos-pnl" style="color:#3fb950">▲ $78.57</div>
-      <div class="pos-pnl-pct" style="color:#3fb950">+10.2%</div>
+      <div class="pos-pnl" style="color:#3fb950">▲ $60.26</div>
+      <div class="pos-pnl-pct" style="color:#3fb950">+7.8%</div>
     </div>
   </div>
-  <div class="pos-bar-track"><div style="width:51%;height:100%;background:#3fb950;border-radius:2px;opacity:.8"></div></div>
+  <div class="pos-bar-track"><div style="width:39%;height:100%;background:#3fb950;border-radius:2px;opacity:.8"></div></div>
   <div class="pos-meta">
     <span>Entrada <b>$970.14</b></span>
-    <span>Valor actual <b>$851.67</b></span>
-    <span>P&L <b style="color:#3fb950">+$78.57</b></span>
+    <span>Valor actual <b>$833.36</b></span>
+    <span>P&L <b style="color:#3fb950">+$60.26</b></span>
   </div>
-  <div class="pos-meta" style="margin-top:4px;border-top:1px dashed var(--bd);padding-top:5px"><span>Stop <b style="color:#f85149">$974.99</b></span><span>Dist. stop <b style="color:#3fb950">+8.8%</b></span><span>$ en riesgo <b>$74.70</b></span><span>TP <b style="color:#3fb950">$1,270.41</b></span><span>Hold <b>1d</b></span></div>
+  <div class="pos-meta" style="margin-top:4px;border-top:1px dashed var(--bd);padding-top:5px"><span>Stop <b style="color:#f85149">$974.99</b></span><span>Dist. stop <b style="color:#d29922">+6.8%</b></span><span>$ en riesgo <b>$56.39</b></span><span>TP <b style="color:#3fb950">$1,270.41</b></span><span>Hold <b>2d</b></span></div>
 </div>
 <div class="pos-card" style="border-top:3px solid #ffa657">
   <div class="pos-top">
     <div>
       <div class="pos-ticker" style="color:#ffa657">WOLF</div>
-      <div class="pos-sub">0.3% del portfolio &middot; 0.0758 acc.</div>
+      <div class="pos-sub">0.2% del portfolio &middot; 0.0758 acc.</div>
     </div>
     <div style="text-align:right">
-      <div class="pos-pnl" style="color:#3fb950">▲ $2.04</div>
-      <div class="pos-pnl-pct" style="color:#3fb950">+70.0%</div>
+      <div class="pos-pnl" style="color:#3fb950">▲ $1.54</div>
+      <div class="pos-pnl-pct" style="color:#3fb950">+52.9%</div>
     </div>
   </div>
   <div class="pos-bar-track"><div style="width:100%;height:100%;background:#3fb950;border-radius:2px;opacity:.8"></div></div>
   <div class="pos-meta">
     <span>Entrada <b>$38.50</b></span>
-    <span>Valor actual <b>$4.96</b></span>
-    <span>P&L <b style="color:#3fb950">+$2.04</b></span>
+    <span>Valor actual <b>$4.46</b></span>
+    <span>P&L <b style="color:#3fb950">+$1.54</b></span>
   </div>
   <div class="pos-meta" style="margin-top:4px;border-top:1px dashed var(--bd);padding-top:5px"><span class="muted">sin stop en señal (huérfana)</span></div>
 </div>
@@ -1219,14 +1221,14 @@ tr:hover td{background:var(--s2)}
   <td><span style="color:#8b949e;font-weight:600">ARM</span></td>
   <td class="muted">$215.80</td>
   <td><span style="color:#f85149">$0.00</span></td>
-  <td><span style="color:#3fb950;font-weight:600">+$0.23</span></td>
+  <td><span style="color:#3fb950;font-weight:600">+$0.21</span></td>
   <td><span style="font-size:.72rem;background:#21262d;color:#8b949e;padding:2px 8px;border-radius:10px">Expirada</span></td>
 </tr>
 <tr>
   <td><span style="color:#8b949e;font-weight:600">MSTR</span></td>
   <td class="muted">$183.19</td>
   <td><span style="color:#f85149">$0.00</span></td>
-  <td><span style="color:#f85149;font-weight:600">$-0.20</span></td>
+  <td><span style="color:#f85149;font-weight:600">$-0.24</span></td>
   <td><span style="font-size:.72rem;background:#21262d;color:#8b949e;padding:2px 8px;border-radius:10px">Expirada</span></td>
 </tr>
 <tr>
@@ -1240,7 +1242,7 @@ tr:hover td{background:var(--s2)}
   <td><span style="color:#8b949e;font-weight:600">SQM</span></td>
   <td class="muted">$88.59</td>
   <td><span style="color:#f85149">$0.00</span></td>
-  <td><span style="color:#f85149;font-weight:600">$-0.02</span></td>
+  <td><span style="color:#f85149;font-weight:600">$-0.01</span></td>
   <td><span style="font-size:.72rem;background:#21262d;color:#8b949e;padding:2px 8px;border-radius:10px">Expirada</span></td>
 </tr>
 <tr>
@@ -1257,7 +1259,7 @@ tr:hover td{background:var(--s2)}
 <script>
 (function(){
   const labels=["BMA", "DDOG", "GD", "LLY", "MU", "WOLF"];
-  const values=[213.69, 764.42, 1.01, 74.11, 851.67, 4.96];
+  const values=[261.59, 762.23, 1.01, 73.76, 833.36, 4.46];
   const colors=["#58a6ff", "#3fb950", "#d29922", "#f85149", "#bc8cff", "#ffa657"];
   window._charts = window._charts||{};
   window._charts.alloc = new Chart(document.getElementById('allocChart'),{
@@ -1498,7 +1500,7 @@ tr:hover td{background:var(--s2)}
       <div class="card-sub">Cómo le fue a ESTE sistema operando cada ticker. Alimenta el scorer (favorable +0.25, adverso -0.50).</div>
     </div></div>
     <table><thead><tr><th>Ticker</th><th>Trades</th><th>Win%</th><th>Avg P&L</th><th>Hold</th><th>Veredicto</th></tr></thead>
-    <tbody><tr><td class='rt-ticker'>MU</td><td>16</td><td style='color:#3fb950'>50%</td><td style='color:#3fb950'>+7.1%</td><td>6d</td><td style='color:#8b949e;font-weight:700'>NEUTRAL</td></tr><tr><td class='rt-ticker'>VIST</td><td>6</td><td style='color:#3fb950'>83%</td><td style='color:#3fb950'>+6.9%</td><td>3d</td><td style='color:#3fb950;font-weight:700'>FAVORABLE</td></tr><tr><td class='rt-ticker'>DDOG</td><td>4</td><td style='color:#3fb950'>50%</td><td style='color:#3fb950'>+5.4%</td><td>4d</td><td style='color:#8b949e;font-weight:700'>NEUTRAL</td></tr><tr><td class='rt-ticker'>LLY</td><td>4</td><td style='color:#3fb950'>100%</td><td style='color:#3fb950'>+10.2%</td><td>14d</td><td style='color:#3fb950;font-weight:700'>FAVORABLE</td></tr><tr><td class='rt-ticker'>PBR</td><td>3</td><td style='color:#f85149'>33%</td><td style='color:#3fb950'>+0.2%</td><td>3d</td><td style='color:#8b949e;font-weight:700'>NEUTRAL</td></tr><tr><td class='rt-ticker'>ARM</td><td>2</td><td style='color:#3fb950'>100%</td><td style='color:#3fb950'>+7.3%</td><td>1d</td><td style='color:#8b949e;font-weight:700'>NEUTRAL</td></tr><tr><td class='rt-ticker'>DE</td><td>2</td><td style='color:#3fb950'>50%</td><td style='color:#3fb950'>+0.7%</td><td>0d</td><td style='color:#8b949e;font-weight:700'>NEUTRAL</td></tr><tr><td class='rt-ticker'>GD</td><td>2</td><td style='color:#f85149'>0%</td><td style='color:#f85149'>-0.0%</td><td>3d</td><td style='color:#8b949e;font-weight:700'>NEUTRAL</td></tr><tr><td class='rt-ticker'>RIO</td><td>2</td><td style='color:#f85149'>0%</td><td style='color:#f85149'>-5.6%</td><td>2d</td><td style='color:#8b949e;font-weight:700'>NEUTRAL</td></tr><tr><td class='rt-ticker'>TSM</td><td>2</td><td style='color:#f85149'>0%</td><td style='color:#f85149'>-1.0%</td><td>4d</td><td style='color:#8b949e;font-weight:700'>NEUTRAL</td></tr><tr><td class='rt-ticker'>AMD</td><td>1</td><td style='color:#3fb950'>100%</td><td style='color:#3fb950'>+0.5%</td><td>0d</td><td style='color:#8b949e;font-weight:700'>NEUTRAL</td></tr><tr><td class='rt-ticker'>BMA</td><td>1</td><td style='color:#f85149'>0%</td><td style='color:#f85149'>-3.6%</td><td>2d</td><td style='color:#8b949e;font-weight:700'>NEUTRAL</td></tr><tr><td class='rt-ticker'>LAC</td><td>1</td><td style='color:#f85149'>0%</td><td style='color:#f85149'>-1.8%</td><td>1d</td><td style='color:#8b949e;font-weight:700'>NEUTRAL</td></tr><tr><td class='rt-ticker'>MSTR</td><td>1</td><td style='color:#f85149'>0%</td><td style='color:#f85149'>-1.9%</td><td>1d</td><td style='color:#8b949e;font-weight:700'>NEUTRAL</td></tr><tr><td class='rt-ticker'>SQM</td><td>1</td><td style='color:#3fb950'>100%</td><td style='color:#3fb950'>+5.0%</td><td>1d</td><td style='color:#8b949e;font-weight:700'>NEUTRAL</td></tr><tr><td class='rt-ticker'>WOLF</td><td>1</td><td style='color:#3fb950'>100%</td><td style='color:#3fb950'>+20.6%</td><td>1d</td><td style='color:#8b949e;font-weight:700'>NEUTRAL</td></tr></tbody></table>
+    <tbody><tr><td class='rt-ticker'>MU</td><td>16</td><td style='color:#3fb950'>50%</td><td style='color:#3fb950'>+7.1%</td><td>6d</td><td style='color:#8b949e;font-weight:700'>NEUTRAL</td></tr><tr><td class='rt-ticker'>VIST</td><td>6</td><td style='color:#3fb950'>83%</td><td style='color:#3fb950'>+6.9%</td><td>3d</td><td style='color:#3fb950;font-weight:700'>FAVORABLE</td></tr><tr><td class='rt-ticker'>DDOG</td><td>5</td><td style='color:#3fb950'>60%</td><td style='color:#3fb950'>+6.7%</td><td>4d</td><td style='color:#3fb950;font-weight:700'>FAVORABLE</td></tr><tr><td class='rt-ticker'>LLY</td><td>4</td><td style='color:#3fb950'>100%</td><td style='color:#3fb950'>+10.2%</td><td>14d</td><td style='color:#3fb950;font-weight:700'>FAVORABLE</td></tr><tr><td class='rt-ticker'>PBR</td><td>3</td><td style='color:#f85149'>33%</td><td style='color:#3fb950'>+0.2%</td><td>3d</td><td style='color:#8b949e;font-weight:700'>NEUTRAL</td></tr><tr><td class='rt-ticker'>ARM</td><td>2</td><td style='color:#3fb950'>100%</td><td style='color:#3fb950'>+7.3%</td><td>1d</td><td style='color:#8b949e;font-weight:700'>NEUTRAL</td></tr><tr><td class='rt-ticker'>DE</td><td>2</td><td style='color:#3fb950'>50%</td><td style='color:#3fb950'>+0.7%</td><td>0d</td><td style='color:#8b949e;font-weight:700'>NEUTRAL</td></tr><tr><td class='rt-ticker'>GD</td><td>2</td><td style='color:#f85149'>0%</td><td style='color:#f85149'>-0.0%</td><td>3d</td><td style='color:#8b949e;font-weight:700'>NEUTRAL</td></tr><tr><td class='rt-ticker'>RIO</td><td>2</td><td style='color:#f85149'>0%</td><td style='color:#f85149'>-5.6%</td><td>2d</td><td style='color:#8b949e;font-weight:700'>NEUTRAL</td></tr><tr><td class='rt-ticker'>TSM</td><td>2</td><td style='color:#f85149'>0%</td><td style='color:#f85149'>-1.0%</td><td>4d</td><td style='color:#8b949e;font-weight:700'>NEUTRAL</td></tr><tr><td class='rt-ticker'>AMD</td><td>1</td><td style='color:#3fb950'>100%</td><td style='color:#3fb950'>+0.5%</td><td>0d</td><td style='color:#8b949e;font-weight:700'>NEUTRAL</td></tr><tr><td class='rt-ticker'>BMA</td><td>1</td><td style='color:#f85149'>0%</td><td style='color:#f85149'>-3.6%</td><td>2d</td><td style='color:#8b949e;font-weight:700'>NEUTRAL</td></tr><tr><td class='rt-ticker'>LAC</td><td>1</td><td style='color:#f85149'>0%</td><td style='color:#f85149'>-1.8%</td><td>1d</td><td style='color:#8b949e;font-weight:700'>NEUTRAL</td></tr><tr><td class='rt-ticker'>MSTR</td><td>1</td><td style='color:#f85149'>0%</td><td style='color:#f85149'>-1.9%</td><td>1d</td><td style='color:#8b949e;font-weight:700'>NEUTRAL</td></tr><tr><td class='rt-ticker'>SQM</td><td>1</td><td style='color:#3fb950'>100%</td><td style='color:#3fb950'>+5.0%</td><td>1d</td><td style='color:#8b949e;font-weight:700'>NEUTRAL</td></tr><tr><td class='rt-ticker'>WOLF</td><td>1</td><td style='color:#3fb950'>100%</td><td style='color:#3fb950'>+20.6%</td><td>1d</td><td style='color:#8b949e;font-weight:700'>NEUTRAL</td></tr></tbody></table>
   </div>
 </div>
 
@@ -1520,7 +1522,7 @@ tr:hover td{background:var(--s2)}
   window._charts=window._charts||{};
   window._charts.sector=new Chart(document.getElementById('sectorChart'),{
     type:'bar',
-    data:{labels:["Tech", "ETF", "Energy", "Industrials", "Materials", "Financials", "Defense", "Healthcare", "Comm", "GoldMiners"],datasets:[{data:[31.75, 4.3, 2.36, 1.64, 1.42, -0.37, -1.19, -1.42, -4.03, -9.69],
+    data:{labels:["Tech", "ETF", "Energy", "Materials", "Industrials", "Financials", "Healthcare", "Defense", "Comm", "GoldMiners"],datasets:[{data:[31.48, 4.3, 2.28, 1.29, 1.24, -0.67, -1.62, -1.98, -4.27, -10.29],
       backgroundColor:["#3fb950", "#3fb950", "#3fb950", "#3fb950", "#3fb950", "#f85149", "#f85149", "#f85149", "#f85149", "#f85149"],borderRadius:6,borderSkipped:false}]},
     options:{
       animation:{duration:700},
@@ -1556,61 +1558,61 @@ tr:hover td{background:var(--s2)}
       <tbody>
 <tr>
   <td><span class="rt-ticker" style="color:#e6edf3">DDOG</span></td>
-  <td><span style="color:#f85149;font-weight:700">▼ 7.7%</span></td>
+  <td><span style="color:#f85149;font-weight:700">▼ 7.0%</span></td>
   <td class="muted" style="font-size:.8rem;max-width:320px">1 Unpopular Stock That Should Get More Attention and 2 We Avoid</td>
   <td><span class="muted" style="font-size:.75rem">BUY_CP</span></td>
 </tr>
 <tr>
   <td><span class="rt-ticker" style="color:#e6edf3">VIST</span></td>
-  <td><span style="color:#f85149;font-weight:700">▼ 0.3%</span></td>
+  <td><span style="color:#f85149;font-weight:700">▼ 0.2%</span></td>
   <td class="muted" style="font-size:.8rem;max-width:320px">What Makes Vista Energy, S.A.B. de C.V. (VIST) an Investment Bet?</td>
   <td><span class="muted" style="font-size:.75rem">BUY_CP</span></td>
 </tr>
 <tr>
   <td><span class="rt-ticker" style="color:#e6edf3">MU</span></td>
-  <td><span style="color:#3fb950;font-weight:700">▲ 0.4%</span></td>
+  <td><span style="color:#3fb950;font-weight:700">▲ 1.5%</span></td>
   <td class="muted" style="font-size:.8rem;max-width:320px">Marvell stock extends gains after a 32% pop as Nvidia CEO calls chipmake...</td>
   <td><span class="muted" style="font-size:.75rem">BUY_CP</span></td>
 </tr>
 <tr>
   <td><span class="rt-ticker" style="color:#e6edf3">CAT</span></td>
-  <td><span style="color:#3fb950;font-weight:700">▲ 1.6%</span></td>
+  <td><span style="color:#3fb950;font-weight:700">▲ 1.8%</span></td>
   <td class="muted" style="font-size:.8rem;max-width:320px">SpaceX Stock Will Cost Less Than You Think. It’s a Red Flag for Markets.</td>
   <td><span class="muted" style="font-size:.75rem">BUY_CP</span></td>
 </tr>
 <tr>
   <td><span class="rt-ticker" style="color:#e6edf3">UNH</span></td>
-  <td><span style="color:#3fb950;font-weight:700">▲ 0.8%</span></td>
+  <td><span style="color:#f85149;font-weight:700">▼ 0.2%</span></td>
   <td class="muted" style="font-size:.8rem;max-width:320px">Berkshire Hathaway Made Some Major Portfolio Moves, but This One Was a H...</td>
   <td><span class="muted" style="font-size:.75rem">BUY_CP</span></td>
 </tr>
 <tr>
   <td><span class="rt-ticker" style="color:#e6edf3">NET</span></td>
-  <td><span style="color:#f85149;font-weight:700">▼ 2.5%</span></td>
+  <td><span style="color:#f85149;font-weight:700">▼ 2.7%</span></td>
   <td class="muted" style="font-size:.8rem;max-width:320px">The 'Lifeboat Effect': Money Moving From Seat To Stack</td>
   <td><span class="muted" style="font-size:.75rem">—</span></td>
 </tr>
 <tr>
   <td><span class="rt-ticker" style="color:#e6edf3">ETHE</span></td>
-  <td><span style="color:#f85149;font-weight:700">▼ 4.6%</span></td>
+  <td><span style="color:#f85149;font-weight:700">▼ 5.8%</span></td>
   <td class="muted" style="font-size:.8rem;max-width:320px">Beyond Bitcoin: Crypto ETFs to Watch Amid Ethereum's Momentum</td>
   <td><span class="muted" style="font-size:.75rem">—</span></td>
 </tr>
 <tr>
   <td><span class="rt-ticker" style="color:#e6edf3">FCX</span></td>
-  <td><span style="color:#f85149;font-weight:700">▼ 1.2%</span></td>
+  <td><span style="color:#f85149;font-weight:700">▼ 1.5%</span></td>
   <td class="muted" style="font-size:.8rem;max-width:320px">Rare Earth Stocks, Copper Plays Surging; FCX, MP Near Buy Points</td>
   <td><span class="muted" style="font-size:.75rem">—</span></td>
 </tr>
 <tr>
   <td><span class="rt-ticker" style="color:#e6edf3">SQM</span></td>
-  <td><span style="color:#f85149;font-weight:700">▼ 1.7%</span></td>
+  <td><span style="color:#f85149;font-weight:700">▼ 2.8%</span></td>
   <td class="muted" style="font-size:.8rem;max-width:320px">Meta Platforms upgraded, Okta downgraded: Wall Street's top analyst calls</td>
   <td><span class="muted" style="font-size:.75rem">—</span></td>
 </tr>
 <tr>
   <td><span class="rt-ticker" style="color:#e6edf3">CCJ</span></td>
-  <td><span style="color:#f85149;font-weight:700">▼ 4.6%</span></td>
+  <td><span style="color:#f85149;font-weight:700">▼ 4.9%</span></td>
   <td class="muted" style="font-size:.8rem;max-width:320px">Nuclear Stocks Jump on Multibillion-Dollar Uranium Growth Project</td>
   <td><span class="muted" style="font-size:.75rem">—</span></td>
 </tr></tbody>
@@ -1644,21 +1646,21 @@ tr:hover td{background:var(--s2)}
 <div class="card">
   <div class="card-head"><div>
     <div class="card-title">Historial de Operaciones</div>
-    <div class="card-sub">55 posiciones · 49 cerradas</div>
+    <div class="card-sub">55 posiciones · 50 cerradas</div>
   </div></div>
   
   <div style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:16px">
     <div class="kpi-card" style="flex:1;min-width:110px">
       <div class="kpi-label">Trades cerrados</div>
-      <div class="kpi-val">49</div>
+      <div class="kpi-val">50</div>
     </div>
     <div class="kpi-card" style="flex:1;min-width:110px">
       <div class="kpi-label">Win rate real</div>
-      <div class="kpi-val" style="color:#d29922">53.1%</div>
+      <div class="kpi-val" style="color:#d29922">54.0%</div>
     </div>
     <div class="kpi-card" style="flex:1;min-width:130px;background:rgba(63,185,80,.15)22">
       <div class="kpi-label">P&L realizado</div>
-      <div class="kpi-val" style="color:#3fb950">+$342.45</div>
+      <div class="kpi-val" style="color:#3fb950">+$347.96</div>
     </div>
     <div class="kpi-card" style="flex:1;min-width:110px">
       <div class="kpi-label">Hold promedio</div>
@@ -1668,7 +1670,7 @@ tr:hover td{background:var(--s2)}
   <div style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:16px">
     <div class="kpi-card" style="flex:1;min-width:110px">
       <div class="kpi-label">Avg ganador</div>
-      <div class="kpi-val" style="color:#3fb950">+$17.13</div>
+      <div class="kpi-val" style="color:#3fb950">+$16.70</div>
     </div>
     <div class="kpi-card" style="flex:1;min-width:110px">
       <div class="kpi-label">Avg perdedor</div>
@@ -1676,15 +1678,15 @@ tr:hover td{background:var(--s2)}
     </div>
     <div class="kpi-card" style="flex:1;min-width:110px">
       <div class="kpi-label">Win/Loss ratio</div>
-      <div class="kpi-val" style="color:#3fb950">3.50x</div>
+      <div class="kpi-val" style="color:#3fb950">3.41x</div>
     </div>
     <div class="kpi-card" style="flex:1;min-width:110px">
       <div class="kpi-label">Profit factor</div>
-      <div class="kpi-val" style="color:#3fb950">4.33</div>
+      <div class="kpi-val" style="color:#3fb950">4.38</div>
     </div>
     <div class="kpi-card" style="flex:1;min-width:120px">
       <div class="kpi-label">Expectancy/trade</div>
-      <div class="kpi-val" style="color:#3fb950">+$6.99</div>
+      <div class="kpi-val" style="color:#3fb950">+$6.96</div>
     </div>
   </div>
   
@@ -1715,9 +1717,9 @@ tr:hover td{background:var(--s2)}
   <div style="font-size:.7rem;font-weight:700;color:#7d8590;text-transform:uppercase;
     letter-spacing:.06em;margin-bottom:6px">—</div>
   <div style="font-size:1rem;font-weight:700;color:#3fb950;margin-bottom:2px">
-    +$22.48</div>
+    +$27.99</div>
   <div style="font-size:.72rem;color:var(--mt)">
-    WR <span style="color:#d29922">52%</span> &nbsp;·&nbsp; 23 trades</div>
+    WR <span style="color:#d29922">54%</span> &nbsp;·&nbsp; 24 trades</div>
 </div></div>
   </div>
   <div style="overflow-x:auto">
@@ -1736,7 +1738,7 @@ tr:hover td{background:var(--s2)}
         </tr>
       </thead>
       <tbody>
-        <tr style="border-bottom:1px solid var(--border);"><td style="padding:7px 10px;color:var(--mt);font-size:.78rem">2026-06-02</td><td style="padding:7px 10px"><b>DDOG</b></td><td style="padding:7px 10px">CP</td><td style="padding:7px 10px;text-align:right">$273.40</td><td style="text-align:right;color:var(--mt)">—</td><td style="text-align:right;color:var(--mt)">—</td><td style="text-align:right;color:var(--mt)">—</td><td style="text-align:right;color:var(--mt)">—</td><td style="padding:7px 10px;color:#3fb950;font-size:.78rem">ABIERTO</td></tr><tr style="border-bottom:1px solid var(--border);"><td style="padding:7px 10px;color:var(--mt);font-size:.78rem">2026-06-02</td><td style="padding:7px 10px"><b>MU</b></td><td style="padding:7px 10px">CP</td><td style="padding:7px 10px;text-align:right">$1,038.60</td><td style="text-align:right;color:var(--mt)">—</td><td style="text-align:right;color:var(--mt)">—</td><td style="text-align:right;color:var(--mt)">—</td><td style="text-align:right;color:var(--mt)">—</td><td style="padding:7px 10px;color:#3fb950;font-size:.78rem">ABIERTO</td></tr><tr style="border-bottom:1px solid var(--border);"><td style="padding:7px 10px;color:var(--mt);font-size:.78rem">2026-06-01</td><td style="padding:7px 10px"><b>BMA</b></td><td style="padding:7px 10px">CP</td><td style="padding:7px 10px;text-align:right">$91.25</td><td style="text-align:right">$88.00</td><td style="text-align:right;color:#f85149;font-weight:600">$-8.08</td><td style="text-align:right;color:#f85149">-3.6%</td><td style="text-align:right">2.0d</td><td style="padding:7px 10px;color:#8b949e;font-size:.78rem">CERRADO</td></tr><tr style="border-bottom:1px solid var(--border);"><td style="padding:7px 10px;color:var(--mt);font-size:.78rem">2026-06-01</td><td style="padding:7px 10px"><b>DDOG</b></td><td style="padding:7px 10px">CP</td><td style="padding:7px 10px;text-align:right">$264.97</td><td style="text-align:right;color:var(--mt)">—</td><td style="text-align:right;color:var(--mt)">—</td><td style="text-align:right;color:var(--mt)">—</td><td style="text-align:right;color:var(--mt)">—</td><td style="padding:7px 10px;color:#3fb950;font-size:.78rem">ABIERTO</td></tr><tr style="border-bottom:1px solid var(--border);"><td style="padding:7px 10px;color:var(--mt);font-size:.78rem">2026-06-01</td><td style="padding:7px 10px"><b>MU</b></td><td style="padding:7px 10px">CP</td><td style="padding:7px 10px;text-align:right">$1,029.44</td><td style="text-align:right;color:var(--mt)">—</td><td style="text-align:right;color:var(--mt)">—</td><td style="text-align:right;color:var(--mt)">—</td><td style="text-align:right;color:var(--mt)">—</td><td style="padding:7px 10px;color:#3fb950;font-size:.78rem">ABIERTO</td></tr><tr style="border-bottom:1px solid var(--border);"><td style="padding:7px 10px;color:var(--mt);font-size:.78rem">2026-04-28</td><td style="padding:7px 10px"><b>SQM</b></td><td style="padding:7px 10px">—</td><td style="padding:7px 10px;text-align:right">$88.59</td><td style="text-align:right">$93.00</td><td style="text-align:right;color:#3fb950;font-weight:600">+$0.75</td><td style="text-align:right;color:#3fb950">+5.0%</td><td style="text-align:right">1.1d</td><td style="padding:7px 10px;color:#8b949e;font-size:.78rem">CERRADO</td></tr><tr style="border-bottom:1px solid var(--border);"><td style="padding:7px 10px;color:var(--mt);font-size:.78rem">2026-04-30</td><td style="padding:7px 10px"><b>PBR260501C00022500</b></td><td style="padding:7px 10px">—</td><td style="padding:7px 10px;text-align:right">$0.05</td><td style="text-align:right;color:var(--mt)">—</td><td style="text-align:right;color:var(--mt)">—</td><td style="text-align:right;color:var(--mt)">—</td><td style="text-align:right;color:var(--mt)">—</td><td style="padding:7px 10px;color:#3fb950;font-size:.78rem">ABIERTO</td></tr><tr style="border-bottom:1px solid var(--border);"><td style="padding:7px 10px;color:var(--mt);font-size:.78rem">2026-05-01</td><td style="padding:7px 10px"><b>LLY</b></td><td style="padding:7px 10px">—</td><td style="padding:7px 10px;text-align:right">$961.68</td><td style="text-align:right">$1,064.52</td><td style="text-align:right;color:#3fb950;font-weight:600">+$0.30</td><td style="text-align:right;color:#3fb950">+10.7%</td><td style="text-align:right">24.9d</td><td style="padding:7px 10px;color:#8b949e;font-size:.78rem">CERRADO</td></tr><tr style="border-bottom:1px solid var(--border);"><td style="padding:7px 10px;color:var(--mt);font-size:.78rem">2026-05-01</td><td style="padding:7px 10px"><b>GD</b></td><td style="padding:7px 10px">—</td><td style="padding:7px 10px;text-align:right">$345.84</td><td style="text-align:right">$345.62</td><td style="text-align:right;color:#f85149;font-weight:600">$-0.01</td><td style="text-align:right;color:#f85149">-0.1%</td><td style="text-align:right">2.9d</td><td style="padding:7px 10px;color:#8b949e;font-size:.78rem">CERRADO</td></tr><tr style="border-bottom:1px solid var(--border);"><td style="padding:7px 10px;color:var(--mt);font-size:.78rem">2026-05-04</td><td style="padding:7px 10px"><b>MU</b></td><td style="padding:7px 10px">—</td><td style="padding:7px 10px;text-align:right">$578.98</td><td style="text-align:right">$736.53</td><td style="text-align:right;color:#3fb950;font-weight:600">+$36.46</td><td style="text-align:right;color:#3fb950">+27.2%</td><td style="text-align:right">10.9d</td><td style="padding:7px 10px;color:#8b949e;font-size:.78rem">CERRADO</td></tr><tr style="border-bottom:1px solid var(--border);"><td style="padding:7px 10px;color:var(--mt);font-size:.78rem">2026-05-06</td><td style="padding:7px 10px"><b>WOLF</b></td><td style="padding:7px 10px">—</td><td style="padding:7px 10px;text-align:right">$38.50</td><td style="text-align:right">$46.44</td><td style="text-align:right;color:#3fb950;font-weight:600">+$0.74</td><td style="text-align:right;color:#3fb950">+20.6%</td><td style="text-align:right">1.0d</td><td style="padding:7px 10px;color:#8b949e;font-size:.78rem">CERRADO</td></tr><tr style="border-bottom:1px solid var(--border);"><td style="padding:7px 10px;color:var(--mt);font-size:.78rem">2026-05-07</td><td style="padding:7px 10px"><b>ARM</b></td><td style="padding:7px 10px">—</td><td style="padding:7px 10px;text-align:right">$218.75</td><td style="text-align:right">$218.80</td><td style="text-align:right;color:#3fb950;font-weight:600">+$0.01</td><td style="text-align:right;color:#3fb950">+0.0%</td><td style="text-align:right">0.9d</td><td style="padding:7px 10px;color:#8b949e;font-size:.78rem">CERRADO</td></tr><tr style="border-bottom:1px solid var(--border);"><td style="padding:7px 10px;color:var(--mt);font-size:.78rem">2026-05-07</td><td style="padding:7px 10px"><b>MU</b></td><td style="padding:7px 10px">—</td><td style="padding:7px 10px;text-align:right">$644.36</td><td style="text-align:right">$722.50</td><td style="text-align:right;color:#3fb950;font-weight:600">+$0.02</td><td style="text-align:right;color:#3fb950">+12.1%</td><td style="text-align:right">7.9d</td><td style="padding:7px 10px;color:#8b949e;font-size:.78rem">CERRADO</td></tr><tr style="border-bottom:1px solid var(--border);"><td style="padding:7px 10px;color:var(--mt);font-size:.78rem">2026-05-11</td><td style="padding:7px 10px"><b>MU</b></td><td style="padding:7px 10px">—</td><td style="padding:7px 10px;text-align:right">$787.54</td><td style="text-align:right">$721.52</td><td style="text-align:right;color:#f85149;font-weight:600">$-12.75</td><td style="text-align:right;color:#f85149">-8.4%</td><td style="text-align:right">7.0d</td><td style="padding:7px 10px;color:#8b949e;font-size:.78rem">CERRADO</td></tr><tr style="border-bottom:1px solid var(--border);"><td style="padding:7px 10px;color:var(--mt);font-size:.78rem">2026-05-12</td><td style="padding:7px 10px"><b>MSTR</b></td><td style="padding:7px 10px">—</td><td style="padding:7px 10px;text-align:right">$183.19</td><td style="text-align:right">$179.74</td><td style="text-align:right;color:#f85149;font-weight:600">$-0.88</td><td style="text-align:right;color:#f85149">-1.9%</td><td style="text-align:right">0.9d</td><td style="padding:7px 10px;color:#8b949e;font-size:.78rem">CERRADO</td></tr><tr style="border-bottom:1px solid var(--border);"><td style="padding:7px 10px;color:var(--mt);font-size:.78rem">2026-05-12</td><td style="padding:7px 10px"><b>MU</b></td><td style="padding:7px 10px">—</td><td style="padding:7px 10px;text-align:right">$728.30</td><td style="text-align:right">$721.52</td><td style="text-align:right;color:#f85149;font-weight:600">$-2.74</td><td style="text-align:right;color:#f85149">-0.9%</td><td style="text-align:right">5.9d</td><td style="padding:7px 10px;color:#8b949e;font-size:.78rem">CERRADO</td></tr><tr style="border-bottom:1px solid var(--border);"><td style="padding:7px 10px;color:var(--mt);font-size:.78rem">2026-05-13</td><td style="padding:7px 10px"><b>VIST</b></td><td style="padding:7px 10px">—</td><td style="padding:7px 10px;text-align:right">$68.52</td><td style="text-align:right">$80.09</td><td style="text-align:right;color:#3fb950;font-weight:600">+$9.85</td><td style="text-align:right;color:#3fb950">+16.9%</td><td style="text-align:right">6.8d</td><td style="padding:7px 10px;color:#8b949e;font-size:.78rem">CERRADO</td></tr><tr style="border-bottom:1px solid var(--border);"><td style="padding:7px 10px;color:var(--mt);font-size:.78rem">2026-05-13</td><td style="padding:7px 10px"><b>VIST</b></td><td style="padding:7px 10px">—</td><td style="padding:7px 10px;text-align:right">$68.52</td><td style="text-align:right">$80.09</td><td style="text-align:right;color:#3fb950;font-weight:600">+$10.36</td><td style="text-align:right;color:#3fb950">+16.9%</td><td style="text-align:right">6.8d</td><td style="padding:7px 10px;color:#8b949e;font-size:.78rem">CERRADO</td></tr><tr style="border-bottom:1px solid var(--border);"><td style="padding:7px 10px;color:var(--mt);font-size:.78rem">2026-05-14</td><td style="padding:7px 10px"><b>MU</b></td><td style="padding:7px 10px">—</td><td style="padding:7px 10px;text-align:right">$785.10</td><td style="text-align:right">$721.52</td><td style="text-align:right;color:#f85149;font-weight:600">$-12.51</td><td style="text-align:right;color:#f85149">-8.1%</td><td style="text-align:right">3.9d</td><td style="padding:7px 10px;color:#8b949e;font-size:.78rem">CERRADO</td></tr><tr style="border-bottom:1px solid var(--border);"><td style="padding:7px 10px;color:var(--mt);font-size:.78rem">2026-05-18</td><td style="padding:7px 10px"><b>MU</b></td><td style="padding:7px 10px">—</td><td style="padding:7px 10px;text-align:right">$727.54</td><td style="text-align:right">$687.16</td><td style="text-align:right;color:#f85149;font-weight:600">$-17.02</td><td style="text-align:right;color:#f85149">-5.5%</td><td style="text-align:right">0.1d</td><td style="padding:7px 10px;color:#8b949e;font-size:.78rem">CERRADO</td></tr><tr style="border-bottom:1px solid var(--border);"><td style="padding:7px 10px;color:var(--mt);font-size:.78rem">2026-05-18</td><td style="padding:7px 10px"><b>VIST</b></td><td style="padding:7px 10px">—</td><td style="padding:7px 10px;text-align:right">$72.32</td><td style="text-align:right">$80.09</td><td style="text-align:right;color:#3fb950;font-weight:600">+$3.32</td><td style="text-align:right;color:#3fb950">+10.7%</td><td style="text-align:right">2.0d</td><td style="padding:7px 10px;color:#8b949e;font-size:.78rem">CERRADO</td></tr><tr style="border-bottom:1px solid var(--border);"><td style="padding:7px 10px;color:var(--mt);font-size:.78rem">2026-05-18</td><td style="padding:7px 10px"><b>MU</b></td><td style="padding:7px 10px">—</td><td style="padding:7px 10px;text-align:right">$684.65</td><td style="text-align:right">$674.14</td><td style="text-align:right;color:#3fb950;font-weight:600">+$0.00</td><td style="text-align:right;color:#3fb950">-1.5%</td><td style="text-align:right">0.9d</td><td style="padding:7px 10px;color:#8b949e;font-size:.78rem">CERRADO</td></tr><tr style="border-bottom:1px solid var(--border);"><td style="padding:7px 10px;color:var(--mt);font-size:.78rem">2026-05-18</td><td style="padding:7px 10px"><b>VIST</b></td><td style="padding:7px 10px">—</td><td style="padding:7px 10px;text-align:right">$75.54</td><td style="text-align:right">$80.09</td><td style="text-align:right;color:#3fb950;font-weight:600">+$1.15</td><td style="text-align:right;color:#3fb950">+6.0%</td><td style="text-align:right">1.9d</td><td style="padding:7px 10px;color:#8b949e;font-size:.78rem">CERRADO</td></tr><tr style="border-bottom:1px solid var(--border);"><td style="padding:7px 10px;color:var(--mt);font-size:.78rem">2026-05-19</td><td style="padding:7px 10px"><b>MU</b></td><td style="padding:7px 10px">—</td><td style="padding:7px 10px;text-align:right">$680.05</td><td style="text-align:right">$674.14</td><td style="text-align:right;color:#f85149;font-weight:600">$-2.50</td><td style="text-align:right;color:#f85149">-0.9%</td><td style="text-align:right">0.0d</td><td style="padding:7px 10px;color:#8b949e;font-size:.78rem">CERRADO</td></tr><tr style="border-bottom:1px solid var(--border);"><td style="padding:7px 10px;color:var(--mt);font-size:.78rem">2026-05-19</td><td style="padding:7px 10px"><b>MU</b></td><td style="padding:7px 10px">—</td><td style="padding:7px 10px;text-align:right">$680.20</td><td style="text-align:right">$674.14</td><td style="text-align:right;color:#f85149;font-weight:600">$-1.97</td><td style="text-align:right;color:#f85149">-0.9%</td><td style="text-align:right">0.0d</td><td style="padding:7px 10px;color:#8b949e;font-size:.78rem">CERRADO</td></tr><tr style="border-bottom:1px solid var(--border);"><td style="padding:7px 10px;color:var(--mt);font-size:.78rem">2026-05-22</td><td style="padding:7px 10px"><b>DDOG</b></td><td style="padding:7px 10px">—</td><td style="padding:7px 10px;text-align:right">$222.36</td><td style="text-align:right">$220.31</td><td style="text-align:right;color:#f85149;font-weight:600">$-1.52</td><td style="text-align:right;color:#f85149">-0.9%</td><td style="text-align:right">3.8d</td><td style="padding:7px 10px;color:#8b949e;font-size:.78rem">CERRADO</td></tr><tr style="border-bottom:1px solid var(--border);"><td style="padding:7px 10px;color:var(--mt);font-size:.78rem">2026-05-27</td><td style="padding:7px 10px"><b>DE</b></td><td style="padding:7px 10px">—</td><td style="padding:7px 10px;text-align:right">$531.39</td><td style="text-align:right">$527.34</td><td style="text-align:right;color:#f85149;font-weight:600">$-0.77</td><td style="text-align:right;color:#f85149">-0.8%</td><td style="text-align:right">0.0d</td><td style="padding:7px 10px;color:#8b949e;font-size:.78rem">CERRADO</td></tr><tr style="border-bottom:1px solid var(--border);"><td style="padding:7px 10px;color:var(--mt);font-size:.78rem">2026-05-27</td><td style="padding:7px 10px"><b>LLY</b></td><td style="padding:7px 10px">—</td><td style="padding:7px 10px;text-align:right">$1,092.52</td><td style="text-align:right">$1,144.12</td><td style="text-align:right;color:#3fb950;font-weight:600">+$3.51</td><td style="text-align:right;color:#3fb950">+4.7%</td><td style="text-align:right">1.0d</td><td style="padding:7px 10px;color:#8b949e;font-size:.78rem">CERRADO</td></tr><tr style="border-bottom:1px solid var(--border);"><td style="padding:7px 10px;color:var(--mt);font-size:.78rem">2026-05-27</td><td style="padding:7px 10px"><b>DDOG</b></td><td style="padding:7px 10px">—</td><td style="padding:7px 10px;text-align:right">$225.82</td><td style="text-align:right;color:var(--mt)">—</td><td style="text-align:right;color:var(--mt)">—</td><td style="text-align:right;color:var(--mt)">—</td><td style="text-align:right;color:var(--mt)">—</td><td style="padding:7px 10px;color:#3fb950;font-size:.78rem">ABIERTO</td></tr><tr style="border-bottom:1px solid var(--border);"><td style="padding:7px 10px;color:var(--mt);font-size:.78rem">2026-05-28</td><td style="padding:7px 10px"><b>DDOG</b></td><td style="padding:7px 10px">—</td><td style="padding:7px 10px;text-align:right">$223.09</td><td style="text-align:right">$251.98</td><td style="text-align:right;color:#3fb950;font-weight:600">+$8.68</td><td style="text-align:right;color:#3fb950">+12.9%</td><td style="text-align:right">4.0d</td><td style="padding:7px 10px;color:#8b949e;font-size:.78rem">CERRADO</td></tr><tr style="border-bottom:1px solid var(--border);"><td style="padding:7px 10px;color:var(--mt);font-size:.78rem">2026-05-27</td><td style="padding:7px 10px"><b>DE</b></td><td style="padding:7px 10px">CP</td><td style="padding:7px 10px;text-align:right">$516.07</td><td style="text-align:right">$527.34</td><td style="text-align:right;color:#3fb950;font-weight:600">+$2.16</td><td style="text-align:right;color:#3fb950">+2.2%</td><td style="text-align:right">0.0d</td><td style="padding:7px 10px;color:#8b949e;font-size:.78rem">CERRADO</td></tr><tr style="border-bottom:1px solid var(--border);"><td style="padding:7px 10px;color:var(--mt);font-size:.78rem">2026-05-27</td><td style="padding:7px 10px"><b>LLY</b></td><td style="padding:7px 10px">CP</td><td style="padding:7px 10px;text-align:right">$1,069.68</td><td style="text-align:right">$1,139.61</td><td style="text-align:right;color:#3fb950;font-weight:600">+$9.51</td><td style="text-align:right;color:#3fb950">+6.5%</td><td style="text-align:right">1.0d</td><td style="padding:7px 10px;color:#8b949e;font-size:.78rem">CERRADO</td></tr><tr style="border-bottom:1px solid var(--border);"><td style="padding:7px 10px;color:var(--mt);font-size:.78rem">2026-05-27</td><td style="padding:7px 10px"><b>DDOG</b></td><td style="padding:7px 10px">CP</td><td style="padding:7px 10px;text-align:right">$220.91</td><td style="text-align:right">$251.98</td><td style="text-align:right;color:#3fb950;font-weight:600">+$9.33</td><td style="text-align:right;color:#3fb950">+14.1%</td><td style="text-align:right">5.0d</td><td style="padding:7px 10px;color:#8b949e;font-size:.78rem">CERRADO</td></tr><tr style="border-bottom:1px solid var(--border);"><td style="padding:7px 10px;color:var(--mt);font-size:.78rem">2026-05-27</td><td style="padding:7px 10px"><b>MU</b></td><td style="padding:7px 10px">CP</td><td style="padding:7px 10px;text-align:right">$916.46</td><td style="text-align:right">$1,009.42</td><td style="text-align:right;color:#3fb950;font-weight:600">+$42.66</td><td style="text-align:right;color:#3fb950">+10.1%</td><td style="text-align:right">5.0d</td><td style="padding:7px 10px;color:#8b949e;font-size:.78rem">CERRADO</td></tr><tr style="border-bottom:1px solid var(--border);"><td style="padding:7px 10px;color:var(--mt);font-size:.78rem">2026-05-26</td><td style="padding:7px 10px"><b>MU</b></td><td style="padding:7px 10px">CP</td><td style="padding:7px 10px;text-align:right">$856.74</td><td style="text-align:right">$886.28</td><td style="text-align:right;color:#3fb950;font-weight:600">+$9.92</td><td style="text-align:right;color:#3fb950">+3.5%</td><td style="text-align:right">0.0d</td><td style="padding:7px 10px;color:#8b949e;font-size:.78rem">CERRADO</td></tr><tr style="border-bottom:1px solid var(--border);"><td style="padding:7px 10px;color:var(--mt);font-size:.78rem">2026-05-21</td><td style="padding:7px 10px"><b>MU</b></td><td style="padding:7px 10px">CP</td><td style="padding:7px 10px;text-align:right">$748.39</td><td style="text-align:right">$1,009.42</td><td style="text-align:right;color:#3fb950;font-weight:600">+$119.79</td><td style="text-align:right;color:#3fb950">+34.9%</td><td style="text-align:right">11.0d</td><td style="padding:7px 10px;color:#8b949e;font-size:.78rem">CERRADO</td></tr><tr style="border-bottom:1px solid var(--border);"><td style="padding:7px 10px;color:var(--mt);font-size:.78rem">2026-05-20</td><td style="padding:7px 10px"><b>MU</b></td><td style="padding:7px 10px">CP</td><td style="padding:7px 10px;text-align:right">$709.93</td><td style="text-align:right">$886.28</td><td style="text-align:right;color:#3fb950;font-weight:600">+$32.80</td><td style="text-align:right;color:#3fb950">+24.8%</td><td style="text-align:right">6.0d</td><td style="padding:7px 10px;color:#8b949e;font-size:.78rem">CERRADO</td></tr><tr style="border-bottom:1px solid var(--border);"><td style="padding:7px 10px;color:var(--mt);font-size:.78rem">2026-05-20</td><td style="padding:7px 10px"><b>DDOG</b></td><td style="padding:7px 10px">CP</td><td style="padding:7px 10px;text-align:right">$219.60</td><td style="text-align:right">$210.08</td><td style="text-align:right;color:#f85149;font-weight:600">$-3.34</td><td style="text-align:right;color:#f85149">-4.3%</td><td style="text-align:right">1.0d</td><td style="padding:7px 10px;color:#8b949e;font-size:.78rem">CERRADO</td></tr><tr style="border-bottom:1px solid var(--border);"><td style="padding:7px 10px;color:var(--mt);font-size:.78rem">2026-05-20</td><td style="padding:7px 10px"><b>VIST</b></td><td style="padding:7px 10px">CP</td><td style="padding:7px 10px;text-align:right">$80.05</td><td style="text-align:right">$71.32</td><td style="text-align:right;color:#f85149;font-weight:600">$-32.05</td><td style="text-align:right;color:#f85149">-10.9%</td><td style="text-align:right">2.0d</td><td style="padding:7px 10px;color:#8b949e;font-size:.78rem">CERRADO</td></tr><tr style="border-bottom:1px solid var(--border);"><td style="padding:7px 10px;color:var(--mt);font-size:.78rem">2026-05-20</td><td style="padding:7px 10px"><b>MU</b></td><td style="padding:7px 10px">CP</td><td style="padding:7px 10px;text-align:right">$727.08</td><td style="text-align:right">$886.28</td><td style="text-align:right;color:#3fb950;font-weight:600">+$23.85</td><td style="text-align:right;color:#3fb950">+21.9%</td><td style="text-align:right">6.0d</td><td style="padding:7px 10px;color:#8b949e;font-size:.78rem">CERRADO</td></tr><tr style="border-bottom:1px solid var(--border);"><td style="padding:7px 10px;color:var(--mt);font-size:.78rem">2026-05-19</td><td style="padding:7px 10px"><b>ARM</b></td><td style="padding:7px 10px">CP</td><td style="padding:7px 10px;text-align:right">$215.72</td><td style="text-align:right">$247.32</td><td style="text-align:right;color:#3fb950;font-weight:600">+$54.56</td><td style="text-align:right;color:#3fb950">+14.7%</td><td style="text-align:right">0.9d</td><td style="padding:7px 10px;color:#8b949e;font-size:.78rem">CERRADO</td></tr><tr style="border-bottom:1px solid var(--border);"><td style="padding:7px 10px;color:var(--mt);font-size:.78rem">2026-05-19</td><td style="padding:7px 10px"><b>VIST</b></td><td style="padding:7px 10px">CP</td><td style="padding:7px 10px;text-align:right">$78.55</td><td style="text-align:right">$80.09</td><td style="text-align:right;color:#3fb950;font-weight:600">+$9.90</td><td style="text-align:right;color:#3fb950">+2.0%</td><td style="text-align:right">0.9d</td><td style="padding:7px 10px;color:#8b949e;font-size:.78rem">CERRADO</td></tr><tr style="border-bottom:1px solid var(--border);"><td style="padding:7px 10px;color:var(--mt);font-size:.78rem">2026-05-12</td><td style="padding:7px 10px"><b>PBR</b></td><td style="padding:7px 10px">CP</td><td style="padding:7px 10px;text-align:right">$20.49</td><td style="text-align:right">$20.17</td><td style="text-align:right;color:#f85149;font-weight:600">$-0.28</td><td style="text-align:right;color:#f85149">-1.6%</td><td style="text-align:right">1.1d</td><td style="padding:7px 10px;color:#8b949e;font-size:.78rem">CERRADO</td></tr><tr style="border-bottom:1px solid var(--border);"><td style="padding:7px 10px;color:var(--mt);font-size:.78rem">2026-05-12</td><td style="padding:7px 10px"><b>MU</b></td><td style="padding:7px 10px">CP</td><td style="padding:7px 10px;text-align:right">$759.89</td><td style="text-align:right">$756.07</td><td style="text-align:right;color:#f85149;font-weight:600">$-0.19</td><td style="text-align:right;color:#f85149">-0.5%</td><td style="text-align:right">10.1d</td><td style="padding:7px 10px;color:#8b949e;font-size:.78rem">CERRADO</td></tr><tr style="border-bottom:1px solid var(--border);"><td style="padding:7px 10px;color:var(--mt);font-size:.78rem">2026-05-08</td><td style="padding:7px 10px"><b>PBR</b></td><td style="padding:7px 10px">CP</td><td style="padding:7px 10px;text-align:right">$20.51</td><td style="text-align:right">$20.17</td><td style="text-align:right;color:#f85149;font-weight:600">$-0.29</td><td style="text-align:right;color:#f85149">-1.6%</td><td style="text-align:right">5.1d</td><td style="padding:7px 10px;color:#8b949e;font-size:.78rem">CERRADO</td></tr><tr style="border-bottom:1px solid var(--border);"><td style="padding:7px 10px;color:var(--mt);font-size:.78rem">2026-05-08</td><td style="padding:7px 10px"><b>MU</b></td><td style="padding:7px 10px">CP</td><td style="padding:7px 10px;text-align:right">$709.95</td><td style="text-align:right">$756.07</td><td style="text-align:right;color:#3fb950;font-weight:600">+$39.26</td><td style="text-align:right;color:#3fb950">+6.5%</td><td style="text-align:right">14.1d</td><td style="padding:7px 10px;color:#8b949e;font-size:.78rem">CERRADO</td></tr><tr style="border-bottom:1px solid var(--border);"><td style="padding:7px 10px;color:var(--mt);font-size:.78rem">2026-05-01</td><td style="padding:7px 10px"><b>GD</b></td><td style="padding:7px 10px">CP</td><td style="padding:7px 10px;text-align:right">$345.66</td><td style="text-align:right">$345.62</td><td style="text-align:right;color:#3fb950;font-weight:600">+$0.00</td><td style="text-align:right;color:#3fb950">-0.0%</td><td style="text-align:right">3.0d</td><td style="padding:7px 10px;color:#8b949e;font-size:.78rem">CERRADO</td></tr><tr style="border-bottom:1px solid var(--border);"><td style="padding:7px 10px;color:var(--mt);font-size:.78rem">2026-05-01</td><td style="padding:7px 10px"><b>LLY</b></td><td style="padding:7px 10px">CP</td><td style="padding:7px 10px;text-align:right">$961.55</td><td style="text-align:right">$1,144.12</td><td style="text-align:right;color:#3fb950;font-weight:600">+$12.42</td><td style="text-align:right;color:#3fb950">+19.0%</td><td style="text-align:right">27.0d</td><td style="padding:7px 10px;color:#8b949e;font-size:.78rem">CERRADO</td></tr><tr style="border-bottom:1px solid var(--border);"><td style="padding:7px 10px;color:var(--mt);font-size:.78rem">2026-04-30</td><td style="padding:7px 10px"><b>LAC</b></td><td style="padding:7px 10px">CP</td><td style="padding:7px 10px;text-align:right">$5.66</td><td style="text-align:right">$5.55</td><td style="text-align:right;color:#f85149;font-weight:600">$-0.89</td><td style="text-align:right;color:#f85149">-1.8%</td><td style="text-align:right">1.0d</td><td style="padding:7px 10px;color:#8b949e;font-size:.78rem">CERRADO</td></tr><tr style="border-bottom:1px solid var(--border);"><td style="padding:7px 10px;color:var(--mt);font-size:.78rem">2026-04-27</td><td style="padding:7px 10px"><b>TSM</b></td><td style="padding:7px 10px">CP</td><td style="padding:7px 10px;text-align:right">$403.87</td><td style="text-align:right">$399.41</td><td style="text-align:right;color:#f85149;font-weight:600">$-0.41</td><td style="text-align:right;color:#f85149">-1.1%</td><td style="text-align:right">3.9d</td><td style="padding:7px 10px;color:#8b949e;font-size:.78rem">CERRADO</td></tr><tr style="border-bottom:1px solid var(--border);"><td style="padding:7px 10px;color:var(--mt);font-size:.78rem">2026-04-27</td><td style="padding:7px 10px"><b>RIO</b></td><td style="padding:7px 10px">LP</td><td style="padding:7px 10px;text-align:right">$100.26</td><td style="text-align:right">$97.22</td><td style="text-align:right;color:#f85149;font-weight:600">$-1.53</td><td style="text-align:right;color:#f85149">-3.0%</td><td style="text-align:right">2.0d</td><td style="padding:7px 10px;color:#8b949e;font-size:.78rem">CERRADO</td></tr><tr style="border-bottom:1px solid var(--border);"><td style="padding:7px 10px;color:var(--mt);font-size:.78rem">2026-04-27</td><td style="padding:7px 10px"><b>TSM</b></td><td style="padding:7px 10px">CP</td><td style="padding:7px 10px;text-align:right">$403.29</td><td style="text-align:right">$399.41</td><td style="text-align:right;color:#f85149;font-weight:600">$-0.61</td><td style="text-align:right;color:#f85149">-1.0%</td><td style="text-align:right">4.0d</td><td style="padding:7px 10px;color:#8b949e;font-size:.78rem">CERRADO</td></tr><tr style="border-bottom:1px solid var(--border);"><td style="padding:7px 10px;color:var(--mt);font-size:.78rem">2026-04-27</td><td style="padding:7px 10px"><b>AMD</b></td><td style="padding:7px 10px">CP</td><td style="padding:7px 10px;text-align:right">$334.50</td><td style="text-align:right">$336.27</td><td style="text-align:right;color:#3fb950;font-weight:600">+$0.78</td><td style="text-align:right;color:#3fb950">+0.5%</td><td style="text-align:right">0.2d</td><td style="padding:7px 10px;color:#8b949e;font-size:.78rem">CERRADO</td></tr><tr style="border-bottom:1px solid var(--border);"><td style="padding:7px 10px;color:var(--mt);font-size:.78rem">2026-04-27</td><td style="padding:7px 10px"><b>RIO</b></td><td style="padding:7px 10px">LP</td><td style="padding:7px 10px;text-align:right">$99.81</td><td style="text-align:right">$91.75</td><td style="text-align:right;color:#f85149;font-weight:600">$-2.56</td><td style="text-align:right;color:#f85149">-8.1%</td><td style="text-align:right">1.0d</td><td style="padding:7px 10px;color:#8b949e;font-size:.78rem">CERRADO</td></tr><tr style="border-bottom:1px solid var(--border);"><td style="padding:7px 10px;color:var(--mt);font-size:.78rem">2026-04-27</td><td style="padding:7px 10px"><b>PBR</b></td><td style="padding:7px 10px">LP</td><td style="padding:7px 10px;text-align:right">$21.02</td><td style="text-align:right">$21.82</td><td style="text-align:right;color:#3fb950;font-weight:600">+$3.26</td><td style="text-align:right;color:#3fb950">+3.9%</td><td style="text-align:right">3.0d</td><td style="padding:7px 10px;color:#8b949e;font-size:.78rem">CERRADO</td></tr>
+        <tr style="border-bottom:1px solid var(--border);"><td style="padding:7px 10px;color:var(--mt);font-size:.78rem">2026-06-02</td><td style="padding:7px 10px"><b>DDOG</b></td><td style="padding:7px 10px">CP</td><td style="padding:7px 10px;text-align:right">$273.40</td><td style="text-align:right;color:var(--mt)">—</td><td style="text-align:right;color:var(--mt)">—</td><td style="text-align:right;color:var(--mt)">—</td><td style="text-align:right;color:var(--mt)">—</td><td style="padding:7px 10px;color:#3fb950;font-size:.78rem">ABIERTO</td></tr><tr style="border-bottom:1px solid var(--border);"><td style="padding:7px 10px;color:var(--mt);font-size:.78rem">2026-06-02</td><td style="padding:7px 10px"><b>MU</b></td><td style="padding:7px 10px">CP</td><td style="padding:7px 10px;text-align:right">$1,038.60</td><td style="text-align:right;color:var(--mt)">—</td><td style="text-align:right;color:var(--mt)">—</td><td style="text-align:right;color:var(--mt)">—</td><td style="text-align:right;color:var(--mt)">—</td><td style="padding:7px 10px;color:#3fb950;font-size:.78rem">ABIERTO</td></tr><tr style="border-bottom:1px solid var(--border);"><td style="padding:7px 10px;color:var(--mt);font-size:.78rem">2026-06-01</td><td style="padding:7px 10px"><b>BMA</b></td><td style="padding:7px 10px">CP</td><td style="padding:7px 10px;text-align:right">$91.25</td><td style="text-align:right">$88.00</td><td style="text-align:right;color:#f85149;font-weight:600">$-8.08</td><td style="text-align:right;color:#f85149">-3.6%</td><td style="text-align:right">2.0d</td><td style="padding:7px 10px;color:#8b949e;font-size:.78rem">CERRADO</td></tr><tr style="border-bottom:1px solid var(--border);"><td style="padding:7px 10px;color:var(--mt);font-size:.78rem">2026-06-01</td><td style="padding:7px 10px"><b>DDOG</b></td><td style="padding:7px 10px">CP</td><td style="padding:7px 10px;text-align:right">$264.97</td><td style="text-align:right;color:var(--mt)">—</td><td style="text-align:right;color:var(--mt)">—</td><td style="text-align:right;color:var(--mt)">—</td><td style="text-align:right;color:var(--mt)">—</td><td style="padding:7px 10px;color:#3fb950;font-size:.78rem">ABIERTO</td></tr><tr style="border-bottom:1px solid var(--border);"><td style="padding:7px 10px;color:var(--mt);font-size:.78rem">2026-06-01</td><td style="padding:7px 10px"><b>MU</b></td><td style="padding:7px 10px">CP</td><td style="padding:7px 10px;text-align:right">$1,029.44</td><td style="text-align:right;color:var(--mt)">—</td><td style="text-align:right;color:var(--mt)">—</td><td style="text-align:right;color:var(--mt)">—</td><td style="text-align:right;color:var(--mt)">—</td><td style="padding:7px 10px;color:#3fb950;font-size:.78rem">ABIERTO</td></tr><tr style="border-bottom:1px solid var(--border);"><td style="padding:7px 10px;color:var(--mt);font-size:.78rem">2026-04-28</td><td style="padding:7px 10px"><b>SQM</b></td><td style="padding:7px 10px">—</td><td style="padding:7px 10px;text-align:right">$88.59</td><td style="text-align:right">$93.00</td><td style="text-align:right;color:#3fb950;font-weight:600">+$0.75</td><td style="text-align:right;color:#3fb950">+5.0%</td><td style="text-align:right">1.1d</td><td style="padding:7px 10px;color:#8b949e;font-size:.78rem">CERRADO</td></tr><tr style="border-bottom:1px solid var(--border);"><td style="padding:7px 10px;color:var(--mt);font-size:.78rem">2026-04-30</td><td style="padding:7px 10px"><b>PBR260501C00022500</b></td><td style="padding:7px 10px">—</td><td style="padding:7px 10px;text-align:right">$0.05</td><td style="text-align:right;color:var(--mt)">—</td><td style="text-align:right;color:var(--mt)">—</td><td style="text-align:right;color:var(--mt)">—</td><td style="text-align:right;color:var(--mt)">—</td><td style="padding:7px 10px;color:#3fb950;font-size:.78rem">ABIERTO</td></tr><tr style="border-bottom:1px solid var(--border);"><td style="padding:7px 10px;color:var(--mt);font-size:.78rem">2026-05-01</td><td style="padding:7px 10px"><b>LLY</b></td><td style="padding:7px 10px">—</td><td style="padding:7px 10px;text-align:right">$961.68</td><td style="text-align:right">$1,064.52</td><td style="text-align:right;color:#3fb950;font-weight:600">+$0.30</td><td style="text-align:right;color:#3fb950">+10.7%</td><td style="text-align:right">24.9d</td><td style="padding:7px 10px;color:#8b949e;font-size:.78rem">CERRADO</td></tr><tr style="border-bottom:1px solid var(--border);"><td style="padding:7px 10px;color:var(--mt);font-size:.78rem">2026-05-01</td><td style="padding:7px 10px"><b>GD</b></td><td style="padding:7px 10px">—</td><td style="padding:7px 10px;text-align:right">$345.84</td><td style="text-align:right">$345.62</td><td style="text-align:right;color:#f85149;font-weight:600">$-0.01</td><td style="text-align:right;color:#f85149">-0.1%</td><td style="text-align:right">2.9d</td><td style="padding:7px 10px;color:#8b949e;font-size:.78rem">CERRADO</td></tr><tr style="border-bottom:1px solid var(--border);"><td style="padding:7px 10px;color:var(--mt);font-size:.78rem">2026-05-04</td><td style="padding:7px 10px"><b>MU</b></td><td style="padding:7px 10px">—</td><td style="padding:7px 10px;text-align:right">$578.98</td><td style="text-align:right">$736.53</td><td style="text-align:right;color:#3fb950;font-weight:600">+$36.46</td><td style="text-align:right;color:#3fb950">+27.2%</td><td style="text-align:right">10.9d</td><td style="padding:7px 10px;color:#8b949e;font-size:.78rem">CERRADO</td></tr><tr style="border-bottom:1px solid var(--border);"><td style="padding:7px 10px;color:var(--mt);font-size:.78rem">2026-05-06</td><td style="padding:7px 10px"><b>WOLF</b></td><td style="padding:7px 10px">—</td><td style="padding:7px 10px;text-align:right">$38.50</td><td style="text-align:right">$46.44</td><td style="text-align:right;color:#3fb950;font-weight:600">+$0.74</td><td style="text-align:right;color:#3fb950">+20.6%</td><td style="text-align:right">1.0d</td><td style="padding:7px 10px;color:#8b949e;font-size:.78rem">CERRADO</td></tr><tr style="border-bottom:1px solid var(--border);"><td style="padding:7px 10px;color:var(--mt);font-size:.78rem">2026-05-07</td><td style="padding:7px 10px"><b>ARM</b></td><td style="padding:7px 10px">—</td><td style="padding:7px 10px;text-align:right">$218.75</td><td style="text-align:right">$218.80</td><td style="text-align:right;color:#3fb950;font-weight:600">+$0.01</td><td style="text-align:right;color:#3fb950">+0.0%</td><td style="text-align:right">0.9d</td><td style="padding:7px 10px;color:#8b949e;font-size:.78rem">CERRADO</td></tr><tr style="border-bottom:1px solid var(--border);"><td style="padding:7px 10px;color:var(--mt);font-size:.78rem">2026-05-07</td><td style="padding:7px 10px"><b>MU</b></td><td style="padding:7px 10px">—</td><td style="padding:7px 10px;text-align:right">$644.36</td><td style="text-align:right">$722.50</td><td style="text-align:right;color:#3fb950;font-weight:600">+$0.02</td><td style="text-align:right;color:#3fb950">+12.1%</td><td style="text-align:right">7.9d</td><td style="padding:7px 10px;color:#8b949e;font-size:.78rem">CERRADO</td></tr><tr style="border-bottom:1px solid var(--border);"><td style="padding:7px 10px;color:var(--mt);font-size:.78rem">2026-05-11</td><td style="padding:7px 10px"><b>MU</b></td><td style="padding:7px 10px">—</td><td style="padding:7px 10px;text-align:right">$787.54</td><td style="text-align:right">$721.52</td><td style="text-align:right;color:#f85149;font-weight:600">$-12.75</td><td style="text-align:right;color:#f85149">-8.4%</td><td style="text-align:right">7.0d</td><td style="padding:7px 10px;color:#8b949e;font-size:.78rem">CERRADO</td></tr><tr style="border-bottom:1px solid var(--border);"><td style="padding:7px 10px;color:var(--mt);font-size:.78rem">2026-05-12</td><td style="padding:7px 10px"><b>MSTR</b></td><td style="padding:7px 10px">—</td><td style="padding:7px 10px;text-align:right">$183.19</td><td style="text-align:right">$179.74</td><td style="text-align:right;color:#f85149;font-weight:600">$-0.88</td><td style="text-align:right;color:#f85149">-1.9%</td><td style="text-align:right">0.9d</td><td style="padding:7px 10px;color:#8b949e;font-size:.78rem">CERRADO</td></tr><tr style="border-bottom:1px solid var(--border);"><td style="padding:7px 10px;color:var(--mt);font-size:.78rem">2026-05-12</td><td style="padding:7px 10px"><b>MU</b></td><td style="padding:7px 10px">—</td><td style="padding:7px 10px;text-align:right">$728.30</td><td style="text-align:right">$721.52</td><td style="text-align:right;color:#f85149;font-weight:600">$-2.74</td><td style="text-align:right;color:#f85149">-0.9%</td><td style="text-align:right">5.9d</td><td style="padding:7px 10px;color:#8b949e;font-size:.78rem">CERRADO</td></tr><tr style="border-bottom:1px solid var(--border);"><td style="padding:7px 10px;color:var(--mt);font-size:.78rem">2026-05-13</td><td style="padding:7px 10px"><b>VIST</b></td><td style="padding:7px 10px">—</td><td style="padding:7px 10px;text-align:right">$68.52</td><td style="text-align:right">$80.09</td><td style="text-align:right;color:#3fb950;font-weight:600">+$9.85</td><td style="text-align:right;color:#3fb950">+16.9%</td><td style="text-align:right">6.8d</td><td style="padding:7px 10px;color:#8b949e;font-size:.78rem">CERRADO</td></tr><tr style="border-bottom:1px solid var(--border);"><td style="padding:7px 10px;color:var(--mt);font-size:.78rem">2026-05-13</td><td style="padding:7px 10px"><b>VIST</b></td><td style="padding:7px 10px">—</td><td style="padding:7px 10px;text-align:right">$68.52</td><td style="text-align:right">$80.09</td><td style="text-align:right;color:#3fb950;font-weight:600">+$10.36</td><td style="text-align:right;color:#3fb950">+16.9%</td><td style="text-align:right">6.8d</td><td style="padding:7px 10px;color:#8b949e;font-size:.78rem">CERRADO</td></tr><tr style="border-bottom:1px solid var(--border);"><td style="padding:7px 10px;color:var(--mt);font-size:.78rem">2026-05-14</td><td style="padding:7px 10px"><b>MU</b></td><td style="padding:7px 10px">—</td><td style="padding:7px 10px;text-align:right">$785.10</td><td style="text-align:right">$721.52</td><td style="text-align:right;color:#f85149;font-weight:600">$-12.51</td><td style="text-align:right;color:#f85149">-8.1%</td><td style="text-align:right">3.9d</td><td style="padding:7px 10px;color:#8b949e;font-size:.78rem">CERRADO</td></tr><tr style="border-bottom:1px solid var(--border);"><td style="padding:7px 10px;color:var(--mt);font-size:.78rem">2026-05-18</td><td style="padding:7px 10px"><b>MU</b></td><td style="padding:7px 10px">—</td><td style="padding:7px 10px;text-align:right">$727.54</td><td style="text-align:right">$687.16</td><td style="text-align:right;color:#f85149;font-weight:600">$-17.02</td><td style="text-align:right;color:#f85149">-5.5%</td><td style="text-align:right">0.1d</td><td style="padding:7px 10px;color:#8b949e;font-size:.78rem">CERRADO</td></tr><tr style="border-bottom:1px solid var(--border);"><td style="padding:7px 10px;color:var(--mt);font-size:.78rem">2026-05-18</td><td style="padding:7px 10px"><b>VIST</b></td><td style="padding:7px 10px">—</td><td style="padding:7px 10px;text-align:right">$72.32</td><td style="text-align:right">$80.09</td><td style="text-align:right;color:#3fb950;font-weight:600">+$3.32</td><td style="text-align:right;color:#3fb950">+10.7%</td><td style="text-align:right">2.0d</td><td style="padding:7px 10px;color:#8b949e;font-size:.78rem">CERRADO</td></tr><tr style="border-bottom:1px solid var(--border);"><td style="padding:7px 10px;color:var(--mt);font-size:.78rem">2026-05-18</td><td style="padding:7px 10px"><b>MU</b></td><td style="padding:7px 10px">—</td><td style="padding:7px 10px;text-align:right">$684.65</td><td style="text-align:right">$674.14</td><td style="text-align:right;color:#3fb950;font-weight:600">+$0.00</td><td style="text-align:right;color:#3fb950">-1.5%</td><td style="text-align:right">0.9d</td><td style="padding:7px 10px;color:#8b949e;font-size:.78rem">CERRADO</td></tr><tr style="border-bottom:1px solid var(--border);"><td style="padding:7px 10px;color:var(--mt);font-size:.78rem">2026-05-18</td><td style="padding:7px 10px"><b>VIST</b></td><td style="padding:7px 10px">—</td><td style="padding:7px 10px;text-align:right">$75.54</td><td style="text-align:right">$80.09</td><td style="text-align:right;color:#3fb950;font-weight:600">+$1.15</td><td style="text-align:right;color:#3fb950">+6.0%</td><td style="text-align:right">1.9d</td><td style="padding:7px 10px;color:#8b949e;font-size:.78rem">CERRADO</td></tr><tr style="border-bottom:1px solid var(--border);"><td style="padding:7px 10px;color:var(--mt);font-size:.78rem">2026-05-19</td><td style="padding:7px 10px"><b>MU</b></td><td style="padding:7px 10px">—</td><td style="padding:7px 10px;text-align:right">$680.05</td><td style="text-align:right">$674.14</td><td style="text-align:right;color:#f85149;font-weight:600">$-2.50</td><td style="text-align:right;color:#f85149">-0.9%</td><td style="text-align:right">0.0d</td><td style="padding:7px 10px;color:#8b949e;font-size:.78rem">CERRADO</td></tr><tr style="border-bottom:1px solid var(--border);"><td style="padding:7px 10px;color:var(--mt);font-size:.78rem">2026-05-19</td><td style="padding:7px 10px"><b>MU</b></td><td style="padding:7px 10px">—</td><td style="padding:7px 10px;text-align:right">$680.20</td><td style="text-align:right">$674.14</td><td style="text-align:right;color:#f85149;font-weight:600">$-1.97</td><td style="text-align:right;color:#f85149">-0.9%</td><td style="text-align:right">0.0d</td><td style="padding:7px 10px;color:#8b949e;font-size:.78rem">CERRADO</td></tr><tr style="border-bottom:1px solid var(--border);"><td style="padding:7px 10px;color:var(--mt);font-size:.78rem">2026-05-22</td><td style="padding:7px 10px"><b>DDOG</b></td><td style="padding:7px 10px">—</td><td style="padding:7px 10px;text-align:right">$222.36</td><td style="text-align:right">$220.31</td><td style="text-align:right;color:#f85149;font-weight:600">$-1.52</td><td style="text-align:right;color:#f85149">-0.9%</td><td style="text-align:right">3.8d</td><td style="padding:7px 10px;color:#8b949e;font-size:.78rem">CERRADO</td></tr><tr style="border-bottom:1px solid var(--border);"><td style="padding:7px 10px;color:var(--mt);font-size:.78rem">2026-05-27</td><td style="padding:7px 10px"><b>DE</b></td><td style="padding:7px 10px">—</td><td style="padding:7px 10px;text-align:right">$531.39</td><td style="text-align:right">$527.34</td><td style="text-align:right;color:#f85149;font-weight:600">$-0.77</td><td style="text-align:right;color:#f85149">-0.8%</td><td style="text-align:right">0.0d</td><td style="padding:7px 10px;color:#8b949e;font-size:.78rem">CERRADO</td></tr><tr style="border-bottom:1px solid var(--border);"><td style="padding:7px 10px;color:var(--mt);font-size:.78rem">2026-05-27</td><td style="padding:7px 10px"><b>LLY</b></td><td style="padding:7px 10px">—</td><td style="padding:7px 10px;text-align:right">$1,092.52</td><td style="text-align:right">$1,144.12</td><td style="text-align:right;color:#3fb950;font-weight:600">+$3.51</td><td style="text-align:right;color:#3fb950">+4.7%</td><td style="text-align:right">1.0d</td><td style="padding:7px 10px;color:#8b949e;font-size:.78rem">CERRADO</td></tr><tr style="border-bottom:1px solid var(--border);"><td style="padding:7px 10px;color:var(--mt);font-size:.78rem">2026-05-27</td><td style="padding:7px 10px"><b>DDOG</b></td><td style="padding:7px 10px">—</td><td style="padding:7px 10px;text-align:right">$225.82</td><td style="text-align:right">$251.98</td><td style="text-align:right;color:#3fb950;font-weight:600">+$5.51</td><td style="text-align:right;color:#3fb950">+11.6%</td><td style="text-align:right">5.0d</td><td style="padding:7px 10px;color:#8b949e;font-size:.78rem">CERRADO</td></tr><tr style="border-bottom:1px solid var(--border);"><td style="padding:7px 10px;color:var(--mt);font-size:.78rem">2026-05-28</td><td style="padding:7px 10px"><b>DDOG</b></td><td style="padding:7px 10px">—</td><td style="padding:7px 10px;text-align:right">$223.09</td><td style="text-align:right">$251.98</td><td style="text-align:right;color:#3fb950;font-weight:600">+$8.68</td><td style="text-align:right;color:#3fb950">+12.9%</td><td style="text-align:right">4.0d</td><td style="padding:7px 10px;color:#8b949e;font-size:.78rem">CERRADO</td></tr><tr style="border-bottom:1px solid var(--border);"><td style="padding:7px 10px;color:var(--mt);font-size:.78rem">2026-05-27</td><td style="padding:7px 10px"><b>DE</b></td><td style="padding:7px 10px">CP</td><td style="padding:7px 10px;text-align:right">$516.07</td><td style="text-align:right">$527.34</td><td style="text-align:right;color:#3fb950;font-weight:600">+$2.16</td><td style="text-align:right;color:#3fb950">+2.2%</td><td style="text-align:right">0.0d</td><td style="padding:7px 10px;color:#8b949e;font-size:.78rem">CERRADO</td></tr><tr style="border-bottom:1px solid var(--border);"><td style="padding:7px 10px;color:var(--mt);font-size:.78rem">2026-05-27</td><td style="padding:7px 10px"><b>LLY</b></td><td style="padding:7px 10px">CP</td><td style="padding:7px 10px;text-align:right">$1,069.68</td><td style="text-align:right">$1,139.61</td><td style="text-align:right;color:#3fb950;font-weight:600">+$9.51</td><td style="text-align:right;color:#3fb950">+6.5%</td><td style="text-align:right">1.0d</td><td style="padding:7px 10px;color:#8b949e;font-size:.78rem">CERRADO</td></tr><tr style="border-bottom:1px solid var(--border);"><td style="padding:7px 10px;color:var(--mt);font-size:.78rem">2026-05-27</td><td style="padding:7px 10px"><b>DDOG</b></td><td style="padding:7px 10px">CP</td><td style="padding:7px 10px;text-align:right">$220.91</td><td style="text-align:right">$251.98</td><td style="text-align:right;color:#3fb950;font-weight:600">+$9.33</td><td style="text-align:right;color:#3fb950">+14.1%</td><td style="text-align:right">5.0d</td><td style="padding:7px 10px;color:#8b949e;font-size:.78rem">CERRADO</td></tr><tr style="border-bottom:1px solid var(--border);"><td style="padding:7px 10px;color:var(--mt);font-size:.78rem">2026-05-27</td><td style="padding:7px 10px"><b>MU</b></td><td style="padding:7px 10px">CP</td><td style="padding:7px 10px;text-align:right">$916.46</td><td style="text-align:right">$1,009.42</td><td style="text-align:right;color:#3fb950;font-weight:600">+$42.66</td><td style="text-align:right;color:#3fb950">+10.1%</td><td style="text-align:right">5.0d</td><td style="padding:7px 10px;color:#8b949e;font-size:.78rem">CERRADO</td></tr><tr style="border-bottom:1px solid var(--border);"><td style="padding:7px 10px;color:var(--mt);font-size:.78rem">2026-05-26</td><td style="padding:7px 10px"><b>MU</b></td><td style="padding:7px 10px">CP</td><td style="padding:7px 10px;text-align:right">$856.74</td><td style="text-align:right">$886.28</td><td style="text-align:right;color:#3fb950;font-weight:600">+$9.92</td><td style="text-align:right;color:#3fb950">+3.5%</td><td style="text-align:right">0.0d</td><td style="padding:7px 10px;color:#8b949e;font-size:.78rem">CERRADO</td></tr><tr style="border-bottom:1px solid var(--border);"><td style="padding:7px 10px;color:var(--mt);font-size:.78rem">2026-05-21</td><td style="padding:7px 10px"><b>MU</b></td><td style="padding:7px 10px">CP</td><td style="padding:7px 10px;text-align:right">$748.39</td><td style="text-align:right">$1,009.42</td><td style="text-align:right;color:#3fb950;font-weight:600">+$119.79</td><td style="text-align:right;color:#3fb950">+34.9%</td><td style="text-align:right">11.0d</td><td style="padding:7px 10px;color:#8b949e;font-size:.78rem">CERRADO</td></tr><tr style="border-bottom:1px solid var(--border);"><td style="padding:7px 10px;color:var(--mt);font-size:.78rem">2026-05-20</td><td style="padding:7px 10px"><b>MU</b></td><td style="padding:7px 10px">CP</td><td style="padding:7px 10px;text-align:right">$709.93</td><td style="text-align:right">$886.28</td><td style="text-align:right;color:#3fb950;font-weight:600">+$32.80</td><td style="text-align:right;color:#3fb950">+24.8%</td><td style="text-align:right">6.0d</td><td style="padding:7px 10px;color:#8b949e;font-size:.78rem">CERRADO</td></tr><tr style="border-bottom:1px solid var(--border);"><td style="padding:7px 10px;color:var(--mt);font-size:.78rem">2026-05-20</td><td style="padding:7px 10px"><b>DDOG</b></td><td style="padding:7px 10px">CP</td><td style="padding:7px 10px;text-align:right">$219.60</td><td style="text-align:right">$210.08</td><td style="text-align:right;color:#f85149;font-weight:600">$-3.34</td><td style="text-align:right;color:#f85149">-4.3%</td><td style="text-align:right">1.0d</td><td style="padding:7px 10px;color:#8b949e;font-size:.78rem">CERRADO</td></tr><tr style="border-bottom:1px solid var(--border);"><td style="padding:7px 10px;color:var(--mt);font-size:.78rem">2026-05-20</td><td style="padding:7px 10px"><b>VIST</b></td><td style="padding:7px 10px">CP</td><td style="padding:7px 10px;text-align:right">$80.05</td><td style="text-align:right">$71.32</td><td style="text-align:right;color:#f85149;font-weight:600">$-32.05</td><td style="text-align:right;color:#f85149">-10.9%</td><td style="text-align:right">2.0d</td><td style="padding:7px 10px;color:#8b949e;font-size:.78rem">CERRADO</td></tr><tr style="border-bottom:1px solid var(--border);"><td style="padding:7px 10px;color:var(--mt);font-size:.78rem">2026-05-20</td><td style="padding:7px 10px"><b>MU</b></td><td style="padding:7px 10px">CP</td><td style="padding:7px 10px;text-align:right">$727.08</td><td style="text-align:right">$886.28</td><td style="text-align:right;color:#3fb950;font-weight:600">+$23.85</td><td style="text-align:right;color:#3fb950">+21.9%</td><td style="text-align:right">6.0d</td><td style="padding:7px 10px;color:#8b949e;font-size:.78rem">CERRADO</td></tr><tr style="border-bottom:1px solid var(--border);"><td style="padding:7px 10px;color:var(--mt);font-size:.78rem">2026-05-19</td><td style="padding:7px 10px"><b>ARM</b></td><td style="padding:7px 10px">CP</td><td style="padding:7px 10px;text-align:right">$215.72</td><td style="text-align:right">$247.32</td><td style="text-align:right;color:#3fb950;font-weight:600">+$54.56</td><td style="text-align:right;color:#3fb950">+14.7%</td><td style="text-align:right">0.9d</td><td style="padding:7px 10px;color:#8b949e;font-size:.78rem">CERRADO</td></tr><tr style="border-bottom:1px solid var(--border);"><td style="padding:7px 10px;color:var(--mt);font-size:.78rem">2026-05-19</td><td style="padding:7px 10px"><b>VIST</b></td><td style="padding:7px 10px">CP</td><td style="padding:7px 10px;text-align:right">$78.55</td><td style="text-align:right">$80.09</td><td style="text-align:right;color:#3fb950;font-weight:600">+$9.90</td><td style="text-align:right;color:#3fb950">+2.0%</td><td style="text-align:right">0.9d</td><td style="padding:7px 10px;color:#8b949e;font-size:.78rem">CERRADO</td></tr><tr style="border-bottom:1px solid var(--border);"><td style="padding:7px 10px;color:var(--mt);font-size:.78rem">2026-05-12</td><td style="padding:7px 10px"><b>PBR</b></td><td style="padding:7px 10px">CP</td><td style="padding:7px 10px;text-align:right">$20.49</td><td style="text-align:right">$20.17</td><td style="text-align:right;color:#f85149;font-weight:600">$-0.28</td><td style="text-align:right;color:#f85149">-1.6%</td><td style="text-align:right">1.1d</td><td style="padding:7px 10px;color:#8b949e;font-size:.78rem">CERRADO</td></tr><tr style="border-bottom:1px solid var(--border);"><td style="padding:7px 10px;color:var(--mt);font-size:.78rem">2026-05-12</td><td style="padding:7px 10px"><b>MU</b></td><td style="padding:7px 10px">CP</td><td style="padding:7px 10px;text-align:right">$759.89</td><td style="text-align:right">$756.07</td><td style="text-align:right;color:#f85149;font-weight:600">$-0.19</td><td style="text-align:right;color:#f85149">-0.5%</td><td style="text-align:right">10.1d</td><td style="padding:7px 10px;color:#8b949e;font-size:.78rem">CERRADO</td></tr><tr style="border-bottom:1px solid var(--border);"><td style="padding:7px 10px;color:var(--mt);font-size:.78rem">2026-05-08</td><td style="padding:7px 10px"><b>PBR</b></td><td style="padding:7px 10px">CP</td><td style="padding:7px 10px;text-align:right">$20.51</td><td style="text-align:right">$20.17</td><td style="text-align:right;color:#f85149;font-weight:600">$-0.29</td><td style="text-align:right;color:#f85149">-1.6%</td><td style="text-align:right">5.1d</td><td style="padding:7px 10px;color:#8b949e;font-size:.78rem">CERRADO</td></tr><tr style="border-bottom:1px solid var(--border);"><td style="padding:7px 10px;color:var(--mt);font-size:.78rem">2026-05-08</td><td style="padding:7px 10px"><b>MU</b></td><td style="padding:7px 10px">CP</td><td style="padding:7px 10px;text-align:right">$709.95</td><td style="text-align:right">$756.07</td><td style="text-align:right;color:#3fb950;font-weight:600">+$39.26</td><td style="text-align:right;color:#3fb950">+6.5%</td><td style="text-align:right">14.1d</td><td style="padding:7px 10px;color:#8b949e;font-size:.78rem">CERRADO</td></tr><tr style="border-bottom:1px solid var(--border);"><td style="padding:7px 10px;color:var(--mt);font-size:.78rem">2026-05-01</td><td style="padding:7px 10px"><b>GD</b></td><td style="padding:7px 10px">CP</td><td style="padding:7px 10px;text-align:right">$345.66</td><td style="text-align:right">$345.62</td><td style="text-align:right;color:#3fb950;font-weight:600">+$0.00</td><td style="text-align:right;color:#3fb950">-0.0%</td><td style="text-align:right">3.0d</td><td style="padding:7px 10px;color:#8b949e;font-size:.78rem">CERRADO</td></tr><tr style="border-bottom:1px solid var(--border);"><td style="padding:7px 10px;color:var(--mt);font-size:.78rem">2026-05-01</td><td style="padding:7px 10px"><b>LLY</b></td><td style="padding:7px 10px">CP</td><td style="padding:7px 10px;text-align:right">$961.55</td><td style="text-align:right">$1,144.12</td><td style="text-align:right;color:#3fb950;font-weight:600">+$12.42</td><td style="text-align:right;color:#3fb950">+19.0%</td><td style="text-align:right">27.0d</td><td style="padding:7px 10px;color:#8b949e;font-size:.78rem">CERRADO</td></tr><tr style="border-bottom:1px solid var(--border);"><td style="padding:7px 10px;color:var(--mt);font-size:.78rem">2026-04-30</td><td style="padding:7px 10px"><b>LAC</b></td><td style="padding:7px 10px">CP</td><td style="padding:7px 10px;text-align:right">$5.66</td><td style="text-align:right">$5.55</td><td style="text-align:right;color:#f85149;font-weight:600">$-0.89</td><td style="text-align:right;color:#f85149">-1.8%</td><td style="text-align:right">1.0d</td><td style="padding:7px 10px;color:#8b949e;font-size:.78rem">CERRADO</td></tr><tr style="border-bottom:1px solid var(--border);"><td style="padding:7px 10px;color:var(--mt);font-size:.78rem">2026-04-27</td><td style="padding:7px 10px"><b>TSM</b></td><td style="padding:7px 10px">CP</td><td style="padding:7px 10px;text-align:right">$403.87</td><td style="text-align:right">$399.41</td><td style="text-align:right;color:#f85149;font-weight:600">$-0.41</td><td style="text-align:right;color:#f85149">-1.1%</td><td style="text-align:right">3.9d</td><td style="padding:7px 10px;color:#8b949e;font-size:.78rem">CERRADO</td></tr><tr style="border-bottom:1px solid var(--border);"><td style="padding:7px 10px;color:var(--mt);font-size:.78rem">2026-04-27</td><td style="padding:7px 10px"><b>RIO</b></td><td style="padding:7px 10px">LP</td><td style="padding:7px 10px;text-align:right">$100.26</td><td style="text-align:right">$97.22</td><td style="text-align:right;color:#f85149;font-weight:600">$-1.53</td><td style="text-align:right;color:#f85149">-3.0%</td><td style="text-align:right">2.0d</td><td style="padding:7px 10px;color:#8b949e;font-size:.78rem">CERRADO</td></tr><tr style="border-bottom:1px solid var(--border);"><td style="padding:7px 10px;color:var(--mt);font-size:.78rem">2026-04-27</td><td style="padding:7px 10px"><b>TSM</b></td><td style="padding:7px 10px">CP</td><td style="padding:7px 10px;text-align:right">$403.29</td><td style="text-align:right">$399.41</td><td style="text-align:right;color:#f85149;font-weight:600">$-0.61</td><td style="text-align:right;color:#f85149">-1.0%</td><td style="text-align:right">4.0d</td><td style="padding:7px 10px;color:#8b949e;font-size:.78rem">CERRADO</td></tr><tr style="border-bottom:1px solid var(--border);"><td style="padding:7px 10px;color:var(--mt);font-size:.78rem">2026-04-27</td><td style="padding:7px 10px"><b>AMD</b></td><td style="padding:7px 10px">CP</td><td style="padding:7px 10px;text-align:right">$334.50</td><td style="text-align:right">$336.27</td><td style="text-align:right;color:#3fb950;font-weight:600">+$0.78</td><td style="text-align:right;color:#3fb950">+0.5%</td><td style="text-align:right">0.2d</td><td style="padding:7px 10px;color:#8b949e;font-size:.78rem">CERRADO</td></tr><tr style="border-bottom:1px solid var(--border);"><td style="padding:7px 10px;color:var(--mt);font-size:.78rem">2026-04-27</td><td style="padding:7px 10px"><b>RIO</b></td><td style="padding:7px 10px">LP</td><td style="padding:7px 10px;text-align:right">$99.81</td><td style="text-align:right">$91.75</td><td style="text-align:right;color:#f85149;font-weight:600">$-2.56</td><td style="text-align:right;color:#f85149">-8.1%</td><td style="text-align:right">1.0d</td><td style="padding:7px 10px;color:#8b949e;font-size:.78rem">CERRADO</td></tr><tr style="border-bottom:1px solid var(--border);"><td style="padding:7px 10px;color:var(--mt);font-size:.78rem">2026-04-27</td><td style="padding:7px 10px"><b>PBR</b></td><td style="padding:7px 10px">LP</td><td style="padding:7px 10px;text-align:right">$21.02</td><td style="text-align:right">$21.82</td><td style="text-align:right;color:#3fb950;font-weight:600">+$3.26</td><td style="text-align:right;color:#3fb950">+3.9%</td><td style="text-align:right">3.0d</td><td style="padding:7px 10px;color:#8b949e;font-size:.78rem">CERRADO</td></tr>
       </tbody>
     </table>
   </div>
