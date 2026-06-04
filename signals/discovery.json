@@ -1,18 +1,6 @@
 {
-  "generated_at": "2026-06-03T13:42:24.966385",
+  "generated_at": "2026-06-04T13:41:54.860690",
   "n_scanned": 118,
-  "candidates": [
-    {
-      "ticker": "TBLA",
-      "score": 40.8,
-      "ret_1m": 26.8,
-      "ret_3m": 42.1,
-      "prioridad": "MEDIA",
-      "razon": "Score técnico 41/100",
-      "riesgo": ""
-    }
-  ],
-  "repeated_alerts": [
-    "TBLA"
-  ]
+  "candidates": [],
+  "repeated_alerts": []
 }
