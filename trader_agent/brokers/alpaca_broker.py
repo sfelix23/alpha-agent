@@ -106,11 +106,38 @@ class AlpacaBroker(BrokerBase):
         return out
 
     def get_last_price(self, ticker: str) -> float:
-        from alpaca.data.requests import StockLatestQuoteRequest  # type: ignore
-        req = StockLatestQuoteRequest(symbol_or_symbols=ticker)
-        quote = self._data.get_stock_latest_quote(req)
-        q = quote[ticker]
-        return float((q.ask_price + q.bid_price) / 2)
+        """iter61: precio robusto. Primario = ÚLTIMO TRADE (precio ejecutado real).
+
+        El midpoint (bid+ask)/2 se ROMPE con quotes crossed/stale: ej MU mostró
+        bid $52 / ask $1055 → mid $554 = MITAD del precio real → el trader puso
+        un SELL limit a mitad de precio. El trade price no tiene ese problema.
+        Fallback al quote SOLO si está sano (no crossed, bid >= 70% del ask).
+        """
+        from alpaca.data.requests import (  # type: ignore
+            StockLatestQuoteRequest, StockLatestTradeRequest,
+        )
+        # 1) Último trade (robusto)
+        try:
+            tr = self._data.get_stock_latest_trade(
+                StockLatestTradeRequest(symbol_or_symbols=ticker))
+            p = float(tr[ticker].price)
+            if p > 0:
+                return p
+        except Exception as e:
+            logger.debug("latest_trade %s falló (%s) — fallback a quote", ticker, e)
+        # 2) Fallback: quote midpoint, pero guardando contra quotes basura/crossed
+        q = self._data.get_stock_latest_quote(
+            StockLatestQuoteRequest(symbol_or_symbols=ticker))[ticker]
+        bid, ask = float(q.bid_price or 0), float(q.ask_price or 0)
+        if bid > 0 and ask > 0 and bid <= ask and bid >= ask * 0.70:
+            return (bid + ask) / 2
+        # quote degradado → lado válido (ask preferido para no subvaluar)
+        if ask > 0:
+            logger.warning("%s quote degradado (bid=%.2f ask=%.2f) — uso ask", ticker, bid, ask)
+            return ask
+        if bid > 0:
+            return bid
+        raise RuntimeError(f"Sin precio válido para {ticker} (bid={bid} ask={ask})")
 
     # ──────────────────────────────────────────────────────────────────
     # Equity orders

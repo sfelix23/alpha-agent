@@ -198,6 +198,42 @@ def test_limit_price_buffer():
     assert _limit_price(88.0, "SELL") == 86.24
 
 
+def test_get_last_price_robusto_a_quote_basura():
+    """iter61: el midpoint (bid+ask)/2 se rompe con quotes crossed/stale (MU mostró
+    bid $52 / ask $1055 → mid $554 = mitad). Ahora usa el último TRADE; y si cae al
+    quote, guarda contra el bid basura."""
+    from trader_agent.brokers.alpaca_broker import AlpacaBroker
+
+    class _Trade:
+        def __init__(self, p): self.price = p
+
+    class _Q:
+        def __init__(self, bid, ask): self.bid_price = bid; self.ask_price = ask
+
+    b = AlpacaBroker.__new__(AlpacaBroker)  # bypass __init__ (sin red)
+
+    class _DataOK:
+        def get_stock_latest_trade(self, req): return {"MU": _Trade(1056.0)}
+        def get_stock_latest_quote(self, req): return {"MU": _Q(52.0, 1055.0)}
+    b._data = _DataOK()
+    # trade válido → usa el trade, ignora el quote basura (NO $553.5)
+    assert b.get_last_price("MU") == 1056.0
+
+    class _DataNoTrade:
+        def get_stock_latest_trade(self, req): raise RuntimeError("sin trade")
+        def get_stock_latest_quote(self, req): return {"MU": _Q(52.0, 1055.0)}
+    b._data = _DataNoTrade()
+    # sin trade → fallback quote, pero el bid $52 es basura (<70% del ask) → usa ask
+    assert b.get_last_price("MU") == 1055.0
+
+    class _DataGoodQuote:
+        def get_stock_latest_trade(self, req): raise RuntimeError("sin trade")
+        def get_stock_latest_quote(self, req): return {"MU": _Q(1054.0, 1056.0)}
+    b._data = _DataGoodQuote()
+    # quote sano → midpoint normal
+    assert b.get_last_price("MU") == 1055.0
+
+
 def test_rebuild_ledger_from_alpaca(tmp_path, monkeypatch):
     """iter45/47: el rebuild del ledger desde fills de Alpaca computa el
     P&L realizado correctamente (FIFO) y es idempotente."""
