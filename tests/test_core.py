@@ -198,6 +198,20 @@ def test_limit_price_buffer():
     assert _limit_price(88.0, "SELL") == 86.24
 
 
+def test_calc_metrics_dias_ganancia():
+    """iter62: % días positivos y retorno del período (lo que alimenta el
+    calendario de P&L y la trayectoria) se computan correctamente sobre la serie."""
+    from run_dashboard import _calc_metrics
+    # sube +1%, +0.99%, baja -0.49%, sube +1.48% → 3 de 4 días positivos = 75%
+    hist = [{"equity": 1000}, {"equity": 1010}, {"equity": 1020},
+            {"equity": 1015}, {"equity": 1030}]
+    m = _calc_metrics(hist, [])
+    assert m["win_rate"] == 75.0           # 3 de 4 cambios diarios positivos
+    assert m["port_ret_1m"] == 3.0         # (1030-1000)/1000 = +3% del período
+    assert m["max_dd"] >= 0.49             # el dip 1020→1015 se captura
+    assert m["n_snapshots"] == 5
+
+
 def test_get_last_price_robusto_a_quote_basura():
     """iter61: el midpoint (bid+ask)/2 se rompe con quotes crossed/stale (MU mostró
     bid $52 / ask $1055 → mid $554 = mitad). Ahora usa el último TRADE; y si cae al

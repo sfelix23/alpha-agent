@@ -3428,6 +3428,23 @@ def generate() -> None:
             else:
                 history = raw_hist
         logger.info("Portfolio history: %d entradas (escalado virtual)", len(history))
+        # iter62: persistir la serie AUTORITATIVA de Alpaca a equity_snapshots.json
+        # (1 valor por fecha = último del día). Antes el monitor guardaba el equity
+        # INTRADÍA de su última corrida, que driftaba del cierre real de Alpaca
+        # ($40-78 de diferencia algunos días) y podía invertir el signo de un día en
+        # el calendario. Ahora el archivo (y el fallback) reflejan la verdad de Alpaca.
+        if history:
+            try:
+                _bd: dict[str, float] = {}
+                for _r in history:
+                    _dk = datetime.fromtimestamp(_r["ts"]).strftime("%Y-%m-%d")
+                    _bd[_dk] = round(float(_r["equity"]), 2)   # último del día gana
+                _auth = [{"date": _d, "equity": _e} for _d, _e in sorted(_bd.items())]
+                (BASE_DIR / "signals" / "equity_snapshots.json").write_text(
+                    json.dumps(_auth, indent=2), encoding="utf-8")
+                logger.info("equity_snapshots.json: %d días autoritativos desde Alpaca", len(_auth))
+            except Exception as _pe:
+                logger.warning("no pude persistir snapshots autoritativos: %s", _pe)
     except Exception as e:
         logger.warning("Portfolio history no disponible: %s", e)
 
