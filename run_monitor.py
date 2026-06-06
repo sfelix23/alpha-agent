@@ -433,6 +433,48 @@ def _register_pdt_block(ticker: str) -> None:
         pass
 
 
+_REGIME_STATE_FILE = BASE_DIR / "signals" / "regime_state.json"
+
+
+def _regime_change_alert(current_regime: str, spy_vs_sma200: float | None = None) -> str | None:
+    """iter64: alerta cuando la TENDENCIA DEL MERCADO cambia de régimen.
+
+    Distingue ruido (mismo régimen) de una ruptura real (bull→bear / SPY bajo
+    SMA200) — lo que el usuario pidió: 'avisame cuándo es de verdad'. Persiste el
+    último régimen en signals/regime_state.json; alerta SOLO en la transición.
+    Devuelve el texto de alerta o None.
+    """
+    from datetime import timezone as _tz
+    cur = (current_regime or "unknown").lower()
+    if cur in ("", "unknown"):
+        return None
+    prev = None
+    try:
+        if _REGIME_STATE_FILE.exists():
+            prev = json.loads(_REGIME_STATE_FILE.read_text(encoding="utf-8")).get("regime")
+    except Exception:
+        prev = None
+    if prev == cur:
+        return None
+    # Persistir el nuevo régimen
+    try:
+        _REGIME_STATE_FILE.write_text(
+            json.dumps({"regime": cur, "ts": datetime.now(_tz.utc).isoformat(timespec="seconds")}),
+            encoding="utf-8")
+    except Exception:
+        pass
+    if prev is None:
+        return None  # primera vez: registrar sin alertar (evita spam en bootstrap)
+    dist = f" (SPY {spy_vs_sma200*100:+.1f}% vs SMA200)" if spy_vs_sma200 is not None else ""
+    icon = {"bull": "🟢", "bear": "🔴", "sideways": "🟡"}.get(cur, "⚪")
+    sev = ""
+    if cur == "bear":
+        sev = "\n⚠️ Tendencia a la BAJA confirmada — modo defensivo. Esto NO es ruido."
+    elif prev == "bear" and cur == "bull":
+        sev = "\n✅ Tendencia RECUPERADA a alza — el sistema puede re-desplegar."
+    return (f"{icon} *CAMBIO DE RÉGIMEN*: {prev.upper()} → {cur.upper()}{dist}{sev}")
+
+
 def _build_eod_summary(broker, positions: list, equity: float, capital_base: float) -> str:
     """
     Resumen diario del portfolio enviado al último run del monitor (16:35 ART).
@@ -764,6 +806,16 @@ def _main_locked(args):
             f"Equity: ${equity:.0f} | DD {drawdown*100:.1f}% desde ${capital_base:.0f}\n"
             f"{risk_band.get('description', '')}"
         )
+
+    # iter64: alerta de CAMBIO DE RÉGIMEN (tendencia real, no ruido)
+    try:
+        _macro = signals_data.get("macro", {}) if isinstance(signals_data, dict) else {}
+        _rc = _regime_change_alert(_macro.get("regime", "unknown"), _macro.get("spy_vs_sma200"))
+        if _rc:
+            alerts.append(_rc)
+            logger.warning("Cambio de régimen detectado: %s", _rc.replace("\n", " "))
+    except Exception as _rce:
+        logger.debug("regime change alert error: %s", _rce)
 
     # KILL — cerrar TODO
     if risk_level == "KILL":

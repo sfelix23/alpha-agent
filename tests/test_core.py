@@ -30,7 +30,11 @@ def test_allocation_invariants(regime, vix):
     assert d.level in (1, 2, 3)
 
 
-def test_allocation_defensive_in_bear():
+def test_allocation_defensive_in_bear(monkeypatch):
+    # iter64: win_rate mockeado sano para aislar el efecto del RÉGIMEN (sin la
+    # racha perdedora viva del trade_db, que igualaría bull y bear).
+    import alpha_agent.analytics.allocation_agent as aa
+    monkeypatch.setattr(aa, "_get_recent_performance", lambda: (0.60, 50.0))
     bear = decide_allocation(regime="BEAR", vix=35.0)
     bull = decide_allocation(regime="BULL", vix=13.0)
     # En BEAR/VIX alto la exposición CP debe ser MENOR que en BULL tranquilo.
@@ -38,10 +42,14 @@ def test_allocation_defensive_in_bear():
     assert bear.level == 3
 
 
-def test_allocation_diversified_sizing():
+def test_allocation_diversified_sizing(monkeypatch):
     # iter29: el sizing debe diversificar (5-6 posiciones), no concentrar en 2.
+    # iter64: el win_rate se lee de trade_db live (racha real) → mockeamos una sana
+    # para testear la LÓGICA de diversificación, no el estado vivo del momento.
+    import alpha_agent.analytics.allocation_agent as aa
+    monkeypatch.setattr(aa, "_get_recent_performance", lambda: (0.60, 50.0))  # win 60%, +$50
     d = decide_allocation(regime="BULL", vix=13.0)
-    assert d.n_cp_positions >= 5, "iter29: BULL debe diversificar a >=5 posiciones"
+    assert d.n_cp_positions >= 5, "iter29: BULL (win sano) debe diversificar a >=5 posiciones"
 
 
 # ── scoring: cp_vol_penalty wiring ──────────────────────────────────────────
@@ -210,6 +218,21 @@ def test_calc_metrics_dias_ganancia():
     assert m["port_ret_1m"] == 3.0         # (1030-1000)/1000 = +3% del período
     assert m["max_dd"] >= 0.49             # el dip 1020→1015 se captura
     assert m["n_snapshots"] == 5
+
+
+def test_regime_change_alert(tmp_path, monkeypatch):
+    """iter64: alerta solo en la TRANSICIÓN de régimen (no en ruido/mismo estado)."""
+    import run_monitor as rm
+    monkeypatch.setattr(rm, "_REGIME_STATE_FILE", tmp_path / "regime.json")
+    # 1ra vez (sin previo) → registra sin alertar (anti-spam bootstrap)
+    assert rm._regime_change_alert("bull", 0.08) is None
+    # mismo régimen → None (es ruido, no cambio)
+    assert rm._regime_change_alert("bull", 0.07) is None
+    # bull → bear → ALERTA (ruptura real)
+    msg = rm._regime_change_alert("bear", -0.02)
+    assert msg is not None and "BULL" in msg and "BEAR" in msg
+    # unknown → None (no alerta con régimen indefinido)
+    assert rm._regime_change_alert("unknown") is None
 
 
 def test_calc_metrics_recuperacion_y_tendencia():
