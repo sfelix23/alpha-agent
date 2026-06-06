@@ -212,6 +212,24 @@ def test_calc_metrics_dias_ganancia():
     assert m["n_snapshots"] == 5
 
 
+def test_calc_metrics_recuperacion_y_tendencia():
+    """iter63: métricas de recuperación (current DD, ulcer, recovery factor) y
+    calidad de tendencia (regresión: pendiente + R²)."""
+    from run_dashboard import _calc_metrics
+    # serie monótona creciente perfecta → R² alto, pendiente +, DD actual 0
+    up = [{"equity": e} for e in (1000, 1010, 1020, 1030, 1040)]
+    m = _calc_metrics(up, [])
+    assert m["current_dd"] == 0.0          # en máximos, sin caída
+    assert m["trend_r2"] >= 0.99           # línea casi perfecta → R²≈1
+    assert m["trend_slope_pct"] > 0        # pendiente positiva
+    assert m["recovery_factor"] is None    # sin drawdown → factor indefinido
+    # serie con caída y no-recuperada → current_dd > 0, ulcer > 0
+    down = [{"equity": e} for e in (1000, 1050, 1030, 990, 1000)]
+    m2 = _calc_metrics(down, [])
+    assert m2["current_dd"] > 0            # bajo el pico de 1050
+    assert m2["ulcer_index"] > 0
+
+
 def test_get_last_price_robusto_a_quote_basura():
     """iter61: el midpoint (bid+ask)/2 se rompe con quotes crossed/stale (MU mostró
     bid $52 / ask $1055 → mid $554 = mitad). Ahora usa el último TRADE; y si cae al

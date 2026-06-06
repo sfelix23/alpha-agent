@@ -116,6 +116,27 @@ def _calc_metrics(history: list[dict], spy_history: list[dict], qqq_history: lis
     # % de días positivos (NO es el win-rate de trades — eso vive en el historial)
     win_rate = len([r for r in daily_rets if r >= 0]) / n_obs * 100 if daily_rets else 0
 
+    # iter63: RECUPERACIÓN — drawdown actual desde el pico + Ulcer Index
+    # (profundidad × duración del dolor) + recovery factor (retorno / max DD).
+    _dds, _pk = [], vals[0]
+    for v in vals:
+        _pk = max(_pk, v)
+        _dds.append(((_pk - v) / _pk) if _pk > 0 else 0.0)
+    current_dd = _dds[-1]
+    ulcer = (sum(d * d for d in _dds) / len(_dds)) ** 0.5 if _dds else 0.0
+    recovery_factor = (port_ret / max_dd) if max_dd > 1e-4 else None
+    # iter63: CALIDAD DE TENDENCIA — regresión lineal del equity vs tiempo.
+    # Pendiente = dirección/fuerza; R² = qué tan LIMPIA es la trayectoria (alto =
+    # tendencia confiable; bajo = choppy/ruido). NO predice — mide el presente.
+    _n = len(vals); _xs = list(range(_n))
+    _mx = sum(_xs) / _n; _my = sum(vals) / _n
+    _sxx = sum((x - _mx) ** 2 for x in _xs)
+    _sxy = sum((_xs[i] - _mx) * (vals[i] - _my) for i in range(_n))
+    _syy = sum((y - _my) ** 2 for y in vals)
+    _slope = (_sxy / _sxx) if _sxx > 0 else 0.0
+    trend_slope_pct = (_slope / _my * 100) if _my > 0 else 0.0   # % por período
+    trend_r2 = ((_sxy ** 2) / (_sxx * _syy)) if (_sxx > 0 and _syy > 0) else 0.0
+
     spy_ret = None
     if spy_history and len(spy_history) >= 2:
         s_vals = [s["equity"] for s in spy_history]
@@ -137,6 +158,12 @@ def _calc_metrics(history: list[dict], spy_history: list[dict], qqq_history: lis
         "qqq_ret_1m": round(qqq_ret * 100, 2) if qqq_ret is not None else None,
         "alpha_1m": round((port_ret - spy_ret) * 100, 2) if spy_ret is not None else None,
         "alpha_vs_qqq": round((port_ret - qqq_ret) * 100, 2) if qqq_ret is not None else None,
+        # iter63: recuperación + calidad de tendencia
+        "current_dd": round(current_dd * 100, 2),
+        "ulcer_index": round(ulcer * 100, 2),
+        "recovery_factor": round(recovery_factor, 2) if recovery_factor is not None else None,
+        "trend_slope_pct": round(trend_slope_pct, 3),
+        "trend_r2": round(trend_r2, 2),
     }
 
 
@@ -1159,6 +1186,40 @@ def _tab_resumen(equity, initial, regime, vix, wti, gold, dxy,
   </div>
   {alpha_html}
   {qqq_html}
+</div>"""
+
+        # iter63: fila de RECUPERACIÓN + CALIDAD DE TENDENCIA
+        cdd   = metrics.get("current_dd", 0) or 0
+        ulcer = metrics.get("ulcer_index", 0) or 0
+        rf    = metrics.get("recovery_factor")
+        r2    = metrics.get("trend_r2", 0) or 0
+        slope = metrics.get("trend_slope_pct", 0) or 0
+        # R²: alto = tendencia limpia/confiable; bajo = choppy. Color por calidad+dirección
+        r2_col = ("#3fb950" if (r2 >= 0.6 and slope > 0) else
+                  "#d29922" if r2 >= 0.3 else "#f85149")
+        rf_txt = f"{rf:.2f}" if rf is not None else "—"
+        adv_kpis += f"""
+<div class="kpi-row kpi-row-adv">
+  <div class="kpi">
+    <div class="kpi-lbl">Drawdown actual</div>
+    <div class="kpi-val" style="color:{'#3fb950'if cdd<2 else'#d29922'if cdd<6 else'#f85149'}">-{cdd:.2f}%</div>
+    <div class="kpi-sub">caída desde el pico (0% = en máximos)</div>
+  </div>
+  <div class="kpi">
+    <div class="kpi-lbl">Ulcer Index</div>
+    <div class="kpi-val" style="color:{'#3fb950'if ulcer<2 else'#d29922'if ulcer<5 else'#f85149'}">{ulcer:.2f}</div>
+    <div class="kpi-sub">profundidad×duración del dolor (menor=mejor)</div>
+  </div>
+  <div class="kpi">
+    <div class="kpi-lbl">Recovery Factor</div>
+    <div class="kpi-val" style="color:{'#3fb950'if (rf or 0)>=2 else'#d29922'if (rf or 0)>=1 else'#f85149'}">{rf_txt}</div>
+    <div class="kpi-sub">retorno / max DD (eficiencia de recuperación)</div>
+  </div>
+  <div class="kpi">
+    <div class="kpi-lbl">Calidad de tendencia (R²)</div>
+    <div class="kpi-val" style="color:{r2_col}">{r2:.2f}</div>
+    <div class="kpi-sub">{slope:+.2f}%/día · R² alto = trend limpio, bajo = choppy</div>
+  </div>
 </div>"""
 
     eq_chart = _equity_chart(history, spy_history, qqq_history=qqq_history)
