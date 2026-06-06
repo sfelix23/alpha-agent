@@ -68,6 +68,23 @@ El backtester debiasado reveló la verdad del edge. **Cada sesgo que se saca, el
 - **iter51 ETAPA del trend**: el radar distingue 🟢 temprana (trend joven: cruzó SMA50, RSI 45-68, no extendido) de 🔴 tardía (RSI>75 o +40% o parabólico). Score bonifica temprana (+12), penaliza tardía (-15) → anti-chase. Es el "llegar temprano" real.
 - ⚠️ **NO probado/revertido**: intento de fills parciales en FIFO reconciliaba PEOR ($338 vs $278 equity) → revertido, la versión simple es la precisa.
 
+### ✅ iter60-63 — troubleshooting en vivo (selloff tech) + medidores + stress test
+Sesión de diagnóstico con el user durante el selloff tech de jun-2026. **3 bugs reales encontrados (varios por el ojo del user) + medidores nuevos + stress test:**
+- **iter60**: SELL buffer -0.15%→-2% (espejo iter39). El exit de BMA quedaba trabado (limit arriba del mercado en un nombre cayendo). Cancelé la orden trabada; el daily re-emite marketable.
+- **iter61 (lo detectó el user)**: `get_last_price` usaba `(bid+ask)/2` → con quote crossed/stale (MU bid $52/ask $1055) daba **mitad de precio** → SELL de MU con limit $508. Fix: usa último TRADE; fallback quote solo si sano (bid≥70% ask). NO afecta stops/kill (usan market_value). Inofensivo en sells (filean al market) pero arreglado.
+- **iter62**: `equity_snapshots.json` (fallback del chart) driftaba $40-78 vs Alpaca (guardaba equity intradía, no cierre). Fix: `generate()` lo reescribe con la serie autoritativa de Alpaca. VERIFICADO: trayectoria/calendario/posiciones del dashboard son REALES (chart usa portfolio history Alpaca ×1.0, baseline=$1600=fondeo real).
+- **iter63**: medidores nuevos en dashboard (`_calc_metrics`): drawdown actual, Ulcer Index, recovery factor, **calidad de tendencia (regresión: pendiente+R²)** = la "regresión bien usada" (mide trend limpio vs choppy, NO predice).
+- **STRESS TEST 2022 (clave)**: en el bear (SPY -18%), la estrategia hizo +25.84% (alpha +19.8%/año), maxDD -21% vs SPY -24.5%. **Prevalece en bears** (caveat: survivorship bias infla). HALLAZGO: maxDD backtest -21% choca con kill -13% live → en un bear real el sistema se va a cash a -13% y **puede perderse la V**.
+- 58 tests. Commits iter60 (376ff37) → iter63 (a822cdf). Todo deployado.
+
+### 🔭 PRÓXIMO BLOQUE (pedido del user, con foco, NO apurar): "comerse las V"
+El user quiere: (1) no asustarse por ruido/pullbacks dentro de tendencia intacta, (2) capturar la recuperación en V tras toma de ganancia. Plan acordado (TODO con backtest A/B antes de tocar exits — money path):
+- **Filtro de tendencia en salidas**: no rotar a cash un nombre aún sobre SMA200 (es pullback, no ruptura); cortar solo en ruptura real o reglas duras (backstop -8%/kill -13%).
+- **Re-entrada en la V**: tras ponerse defensivo, RE-ENTRAR cuando se confirma recuperación (precio recupera SMA200 + R² alto). Resuelve el choque kill-13%-vs-V.
+- **Comportamiento por régimen**: bull-pullback→aguantar; lateral→menos trades (anti-whipsaw); bear→defensivo+re-entrada.
+- **Stress tests faltantes**: COVID 2020 (captura de V) + período choppy (whipsaw).
+- ⚠️ El user pidió "predecir el mercado con regresiones" — se le explicó honestamente que NO se puede predecir dirección (random walk); la regresión sirve para MEDIR trend/calidad (R²), no adivinar. Acordado: adaptación al régimen (reglas dependientes del estado), NO predicción.
+
 ### ✅ iter57-59 — pulido + auditoría de pérdidas + fix rotación muerta (dry-run)
 - **iter55 (dashboard honesto)**: métricas infladas por muestra chica neutralizadas — Sortino 9.14→"n/a si n<20", ARR +11.800%→"n/a si n<60 snapshots", Calmar/Info gated, "Win Rate"→"Días positivos %" (el real de trades es 54%), "Sharpe"→"ex-ante". Equity dashboard==Alpaca (era solo lag de regen, no dato falso).
 - **iter57**: bot `cartera` separa dust <$5 (4 reales +N dust) → consistente con Alpaca/dashboard.
