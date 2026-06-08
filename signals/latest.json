@@ -1,183 +1,285 @@
 {
-  "generated_at": "2026-06-05T13:44:07",
+  "generated_at": "2026-06-08T13:44:19",
   "horizon": "medium_long_70_30_high_conviction",
-  "capital_usd": 1795.18,
+  "capital_usd": 1773.33,
   "params": {
     "weight_long_term": 0.0,
-    "weight_short_term": 0.95,
+    "weight_short_term": 0.5850000000000001,
     "weight_options": 0.14,
     "risk_free_rate": 0.045,
     "max_beta_lp": 2.8,
     "min_sharpe_lp": 0.1,
     "top_n_long_term": 2,
-    "top_n_short_term": 0,
+    "top_n_short_term": 1,
     "top_n_bearish": 1,
-    "max_hold_days_cp": 8,
+    "max_hold_days_cp": 4,
     "max_weight_per_asset": 0.55,
     "enable_short_equity": false,
     "enable_options": true
   },
   "macro": {
     "regime": "bull",
-    "regime_reason": "SPY +10.2% sobre SMA200 con pendiente positiva",
+    "regime_reason": "SPY +8.9% sobre SMA200 con pendiente positiva",
     "prices": {
-      "oil_wti": 91.52,
-      "oil_brent": 94.05,
-      "gold": 4433.7,
-      "dxy": 99.628,
-      "vix": 15.95,
-      "us10y": 4.536
+      "oil_wti": 91.03,
+      "oil_brent": 94.02,
+      "gold": 4361.3,
+      "dxy": 99.84,
+      "vix": 18.73,
+      "us10y": 4.524
     },
     "changes_1d": {
-      "oil_wti": -0.0163,
-      "oil_brent": -0.0103,
-      "gold": -0.0094,
-      "dxy": 0.0022,
-      "vix": 0.0357,
-      "us10y": 0.0132
+      "oil_wti": 0.0054,
+      "oil_brent": 0.01,
+      "gold": 0.0056,
+      "dxy": -0.0023,
+      "vix": -0.1292,
+      "us10y": -0.0026
     },
     "changes_1m": {
-      "oil_wti": -0.0374,
-      "oil_brent": -0.0713,
-      "gold": -0.053,
-      "dxy": 0.0164,
-      "vix": -0.0662,
-      "us10y": 0.0413
+      "oil_wti": -0.0399,
+      "oil_brent": -0.0604,
+      "gold": -0.072,
+      "dxy": 0.0162,
+      "vix": 0.0896,
+      "us10y": 0.0301
     },
-    "spy_vs_sma200": 0.1015
+    "spy_vs_sma200": 0.0885
   },
   "long_term": [],
-  "short_term": [],
+  "short_term": [
+    {
+      "ticker": "ARM",
+      "side": "BUY",
+      "horizon": "CP",
+      "price": 347.45,
+      "stop_loss": 319.65,
+      "take_profit": 416.95,
+      "weight_target": 1.0,
+      "thesis": {
+        "ticker": "ARM",
+        "horizon": "CP",
+        "conviction": "MEDIA",
+        "quant": {
+          "mu_anual": 2.0886254473829076,
+          "sigma_anual": 0.6784760813390831,
+          "beta": 2.5433601274907893,
+          "alpha_jensen": 1.559000851382413,
+          "sharpe": 3.0120817868029772,
+          "expected_return_capm": 0.5296245960004946
+        },
+        "technical": {
+          "price": 347.45,
+          "rsi": 70.71,
+          "atr": 36.5278,
+          "stop_loss_atr": 274.39,
+          "ret_1m": 0.6291320877939492,
+          "ret_3m": 1.8821650645254997,
+          "dist_52w_high": -0.1563387352726171
+        },
+        "fundamental": {
+          "sentiment_score": -0.333,
+          "n_headlines": 6,
+          "positive": 2,
+          "negative": 4,
+          "sample_titles": [
+            "After 11% Wipeout, XSD Investors Must Hate Broadcom",
+            "The Bull Case For Arm Holdings (ARM) Could Change Following AI Chip Selloff And Rate Jitters – Learn Why",
+            "AI stock mania is taking over the markets in 2026"
+          ]
+        },
+        "macro": {
+          "regime": "bull",
+          "regime_reason": "SPY +8.9% sobre SMA200 con pendiente positiva",
+          "vix": 18.73,
+          "oil_wti": 91.03,
+          "dxy_1m": 0.0162,
+          "gold_1m": -0.072
+        },
+        "risk": {
+          "dollars_allocated": 1037.4,
+          "weight_of_total_portfolio": 0.585,
+          "max_loss_usd_if_stop_hit": 218.14,
+          "max_loss_pct_of_capital": 0.123,
+          "stop_loss": 274.39
+        },
+        "thesis_text": "ARM — horizonte CORTO PLAZO. Convicción MEDIA. Setup técnico: RSI 71, momentum 1m +62.9%, momentum 3m +188.2%. ⚠️ RSI en sobrecompra → riesgo de reversión a la media. Stop loss ATR en $274.39 (riesgo ≈ 21.0% desde entrada). ⚠️ Sentiment negativo puede invalidar el rebote — reducir tamaño.",
+        "key_risks": [
+          "Flujo de noticias negativo (sentiment -0.33, n=6)."
+        ],
+        "swarm": {
+          "go": false,
+          "size_factor": 0.0,
+          "reasoning": "Meta-LP heuristico (LLM OFF): EV=+ 4 NO-GO → SKIP",
+          "go_count": 0,
+          "ev": 915.39,
+          "ev_positive": true,
+          "opinions": [
+            {
+              "agent": "TechnicalCP",
+              "stance": "NO-GO",
+              "confidence": 0,
+              "reasoning": "llm_disabled",
+              "cot": "→ Anthropic deshabilitado por flag (ENABLE_ANTHROPIC OFF)."
+            },
+            {
+              "agent": "MacroLP",
+              "stance": "NO-GO",
+              "confidence": 0,
+              "reasoning": "llm_disabled",
+              "cot": "→ Anthropic deshabilitado por flag (ENABLE_ANTHROPIC OFF)."
+            },
+            {
+              "agent": "SentimentLP",
+              "stance": "NO-GO",
+              "confidence": 0,
+              "reasoning": "llm_disabled",
+              "cot": "→ Anthropic deshabilitado por flag (ENABLE_ANTHROPIC OFF)."
+            },
+            {
+              "agent": "RiskAuditorLP",
+              "stance": "NO-GO",
+              "confidence": 0,
+              "reasoning": "llm_disabled",
+              "cot": "→ Anthropic deshabilitado por flag (ENABLE_ANTHROPIC OFF)."
+            }
+          ],
+          "debate_id": "ARM-CP-1780926262"
+        }
+      },
+      "option": null
+    }
+  ],
   "options_book": [],
   "hedge_book": [],
   "portfolio": {},
   "radar": {
     "entries": [
       {
-        "ticker": "MSTR",
-        "sector": "Crypto",
-        "price": 122.57,
-        "pct_1d": -0.0526,
-        "pct_1w": -0.2296,
-        "pct_1m": -0.3439,
+        "ticker": "ARM",
+        "sector": "Tech",
+        "price": 347.33,
+        "pct_1d": 0.0128,
+        "pct_1w": -0.1505,
+        "pct_1m": 0.6283,
+        "action": "BUY_CP",
+        "headline": "After 11% Wipeout, XSD Investors Must Hate Broadcom",
+        "sentiment": -0.333,
+        "n_headlines": 6
+      },
+      {
+        "ticker": "MRVL",
+        "sector": "Other",
+        "price": 289.5,
+        "pct_1d": 0.0988,
+        "pct_1w": 0.3193,
+        "pct_1m": 0.8093,
         "action": "—",
-        "headline": "Bitcoin continues plunge as one analyst says token's  'bear market is in...",
-        "sentiment": -1.0,
+        "headline": "Marvell stock surges on S&P 500 inclusion",
+        "sentiment": 0.5,
         "n_headlines": 6
       },
       {
         "ticker": "ETHE",
         "sector": "Crypto",
-        "price": 13.4,
-        "pct_1d": -0.0672,
-        "pct_1w": -0.1777,
-        "pct_1m": -0.2959,
+        "price": 13.63,
+        "pct_1d": 0.069,
+        "pct_1w": -0.1581,
+        "pct_1m": -0.2674,
         "action": "—",
         "headline": "Beyond Bitcoin: Crypto ETFs to Watch Amid Ethereum's Momentum",
         "sentiment": 1.0,
         "n_headlines": 6
       },
       {
-        "ticker": "CAT",
-        "sector": "Industrials",
-        "price": 913.52,
-        "pct_1d": -0.0287,
-        "pct_1w": 0.043,
-        "pct_1m": -0.0145,
-        "action": "—",
-        "headline": "If You Invested $1000 in Caterpillar a Decade Ago, This is How Much It'd...",
-        "sentiment": 1.0,
-        "n_headlines": 6
-      },
-      {
-        "ticker": "ABBV",
-        "sector": "Healthcare",
-        "price": 229.76,
-        "pct_1d": 0.0214,
-        "pct_1w": 0.0553,
-        "pct_1m": 0.1206,
-        "action": "—",
-        "headline": "June 2026's Top Stocks Estimated Below Intrinsic Value",
-        "sentiment": 1.0,
-        "n_headlines": 6
-      },
-      {
-        "ticker": "COIN",
+        "ticker": "MSTR",
         "sector": "Crypto",
-        "price": 155.9,
-        "pct_1d": -0.0501,
-        "pct_1w": -0.1752,
-        "pct_1m": -0.2124,
+        "price": 124.01,
+        "pct_1d": 0.0297,
+        "pct_1w": -0.172,
+        "pct_1m": -0.3104,
         "action": "—",
-        "headline": "Coinbase Stock Is Struggling. Why Crypto Trading Could Be Slow to Recover.",
-        "sentiment": -0.333,
-        "n_headlines": 6
-      },
-      {
-        "ticker": "CCJ",
-        "sector": "Materials",
-        "price": 108.28,
-        "pct_1d": -0.0504,
-        "pct_1w": -0.0393,
-        "pct_1m": -0.1251,
-        "action": "—",
-        "headline": "Cameco Lifts Cigar Lake Stake Raising Questions On Uranium Risk And Returns",
+        "headline": "Bitcoin Price Rebounds From 2-Month Low. SpaceX IPO Siphons Capital, Ana...",
         "sentiment": 0.667,
         "n_headlines": 6
       },
       {
-        "ticker": "BA",
-        "sector": "Defense",
-        "price": 216.89,
-        "pct_1d": -0.0024,
-        "pct_1w": -0.0617,
-        "pct_1m": -0.0567,
+        "ticker": "MSFT",
+        "sector": "Tech",
+        "price": 412.33,
+        "pct_1d": -0.0104,
+        "pct_1w": -0.1046,
+        "pct_1m": -0.0179,
         "action": "—",
-        "headline": "Boeing Eyes Bigger 737 Production Push",
+        "headline": "Why Microsoft Stock Surged 10.4% Last Month But Is Sinking in June",
         "sentiment": 1.0,
-        "n_headlines": 6
-      },
-      {
-        "ticker": "DE",
-        "sector": "Other",
-        "price": 592.28,
-        "pct_1d": 0.0009,
-        "pct_1w": 0.0924,
-        "pct_1m": 0.0011,
-        "action": "—",
-        "headline": "When Trump Cuts Tariffs on Farm and Construction Equipment, These 5 Stoc...",
-        "sentiment": 0.833,
         "n_headlines": 6
       },
       {
         "ticker": "SQM",
         "sector": "Materials",
-        "price": 75.82,
-        "pct_1d": -0.0241,
-        "pct_1w": -0.1171,
-        "pct_1m": -0.1795,
+        "price": 74.68,
+        "pct_1d": -0.0099,
+        "pct_1w": -0.1047,
+        "pct_1m": -0.1754,
         "action": "—",
-        "headline": "Meta Platforms upgraded, Okta downgraded: Wall Street's top analyst calls",
-        "sentiment": 0.5,
+        "headline": "Scotiabank Raises its Price Target on Sociedad Química y Minera de Chile...",
+        "sentiment": 1.0,
         "n_headlines": 6
       },
       {
-        "ticker": "ARM",
-        "sector": "Tech",
-        "price": 360.0,
-        "pct_1d": -0.085,
-        "pct_1w": 0.019,
-        "pct_1m": 0.5171,
+        "ticker": "IBIT",
+        "sector": "Crypto",
+        "price": 35.99,
+        "pct_1d": 0.0543,
+        "pct_1w": -0.111,
+        "pct_1m": -0.2072,
         "action": "—",
-        "headline": "Intel, AMD, Micron shares trim losses after Broadcom results spark semic...",
-        "sentiment": 0.167,
+        "headline": "Investors Are Selling Bitcoin ETFs. Here's Why Now's the Time to Buy.",
+        "sentiment": -0.5,
+        "n_headlines": 6
+      },
+      {
+        "ticker": "LLY",
+        "sector": "Healthcare",
+        "price": 1157.22,
+        "pct_1d": 0.0228,
+        "pct_1w": 0.0693,
+        "pct_1m": 0.189,
+        "action": "—",
+        "headline": "Exchange-Traded Funds, Equity Futures Higher Pre-Bell Monday as Chip Sto...",
+        "sentiment": 0.833,
+        "n_headlines": 6
+      },
+      {
+        "ticker": "AMD",
+        "sector": "Tech",
+        "price": 486.05,
+        "pct_1d": 0.0422,
+        "pct_1w": -0.0472,
+        "pct_1m": 0.19,
+        "action": "—",
+        "headline": "Micron stock rebounds along with chip sector following broader market rout",
+        "sentiment": 0.667,
+        "n_headlines": 6
+      },
+      {
+        "ticker": "YPF",
+        "sector": "Energy",
+        "price": 54.61,
+        "pct_1d": 0.0207,
+        "pct_1w": -0.0024,
+        "pct_1m": 0.2759,
+        "action": "—",
+        "headline": "First Non-Associated Gas Flows at BP's ACG Field in the Caspian Sea",
+        "sentiment": 1.0,
         "n_headlines": 6
       }
     ],
-    "n_up": 21,
-    "n_down": 52,
-    "biggest_winner": "KO +2.6%",
-    "biggest_loser": "ARM -8.5%"
+    "n_up": 49,
+    "n_down": 25,
+    "biggest_winner": "MRVL +9.9%",
+    "biggest_loser": "MELI -1.5%"
   },
   "edgar_alerts": []
 }

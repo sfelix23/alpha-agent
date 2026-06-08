@@ -1,4 +1,13 @@
 {
-  "date": "2026-06-02",
-  "providers": {}
+  "date": "2026-06-08",
+  "providers": {
+    "groq": {
+      "cache_hits": 1,
+      "calls": 36,
+      "cost_usd": 0.0,
+      "fallbacks_in": 0,
+      "tokens_in": 7451,
+      "tokens_out": 665
+    }
+  }
 }
