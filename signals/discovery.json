@@ -1,16 +1,6 @@
 {
-  "generated_at": "2026-06-08T13:42:40.192424",
+  "generated_at": "2026-06-09T13:41:33.943917",
   "n_scanned": 118,
-  "candidates": [
-    {
-      "ticker": "MRVL",
-      "score": 40.2,
-      "ret_1m": 70.7,
-      "ret_3m": 211.5,
-      "prioridad": "MEDIA",
-      "razon": "Score técnico 40/100",
-      "riesgo": ""
-    }
-  ],
+  "candidates": [],
   "repeated_alerts": []
 }
