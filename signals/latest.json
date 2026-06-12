@@ -1,16 +1,16 @@
 {
-  "generated_at": "2026-06-11T13:44:14",
+  "generated_at": "2026-06-12T13:44:02",
   "horizon": "medium_long_70_30_high_conviction",
-  "capital_usd": 1717.3,
+  "capital_usd": 1783.25,
   "params": {
     "weight_long_term": 0.0,
-    "weight_short_term": 0.45,
+    "weight_short_term": 0.36000000000000004,
     "weight_options": 0.14,
     "risk_free_rate": 0.045,
     "max_beta_lp": 2.8,
     "min_sharpe_lp": 0.1,
     "top_n_long_term": 2,
-    "top_n_short_term": 1,
+    "top_n_short_term": 0,
     "top_n_bearish": 1,
     "max_hold_days_cp": 4,
     "max_weight_per_asset": 0.55,
@@ -19,268 +19,165 @@
   },
   "macro": {
     "regime": "bull",
-    "regime_reason": "SPY +6.3% sobre SMA200 con pendiente positiva",
+    "regime_reason": "SPY +7.6% sobre SMA200 con pendiente positiva",
     "prices": {
-      "oil_wti": 89.68,
-      "oil_brent": 92.6,
-      "gold": 4097.5,
-      "dxy": 100.098,
-      "vix": 21.31,
-      "us10y": 4.53
+      "oil_wti": 85.4,
+      "oil_brent": 88.31,
+      "gold": 4225.0,
+      "dxy": 99.728,
+      "vix": 19.26,
+      "us10y": 4.485
     },
     "changes_1d": {
-      "oil_wti": -0.0039,
-      "oil_brent": -0.0054,
-      "gold": -0.0026,
-      "dxy": 0.0015,
-      "vix": -0.041,
-      "us10y": -0.0026
+      "oil_wti": -0.0263,
+      "oil_brent": -0.0229,
+      "gold": 0.0329,
+      "dxy": -0.0013,
+      "vix": -0.0093,
+      "us10y": 0.0049
     },
     "changes_1m": {
-      "oil_wti": -0.1223,
-      "oil_brent": -0.1408,
-      "gold": -0.124,
-      "dxy": 0.0184,
-      "vix": 0.1925,
-      "us10y": 0.015
+      "oil_wti": -0.1546,
+      "oil_brent": -0.164,
+      "gold": -0.1006,
+      "dxy": 0.0127,
+      "vix": 0.1159,
+      "us10y": 0.0009
     },
-    "spy_vs_sma200": 0.0631
+    "spy_vs_sma200": 0.076
   },
   "long_term": [],
-  "short_term": [
-    {
-      "ticker": "ARM",
-      "side": "BUY",
-      "horizon": "CP",
-      "price": 321.48,
-      "stop_loss": 297.89,
-      "take_profit": 385.78,
-      "weight_target": 1.0,
-      "thesis": {
-        "ticker": "ARM",
-        "horizon": "CP",
-        "conviction": "MEDIA",
-        "quant": {
-          "mu_anual": 1.8118915955424952,
-          "sigma_anual": 0.6803337739459858,
-          "beta": 2.551877385812544,
-          "alpha_jensen": 1.450431597803818,
-          "sharpe": 2.597095224737109,
-          "expected_return_capm": 0.3614599977386773
-        },
-        "technical": {
-          "price": 321.48,
-          "rsi": 54.03,
-          "atr": 37.9061,
-          "stop_loss_atr": 245.66,
-          "ret_1m": 0.4532570695110558,
-          "ret_3m": 1.7773218669850164,
-          "dist_52w_high": -0.21939874077842314
-        },
-        "fundamental": {
-          "sentiment_score": -0.667,
-          "n_headlines": 6,
-          "positive": 1,
-          "negative": 5,
-          "sample_titles": [
-            "Mizuho Raises PT on Arm Holdings (ARM), Here’s What You Should Know",
-            "US Equity Indexes Slide as Semiconductors Lead Technology Lower, Trump Warns of Iran Attack",
-            "Stocks Settle Sharply Lower on Escalating Middle East Tensions"
-          ]
-        },
-        "macro": {
-          "regime": "bull",
-          "regime_reason": "SPY +6.3% sobre SMA200 con pendiente positiva",
-          "vix": 21.31,
-          "oil_wti": 89.68,
-          "dxy_1m": 0.0184,
-          "gold_1m": -0.124
-        },
-        "risk": {
-          "dollars_allocated": 772.78,
-          "weight_of_total_portfolio": 0.45,
-          "max_loss_usd_if_stop_hit": 182.26,
-          "max_loss_pct_of_capital": 0.1061,
-          "stop_loss": 245.66
-        },
-        "thesis_text": "ARM — horizonte CORTO PLAZO. Convicción MEDIA. Setup técnico: RSI 54, momentum 1m +45.3%, momentum 3m +177.7%. Stop loss ATR en $245.66 (riesgo ≈ 23.6% desde entrada). ⚠️ Sentiment negativo puede invalidar el rebote — reducir tamaño.",
-        "key_risks": [
-          "Flujo de noticias negativo (sentiment -0.67, n=6).",
-          "VIX elevado (21) → volatilidad en alza, reducir tamaño."
-        ],
-        "swarm": {
-          "go": false,
-          "size_factor": 0.0,
-          "reasoning": "Meta-LP heuristico (LLM OFF): EV=+ 4 NO-GO → SKIP",
-          "go_count": 0,
-          "ev": 755.57,
-          "ev_positive": true,
-          "opinions": [
-            {
-              "agent": "TechnicalCP",
-              "stance": "NO-GO",
-              "confidence": 0,
-              "reasoning": "llm_disabled",
-              "cot": "→ Anthropic deshabilitado por flag (ENABLE_ANTHROPIC OFF)."
-            },
-            {
-              "agent": "MacroLP",
-              "stance": "NO-GO",
-              "confidence": 0,
-              "reasoning": "llm_disabled",
-              "cot": "→ Anthropic deshabilitado por flag (ENABLE_ANTHROPIC OFF)."
-            },
-            {
-              "agent": "SentimentLP",
-              "stance": "NO-GO",
-              "confidence": 0,
-              "reasoning": "llm_disabled",
-              "cot": "→ Anthropic deshabilitado por flag (ENABLE_ANTHROPIC OFF)."
-            },
-            {
-              "agent": "RiskAuditorLP",
-              "stance": "NO-GO",
-              "confidence": 0,
-              "reasoning": "llm_disabled",
-              "cot": "→ Anthropic deshabilitado por flag (ENABLE_ANTHROPIC OFF)."
-            }
-          ],
-          "debate_id": "ARM-CP-1781185457"
-        }
-      },
-      "option": null
-    }
-  ],
+  "short_term": [],
   "options_book": [],
   "hedge_book": [],
   "portfolio": {},
   "radar": {
     "entries": [
       {
-        "ticker": "ARM",
-        "sector": "Tech",
-        "price": 321.48,
-        "pct_1d": 0.0457,
-        "pct_1w": -0.1829,
-        "pct_1m": 0.5461,
-        "action": "BUY_CP",
-        "headline": "Mizuho Raises PT on Arm Holdings (ARM), Here’s What You Should Know",
-        "sentiment": -0.667,
-        "n_headlines": 6
-      },
-      {
         "ticker": "BMA",
         "sector": "Financials",
-        "price": 93.9,
-        "pct_1d": 0.0713,
-        "pct_1w": 0.0792,
-        "pct_1m": 0.2991,
+        "price": 99.66,
+        "pct_1d": 0.0179,
+        "pct_1w": 0.1732,
+        "pct_1m": 0.4129,
         "action": "—",
-        "headline": "BMA vs. NABZY: Which Stock Is the Better Value Option?",
+        "headline": "Are Options Traders Betting on a Big Move in Macro Bank Stock?",
         "sentiment": 0.833,
         "n_headlines": 6
       },
       {
-        "ticker": "SQM",
-        "sector": "Materials",
-        "price": 77.29,
-        "pct_1d": 0.0411,
-        "pct_1w": -0.0051,
-        "pct_1m": -0.1832,
+        "ticker": "NET",
+        "sector": "Tech",
+        "price": 222.83,
+        "pct_1d": -0.0203,
+        "pct_1w": -0.1091,
+        "pct_1m": 0.1568,
         "action": "—",
-        "headline": "Scotiabank Raises its Price Target on Sociedad Química y Minera de Chile...",
-        "sentiment": 1.0,
-        "n_headlines": 6
-      },
-      {
-        "ticker": "YPF",
-        "sector": "Energy",
-        "price": 56.14,
-        "pct_1d": 0.0345,
-        "pct_1w": 0.0185,
-        "pct_1m": 0.2489,
-        "action": "—",
-        "headline": "SLB & Qualcomm Team Up to Advance Edge AI in the Energy Sector",
+        "headline": "ASTS, RKLB, RDW, SATS Jump As SpaceX Prices Historic IPO — Cloudflare CE...",
         "sentiment": 1.0,
         "n_headlines": 6
       },
       {
         "ticker": "ASML",
         "sector": "Tech",
-        "price": 1786.16,
-        "pct_1d": 0.03,
-        "pct_1w": 0.0163,
-        "pct_1m": 0.1744,
+        "price": 1850.47,
+        "pct_1d": -0.0258,
+        "pct_1w": 0.1271,
+        "pct_1m": 0.17,
         "action": "—",
-        "headline": "Musk To Pitch Terafab Semiconductor Factory To ASML Ahead Of SpaceX IPO",
-        "sentiment": 1.0,
+        "headline": "The Competitive Threat That Never Was: ASML’s Widening Moat Boosts Stock...",
+        "sentiment": 0.833,
         "n_headlines": 6
       },
       {
-        "ticker": "NET",
+        "ticker": "AMD",
         "sector": "Tech",
-        "price": 217.62,
-        "pct_1d": -0.0093,
-        "pct_1w": -0.1899,
-        "pct_1m": 0.1651,
+        "price": 503.21,
+        "pct_1d": 0.0302,
+        "pct_1w": 0.079,
+        "pct_1m": 0.1295,
         "action": "—",
-        "headline": "Mastercard Launches Agent Pay to Enable AI-Powered Machine-to-Machine Pa...",
+        "headline": "CPU market to grow 5x by 2030, BofA says",
+        "sentiment": 0.833,
+        "n_headlines": 6
+      },
+      {
+        "ticker": "SQM",
+        "sector": "Materials",
+        "price": 83.33,
+        "pct_1d": 0.0359,
+        "pct_1w": 0.1047,
+        "pct_1m": -0.0905,
+        "action": "—",
+        "headline": "Does Albemarle's Premium Valuation Justify Buying the Stock Now?",
+        "sentiment": 0.667,
+        "n_headlines": 6
+      },
+      {
+        "ticker": "ARM",
+        "sector": "Tech",
+        "price": 359.55,
+        "pct_1d": 0.0506,
+        "pct_1w": 0.0485,
+        "pct_1m": 0.6254,
+        "action": "—",
+        "headline": "FTC Probe Puts Arm Licensing Model And AGI CPU Plans In Focus",
         "sentiment": 0.667,
         "n_headlines": 6
       },
       {
         "ticker": "ETHE",
         "sector": "Crypto",
-        "price": 13.3,
-        "pct_1d": 0.0087,
-        "pct_1w": -0.0742,
-        "pct_1m": -0.2812,
+        "price": 13.39,
+        "pct_1d": -0.0154,
+        "pct_1w": 0.0502,
+        "pct_1m": -0.267,
         "action": "—",
         "headline": "Beyond Bitcoin: Crypto ETFs to Watch Amid Ethereum's Momentum",
         "sentiment": 1.0,
         "n_headlines": 6
       },
       {
-        "ticker": "AMD",
-        "sector": "Tech",
-        "price": 464.93,
-        "pct_1d": 0.0277,
-        "pct_1w": -0.1114,
-        "pct_1m": 0.0371,
+        "ticker": "YPF",
+        "sector": "Energy",
+        "price": 56.47,
+        "pct_1d": 0.002,
+        "pct_1w": 0.0554,
+        "pct_1m": 0.2972,
         "action": "—",
-        "headline": "Retail Traders Dump Big Tech to Raise ‘Dry Powder’ to Buy SpaceX",
-        "sentiment": 0.5,
+        "headline": "SLB & Qualcomm Team Up to Advance Edge AI in the Energy Sector",
+        "sentiment": 1.0,
         "n_headlines": 6
       },
       {
-        "ticker": "AVAV",
-        "sector": "Defense",
-        "price": 171.04,
-        "pct_1d": -0.0109,
-        "pct_1w": -0.1632,
-        "pct_1m": 0.0129,
+        "ticker": "COIN",
+        "sector": "Crypto",
+        "price": 156.38,
+        "pct_1d": -0.0252,
+        "pct_1w": 0.0261,
+        "pct_1m": -0.225,
         "action": "—",
-        "headline": "nLIGHT, Vertiv, and AeroVironment Shares Are Falling, What You Need To Know",
-        "sentiment": -0.5,
-        "n_headlines": 6
-      },
-      {
-        "ticker": "KO",
-        "sector": "Other",
-        "price": 83.59,
-        "pct_1d": 0.0,
-        "pct_1w": 0.0881,
-        "pct_1m": 0.0445,
-        "action": "—",
-        "headline": "3 Top Dividend Stocks To Consider For Your Portfolio",
+        "headline": "Stocks Settle Sharply Higher on Middle East Peace Hopes",
         "sentiment": 0.833,
+        "n_headlines": 6
+      },
+      {
+        "ticker": "GOLD",
+        "sector": "Materials",
+        "price": 42.81,
+        "pct_1d": -0.0111,
+        "pct_1w": 0.0805,
+        "pct_1m": 0.0418,
+        "action": "—",
+        "headline": "Assessing Goldcom (GOLD) Valuation After Recent Share Price Weakness",
+        "sentiment": 0.667,
         "n_headlines": 6
       }
     ],
-    "n_up": 54,
-    "n_down": 18,
-    "biggest_winner": "BMA +7.1%",
-    "biggest_loser": "MSFT -2.1%"
+    "n_up": 34,
+    "n_down": 38,
+    "biggest_winner": "ARM +5.1%",
+    "biggest_loser": "AVAV -4.7%"
   },
   "edgar_alerts": []
 }
