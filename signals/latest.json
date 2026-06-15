@@ -1,16 +1,16 @@
 {
-  "generated_at": "2026-06-12T13:44:02",
+  "generated_at": "2026-06-15T13:43:23",
   "horizon": "medium_long_70_30_high_conviction",
-  "capital_usd": 1783.25,
+  "capital_usd": 1830.53,
   "params": {
     "weight_long_term": 0.0,
-    "weight_short_term": 0.36000000000000004,
+    "weight_short_term": 0.5850000000000001,
     "weight_options": 0.14,
     "risk_free_rate": 0.045,
     "max_beta_lp": 2.8,
     "min_sharpe_lp": 0.1,
     "top_n_long_term": 2,
-    "top_n_short_term": 0,
+    "top_n_short_term": 1,
     "top_n_bearish": 1,
     "max_hold_days_cp": 4,
     "max_weight_per_asset": 0.55,
@@ -19,165 +19,267 @@
   },
   "macro": {
     "regime": "bull",
-    "regime_reason": "SPY +7.6% sobre SMA200 con pendiente positiva",
+    "regime_reason": "SPY +10.0% sobre SMA200 con pendiente positiva",
     "prices": {
-      "oil_wti": 85.4,
-      "oil_brent": 88.31,
-      "gold": 4225.0,
-      "dxy": 99.728,
-      "vix": 19.26,
-      "us10y": 4.485
+      "oil_wti": 80.55,
+      "oil_brent": 83.17,
+      "gold": 4382.2,
+      "dxy": 99.467,
+      "vix": 16.28,
+      "us10y": 4.453
     },
     "changes_1d": {
-      "oil_wti": -0.0263,
-      "oil_brent": -0.0229,
-      "gold": 0.0329,
-      "dxy": -0.0013,
-      "vix": -0.0093,
-      "us10y": 0.0049
+      "oil_wti": -0.051,
+      "oil_brent": -0.0476,
+      "gold": 0.0397,
+      "dxy": -0.0028,
+      "vix": -0.0792,
+      "us10y": -0.0076
     },
     "changes_1m": {
-      "oil_wti": -0.1546,
-      "oil_brent": -0.164,
-      "gold": -0.1006,
-      "dxy": 0.0127,
-      "vix": 0.1159,
-      "us10y": 0.0009
+      "oil_wti": -0.2038,
+      "oil_brent": -0.2133,
+      "gold": -0.0633,
+      "dxy": 0.0059,
+      "vix": -0.1167,
+      "us10y": -0.0018
     },
-    "spy_vs_sma200": 0.076
+    "spy_vs_sma200": 0.1001
   },
   "long_term": [],
-  "short_term": [],
+  "short_term": [
+    {
+      "ticker": "ARM",
+      "side": "BUY",
+      "horizon": "CP",
+      "price": 383.88,
+      "stop_loss": 353.17,
+      "take_profit": 460.65,
+      "weight_target": 1.0,
+      "thesis": {
+        "ticker": "ARM",
+        "horizon": "CP",
+        "conviction": "ALTA",
+        "quant": {
+          "mu_anual": 2.256494367595417,
+          "sigma_anual": 0.6869447638912042,
+          "beta": 2.5623978087753323,
+          "alpha_jensen": 1.6502410997147163,
+          "sharpe": 3.2193190542255383,
+          "expected_return_capm": 0.606253267880701
+        },
+        "technical": {
+          "price": 383.88,
+          "rsi": 59.56,
+          "atr": 40.2245,
+          "stop_loss_atr": 303.43,
+          "ret_1m": 0.8353417943886234,
+          "ret_3m": 2.015317758205659,
+          "dist_52w_high": -0.06786754497735992
+        },
+        "fundamental": {
+          "sentiment_score": 0.5,
+          "n_headlines": 6,
+          "positive": 4,
+          "negative": 1,
+          "sample_titles": [
+            "Chips Up 8.8% in One Week: 5 Semiconductor Names Breaking Into New Highs",
+            "Arm Holdings (ARM) Gets BofA Backing, 37% PT Upgrade, Climbs 11%",
+            "Why Intel, AMD, Arm, and Other Artificial Intelligence (AI) Stocks Popped Today"
+          ]
+        },
+        "macro": {
+          "regime": "bull",
+          "regime_reason": "SPY +10.0% sobre SMA200 con pendiente positiva",
+          "vix": 16.28,
+          "oil_wti": 80.55,
+          "dxy_1m": 0.0059,
+          "gold_1m": -0.0633
+        },
+        "risk": {
+          "dollars_allocated": 1070.86,
+          "weight_of_total_portfolio": 0.585,
+          "max_loss_usd_if_stop_hit": 224.42,
+          "max_loss_pct_of_capital": 0.1226,
+          "stop_loss": 303.43
+        },
+        "thesis_text": "ARM — horizonte CORTO PLAZO. Convicción ALTA. Setup técnico: RSI 60, momentum 1m +83.5%, momentum 3m +201.5%. Stop loss ATR en $303.43 (riesgo ≈ 21.0% desde entrada). Sentiment de noticias refuerza el setup.",
+        "key_risks": [
+          "Sin riesgos macro mayores detectados; el riesgo principal es idiosincrático del activo."
+        ],
+        "swarm": {
+          "go": false,
+          "size_factor": 0.0,
+          "reasoning": "Meta-LP heuristico (LLM OFF): EV=+ 4 NO-GO → SKIP",
+          "go_count": 0,
+          "ev": 1028.38,
+          "ev_positive": true,
+          "opinions": [
+            {
+              "agent": "TechnicalCP",
+              "stance": "NO-GO",
+              "confidence": 0,
+              "reasoning": "llm_disabled",
+              "cot": "→ Anthropic deshabilitado por flag (ENABLE_ANTHROPIC OFF)."
+            },
+            {
+              "agent": "MacroLP",
+              "stance": "NO-GO",
+              "confidence": 0,
+              "reasoning": "llm_disabled",
+              "cot": "→ Anthropic deshabilitado por flag (ENABLE_ANTHROPIC OFF)."
+            },
+            {
+              "agent": "SentimentLP",
+              "stance": "NO-GO",
+              "confidence": 0,
+              "reasoning": "llm_disabled",
+              "cot": "→ Anthropic deshabilitado por flag (ENABLE_ANTHROPIC OFF)."
+            },
+            {
+              "agent": "RiskAuditorLP",
+              "stance": "NO-GO",
+              "confidence": 0,
+              "reasoning": "llm_disabled",
+              "cot": "→ Anthropic deshabilitado por flag (ENABLE_ANTHROPIC OFF)."
+            }
+          ],
+          "debate_id": "ARM-CP-1781531006"
+        }
+      },
+      "option": null
+    }
+  ],
   "options_book": [],
   "hedge_book": [],
   "portfolio": {},
   "radar": {
     "entries": [
       {
-        "ticker": "BMA",
-        "sector": "Financials",
-        "price": 99.66,
-        "pct_1d": 0.0179,
-        "pct_1w": 0.1732,
-        "pct_1m": 0.4129,
-        "action": "—",
-        "headline": "Are Options Traders Betting on a Big Move in Macro Bank Stock?",
-        "sentiment": 0.833,
-        "n_headlines": 6
-      },
-      {
-        "ticker": "NET",
-        "sector": "Tech",
-        "price": 222.83,
-        "pct_1d": -0.0203,
-        "pct_1w": -0.1091,
-        "pct_1m": 0.1568,
-        "action": "—",
-        "headline": "ASTS, RKLB, RDW, SATS Jump As SpaceX Prices Historic IPO — Cloudflare CE...",
-        "sentiment": 1.0,
-        "n_headlines": 6
-      },
-      {
-        "ticker": "ASML",
-        "sector": "Tech",
-        "price": 1850.47,
-        "pct_1d": -0.0258,
-        "pct_1w": 0.1271,
-        "pct_1m": 0.17,
-        "action": "—",
-        "headline": "The Competitive Threat That Never Was: ASML’s Widening Moat Boosts Stock...",
-        "sentiment": 0.833,
-        "n_headlines": 6
-      },
-      {
-        "ticker": "AMD",
-        "sector": "Tech",
-        "price": 503.21,
-        "pct_1d": 0.0302,
-        "pct_1w": 0.079,
-        "pct_1m": 0.1295,
-        "action": "—",
-        "headline": "CPU market to grow 5x by 2030, BofA says",
-        "sentiment": 0.833,
-        "n_headlines": 6
-      },
-      {
-        "ticker": "SQM",
-        "sector": "Materials",
-        "price": 83.33,
-        "pct_1d": 0.0359,
-        "pct_1w": 0.1047,
-        "pct_1m": -0.0905,
-        "action": "—",
-        "headline": "Does Albemarle's Premium Valuation Justify Buying the Stock Now?",
-        "sentiment": 0.667,
-        "n_headlines": 6
-      },
-      {
         "ticker": "ARM",
         "sector": "Tech",
-        "price": 359.55,
-        "pct_1d": 0.0506,
-        "pct_1w": 0.0485,
-        "pct_1m": 0.6254,
-        "action": "—",
-        "headline": "FTC Probe Puts Arm Licensing Model And AGI CPU Plans In Focus",
-        "sentiment": 0.667,
+        "price": 384.0,
+        "pct_1d": 0.0084,
+        "pct_1w": 0.1086,
+        "pct_1m": 0.6805,
+        "action": "BUY_CP",
+        "headline": "Chips Up 8.8% in One Week: 5 Semiconductor Names Breaking Into New Highs",
+        "sentiment": 0.5,
         "n_headlines": 6
       },
       {
         "ticker": "ETHE",
         "sector": "Crypto",
-        "price": 13.39,
-        "pct_1d": -0.0154,
-        "pct_1w": 0.0502,
-        "pct_1m": -0.267,
+        "price": 14.64,
+        "pct_1d": 0.0865,
+        "pct_1w": 0.0737,
+        "pct_1m": -0.213,
         "action": "—",
         "headline": "Beyond Bitcoin: Crypto ETFs to Watch Amid Ethereum's Momentum",
         "sentiment": 1.0,
         "n_headlines": 6
       },
       {
-        "ticker": "YPF",
-        "sector": "Energy",
-        "price": 56.47,
-        "pct_1d": 0.002,
-        "pct_1w": 0.0554,
-        "pct_1m": 0.2972,
+        "ticker": "AMD",
+        "sector": "Tech",
+        "price": 551.59,
+        "pct_1d": 0.0782,
+        "pct_1w": 0.1249,
+        "pct_1m": 0.2266,
         "action": "—",
-        "headline": "SLB & Qualcomm Team Up to Advance Edge AI in the Energy Sector",
-        "sentiment": 1.0,
+        "headline": "Is AMD the Next $1 Trillion Chip Stock, or Just the Next AI Trap?",
+        "sentiment": 0.833,
+        "n_headlines": 6
+      },
+      {
+        "ticker": "NEM",
+        "sector": "Materials",
+        "price": 107.84,
+        "pct_1d": 0.0759,
+        "pct_1w": 0.0894,
+        "pct_1m": -0.0708,
+        "action": "—",
+        "headline": "Newmont Stock Loses 9% in a Month: Should You Buy the Dip?",
+        "sentiment": 0.667,
+        "n_headlines": 6
+      },
+      {
+        "ticker": "BMA",
+        "sector": "Financials",
+        "price": 101.07,
+        "pct_1d": 0.0239,
+        "pct_1w": 0.2045,
+        "pct_1m": 0.4275,
+        "action": "—",
+        "headline": "Are Options Traders Betting on a Big Move in Macro Bank Stock?",
+        "sentiment": 0.833,
+        "n_headlines": 6
+      },
+      {
+        "ticker": "MU",
+        "sector": "Tech",
+        "price": 1056.29,
+        "pct_1d": 0.0761,
+        "pct_1w": 0.1127,
+        "pct_1m": 0.3612,
+        "action": "—",
+        "headline": "Micron and Western Digital Climb 8%, SanDisk Rises 6% on Iran Truce",
+        "sentiment": 0.5,
         "n_headlines": 6
       },
       {
         "ticker": "COIN",
         "sector": "Crypto",
-        "price": 156.38,
-        "pct_1d": -0.0252,
-        "pct_1w": 0.0261,
-        "pct_1m": -0.225,
+        "price": 169.31,
+        "pct_1d": 0.0596,
+        "pct_1w": 0.0444,
+        "pct_1m": -0.2014,
         "action": "—",
-        "headline": "Stocks Settle Sharply Higher on Middle East Peace Hopes",
+        "headline": "Prediction Markets See Record Volumes From World Cup Betting",
         "sentiment": 0.833,
         "n_headlines": 6
       },
       {
-        "ticker": "GOLD",
-        "sector": "Materials",
-        "price": 42.81,
-        "pct_1d": -0.0111,
-        "pct_1w": 0.0805,
-        "pct_1m": 0.0418,
+        "ticker": "MSTR",
+        "sector": "Crypto",
+        "price": 132.63,
+        "pct_1d": 0.0699,
+        "pct_1w": 0.0427,
+        "pct_1m": -0.2906,
         "action": "—",
-        "headline": "Assessing Goldcom (GOLD) Valuation After Recent Share Price Weakness",
+        "headline": "Bitcoin Jumps Above $65,000 As Fed Risk Looms",
         "sentiment": 0.667,
+        "n_headlines": 6
+      },
+      {
+        "ticker": "AMZN",
+        "sector": "Tech",
+        "price": 247.05,
+        "pct_1d": 0.0356,
+        "pct_1w": 0.0075,
+        "pct_1m": -0.0755,
+        "action": "—",
+        "headline": "Stock Market Today: Dow Rallies 500 Points On U.S.-Iran Deal; Oil Prices...",
+        "sentiment": 1.0,
+        "n_headlines": 6
+      },
+      {
+        "ticker": "AVGO",
+        "sector": "Tech",
+        "price": 395.36,
+        "pct_1d": 0.0348,
+        "pct_1w": -0.0031,
+        "pct_1m": -0.101,
+        "action": "—",
+        "headline": "This Under-the-Radar AI Chip Leader Just Became a No-Brainer Buy This Week",
+        "sentiment": 1.0,
         "n_headlines": 6
       }
     ],
-    "n_up": 34,
-    "n_down": 38,
-    "biggest_winner": "ARM +5.1%",
-    "biggest_loser": "AVAV -4.7%"
+    "n_up": 51,
+    "n_down": 22,
+    "biggest_winner": "ETHE +8.6%",
+    "biggest_loser": "XOM -5.4%"
   },
   "edgar_alerts": []
 }
