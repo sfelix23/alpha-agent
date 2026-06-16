@@ -1,50 +1,50 @@
 {
-  "generated_at": "2026-06-15T13:43:23",
+  "generated_at": "2026-06-16T13:44:13",
   "horizon": "medium_long_70_30_high_conviction",
-  "capital_usd": 1830.53,
+  "capital_usd": 1846.21,
   "params": {
     "weight_long_term": 0.0,
-    "weight_short_term": 0.5850000000000001,
+    "weight_short_term": 0.95,
     "weight_options": 0.14,
     "risk_free_rate": 0.045,
     "max_beta_lp": 2.8,
     "min_sharpe_lp": 0.1,
     "top_n_long_term": 2,
-    "top_n_short_term": 1,
+    "top_n_short_term": 5,
     "top_n_bearish": 1,
-    "max_hold_days_cp": 4,
+    "max_hold_days_cp": 10,
     "max_weight_per_asset": 0.55,
     "enable_short_equity": false,
     "enable_options": true
   },
   "macro": {
     "regime": "bull",
-    "regime_reason": "SPY +10.0% sobre SMA200 con pendiente positiva",
+    "regime_reason": "SPY +10.3% sobre SMA200 con pendiente positiva",
     "prices": {
-      "oil_wti": 80.55,
-      "oil_brent": 83.17,
-      "gold": 4382.2,
-      "dxy": 99.467,
-      "vix": 16.28,
-      "us10y": 4.453
+      "oil_wti": 76.68,
+      "oil_brent": 80.37,
+      "gold": 4360.4,
+      "dxy": 99.617,
+      "vix": 16.08,
+      "us10y": 4.457
     },
     "changes_1d": {
-      "oil_wti": -0.051,
-      "oil_brent": -0.0476,
-      "gold": 0.0397,
-      "dxy": -0.0028,
-      "vix": -0.0792,
-      "us10y": -0.0076
+      "oil_wti": -0.0504,
+      "oil_brent": -0.0337,
+      "gold": 0.0075,
+      "dxy": -0.0013,
+      "vix": -0.0905,
+      "us10y": -0.0067
     },
     "changes_1m": {
-      "oil_wti": -0.2038,
-      "oil_brent": -0.2133,
-      "gold": -0.0633,
-      "dxy": 0.0059,
-      "vix": -0.1167,
-      "us10y": -0.0018
+      "oil_wti": -0.2726,
+      "oil_brent": -0.2644,
+      "gold": -0.0429,
+      "dxy": 0.0075,
+      "vix": -0.1275,
+      "us10y": -0.0009
     },
-    "spy_vs_sma200": 0.1001
+    "spy_vs_sma200": 0.1028
   },
   "long_term": [],
   "short_term": [
@@ -52,58 +52,58 @@
       "ticker": "ARM",
       "side": "BUY",
       "horizon": "CP",
-      "price": 383.88,
-      "stop_loss": 353.17,
-      "take_profit": 460.65,
-      "weight_target": 1.0,
+      "price": 425.64,
+      "stop_loss": 391.59,
+      "take_profit": 510.76,
+      "weight_target": 0.35,
       "thesis": {
         "ticker": "ARM",
         "horizon": "CP",
         "conviction": "ALTA",
         "quant": {
-          "mu_anual": 2.256494367595417,
-          "sigma_anual": 0.6869447638912042,
-          "beta": 2.5623978087753323,
-          "alpha_jensen": 1.6502410997147163,
-          "sharpe": 3.2193190542255383,
-          "expected_return_capm": 0.606253267880701
+          "mu_anual": 2.2582086811180258,
+          "sigma_anual": 0.68761945854035,
+          "beta": 2.562416583790727,
+          "alpha_jensen": 1.6352983613703214,
+          "sharpe": 3.218653360706419,
+          "expected_return_capm": 0.6229103197477044
         },
         "technical": {
-          "price": 383.88,
-          "rsi": 59.56,
-          "atr": 40.2245,
-          "stop_loss_atr": 303.43,
-          "ret_1m": 0.8353417943886234,
-          "ret_3m": 2.015317758205659,
-          "dist_52w_high": -0.06786754497735992
+          "price": 425.64,
+          "rsi": 64.13,
+          "atr": 42.0868,
+          "stop_loss_atr": 341.47,
+          "ret_1m": 1.0350209483706378,
+          "ret_3m": 2.3433744181620226,
+          "dist_52w_high": 0.0
         },
         "fundamental": {
-          "sentiment_score": 0.5,
+          "sentiment_score": 0.667,
           "n_headlines": 6,
-          "positive": 4,
+          "positive": 5,
           "negative": 1,
           "sample_titles": [
-            "Chips Up 8.8% in One Week: 5 Semiconductor Names Breaking Into New Highs",
-            "Arm Holdings (ARM) Gets BofA Backing, 37% PT Upgrade, Climbs 11%",
-            "Why Intel, AMD, Arm, and Other Artificial Intelligence (AI) Stocks Popped Today"
+            "SpaceX becomes retail's biggest IPO trade: Chart of the Day",
+            "Stocks Rally as US-Iran Peace Deal Sinks Oil and Bond Yields",
+            "Chips Up 8.8% in One Week: 5 Semiconductor Names Breaking Into New Highs"
           ]
         },
         "macro": {
           "regime": "bull",
-          "regime_reason": "SPY +10.0% sobre SMA200 con pendiente positiva",
-          "vix": 16.28,
-          "oil_wti": 80.55,
-          "dxy_1m": 0.0059,
-          "gold_1m": -0.0633
+          "regime_reason": "SPY +10.3% sobre SMA200 con pendiente positiva",
+          "vix": 16.08,
+          "oil_wti": 76.68,
+          "dxy_1m": 0.0075,
+          "gold_1m": -0.0429
         },
         "risk": {
-          "dollars_allocated": 1070.86,
-          "weight_of_total_portfolio": 0.585,
-          "max_loss_usd_if_stop_hit": 224.42,
-          "max_loss_pct_of_capital": 0.1226,
-          "stop_loss": 303.43
+          "dollars_allocated": 1175.18,
+          "weight_of_total_portfolio": 0.6365,
+          "max_loss_usd_if_stop_hit": 232.39,
+          "max_loss_pct_of_capital": 0.1259,
+          "stop_loss": 341.47
         },
-        "thesis_text": "ARM — horizonte CORTO PLAZO. Convicción ALTA. Setup técnico: RSI 60, momentum 1m +83.5%, momentum 3m +201.5%. Stop loss ATR en $303.43 (riesgo ≈ 21.0% desde entrada). Sentiment de noticias refuerza el setup.",
+        "thesis_text": "ARM — horizonte CORTO PLAZO. Convicción ALTA. Setup técnico: RSI 64, momentum 1m +103.5%, momentum 3m +234.3%. Stop loss ATR en $341.47 (riesgo ≈ 19.8% desde entrada). Sentiment de noticias refuerza el setup.",
         "key_risks": [
           "Sin riesgos macro mayores detectados; el riesgo principal es idiosincrático del activo."
         ],
@@ -112,7 +112,7 @@
           "size_factor": 0.0,
           "reasoning": "Meta-LP heuristico (LLM OFF): EV=+ 4 NO-GO → SKIP",
           "go_count": 0,
-          "ev": 1028.38,
+          "ev": 1037.97,
           "ev_positive": true,
           "opinions": [
             {
@@ -144,7 +144,411 @@
               "cot": "→ Anthropic deshabilitado por flag (ENABLE_ANTHROPIC OFF)."
             }
           ],
-          "debate_id": "ARM-CP-1781531006"
+          "debate_id": "ARM-CP-1781617457"
+        }
+      },
+      "option": null
+    },
+    {
+      "ticker": "GGAL",
+      "side": "BUY",
+      "horizon": "CP",
+      "price": 55.65,
+      "stop_loss": 51.2,
+      "take_profit": 66.77,
+      "weight_target": 0.1625,
+      "thesis": {
+        "ticker": "GGAL",
+        "horizon": "CP",
+        "conviction": "MEDIA",
+        "quant": {
+          "mu_anual": 0.5329394033525003,
+          "sigma_anual": 0.6427257588715363,
+          "beta": 1.5178870816960766,
+          "alpha_jensen": 0.14560529020599777,
+          "sharpe": 0.759172005505425,
+          "expected_return_capm": 0.38733411314650257
+        },
+        "technical": {
+          "price": 55.65,
+          "rsi": 76.67,
+          "atr": 2.3329,
+          "stop_loss_atr": 50.98,
+          "ret_1m": 0.3643049834964547,
+          "ret_3m": 0.37024634410026214,
+          "dist_52w_high": -0.05280633845134575
+        },
+        "fundamental": {
+          "sentiment_score": -0.167,
+          "n_headlines": 6,
+          "positive": 1,
+          "negative": 2,
+          "sample_titles": [
+            "How The Investment Story For Grupo Financiero Galicia (BASE:GGAL) Is Shifting After JPMorgan’s Target Cut",
+            "New Strong Sell Stocks for February 10th",
+            "How A Fresh Price Target Is Reframing The Story For Grupo Financiero Galicia (BASE:GGAL)"
+          ]
+        },
+        "macro": {
+          "regime": "bull",
+          "regime_reason": "SPY +10.3% sobre SMA200 con pendiente positiva",
+          "vix": 16.08,
+          "oil_wti": 76.68,
+          "dxy_1m": 0.0075,
+          "gold_1m": -0.0429
+        },
+        "risk": {
+          "dollars_allocated": 248.13,
+          "weight_of_total_portfolio": 0.1344,
+          "max_loss_usd_if_stop_hit": 20.82,
+          "max_loss_pct_of_capital": 0.0113,
+          "stop_loss": 50.98
+        },
+        "thesis_text": "GGAL — horizonte CORTO PLAZO. Convicción MEDIA. Setup técnico: RSI 77, momentum 1m +36.4%, momentum 3m +37.0%. ⚠️ RSI en sobrecompra → riesgo de reversión a la media. Stop loss ATR en $50.98 (riesgo ≈ 8.4% desde entrada).",
+        "key_risks": [
+          "Sin riesgos macro mayores detectados; el riesgo principal es idiosincrático del activo."
+        ],
+        "swarm": {
+          "go": false,
+          "size_factor": 0.0,
+          "reasoning": "Meta-LP heuristico (LLM OFF): EV=+ 4 NO-GO → SKIP",
+          "go_count": 0,
+          "ev": 73.37,
+          "ev_positive": true,
+          "opinions": [
+            {
+              "agent": "TechnicalCP",
+              "stance": "NO-GO",
+              "confidence": 0,
+              "reasoning": "llm_disabled",
+              "cot": "→ Anthropic deshabilitado por flag (ENABLE_ANTHROPIC OFF)."
+            },
+            {
+              "agent": "MacroLP",
+              "stance": "NO-GO",
+              "confidence": 0,
+              "reasoning": "llm_disabled",
+              "cot": "→ Anthropic deshabilitado por flag (ENABLE_ANTHROPIC OFF)."
+            },
+            {
+              "agent": "SentimentLP",
+              "stance": "NO-GO",
+              "confidence": 0,
+              "reasoning": "llm_disabled",
+              "cot": "→ Anthropic deshabilitado por flag (ENABLE_ANTHROPIC OFF)."
+            },
+            {
+              "agent": "RiskAuditorLP",
+              "stance": "NO-GO",
+              "confidence": 0,
+              "reasoning": "llm_disabled",
+              "cot": "→ Anthropic deshabilitado por flag (ENABLE_ANTHROPIC OFF)."
+            }
+          ],
+          "debate_id": "GGAL-CP-1781617457"
+        }
+      },
+      "option": null
+    },
+    {
+      "ticker": "GE",
+      "side": "BUY",
+      "horizon": "CP",
+      "price": 351.99,
+      "stop_loss": 330.01,
+      "take_profit": 406.94,
+      "weight_target": 0.1625,
+      "thesis": {
+        "ticker": "GE",
+        "horizon": "CP",
+        "conviction": "MEDIA",
+        "quant": {
+          "mu_anual": 0.3628036735891693,
+          "sigma_anual": 0.3303268770967243,
+          "beta": 1.1874242076974382,
+          "alpha_jensen": 0.04999994960162779,
+          "sharpe": 0.9620884512407145,
+          "expected_return_capm": 0.3128037239875415
+        },
+        "technical": {
+          "price": 351.99,
+          "rsi": 70.2,
+          "atr": 10.9893,
+          "stop_loss_atr": 330.01,
+          "ret_1m": 0.25027525223098745,
+          "ret_3m": 0.16518254328644089,
+          "dist_52w_high": 0.0
+        },
+        "fundamental": {
+          "sentiment_score": 0.5,
+          "n_headlines": 6,
+          "positive": 4,
+          "negative": 1,
+          "sample_titles": [
+            "GE Aerospace (GE) Laps the Stock Market: Here's Why",
+            "GE Vernova GridOS Launch Spurs Questions On Growth And Valuation",
+            "GE Aerospace Rises 12.2% in Six Months: How Should You Play the Stock?"
+          ]
+        },
+        "macro": {
+          "regime": "bull",
+          "regime_reason": "SPY +10.3% sobre SMA200 con pendiente positiva",
+          "vix": 16.08,
+          "oil_wti": 76.68,
+          "dxy_1m": 0.0075,
+          "gold_1m": -0.0429
+        },
+        "risk": {
+          "dollars_allocated": 149.37,
+          "weight_of_total_portfolio": 0.0809,
+          "max_loss_usd_if_stop_hit": 9.33,
+          "max_loss_pct_of_capital": 0.0051,
+          "stop_loss": 330.01
+        },
+        "thesis_text": "GE — horizonte CORTO PLAZO. Convicción MEDIA. Setup técnico: RSI 70, momentum 1m +25.0%, momentum 3m +16.5%. ⚠️ RSI en sobrecompra → riesgo de reversión a la media. Stop loss ATR en $330.01 (riesgo ≈ 6.2% desde entrada). Sentiment de noticias refuerza el setup.",
+        "key_risks": [
+          "Sin riesgos macro mayores detectados; el riesgo principal es idiosincrático del activo."
+        ],
+        "swarm": {
+          "go": false,
+          "size_factor": 0.0,
+          "reasoning": "Meta-LP heuristico (LLM OFF): EV=+ 4 NO-GO → SKIP",
+          "go_count": 0,
+          "ev": 120.19,
+          "ev_positive": true,
+          "opinions": [
+            {
+              "agent": "TechnicalCP",
+              "stance": "NO-GO",
+              "confidence": 0,
+              "reasoning": "llm_disabled",
+              "cot": "→ Anthropic deshabilitado por flag (ENABLE_ANTHROPIC OFF)."
+            },
+            {
+              "agent": "MacroLP",
+              "stance": "NO-GO",
+              "confidence": 0,
+              "reasoning": "llm_disabled",
+              "cot": "→ Anthropic deshabilitado por flag (ENABLE_ANTHROPIC OFF)."
+            },
+            {
+              "agent": "SentimentLP",
+              "stance": "NO-GO",
+              "confidence": 0,
+              "reasoning": "llm_disabled",
+              "cot": "→ Anthropic deshabilitado por flag (ENABLE_ANTHROPIC OFF)."
+            },
+            {
+              "agent": "RiskAuditorLP",
+              "stance": "NO-GO",
+              "confidence": 0,
+              "reasoning": "llm_disabled",
+              "cot": "→ Anthropic deshabilitado por flag (ENABLE_ANTHROPIC OFF)."
+            }
+          ],
+          "debate_id": "GE-CP-1781617457"
+        }
+      },
+      "option": null
+    },
+    {
+      "ticker": "BAC",
+      "side": "BUY",
+      "horizon": "CP",
+      "price": 56.47,
+      "stop_loss": 54.15,
+      "take_profit": 62.27,
+      "weight_target": 0.1625,
+      "thesis": {
+        "ticker": "BAC",
+        "horizon": "CP",
+        "conviction": "MEDIA",
+        "quant": {
+          "mu_anual": 0.2856185616842099,
+          "sigma_anual": 0.2564699746998768,
+          "beta": 0.934716250030716,
+          "alpha_jensen": 0.029808902417368777,
+          "sharpe": 0.938193883965496,
+          "expected_return_capm": 0.2558096592668411
+        },
+        "technical": {
+          "price": 56.47,
+          "rsi": 77.52,
+          "atr": 1.1579,
+          "stop_loss_atr": 54.15,
+          "ret_1m": 0.14041344834676983,
+          "ret_3m": 0.20047332934093665,
+          "dist_52w_high": -0.0029826403206952845
+        },
+        "fundamental": {
+          "sentiment_score": 0.167,
+          "n_headlines": 6,
+          "positive": 3,
+          "negative": 2,
+          "sample_titles": [
+            "AI Stock Rally Is in Boom Phase Not Euphoria, BofA Survey Shows",
+            "STMicro Eyes $1.5 Billion Convertible Bonds After AI-Fueled Jump",
+            "Williams Sonoma (WSM) Stock Could Be 8% Overvalued After Bank Of America Buy Call"
+          ]
+        },
+        "macro": {
+          "regime": "bull",
+          "regime_reason": "SPY +10.3% sobre SMA200 con pendiente positiva",
+          "vix": 16.08,
+          "oil_wti": 76.68,
+          "dxy_1m": 0.0075,
+          "gold_1m": -0.0429
+        },
+        "risk": {
+          "dollars_allocated": 91.12,
+          "weight_of_total_portfolio": 0.0494,
+          "max_loss_usd_if_stop_hit": 3.74,
+          "max_loss_pct_of_capital": 0.002,
+          "stop_loss": 54.15
+        },
+        "thesis_text": "BAC — horizonte CORTO PLAZO. Convicción MEDIA. Setup técnico: RSI 78, momentum 1m +14.0%, momentum 3m +20.0%. ⚠️ RSI en sobrecompra → riesgo de reversión a la media. Stop loss ATR en $54.15 (riesgo ≈ 4.1% desde entrada).",
+        "key_risks": [
+          "Sin riesgos macro mayores detectados; el riesgo principal es idiosincrático del activo."
+        ],
+        "swarm": {
+          "go": false,
+          "size_factor": 0.0,
+          "reasoning": "Meta-LP heuristico (LLM OFF): EV=+ 4 NO-GO → SKIP",
+          "go_count": 0,
+          "ev": 90.2,
+          "ev_positive": true,
+          "opinions": [
+            {
+              "agent": "TechnicalCP",
+              "stance": "NO-GO",
+              "confidence": 0,
+              "reasoning": "llm_disabled",
+              "cot": "→ Anthropic deshabilitado por flag (ENABLE_ANTHROPIC OFF)."
+            },
+            {
+              "agent": "MacroLP",
+              "stance": "NO-GO",
+              "confidence": 0,
+              "reasoning": "llm_disabled",
+              "cot": "→ Anthropic deshabilitado por flag (ENABLE_ANTHROPIC OFF)."
+            },
+            {
+              "agent": "SentimentLP",
+              "stance": "NO-GO",
+              "confidence": 0,
+              "reasoning": "llm_disabled",
+              "cot": "→ Anthropic deshabilitado por flag (ENABLE_ANTHROPIC OFF)."
+            },
+            {
+              "agent": "RiskAuditorLP",
+              "stance": "NO-GO",
+              "confidence": 0,
+              "reasoning": "llm_disabled",
+              "cot": "→ Anthropic deshabilitado por flag (ENABLE_ANTHROPIC OFF)."
+            }
+          ],
+          "debate_id": "BAC-CP-1781617457"
+        }
+      },
+      "option": null
+    },
+    {
+      "ticker": "GD",
+      "side": "BUY",
+      "horizon": "CP",
+      "price": 362.8,
+      "stop_loss": 347.89,
+      "take_profit": 400.08,
+      "weight_target": 0.1625,
+      "thesis": {
+        "ticker": "GD",
+        "horizon": "CP",
+        "conviction": "MEDIA",
+        "quant": {
+          "mu_anual": 0.19797078983783226,
+          "sigma_anual": 0.22065380704338505,
+          "beta": 0.5387225757784915,
+          "alpha_jensen": 0.03147089868317779,
+          "sharpe": 0.6932615026567616,
+          "expected_return_capm": 0.16649989115465447
+        },
+        "technical": {
+          "price": 362.8,
+          "rsi": 63.7,
+          "atr": 7.4525,
+          "stop_loss_atr": 347.89,
+          "ret_1m": 0.08460384990424141,
+          "ret_3m": 0.02300133732807863,
+          "dist_52w_high": -0.007879726103992013
+        },
+        "fundamental": {
+          "sentiment_score": -0.167,
+          "n_headlines": 6,
+          "positive": 2,
+          "negative": 3,
+          "sample_titles": [
+            "GE Aerospace Rises 12.2% in Six Months: How Should You Play the Stock?",
+            "Here’s What Lifted General Dynamics (GD) in Q1",
+            "General Dynamics (GD) Stock After Strong Multi‑Year Run Are Recent Gains Justified By Cash Flows"
+          ]
+        },
+        "macro": {
+          "regime": "bull",
+          "regime_reason": "SPY +10.3% sobre SMA200 con pendiente positiva",
+          "vix": 16.08,
+          "oil_wti": 76.68,
+          "dxy_1m": 0.0075,
+          "gold_1m": -0.0429
+        },
+        "risk": {
+          "dollars_allocated": 90.09,
+          "weight_of_total_portfolio": 0.0488,
+          "max_loss_usd_if_stop_hit": 3.7,
+          "max_loss_pct_of_capital": 0.002,
+          "stop_loss": 347.89
+        },
+        "thesis_text": "GD — horizonte CORTO PLAZO. Convicción MEDIA. Setup técnico: RSI 64, momentum 1m +8.5%, momentum 3m +2.3%. Stop loss ATR en $347.89 (riesgo ≈ 4.1% desde entrada).",
+        "key_risks": [
+          "Sin riesgos macro mayores detectados; el riesgo principal es idiosincrático del activo."
+        ],
+        "swarm": {
+          "go": false,
+          "size_factor": 0.0,
+          "reasoning": "Meta-LP heuristico (LLM OFF): EV=+ 4 NO-GO → SKIP",
+          "go_count": 0,
+          "ev": 19.82,
+          "ev_positive": true,
+          "opinions": [
+            {
+              "agent": "TechnicalCP",
+              "stance": "NO-GO",
+              "confidence": 0,
+              "reasoning": "llm_disabled",
+              "cot": "→ Anthropic deshabilitado por flag (ENABLE_ANTHROPIC OFF)."
+            },
+            {
+              "agent": "MacroLP",
+              "stance": "NO-GO",
+              "confidence": 0,
+              "reasoning": "llm_disabled",
+              "cot": "→ Anthropic deshabilitado por flag (ENABLE_ANTHROPIC OFF)."
+            },
+            {
+              "agent": "SentimentLP",
+              "stance": "NO-GO",
+              "confidence": 0,
+              "reasoning": "llm_disabled",
+              "cot": "→ Anthropic deshabilitado por flag (ENABLE_ANTHROPIC OFF)."
+            },
+            {
+              "agent": "RiskAuditorLP",
+              "stance": "NO-GO",
+              "confidence": 0,
+              "reasoning": "llm_disabled",
+              "cot": "→ Anthropic deshabilitado por flag (ENABLE_ANTHROPIC OFF)."
+            }
+          ],
+          "debate_id": "GD-CP-1781617457"
         }
       },
       "option": null
@@ -158,128 +562,128 @@
       {
         "ticker": "ARM",
         "sector": "Tech",
-        "price": 384.0,
-        "pct_1d": 0.0084,
-        "pct_1w": 0.1086,
-        "pct_1m": 0.6805,
+        "price": 425.35,
+        "pct_1d": 0.1169,
+        "pct_1w": 0.2279,
+        "pct_1m": 0.8615,
         "action": "BUY_CP",
-        "headline": "Chips Up 8.8% in One Week: 5 Semiconductor Names Breaking Into New Highs",
+        "headline": "SpaceX becomes retail's biggest IPO trade: Chart of the Day",
+        "sentiment": 0.667,
+        "n_headlines": 6
+      },
+      {
+        "ticker": "GE",
+        "sector": "Industrials",
+        "price": 352.23,
+        "pct_1d": 0.0505,
+        "pct_1w": 0.0937,
+        "pct_1m": 0.2082,
+        "action": "BUY_CP",
+        "headline": "GE Aerospace (GE) Laps the Stock Market: Here's Why",
         "sentiment": 0.5,
         "n_headlines": 6
       },
       {
-        "ticker": "ETHE",
-        "sector": "Crypto",
-        "price": 14.64,
-        "pct_1d": 0.0865,
-        "pct_1w": 0.0737,
-        "pct_1m": -0.213,
-        "action": "—",
-        "headline": "Beyond Bitcoin: Crypto ETFs to Watch Amid Ethereum's Momentum",
-        "sentiment": 1.0,
+        "ticker": "GGAL",
+        "sector": "Financials",
+        "price": 55.65,
+        "pct_1d": 0.0089,
+        "pct_1w": 0.1584,
+        "pct_1m": 0.3297,
+        "action": "BUY_CP",
+        "headline": "Grupo Financiero Galicia Q1 Earnings Call Highlights",
+        "sentiment": -0.167,
         "n_headlines": 6
       },
       {
-        "ticker": "AMD",
+        "ticker": "GD",
+        "sector": "Defense",
+        "price": 362.8,
+        "pct_1d": 0.0072,
+        "pct_1w": 0.0644,
+        "pct_1m": 0.0651,
+        "action": "BUY_CP",
+        "headline": "GE Aerospace Rises 12.2% in Six Months: How Should You Play the Stock?",
+        "sentiment": -0.167,
+        "n_headlines": 6
+      },
+      {
+        "ticker": "BAC",
+        "sector": "Other",
+        "price": 56.48,
+        "pct_1d": 0.0082,
+        "pct_1w": 0.0531,
+        "pct_1m": 0.1389,
+        "action": "BUY_CP",
+        "headline": "No “big top” yet in risk assets, BofA says despite elevated sentiment",
+        "sentiment": 0.167,
+        "n_headlines": 6
+      },
+      {
+        "ticker": "MU",
         "sector": "Tech",
-        "price": 551.59,
-        "pct_1d": 0.0782,
-        "pct_1w": 0.1249,
-        "pct_1m": 0.2266,
+        "price": 1105.52,
+        "pct_1d": 0.1262,
+        "pct_1w": 0.1646,
+        "pct_1m": 0.4246,
         "action": "—",
-        "headline": "Is AMD the Next $1 Trillion Chip Stock, or Just the Next AI Trap?",
-        "sentiment": 0.833,
+        "headline": "Western Digital, Micron, Sandisk hover at all-time highs as AI trade rei...",
+        "sentiment": 0.333,
         "n_headlines": 6
       },
       {
         "ticker": "NEM",
         "sector": "Materials",
-        "price": 107.84,
-        "pct_1d": 0.0759,
-        "pct_1w": 0.0894,
-        "pct_1m": -0.0708,
+        "price": 108.11,
+        "pct_1d": 0.0787,
+        "pct_1w": 0.0922,
+        "pct_1m": -0.0684,
         "action": "—",
-        "headline": "Newmont Stock Loses 9% in a Month: Should You Buy the Dip?",
+        "headline": "Gold’s Correction Looks More Like a Reset. Newmont and These 4 Stocks Ar...",
         "sentiment": 0.667,
         "n_headlines": 6
       },
       {
         "ticker": "BMA",
         "sector": "Financials",
-        "price": 101.07,
-        "pct_1d": 0.0239,
-        "pct_1w": 0.2045,
-        "pct_1m": 0.4275,
+        "price": 100.51,
+        "pct_1d": 0.0182,
+        "pct_1w": 0.1978,
+        "pct_1m": 0.4196,
         "action": "—",
         "headline": "Are Options Traders Betting on a Big Move in Macro Bank Stock?",
         "sentiment": 0.833,
         "n_headlines": 6
       },
       {
-        "ticker": "MU",
-        "sector": "Tech",
-        "price": 1056.29,
-        "pct_1d": 0.0761,
-        "pct_1w": 0.1127,
-        "pct_1m": 0.3612,
+        "ticker": "HON",
+        "sector": "Other",
+        "price": 231.04,
+        "pct_1d": 0.0487,
+        "pct_1w": 0.0909,
+        "pct_1m": 0.067,
         "action": "—",
-        "headline": "Micron and Western Digital Climb 8%, SanDisk Rises 6% on Iran Truce",
-        "sentiment": 0.5,
-        "n_headlines": 6
-      },
-      {
-        "ticker": "COIN",
-        "sector": "Crypto",
-        "price": 169.31,
-        "pct_1d": 0.0596,
-        "pct_1w": 0.0444,
-        "pct_1m": -0.2014,
-        "action": "—",
-        "headline": "Prediction Markets See Record Volumes From World Cup Betting",
+        "headline": "Stock Market Today: Dow Pops On Trump-Iran Deal; Elon Musk's SpaceX Rock...",
         "sentiment": 0.833,
         "n_headlines": 6
       },
       {
-        "ticker": "MSTR",
-        "sector": "Crypto",
-        "price": 132.63,
-        "pct_1d": 0.0699,
-        "pct_1w": 0.0427,
-        "pct_1m": -0.2906,
+        "ticker": "AMD",
+        "sector": "Tech",
+        "price": 541.95,
+        "pct_1d": 0.0594,
+        "pct_1w": 0.1053,
+        "pct_1m": 0.2051,
         "action": "—",
-        "headline": "Bitcoin Jumps Above $65,000 As Fed Risk Looms",
+        "headline": "Western Digital, Micron, Sandisk hover at all-time highs as AI trade rei...",
         "sentiment": 0.667,
-        "n_headlines": 6
-      },
-      {
-        "ticker": "AMZN",
-        "sector": "Tech",
-        "price": 247.05,
-        "pct_1d": 0.0356,
-        "pct_1w": 0.0075,
-        "pct_1m": -0.0755,
-        "action": "—",
-        "headline": "Stock Market Today: Dow Rallies 500 Points On U.S.-Iran Deal; Oil Prices...",
-        "sentiment": 1.0,
-        "n_headlines": 6
-      },
-      {
-        "ticker": "AVGO",
-        "sector": "Tech",
-        "price": 395.36,
-        "pct_1d": 0.0348,
-        "pct_1w": -0.0031,
-        "pct_1m": -0.101,
-        "action": "—",
-        "headline": "This Under-the-Radar AI Chip Leader Just Became a No-Brainer Buy This Week",
-        "sentiment": 1.0,
         "n_headlines": 6
       }
     ],
-    "n_up": 51,
-    "n_down": 22,
-    "biggest_winner": "ETHE +8.6%",
-    "biggest_loser": "XOM -5.4%"
+    "n_up": 46,
+    "n_down": 27,
+    "biggest_winner": "MU +12.6%",
+    "biggest_loser": "PBR -7.5%"
   },
   "edgar_alerts": []
 }
