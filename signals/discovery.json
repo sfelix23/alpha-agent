@@ -1,6 +1,25 @@
 {
-  "generated_at": "2026-06-17T13:41:11.959063",
+  "generated_at": "2026-06-18T13:43:02.984402",
   "n_scanned": 118,
-  "candidates": [],
+  "candidates": [
+    {
+      "ticker": "SNOW",
+      "score": 42.1,
+      "ret_1m": 34.0,
+      "ret_3m": 33.1,
+      "prioridad": "MEDIA",
+      "razon": "Score técnico 42/100",
+      "riesgo": ""
+    },
+    {
+      "ticker": "OKTA",
+      "score": 40.9,
+      "ret_1m": 21.7,
+      "ret_3m": 38.2,
+      "prioridad": "MEDIA",
+      "razon": "Score técnico 41/100",
+      "riesgo": ""
+    }
+  ],
   "repeated_alerts": []
 }
