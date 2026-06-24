@@ -1,39 +1,21 @@
 {
-  "generated_at": "2026-06-23T13:42:29.831027",
+  "generated_at": "2026-06-24T13:43:21.897939",
   "n_scanned": 118,
   "candidates": [
     {
-      "ticker": "DELL",
-      "score": 41.0,
-      "ret_1m": 34.0,
-      "ret_3m": 124.3,
-      "prioridad": "MEDIA",
-      "razon": "Score técnico 41/100",
-      "riesgo": ""
-    },
-    {
       "ticker": "SNOW",
-      "score": 40.7,
-      "ret_1m": 29.9,
-      "ret_3m": 38.6,
-      "prioridad": "MEDIA",
-      "razon": "Score técnico 41/100",
-      "riesgo": ""
-    },
-    {
-      "ticker": "HPE",
       "score": 40.5,
-      "ret_1m": 23.3,
-      "ret_3m": 93.9,
+      "ret_1m": 30.0,
+      "ret_3m": 43.8,
       "prioridad": "MEDIA",
       "razon": "Score técnico 40/100",
       "riesgo": ""
     },
     {
-      "ticker": "OKTA",
+      "ticker": "HPE",
       "score": 40.4,
-      "ret_1m": 25.7,
-      "ret_3m": 51.0,
+      "ret_1m": 27.4,
+      "ret_3m": 88.1,
       "prioridad": "MEDIA",
       "razon": "Score técnico 40/100",
       "riesgo": ""
@@ -41,6 +23,6 @@
   ],
   "repeated_alerts": [
     "SNOW",
-    "OKTA"
+    "HPE"
   ]
 }
