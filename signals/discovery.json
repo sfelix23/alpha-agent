@@ -1,28 +1,18 @@
 {
-  "generated_at": "2026-06-25T13:41:24.974771",
+  "generated_at": "2026-06-26T13:42:16.330094",
   "n_scanned": 118,
   "candidates": [
     {
       "ticker": "HPE",
-      "score": 40.8,
-      "ret_1m": 27.6,
-      "ret_3m": 89.3,
-      "prioridad": "MEDIA",
-      "razon": "Score técnico 41/100",
-      "riesgo": ""
-    },
-    {
-      "ticker": "SNOW",
       "score": 40.7,
-      "ret_1m": 26.8,
-      "ret_3m": 36.9,
+      "ret_1m": 16.7,
+      "ret_3m": 86.3,
       "prioridad": "MEDIA",
       "razon": "Score técnico 41/100",
       "riesgo": ""
     }
   ],
   "repeated_alerts": [
-    "HPE",
-    "SNOW"
+    "HPE"
   ]
 }
