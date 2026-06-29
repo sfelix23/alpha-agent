@@ -1,18 +1,6 @@
 {
-  "generated_at": "2026-06-26T13:42:16.330094",
+  "generated_at": "2026-06-29T13:41:46.931697",
   "n_scanned": 118,
-  "candidates": [
-    {
-      "ticker": "HPE",
-      "score": 40.7,
-      "ret_1m": 16.7,
-      "ret_3m": 86.3,
-      "prioridad": "MEDIA",
-      "razon": "Score técnico 41/100",
-      "riesgo": ""
-    }
-  ],
-  "repeated_alerts": [
-    "HPE"
-  ]
+  "candidates": [],
+  "repeated_alerts": []
 }
