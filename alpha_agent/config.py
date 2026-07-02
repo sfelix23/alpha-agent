@@ -344,6 +344,13 @@ class FinancialParams:
     # Gate de liquidez: discovery solo surface candidatos tradeables.
     discovery_min_adv_usd: float = 20_000_000   # avg dollar volume 20d mínimo
     discovery_min_price: float = 5.0            # precio mínimo (evita penny stocks)
+    # iter66 — BAJA ROTACIÓN (data-driven): el A/B de 3 años probó que HOLDEAR los
+    # mismos nombres (+149%, Sharpe 2.08) le gana MASIVAMENTE a operarlos activo
+    # (+107%, Sharpe 0.88). El churn (vender en cada dip -3% y recomprar) destruía
+    # valor. Ahora el daily solo rota a cash cerca de lo catastrófico (-8%, donde
+    # ya actúa el backstop); aguanta los pullbacks normales como el hold que ganó.
+    # Reversible: subir a -3.0 vuelve al comportamiento de alta rotación anterior.
+    rotate_loser_pct: float = -8.0              # daily rota a cash solo si pnl <= esto
     # Rotación automática del CP_UNIVERSE (corre semanal en run_rebalancer):
     rotation_enabled: bool = True               # auto-incorporar candidatos fuertes
     rotation_margin: float = 0.20               # candidato debe superar al más flojo por 20%

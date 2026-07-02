@@ -11,13 +11,20 @@ class _Pos:
         self.asset_class = "equity"
 
 
-def test_winner_protection_keeps_profitable_rotated_out():
-    # Ambos salieron del target; el ganador no se vende, el perdedor sí.
-    positions = [_Pos("WIN", 110.0, 10.0, 10.0), _Pos("LOSE", 95.0, 10.0, 10.0)]
+def test_low_turnover_holds_through_pullbacks():
+    # iter66 (baja rotación): salieron del target. El ganador (+10%) NO se vende;
+    # un pullback normal (-5%) tampoco (se AGUANTA, era el churn que perdía valor);
+    # solo se rota a cash lo catastrófico (-10%, cerca del backstop).
+    positions = [
+        _Pos("WIN", 110.0, 10.0, 10.0),    # +10% → hold
+        _Pos("DIP", 95.0, 10.0, 10.0),     # -5%  → hold (antes se vendía con -3%)
+        _Pos("CRASH", 89.0, 10.0, 10.0),   # -11% → rota a cash (<= -8%)
+    ]
     intents = diff_against_current({}, positions, threshold=25.0)
     sells = {i.ticker for i in intents if i.side == "SELL"}
     assert "WIN" not in sells
-    assert "LOSE" in sells
+    assert "DIP" not in sells          # clave: aguanta el pullback normal
+    assert "CRASH" in sells            # solo corta lo catastrófico
 
 
 def test_winner_in_target_still_trims_overexposure():

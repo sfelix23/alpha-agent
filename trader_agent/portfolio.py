@@ -217,7 +217,9 @@ def diff_against_current(
     # el mismo día → cash drag (hoy 33% desplegado tras vender VIST+MU ~flat). Momentum
     # sano = cortar perdedores, mantener el resto. Solo rotamos a cash si pnl < -3%
     # (perdedor real); el monitor maneja stop/TP/trailing/max-hold de los demás.
-    _ROTATE_LOSER_PCT = -3.0
+    # iter66: baja rotación — solo rotar a cash cerca de lo catastrófico (config).
+    # El A/B de 3 años probó que aguantar > operar (hold +149% vs activo +107%).
+    _ROTATE_LOSER_PCT = float(getattr(PARAMS, "rotate_loser_pct", -8.0))
     intents: list[TradeIntent] = []
 
     # Tickers con sobre-exposición respecto al target → SELL el exceso
