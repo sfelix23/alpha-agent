@@ -1,1 +1,1 @@
-{"lp_pct": 0.0, "cp_pct": 0.88, "opt_pct": 0.1, "n_cp_positions": 5, "cp_max_hold_days": 8, "level": 2, "reasoning": "BULL + VIX 16.1: CP 88% en top-5 (diversificado), hold 8d max.", "generated_at": "2026-07-02T13:42:32.178039"}
+{"lp_pct": 0.0, "cp_pct": 0.7040000000000001, "opt_pct": 0.08000000000000002, "n_cp_positions": 5, "cp_max_hold_days": 8, "level": 2, "reasoning": "BULL + VIX 15.9: CP 88% en top-5 (diversificado), hold 8d max. | Sleeve mod 0.80 (ec=COOLING).", "generated_at": "2026-07-03T13:42:52.202800"}
