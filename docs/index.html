@@ -258,7 +258,7 @@ tr:hover td{background:var(--s2)}
 <div class="topbar">
   <div class="logo">ALPHA<span>&nbsp;/&nbsp;TERMINAL</span></div>
   <div class="topbar-meta">
-    <span><span class="live"></span>&nbsp;03 de July de 2026 — 15:36</span>
+    <span><span class="live"></span>&nbsp;03 de July de 2026 — 16:06</span>
     <span style="color:var(--bd)">|</span>
     <span>Paper</span>
     <span style="color:var(--bd)">|</span>
@@ -351,7 +351,7 @@ tr:hover td{background:var(--s2)}
     <div class="kpi-sub">Caida maxima · ventana corta, no anualizada</div>
   </div>
   <div class="kpi"><div class="kpi-lbl">Alpha vs SPY (ventana · 22 snapshots)</div><div class="kpi-val" style="color:#f85149">-15.58%</div><div class="kpi-sub">Portfolio -16.58% · SPY -1.00%</div></div>
-  <div class="kpi"><div class="kpi-lbl">Alpha vs QQQ (ventana · 22 snapshots)</div><div class="kpi-val" style="color:#f85149">-12.44%</div><div class="kpi-sub">QQQ -4.14%</div></div>
+  
 </div>
 <div class="kpi-row kpi-row-adv">
   <div class="kpi">
@@ -721,12 +721,10 @@ tr:hover td{background:var(--s2)}
     🟢 Desplegado según target (100% vs 84%)
   </div>
 </div><div class="card">
-  <div class="card-head">
-    <div>
-      <div class="card-title">PORTFOLIO vs BENCHMARKS · RISK-ADJUSTED</div>
-      <div class="card-sub">El retorno absoluto miente en bull. Esto mide eficiencia del riesgo.</div>
-    </div>
-  </div>
+  <div class="card-head"><div>
+    <div class="card-title">PORTFOLIO vs BENCHMARKS</div>
+    <div class="card-sub">Pocos datos aún para métricas risk-adjusted</div>
+  </div></div>
   <div style="margin-bottom:14px">
       <div style="font-size:.68rem;color:var(--mt);text-transform:uppercase;letter-spacing:.6px;margin-bottom:6px">
         Carrera de retornos · últimos 22 snapshots
@@ -751,15 +749,6 @@ tr:hover td{background:var(--s2)}
                        font-weight:600;color:#58a6ff">-1.00%</span>
         </div>
         <div style="display:flex;align-items:center;gap:8px;margin:5px 0">
-          <span style="width:120px;font-size:.72rem;color:var(--mt)">Nasdaq (QQQ)</span>
-          <div style="flex:1;background:var(--s2);border-radius:3px;height:18px;position:relative">
-            <div style="width:25%;background:#bc8cff;height:100%;border-radius:3px;
-                        min-width:2px;opacity:.85"></div>
-          </div>
-          <span style="width:64px;text-align:right;font-family:var(--mono);font-size:.78rem;
-                       font-weight:600;color:#bc8cff">-4.14%</span>
-        </div>
-        <div style="display:flex;align-items:center;gap:8px;margin:5px 0">
           <span style="width:120px;font-size:.72rem;color:var(--mt)">Portfolio</span>
           <div style="flex:1;background:var(--s2);border-radius:3px;height:18px;position:relative">
             <div style="width:100%;background:#3fb950;height:100%;border-radius:3px;
@@ -769,36 +758,6 @@ tr:hover td{background:var(--s2)}
                        font-weight:600;color:#3fb950">-16.58%</span>
         </div>
     </div>
-  <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin-top:8px">
-    <div style="padding:12px;background:var(--s2);border-radius:4px">
-          <div style="font-size:.62rem;color:var(--mt);text-transform:uppercase;letter-spacing:.6px">Calmar Ratio</div>
-          <div style="font-family:var(--mono);font-size:1.3rem;font-weight:600;color:#d29922">n/a</div>
-          <div style="font-size:.64rem;color:var(--mt)">muestra insuficiente (n&lt;60)</div>
-        </div><div style="padding:12px;background:var(--s2);border-radius:4px">
-          <div style="font-size:.62rem;color:var(--mt);text-transform:uppercase;letter-spacing:.6px">Beta vs QQQ</div>
-          <div style="font-family:var(--mono);font-size:1.3rem;font-weight:600;color:#d29922">1.14</div>
-          <div style="font-size:.64rem;color:var(--mt)">1.0=igual Nasdaq · <1 defensivo</div>
-        </div><div style="padding:12px;background:var(--s2);border-radius:4px">
-          <div style="font-size:.62rem;color:var(--mt);text-transform:uppercase;letter-spacing:.6px">Up Capture</div>
-          <div style="font-family:var(--mono);font-size:1.3rem;font-weight:600;color:#3fb950">105%</div>
-          <div style="font-size:.64rem;color:var(--mt)">de las subidas de QQQ</div>
-        </div><div style="padding:12px;background:var(--s2);border-radius:4px">
-          <div style="font-size:.62rem;color:var(--mt);text-transform:uppercase;letter-spacing:.6px">Down Capture</div>
-          <div style="font-family:var(--mono);font-size:1.3rem;font-weight:600;color:#f85149">154%</div>
-          <div style="font-size:.64rem;color:var(--mt)">de las bajadas (menor=mejor)</div>
-        </div><div style="padding:12px;background:var(--s2);border-radius:4px">
-          <div style="font-size:.62rem;color:var(--mt);text-transform:uppercase;letter-spacing:.6px">Information Ratio</div>
-          <div style="font-family:var(--mono);font-size:1.3rem;font-weight:600;color:#f85149">-3.77</div>
-          <div style="font-size:.64rem;color:var(--mt)">alpha/TE vs QQQ · >0.5 bueno</div>
-        </div><div style="padding:12px;background:var(--s2);border-radius:4px">
-          <div style="font-size:.62rem;color:var(--mt);text-transform:uppercase;letter-spacing:.6px">Batting Avg</div>
-          <div style="font-family:var(--mono);font-size:1.3rem;font-weight:600;color:#f85149">45%</div>
-          <div style="font-size:.64rem;color:var(--mt)">% dias que supera QQQ</div>
-        </div>
-  </div>
-  <div style="margin-top:12px;padding-top:8px;border-top:1px solid var(--bd);font-size:.72rem;color:var(--mt)">
-    🔴 Capturas mas bajadas que subidas vs QQQ — revisar seleccion
-  </div>
 </div><div class="card">
   <div class="card-head"><div>
     <div class="card-title">🧠 SEGUNDO CEREBRO · memoria de trades</div>
@@ -1061,7 +1020,7 @@ tr:hover td{background:var(--s2)}
       <div class="card-sub" style="display:flex;gap:16px;align-items:center;flex-wrap:wrap">
         <span><span style="color:#f85149;font-weight:700;font-size:.9rem">-16.58%</span> Portfolio</span>
         <span style="font-size:.78rem;color:#58a6ff">&#9135;&#9135; SPY -1.00%</span>
-        <span style="font-size:.78rem;color:#e3b341">&#9135;&#9135; QQQ -4.14%</span>
+        
       </div>
     </div>
     <div class="pill" style="color:#f85149">$1,664.78</div>
@@ -1086,10 +1045,7 @@ tr:hover td{background:var(--s2)}
     {data:[0.0, 0.378, -2.213, -1.991, -2.279, -3.82, -2.185, -1.656, 0.078, -0.518, -1.761, -0.739, -1.052, -2.489, -2.534, -2.393, -3.099, -1.502, -0.735, -0.87, -1.0],label:'SPY',
       borderColor:'#58a6ff',backgroundColor:'transparent',fill:false,
       tension:.4,pointRadius:0,borderWidth:1.5,borderDash:[5,3]}
-        ,
-    {data:[0.0, -0.484, -5.261, -3.781, -4.888, -6.788, -3.64, -3.073, -0.028, -1.928, -2.916, -0.482, -0.732, -4.001, -4.409, -3.634, -4.96, -2.598, -0.941, -2.451, -4.142],label:'QQQ',
-      borderColor:'#e3b341',backgroundColor:'transparent',fill:false,
-      tension:.4,pointRadius:0,borderWidth:1.5,borderDash:[3,3]}
+        
       ]
     },
     options:{
