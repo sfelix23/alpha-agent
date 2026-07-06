@@ -1,183 +1,285 @@
 {
-  "generated_at": "2026-07-03T13:43:53",
+  "generated_at": "2026-07-06T13:43:31",
   "horizon": "medium_long_70_30_high_conviction",
-  "capital_usd": 1664.78,
+  "capital_usd": 1677.38,
   "params": {
     "weight_long_term": 0.0,
-    "weight_short_term": 0.7040000000000001,
+    "weight_short_term": 0.36000000000000004,
     "weight_options": 0.14,
     "risk_free_rate": 0.045,
     "max_beta_lp": 2.8,
     "min_sharpe_lp": 0.1,
     "top_n_long_term": 2,
-    "top_n_short_term": 0,
+    "top_n_short_term": 1,
     "top_n_bearish": 1,
-    "max_hold_days_cp": 8,
+    "max_hold_days_cp": 4,
     "max_weight_per_asset": 0.55,
     "enable_short_equity": false,
     "enable_options": true
   },
   "macro": {
     "regime": "bull",
-    "regime_reason": "SPY +8.1% sobre SMA200 con pendiente positiva",
+    "regime_reason": "SPY +8.5% sobre SMA200 con pendiente positiva",
     "prices": {
-      "oil_wti": 68.65,
-      "oil_brent": 71.96,
-      "gold": 4179.4,
-      "dxy": 100.829,
-      "vix": 15.93,
-      "us10y": 4.372
+      "oil_wti": 68.74,
+      "oil_brent": 72.18,
+      "gold": 4159.8,
+      "dxy": 101.048,
+      "vix": 16.49,
+      "us10y": 4.471
     },
     "changes_1d": {
-      "oil_wti": -0.0006,
-      "oil_brent": 0.0022,
-      "gold": 0.0162,
-      "dxy": -0.0003,
-      "vix": -0.0136,
-      "us10y": -0.0046
+      "oil_wti": 0.0007,
+      "oil_brent": 0.0053,
+      "gold": 0.0115,
+      "dxy": 0.0019,
+      "vix": 0.0211,
+      "us10y": -0.0031
     },
     "changes_1m": {
-      "oil_wti": -0.285,
-      "oil_brent": -0.2643,
-      "gold": -0.058,
-      "dxy": 0.0131,
-      "vix": -0.0081,
-      "us10y": -0.0243
+      "oil_wti": -0.2841,
+      "oil_brent": -0.262,
+      "gold": -0.0624,
+      "dxy": 0.0153,
+      "vix": 0.0268,
+      "us10y": -0.0045
     },
-    "spy_vs_sma200": 0.0814
+    "spy_vs_sma200": 0.0853
   },
   "long_term": [],
-  "short_term": [],
+  "short_term": [
+    {
+      "ticker": "CRWD",
+      "side": "BUY",
+      "horizon": "CP",
+      "price": 201.83,
+      "stop_loss": 185.68,
+      "take_profit": 242.21,
+      "weight_target": 1.0,
+      "thesis": {
+        "ticker": "CRWD",
+        "horizon": "CP",
+        "conviction": "ALTA",
+        "quant": {
+          "mu_anual": 1.273869697113701,
+          "sigma_anual": 0.4850876161178666,
+          "beta": 1.4811420833655218,
+          "alpha_jensen": 0.9655141922106266,
+          "sharpe": 2.533294308661778,
+          "expected_return_capm": 0.3083555049030743
+        },
+        "technical": {
+          "price": 201.83,
+          "rsi": 83.47,
+          "atr": 8.2374,
+          "stop_loss_atr": 185.36,
+          "ret_1m": 0.12269670997187054,
+          "ret_3m": 1.0253381425259223,
+          "dist_52w_high": 0.0
+        },
+        "fundamental": {
+          "sentiment_score": 0.667,
+          "n_headlines": 6,
+          "positive": 5,
+          "negative": 1,
+          "sample_titles": [
+            "Is CrowdStrike Stock a Buy After Its Stock Split?",
+            "NAVN, JNJ, CRWD Stocks Hit 52-Week Highs Last Week: What's Driving The Surge?",
+            "CrowdStrike (CRWD) Joins OpenID Foundation to Advance Risk-Aware Identity Security"
+          ]
+        },
+        "macro": {
+          "regime": "bull",
+          "regime_reason": "SPY +8.5% sobre SMA200 con pendiente positiva",
+          "vix": 16.49,
+          "oil_wti": 68.74,
+          "dxy_1m": 0.0153,
+          "gold_1m": -0.0624
+        },
+        "risk": {
+          "dollars_allocated": 603.86,
+          "weight_of_total_portfolio": 0.36,
+          "max_loss_usd_if_stop_hit": 49.28,
+          "max_loss_pct_of_capital": 0.0294,
+          "stop_loss": 185.36
+        },
+        "thesis_text": "CRWD — horizonte CORTO PLAZO. Convicción ALTA. Setup técnico: RSI 83, momentum 1m +12.3%, momentum 3m +102.5%. ⚠️ RSI en sobrecompra → riesgo de reversión a la media. Stop loss ATR en $185.36 (riesgo ≈ 8.2% desde entrada). Sentiment de noticias refuerza el setup.",
+        "key_risks": [
+          "Sin riesgos macro mayores detectados; el riesgo principal es idiosincrático del activo."
+        ],
+        "swarm": {
+          "go": false,
+          "size_factor": 0.0,
+          "reasoning": "Meta-LP heuristico (LLM OFF): EV=+ 4 NO-GO → SKIP",
+          "go_count": 0,
+          "ev": 511.93,
+          "ev_positive": true,
+          "opinions": [
+            {
+              "agent": "TechnicalCP",
+              "stance": "NO-GO",
+              "confidence": 0,
+              "reasoning": "llm_disabled",
+              "cot": "→ Anthropic deshabilitado por flag (ENABLE_ANTHROPIC OFF)."
+            },
+            {
+              "agent": "MacroLP",
+              "stance": "NO-GO",
+              "confidence": 0,
+              "reasoning": "llm_disabled",
+              "cot": "→ Anthropic deshabilitado por flag (ENABLE_ANTHROPIC OFF)."
+            },
+            {
+              "agent": "SentimentLP",
+              "stance": "NO-GO",
+              "confidence": 0,
+              "reasoning": "llm_disabled",
+              "cot": "→ Anthropic deshabilitado por flag (ENABLE_ANTHROPIC OFF)."
+            },
+            {
+              "agent": "RiskAuditorLP",
+              "stance": "NO-GO",
+              "confidence": 0,
+              "reasoning": "llm_disabled",
+              "cot": "→ Anthropic deshabilitado por flag (ENABLE_ANTHROPIC OFF)."
+            }
+          ],
+          "debate_id": "CRWD-CP-1783345414"
+        }
+      },
+      "option": null
+    }
+  ],
   "options_book": [],
   "hedge_book": [],
   "portfolio": {},
   "radar": {
     "entries": [
       {
+        "ticker": "CRWD",
+        "sector": "Tech",
+        "price": 201.41,
+        "pct_1d": 0.0383,
+        "pct_1w": 0.1491,
+        "pct_1m": 0.0776,
+        "action": "BUY_CP",
+        "headline": "Is CrowdStrike Stock a Buy After Its Stock Split?",
+        "sentiment": 0.667,
+        "n_headlines": 6
+      },
+      {
         "ticker": "AVAV",
         "sector": "Defense",
-        "price": 190.89,
-        "pct_1d": 0.107,
-        "pct_1w": 0.3966,
-        "pct_1m": -0.0659,
+        "price": 181.83,
+        "pct_1d": -0.0475,
+        "pct_1w": 0.3181,
+        "pct_1m": -0.0503,
         "action": "—",
-        "headline": "AeroVironment’s Big Bet Gets a Pentagon Payday",
+        "headline": "Company News for July 6, 2026",
         "sentiment": 0.833,
         "n_headlines": 6
       },
       {
-        "ticker": "EDIT",
-        "sector": "Other",
-        "price": 3.65,
-        "pct_1d": 0.1128,
-        "pct_1w": 0.3321,
-        "pct_1m": 0.2943,
+        "ticker": "TSM",
+        "sector": "Tech",
+        "price": 455.36,
+        "pct_1d": 0.0488,
+        "pct_1w": 0.0532,
+        "pct_1m": 0.0452,
         "action": "—",
-        "headline": "Why Is Editas (EDIT) Down 12.4% Since Last Earnings Report?",
-        "sentiment": -0.333,
-        "n_headlines": 6
-      },
-      {
-        "ticker": "MRNA",
-        "sector": "Other",
-        "price": 79.76,
-        "pct_1d": 0.1001,
-        "pct_1w": 0.3349,
-        "pct_1m": 0.7476,
-        "action": "—",
-        "headline": "3 Cash-Heavy Stocks with Warning Signs",
-        "sentiment": 0.167,
-        "n_headlines": 6
-      },
-      {
-        "ticker": "MSTR",
-        "sector": "Crypto",
-        "price": 100.77,
-        "pct_1d": 0.079,
-        "pct_1w": 0.1809,
-        "pct_1m": -0.2595,
-        "action": "—",
-        "headline": "What a weak jobs report means for crypto",
-        "sentiment": -0.667,
-        "n_headlines": 6
-      },
-      {
-        "ticker": "NOC",
-        "sector": "Defense",
-        "price": 549.01,
-        "pct_1d": 0.0559,
-        "pct_1w": 0.0995,
-        "pct_1m": 0.0231,
-        "action": "—",
-        "headline": "AeroVironment’s Big Bet Gets a Pentagon Payday",
+        "headline": "Better Chip Stock: Intel Versus Taiwan Semiconductor",
         "sentiment": 1.0,
         "n_headlines": 6
       },
       {
         "ticker": "ETHE",
         "sector": "Crypto",
-        "price": 13.75,
-        "pct_1d": 0.0528,
-        "pct_1w": 0.0921,
-        "pct_1m": -0.1095,
+        "price": 14.07,
+        "pct_1d": 0.0233,
+        "pct_1w": 0.1053,
+        "pct_1m": -0.0343,
         "action": "—",
         "headline": "Beyond Bitcoin: Crypto ETFs to Watch Amid Ethereum's Momentum",
         "sentiment": 1.0,
         "n_headlines": 6
       },
       {
-        "ticker": "NFLX",
-        "sector": "Consumer",
-        "price": 77.65,
-        "pct_1d": 0.0466,
-        "pct_1w": 0.0952,
-        "pct_1m": -0.0682,
+        "ticker": "MU",
+        "sector": "Tech",
+        "price": 1002.49,
+        "pct_1d": 0.0276,
+        "pct_1w": -0.1147,
+        "pct_1m": -0.0714,
         "action": "—",
-        "headline": "Netflix (NFLX) Is Up 9.5% After AI Ad Tie-Up With Omnicom Media Group - ...",
-        "sentiment": 1.0,
+        "headline": "SK Hynix seeks $28 billion in US IPO listing as memory maker rides AI wave",
+        "sentiment": 0.833,
         "n_headlines": 6
       },
       {
-        "ticker": "HOOD",
-        "sector": "Other",
-        "price": 112.73,
-        "pct_1d": 0.0376,
-        "pct_1w": 0.2061,
-        "pct_1m": 0.2787,
+        "ticker": "AVGO",
+        "sector": "Tech",
+        "price": 382.2,
+        "pct_1d": 0.0603,
+        "pct_1w": 0.0471,
+        "pct_1m": -0.2012,
         "action": "—",
-        "headline": "Robinhood stock soars on global expansion, AI agents, and a push for '24...",
+        "headline": "AVGO Stock Is Rising Today – What's The Apple Connection?",
         "sentiment": 0.667,
-        "n_headlines": 6
-      },
-      {
-        "ticker": "CRSP",
-        "sector": "Other",
-        "price": 60.08,
-        "pct_1d": 0.0802,
-        "pct_1w": 0.113,
-        "pct_1m": 0.1549,
-        "action": "—",
-        "headline": "CRSP, VRTX Stocks Surge As FDA Clears Casgevy For Children Ages 2 And Up",
-        "sentiment": 0.5,
         "n_headlines": 6
       },
       {
         "ticker": "V",
         "sector": "Financials",
-        "price": 362.13,
-        "pct_1d": 0.0315,
-        "pct_1w": 0.0956,
-        "pct_1m": 0.1412,
+        "price": 350.81,
+        "pct_1d": -0.0313,
+        "pct_1w": 0.0434,
+        "pct_1m": 0.123,
         "action": "—",
-        "headline": "Visa (V) Stock May Be 6% Undervalued After AI Payments Push",
+        "headline": "Why A Low-Yield Dividend Portfolio Could Pay More Than A High-Yield Port...",
+        "sentiment": 0.833,
+        "n_headlines": 6
+      },
+      {
+        "ticker": "HON",
+        "sector": "Other",
+        "price": 228.2,
+        "pct_1d": -0.0072,
+        "pct_1w": -0.063,
+        "pct_1m": -0.0254,
+        "action": "—",
+        "headline": "Honeywell spinoff Solstice to buy Element Solutions for $14.5 billion",
         "sentiment": 1.0,
+        "n_headlines": 6
+      },
+      {
+        "ticker": "MSTR",
+        "sector": "Crypto",
+        "price": 97.03,
+        "pct_1d": -0.0371,
+        "pct_1w": 0.1788,
+        "pct_1m": -0.2333,
+        "action": "—",
+        "headline": "Demand Uptick Lifted Generac Holdings (GNRC)",
+        "sentiment": -0.333,
+        "n_headlines": 6
+      },
+      {
+        "ticker": "MA",
+        "sector": "Other",
+        "price": 524.2,
+        "pct_1d": -0.0282,
+        "pct_1w": 0.0505,
+        "pct_1m": 0.1117,
+        "action": "—",
+        "headline": "Market Chatter: BP, Gas Station Operators Warn Against Illegal Vape Sales",
+        "sentiment": 0.667,
         "n_headlines": 6
       }
     ],
-    "n_up": 56,
-    "n_down": 23,
-    "biggest_winner": "EDIT +11.3%",
-    "biggest_loser": "TSLA -7.5%"
+    "n_up": 40,
+    "n_down": 32,
+    "biggest_winner": "AMD +6.3%",
+    "biggest_loser": "AVAV -4.8%"
   },
   "edgar_alerts": []
 }

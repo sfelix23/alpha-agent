@@ -1,61 +1,6 @@
 {
-  "generated_at": "2026-07-03T13:42:14.074538",
+  "generated_at": "2026-07-06T13:41:52.200355",
   "n_scanned": 118,
-  "candidates": [
-    {
-      "ticker": "SE",
-      "score": 69.0,
-      "ret_1m": 15.5,
-      "ret_3m": 25.5,
-      "prioridad": "MEDIA",
-      "razon": "Score técnico 69/100",
-      "riesgo": ""
-    },
-    {
-      "ticker": "CRSP",
-      "score": 64.6,
-      "ret_1m": 15.4,
-      "ret_3m": 21.3,
-      "prioridad": "MEDIA",
-      "razon": "Score técnico 65/100",
-      "riesgo": ""
-    },
-    {
-      "ticker": "MRNA",
-      "score": 62.9,
-      "ret_1m": 62.6,
-      "ret_3m": 62.1,
-      "prioridad": "MEDIA",
-      "razon": "Score técnico 63/100",
-      "riesgo": ""
-    },
-    {
-      "ticker": "EDIT",
-      "score": 62.9,
-      "ret_1m": 31.3,
-      "ret_3m": 36.7,
-      "prioridad": "MEDIA",
-      "razon": "Score técnico 63/100",
-      "riesgo": ""
-    },
-    {
-      "ticker": "HOOD",
-      "score": 53.0,
-      "ret_1m": 36.1,
-      "ret_3m": 63.6,
-      "prioridad": "MEDIA",
-      "razon": "Score técnico 53/100",
-      "riesgo": ""
-    },
-    {
-      "ticker": "BEAM",
-      "score": 49.0,
-      "ret_1m": 17.7,
-      "ret_3m": 41.1,
-      "prioridad": "MEDIA",
-      "razon": "Score técnico 49/100",
-      "riesgo": ""
-    }
-  ],
+  "candidates": [],
   "repeated_alerts": []
 }
