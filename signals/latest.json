@@ -255,7 +255,7 @@
       "side": "BUY",
       "horizon": "CP",
       "price": 252.02,
-      "stop_loss": 237.28,
+      "stop_loss": 238.13,
       "take_profit": 288.87,
       "weight_target": 0.2148,
       "thesis": {
