@@ -1,7 +1,7 @@
 {
-  "generated_at": "2026-07-10T13:43:40",
+  "generated_at": "2026-07-13T13:44:46",
   "horizon": "medium_long_70_30_high_conviction",
-  "capital_usd": 1651.24,
+  "capital_usd": 1619.05,
   "params": {
     "weight_long_term": 0.0,
     "weight_short_term": 0.36000000000000004,
@@ -10,7 +10,7 @@
     "max_beta_lp": 2.8,
     "min_sharpe_lp": 0.1,
     "top_n_long_term": 2,
-    "top_n_short_term": 0,
+    "top_n_short_term": 1,
     "top_n_bearish": 1,
     "max_hold_days_cp": 4,
     "max_weight_per_asset": 0.55,
@@ -19,165 +19,267 @@
   },
   "macro": {
     "regime": "bull",
-    "regime_reason": "SPY +8.8% sobre SMA200 con pendiente positiva",
+    "regime_reason": "SPY +8.9% sobre SMA200 con pendiente positiva",
     "prices": {
-      "oil_wti": 72.01,
-      "oil_brent": 76.37,
-      "gold": 4105.0,
-      "dxy": 100.901,
-      "vix": 15.73,
-      "us10y": 4.549
+      "oil_wti": 73.68,
+      "oil_brent": 78.51,
+      "gold": 4069.4,
+      "dxy": 100.94,
+      "vix": 16.39,
+      "us10y": 4.585
     },
     "changes_1d": {
-      "oil_wti": -0.001,
-      "oil_brent": 0.0009,
-      "gold": -0.0062,
-      "dxy": -0.0004,
-      "vix": -0.0069,
-      "us10y": 0.0022
+      "oil_wti": 0.0318,
+      "oil_brent": 0.0329,
+      "gold": -0.0085,
+      "dxy": -0.0003,
+      "vix": 0.0905,
+      "us10y": 0.0035
     },
     "changes_1m": {
-      "oil_wti": -0.1836,
-      "oil_brent": -0.1649,
-      "gold": -0.0364,
+      "oil_wti": -0.1816,
+      "oil_brent": -0.1567,
+      "gold": -0.0094,
       "dxy": 0.0099,
-      "vix": -0.2084,
-      "us10y": -0.0007
+      "vix": -0.2624,
+      "us10y": 0.0095
     },
-    "spy_vs_sma200": 0.088
+    "spy_vs_sma200": 0.0888
   },
   "long_term": [],
-  "short_term": [],
+  "short_term": [
+    {
+      "ticker": "DDOG",
+      "side": "BUY",
+      "horizon": "CP",
+      "price": 253.11,
+      "stop_loss": 232.86,
+      "take_profit": 303.74,
+      "weight_target": 1.0,
+      "thesis": {
+        "ticker": "DDOG",
+        "horizon": "CP",
+        "conviction": "MEDIA",
+        "quant": {
+          "mu_anual": 1.2201977877931263,
+          "sigma_anual": 0.5331239517088487,
+          "beta": 1.2787486537024702,
+          "alpha_jensen": 0.9440082386292469,
+          "sharpe": 2.2043612635039307,
+          "expected_return_capm": 0.2761895491638794
+        },
+        "technical": {
+          "price": 253.11,
+          "rsi": 68.29,
+          "atr": 12.4467,
+          "stop_loss_atr": 228.22,
+          "ret_1m": 0.08055837890482875,
+          "ret_3m": 1.2993277289258427,
+          "dist_52w_high": -0.0878589876464787
+        },
+        "fundamental": {
+          "sentiment_score": 0.167,
+          "n_headlines": 6,
+          "positive": 3,
+          "negative": 2,
+          "sample_titles": [
+            "Datadog Stock Is Way Too Risky Right Now",
+            "Dynatrace Benefits From AI, Cloud and Telemetry Trends",
+            "Wall Street Analysts Think Datadog (DDOG) Is a Good Investment: Is It?"
+          ]
+        },
+        "macro": {
+          "regime": "bull",
+          "regime_reason": "SPY +8.9% sobre SMA200 con pendiente positiva",
+          "vix": 16.39,
+          "oil_wti": 73.68,
+          "dxy_1m": 0.0099,
+          "gold_1m": -0.0094
+        },
+        "risk": {
+          "dollars_allocated": 582.86,
+          "weight_of_total_portfolio": 0.36,
+          "max_loss_usd_if_stop_hit": 57.32,
+          "max_loss_pct_of_capital": 0.0354,
+          "stop_loss": 228.22
+        },
+        "thesis_text": "DDOG — horizonte CORTO PLAZO. Convicción MEDIA. Setup técnico: RSI 68, momentum 1m +8.1%, momentum 3m +129.9%. Stop loss ATR en $228.22 (riesgo ≈ 9.8% desde entrada).",
+        "key_risks": [
+          "Sin riesgos macro mayores detectados; el riesgo principal es idiosincrático del activo."
+        ],
+        "swarm": {
+          "go": false,
+          "size_factor": 0.0,
+          "reasoning": "Meta-LP heuristico (LLM OFF): EV=+ 4 NO-GO → SKIP",
+          "go_count": 0,
+          "ev": 464.98,
+          "ev_positive": true,
+          "opinions": [
+            {
+              "agent": "TechnicalCP",
+              "stance": "NO-GO",
+              "confidence": 0,
+              "reasoning": "llm_disabled",
+              "cot": "→ Anthropic deshabilitado por flag (ENABLE_ANTHROPIC OFF)."
+            },
+            {
+              "agent": "MacroLP",
+              "stance": "NO-GO",
+              "confidence": 0,
+              "reasoning": "llm_disabled",
+              "cot": "→ Anthropic deshabilitado por flag (ENABLE_ANTHROPIC OFF)."
+            },
+            {
+              "agent": "SentimentLP",
+              "stance": "NO-GO",
+              "confidence": 0,
+              "reasoning": "llm_disabled",
+              "cot": "→ Anthropic deshabilitado por flag (ENABLE_ANTHROPIC OFF)."
+            },
+            {
+              "agent": "RiskAuditorLP",
+              "stance": "NO-GO",
+              "confidence": 0,
+              "reasoning": "llm_disabled",
+              "cot": "→ Anthropic deshabilitado por flag (ENABLE_ANTHROPIC OFF)."
+            }
+          ],
+          "debate_id": "DDOG-CP-1783950289"
+        }
+      },
+      "option": null
+    }
+  ],
   "options_book": [],
   "hedge_book": [],
   "portfolio": {},
   "radar": {
     "entries": [
       {
-        "ticker": "ETHE",
-        "sector": "Crypto",
-        "price": 14.53,
-        "pct_1d": 0.0299,
-        "pct_1w": 0.0569,
-        "pct_1m": 0.0837,
-        "action": "—",
-        "headline": "Beyond Bitcoin: Crypto ETFs to Watch Amid Ethereum's Momentum",
-        "sentiment": 1.0,
+        "ticker": "DDOG",
+        "sector": "Tech",
+        "price": 253.38,
+        "pct_1d": -0.0162,
+        "pct_1w": -0.0078,
+        "pct_1m": 0.1131,
+        "action": "BUY_CP",
+        "headline": "Datadog Stock Is Way Too Risky Right Now",
+        "sentiment": 0.167,
         "n_headlines": 6
       },
       {
-        "ticker": "NET",
+        "ticker": "MU",
         "sector": "Tech",
-        "price": 275.98,
-        "pct_1d": 0.0007,
-        "pct_1w": 0.1385,
-        "pct_1m": 0.1688,
+        "price": 906.07,
+        "pct_1d": -0.0748,
+        "pct_1w": -0.0799,
+        "pct_1m": 0.0161,
         "action": "—",
-        "headline": "5 Cloud Computing Stocks to Buy for 2H 2026 as Digital Demand Soars",
-        "sentiment": 1.0,
+        "headline": "SK Hynix stock drops, chip sector declines as AI trade angst returns",
+        "sentiment": -0.667,
         "n_headlines": 6
       },
       {
         "ticker": "VIST",
         "sector": "Energy",
-        "price": 64.58,
-        "pct_1d": 0.013,
-        "pct_1w": 0.0699,
-        "pct_1m": -0.0968,
+        "price": 65.93,
+        "pct_1d": 0.0173,
+        "pct_1w": 0.0771,
+        "pct_1m": -0.0906,
         "action": "—",
-        "headline": "BP Streamlines Portfolio Through Bay du Nord Stake Sale to EQNR",
+        "headline": "Skip Broad Latin America. This Single-Country Fund Is Where the Reform R...",
         "sentiment": 1.0,
         "n_headlines": 6
       },
       {
-        "ticker": "META",
-        "sector": "Tech",
-        "price": 667.67,
-        "pct_1d": 0.0573,
-        "pct_1w": 0.1454,
-        "pct_1m": 0.1432,
+        "ticker": "COIN",
+        "sector": "Crypto",
+        "price": 156.82,
+        "pct_1d": -0.0141,
+        "pct_1w": -0.0714,
+        "pct_1m": 0.0185,
         "action": "—",
-        "headline": "Why Microsoft is not this portfolio manager's stock pick",
-        "sentiment": 0.167,
+        "headline": "Coinbase's Ryan VanGrack Says CLARITY Act Is 'On the One-Yard Line'",
+        "sentiment": 1.0,
         "n_headlines": 6
       },
       {
-        "ticker": "LLY",
-        "sector": "Healthcare",
-        "price": 1191.75,
-        "pct_1d": -0.0207,
-        "pct_1w": -0.0183,
-        "pct_1m": 0.0411,
+        "ticker": "NEM",
+        "sector": "Materials",
+        "price": 93.17,
+        "pct_1d": -0.0222,
+        "pct_1w": -0.0512,
+        "pct_1m": 0.0043,
         "action": "—",
-        "headline": "JNJ Stock Keeps Climbing. Should You Climb On?",
+        "headline": "Surface Metals advances Nevada Gold and Lithium projects toward key mile...",
         "sentiment": 0.833,
+        "n_headlines": 6
+      },
+      {
+        "ticker": "LAC",
+        "sector": "Materials",
+        "price": 3.24,
+        "pct_1d": -0.024,
+        "pct_1w": -0.1518,
+        "pct_1m": -0.2192,
+        "action": "—",
+        "headline": "Lithium Americas Corp. (LAC) Stock Drops Despite Market Gains: Important...",
+        "sentiment": -0.5,
+        "n_headlines": 6
+      },
+      {
+        "ticker": "CCJ",
+        "sector": "Materials",
+        "price": 92.58,
+        "pct_1d": -0.0355,
+        "pct_1w": -0.0505,
+        "pct_1m": -0.0258,
+        "action": "—",
+        "headline": "Bangladesh’s first nuclear plant highlights emerging markets’ energy shift",
+        "sentiment": 0.667,
         "n_headlines": 6
       },
       {
         "ticker": "PBR",
         "sector": "Energy",
-        "price": 17.24,
-        "pct_1d": 0.0123,
-        "pct_1w": 0.0701,
-        "pct_1m": -0.0326,
+        "price": 17.73,
+        "pct_1d": 0.0234,
+        "pct_1w": 0.0901,
+        "pct_1m": -0.0213,
         "action": "—",
         "headline": "Petrobras Completes Offshore Block 3 Acquisition in São Tomé and Príncipe",
         "sentiment": 0.667,
         "n_headlines": 6
       },
       {
-        "ticker": "MU",
+        "ticker": "CRWD",
         "sector": "Tech",
-        "price": 963.59,
-        "pct_1d": -0.0283,
-        "pct_1w": -0.0121,
-        "pct_1m": 0.0298,
+        "price": 183.04,
+        "pct_1d": -0.0221,
+        "pct_1w": -0.0819,
+        "pct_1m": 0.1304,
         "action": "—",
-        "headline": "Micron, Sandisk, Marvell stocks jump, leading chip sector gains",
+        "headline": "Wall Street's Newest Blockbuster Stock Split Was Just Announced -- and T...",
         "sentiment": 0.667,
         "n_headlines": 6
       },
       {
-        "ticker": "SLB",
-        "sector": "Energy",
-        "price": 47.85,
-        "pct_1d": 0.0129,
-        "pct_1w": 0.0603,
-        "pct_1m": -0.1432,
+        "ticker": "META",
+        "sector": "Tech",
+        "price": 673.84,
+        "pct_1d": 0.0069,
+        "pct_1w": 0.1225,
+        "pct_1m": 0.1812,
         "action": "—",
-        "headline": "The S&P 500 Is Up 5% This Year. This ‘Cash Cow’ Fund Is Up 9%",
-        "sentiment": 0.667,
-        "n_headlines": 6
-      },
-      {
-        "ticker": "GOLD",
-        "sector": "Materials",
-        "price": 41.28,
-        "pct_1d": -0.0102,
-        "pct_1w": -0.0615,
-        "pct_1m": -0.0144,
-        "action": "—",
-        "headline": "Make Your FCX Shares Pay You 15% While You Hold Them",
-        "sentiment": 0.667,
-        "n_headlines": 6
-      },
-      {
-        "ticker": "YPF",
-        "sector": "Energy",
-        "price": 47.4,
-        "pct_1d": 0.0077,
-        "pct_1w": 0.0676,
-        "pct_1m": -0.1158,
-        "action": "—",
-        "headline": "YPF Sociedad Anónima (YPF) to Collaborate With Tesla on Energy Storage I...",
+        "headline": "Tech stocks live updates: Tech stocks fall as AI trade faces scrutiny, S...",
         "sentiment": 0.667,
         "n_headlines": 6
       }
     ],
-    "n_up": 43,
-    "n_down": 30,
-    "biggest_winner": "META +5.7%",
-    "biggest_loser": "MU -2.8%"
+    "n_up": 33,
+    "n_down": 40,
+    "biggest_winner": "XOM +3.0%",
+    "biggest_loser": "ARM -8.3%"
   },
   "edgar_alerts": []
 }
