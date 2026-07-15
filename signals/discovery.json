@@ -1,6 +1,16 @@
 {
-  "generated_at": "2026-07-14T13:43:30.541824",
+  "generated_at": "2026-07-15T13:41:44.230017",
   "n_scanned": 118,
-  "candidates": [],
+  "candidates": [
+    {
+      "ticker": "PYPL",
+      "score": 56.0,
+      "ret_1m": 27.5,
+      "ret_3m": 9.7,
+      "prioridad": "MEDIA",
+      "razon": "Score técnico 56/100",
+      "riesgo": ""
+    }
+  ],
   "repeated_alerts": []
 }
