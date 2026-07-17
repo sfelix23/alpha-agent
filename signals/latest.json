@@ -54,7 +54,7 @@
       "side": "BUY_CALL",
       "horizon": "DERIV",
       "price": 256.7,
-      "stop_loss": null,
+      "stop_loss": 225.38,
       "take_profit": null,
       "weight_target": 1.0,
       "thesis": {
