@@ -1,16 +1,16 @@
 {
-  "generated_at": "2026-07-20T13:44:55",
+  "generated_at": "2026-07-21T13:46:24",
   "horizon": "medium_long_70_30_high_conviction",
-  "capital_usd": 1644.14,
+  "capital_usd": 1628.08,
   "params": {
     "weight_long_term": 0.0,
-    "weight_short_term": 0.6400000000000001,
+    "weight_short_term": 0.7040000000000001,
     "weight_options": 0.14,
     "risk_free_rate": 0.045,
     "max_beta_lp": 2.8,
     "min_sharpe_lp": 0.1,
     "top_n_long_term": 2,
-    "top_n_short_term": 6,
+    "top_n_short_term": 5,
     "top_n_bearish": 1,
     "max_hold_days_cp": 8,
     "max_weight_per_asset": 0.55,
@@ -19,164 +19,63 @@
   },
   "macro": {
     "regime": "bull",
-    "regime_reason": "SPY +7.8% sobre SMA200 con pendiente positiva",
+    "regime_reason": "SPY +7.2% sobre SMA200 con pendiente positiva",
     "prices": {
-      "oil_wti": 81.34,
-      "oil_brent": 87.81,
-      "gold": 4015.3,
-      "dxy": 100.891,
-      "vix": 18.06,
-      "us10y": 4.564
+      "oil_wti": 84.71,
+      "oil_brent": 91.3,
+      "gold": 4054.0,
+      "dxy": 101.064,
+      "vix": 17.75,
+      "us10y": 4.618
     },
     "changes_1d": {
-      "oil_wti": -0.0139,
-      "oil_brent": -0.0033,
-      "gold": 0.0006,
-      "dxy": 0.0014,
-      "vix": -0.0378,
-      "us10y": 0.0051
+      "oil_wti": 0.0178,
+      "oil_brent": 0.0233,
+      "gold": 0.0109,
+      "dxy": 0.0007,
+      "vix": -0.0483,
+      "us10y": 0.0043
     },
     "changes_1m": {
-      "oil_wti": 0.0593,
-      "oil_brent": 0.1038,
-      "gold": -0.0788,
-      "dxy": 0.008,
-      "vix": -0.0206,
-      "us10y": 0.0226
+      "oil_wti": 0.1059,
+      "oil_brent": 0.1434,
+      "gold": -0.0403,
+      "dxy": 0.0021,
+      "vix": 0.0823,
+      "us10y": 0.0375
     },
-    "spy_vs_sma200": 0.0785
+    "spy_vs_sma200": 0.0723
   },
   "long_term": [],
   "short_term": [
     {
-      "ticker": "DDOG",
-      "side": "BUY",
-      "horizon": "CP",
-      "price": 266.07,
-      "stop_loss": 244.78,
-      "take_profit": 319.29,
-      "weight_target": 0.2939,
-      "thesis": {
-        "ticker": "DDOG",
-        "horizon": "CP",
-        "conviction": "ALTA",
-        "quant": {
-          "mu_anual": 1.2906171896026324,
-          "sigma_anual": 0.5312831404700128,
-          "beta": 1.261196192066273,
-          "alpha_jensen": 1.0521903514886561,
-          "sharpe": 2.344544922883618,
-          "expected_return_capm": 0.23842683811397625
-        },
-        "technical": {
-          "price": 266.07,
-          "rsi": 60.58,
-          "atr": 14.1053,
-          "stop_loss_atr": 237.86,
-          "ret_1m": 0.19313904629694512,
-          "ret_3m": 1.0507938651061477,
-          "dist_52w_high": -0.041154576064205584
-        },
-        "fundamental": {
-          "sentiment_score": 0.333,
-          "n_headlines": 6,
-          "positive": 4,
-          "negative": 2,
-          "sample_titles": [
-            "The One Deal That Could End Micron Stock's Old Boom-and-Bust Cycle",
-            "These 7 Stocks Are Analyst Favorites For Magnificent Earnings Growth; Google Holds Top Rating",
-            "The Real Engine Behind ServiceNow Stock Is Its Contract Backlog"
-          ]
-        },
-        "macro": {
-          "regime": "bull",
-          "regime_reason": "SPY +7.8% sobre SMA200 con pendiente positiva",
-          "vix": 18.06,
-          "oil_wti": 81.34,
-          "dxy_1m": 0.008,
-          "gold_1m": -0.0788
-        },
-        "risk": {
-          "dollars_allocated": 308.42,
-          "weight_of_total_portfolio": 0.1876,
-          "max_loss_usd_if_stop_hit": 32.7,
-          "max_loss_pct_of_capital": 0.0199,
-          "stop_loss": 237.86
-        },
-        "thesis_text": "DDOG — horizonte CORTO PLAZO. Convicción ALTA. Setup técnico: RSI 61, momentum 1m +19.3%, momentum 3m +105.1%. Stop loss ATR en $237.86 (riesgo ≈ 10.6% desde entrada). Sentiment de noticias refuerza el setup.",
-        "key_risks": [
-          "Sin riesgos macro mayores detectados; el riesgo principal es idiosincrático del activo."
-        ],
-        "swarm": {
-          "go": false,
-          "size_factor": 0.0,
-          "reasoning": "Meta-LP heuristico (LLM OFF): EV=+ 4 NO-GO → SKIP",
-          "go_count": 0,
-          "ev": 504.23,
-          "ev_positive": true,
-          "opinions": [
-            {
-              "agent": "TechnicalCP",
-              "stance": "NO-GO",
-              "confidence": 0,
-              "reasoning": "llm_disabled",
-              "cot": "→ Anthropic deshabilitado por flag (ENABLE_ANTHROPIC OFF)."
-            },
-            {
-              "agent": "MacroLP",
-              "stance": "NO-GO",
-              "confidence": 0,
-              "reasoning": "llm_disabled",
-              "cot": "→ Anthropic deshabilitado por flag (ENABLE_ANTHROPIC OFF)."
-            },
-            {
-              "agent": "SentimentLP",
-              "stance": "NO-GO",
-              "confidence": 0,
-              "reasoning": "llm_disabled",
-              "cot": "→ Anthropic deshabilitado por flag (ENABLE_ANTHROPIC OFF)."
-            },
-            {
-              "agent": "RiskAuditorLP",
-              "stance": "NO-GO",
-              "confidence": 0,
-              "reasoning": "llm_disabled",
-              "cot": "→ Anthropic deshabilitado por flag (ENABLE_ANTHROPIC OFF)."
-            }
-          ],
-          "debate_id": "DDOG-CP-1784555100"
-        }
-      },
-      "option": null
-    },
-    {
       "ticker": "ABBV",
       "side": "BUY",
       "horizon": "CP",
-      "price": 255.7,
-      "stop_loss": 243.17,
-      "take_profit": 287.02,
-      "weight_target": 0.2261,
+      "price": 253.71,
+      "stop_loss": 241.52,
+      "take_profit": 284.19,
+      "weight_target": 0.32,
       "thesis": {
         "ticker": "ABBV",
         "horizon": "CP",
         "conviction": "ALTA",
         "quant": {
-          "mu_anual": 0.4506089106385598,
-          "sigma_anual": 0.2722927003114103,
-          "beta": 0.2870624221530922,
-          "alpha_jensen": 0.3615827892407128,
-          "sharpe": 1.4896062589069816,
-          "expected_return_capm": 0.08902612139784699
+          "mu_anual": 0.4246287249210116,
+          "sigma_anual": 0.2720321688985817,
+          "beta": 0.28701206307368843,
+          "alpha_jensen": 0.34011134240954816,
+          "sharpe": 1.3955287952085687,
+          "expected_return_capm": 0.08451738251146346
         },
         "technical": {
-          "price": 255.7,
-          "rsi": 53.8,
-          "atr": 6.2668,
-          "stop_loss_atr": 243.17,
-          "ret_1m": 0.18952391870447904,
-          "ret_3m": 0.2641501178524266,
-          "dist_52w_high": -0.01359779597590427
+          "price": 253.71,
+          "rsi": 54.86,
+          "atr": 6.0953,
+          "stop_loss_atr": 241.52,
+          "ret_1m": 0.11089034240351303,
+          "ret_3m": 0.24568973751880185,
+          "dist_52w_high": -0.021274490448338068
         },
         "fundamental": {
           "sentiment_score": 0.333,
@@ -184,27 +83,27 @@
           "positive": 3,
           "negative": 1,
           "sample_titles": [
-            "How Will AbbVie's $10.9 Billion Acquisition of Apogee Impact Its Dividend?",
-            "My 2 Favorite Dividend Kings to Buy Right Now",
-            "The Real Question Buried Inside Merck Stock's Premium Price"
+            "Biotech IPO Gains Crush AI Listings With Standout 55% Return",
+            "Psychedelic drugs are going mainstream",
+            "How Will AbbVie's $10.9 Billion Acquisition of Apogee Impact Its Dividend?"
           ]
         },
         "macro": {
           "regime": "bull",
-          "regime_reason": "SPY +7.8% sobre SMA200 con pendiente positiva",
-          "vix": 18.06,
-          "oil_wti": 81.34,
-          "dxy_1m": 0.008,
-          "gold_1m": -0.0788
+          "regime_reason": "SPY +7.2% sobre SMA200 con pendiente positiva",
+          "vix": 17.75,
+          "oil_wti": 84.71,
+          "dxy_1m": 0.0021,
+          "gold_1m": -0.0403
         },
         "risk": {
-          "dollars_allocated": 237.2,
-          "weight_of_total_portfolio": 0.1443,
-          "max_loss_usd_if_stop_hit": 11.62,
-          "max_loss_pct_of_capital": 0.0071,
-          "stop_loss": 243.17
+          "dollars_allocated": 333.31,
+          "weight_of_total_portfolio": 0.2047,
+          "max_loss_usd_if_stop_hit": 16.01,
+          "max_loss_pct_of_capital": 0.0098,
+          "stop_loss": 241.52
         },
-        "thesis_text": "ABBV — horizonte CORTO PLAZO. Convicción ALTA. Setup técnico: RSI 54, momentum 1m +19.0%, momentum 3m +26.4%. Stop loss ATR en $243.17 (riesgo ≈ 4.9% desde entrada). Sentiment de noticias refuerza el setup.",
+        "thesis_text": "ABBV — horizonte CORTO PLAZO. Convicción ALTA. Setup técnico: RSI 55, momentum 1m +11.1%, momentum 3m +24.6%. Stop loss ATR en $241.52 (riesgo ≈ 4.8% desde entrada). Sentiment de noticias refuerza el setup.",
         "key_risks": [
           "Sin riesgos macro mayores detectados; el riesgo principal es idiosincrático del activo."
         ],
@@ -213,7 +112,7 @@
           "size_factor": 0.0,
           "reasoning": "Meta-LP heuristico (LLM OFF): EV=+ 4 NO-GO → SKIP",
           "go_count": 0,
-          "ev": 153.17,
+          "ev": 140.07,
           "ev_positive": true,
           "opinions": [
             {
@@ -245,7 +144,209 @@
               "cot": "→ Anthropic deshabilitado por flag (ENABLE_ANTHROPIC OFF)."
             }
           ],
-          "debate_id": "ABBV-CP-1784555100"
+          "debate_id": "ABBV-CP-1784641589"
+        }
+      },
+      "option": null
+    },
+    {
+      "ticker": "CRWD",
+      "side": "BUY",
+      "horizon": "CP",
+      "price": 198.41,
+      "stop_loss": 182.54,
+      "take_profit": 238.09,
+      "weight_target": 0.32,
+      "thesis": {
+        "ticker": "CRWD",
+        "horizon": "CP",
+        "conviction": "ALTA",
+        "quant": {
+          "mu_anual": 1.0963390133542883,
+          "sigma_anual": 0.47329423563174616,
+          "beta": 1.499883158960661,
+          "alpha_jensen": 0.8448269389822329,
+          "sharpe": 2.22132224355316,
+          "expected_return_capm": 0.25151207437205536
+        },
+        "technical": {
+          "price": 198.41,
+          "rsi": 55.35,
+          "atr": 11.1018,
+          "stop_loss_atr": 176.21,
+          "ret_1m": 0.1749970564073675,
+          "ret_3m": 0.7651743522285619,
+          "dist_52w_high": -0.05846340015760587
+        },
+        "fundamental": {
+          "sentiment_score": 0.833,
+          "n_headlines": 6,
+          "positive": 5,
+          "negative": 0,
+          "sample_titles": [
+            "Morgan Stanley says software selloff has gone too far, names 8 winners",
+            "Nvidia Returns to NZS Growth Fund",
+            "2 Glorious Growth Stocks Bucking the Recent Tech Sell-Off"
+          ]
+        },
+        "macro": {
+          "regime": "bull",
+          "regime_reason": "SPY +7.2% sobre SMA200 con pendiente positiva",
+          "vix": 17.75,
+          "oil_wti": 84.71,
+          "dxy_1m": 0.0021,
+          "gold_1m": -0.0403
+        },
+        "risk": {
+          "dollars_allocated": 318.77,
+          "weight_of_total_portfolio": 0.1958,
+          "max_loss_usd_if_stop_hit": 35.67,
+          "max_loss_pct_of_capital": 0.0219,
+          "stop_loss": 176.21
+        },
+        "thesis_text": "CRWD — horizonte CORTO PLAZO. Convicción ALTA. Setup técnico: RSI 55, momentum 1m +17.5%, momentum 3m +76.5%. Stop loss ATR en $176.21 (riesgo ≈ 11.2% desde entrada). Sentiment de noticias refuerza el setup.",
+        "key_risks": [
+          "Sin riesgos macro mayores detectados; el riesgo principal es idiosincrático del activo."
+        ],
+        "swarm": {
+          "go": false,
+          "size_factor": 0.0,
+          "reasoning": "Meta-LP heuristico (LLM OFF): EV=+ 4 NO-GO → SKIP",
+          "go_count": 0,
+          "ev": 418.69,
+          "ev_positive": true,
+          "opinions": [
+            {
+              "agent": "TechnicalCP",
+              "stance": "NO-GO",
+              "confidence": 0,
+              "reasoning": "llm_disabled",
+              "cot": "→ Anthropic deshabilitado por flag (ENABLE_ANTHROPIC OFF)."
+            },
+            {
+              "agent": "MacroLP",
+              "stance": "NO-GO",
+              "confidence": 0,
+              "reasoning": "llm_disabled",
+              "cot": "→ Anthropic deshabilitado por flag (ENABLE_ANTHROPIC OFF)."
+            },
+            {
+              "agent": "SentimentLP",
+              "stance": "NO-GO",
+              "confidence": 0,
+              "reasoning": "llm_disabled",
+              "cot": "→ Anthropic deshabilitado por flag (ENABLE_ANTHROPIC OFF)."
+            },
+            {
+              "agent": "RiskAuditorLP",
+              "stance": "NO-GO",
+              "confidence": 0,
+              "reasoning": "llm_disabled",
+              "cot": "→ Anthropic deshabilitado por flag (ENABLE_ANTHROPIC OFF)."
+            }
+          ],
+          "debate_id": "CRWD-CP-1784641589"
+        }
+      },
+      "option": null
+    },
+    {
+      "ticker": "MA",
+      "side": "BUY",
+      "horizon": "CP",
+      "price": 540.18,
+      "stop_loss": 514.27,
+      "take_profit": 604.95,
+      "weight_target": 0.12,
+      "thesis": {
+        "ticker": "MA",
+        "horizon": "CP",
+        "conviction": "BAJA",
+        "quant": {
+          "mu_anual": 0.11100018396657182,
+          "sigma_anual": 0.22344733367104616,
+          "beta": 0.6640426816667879,
+          "alpha_jensen": -0.02542882558215634,
+          "sharpe": 0.29537243914369427,
+          "expected_return_capm": 0.13642900954872816
+        },
+        "technical": {
+          "price": 540.18,
+          "rsi": 63.39,
+          "atr": 12.9574,
+          "stop_loss_atr": 514.27,
+          "ret_1m": 0.11774775568376472,
+          "ret_3m": 0.05816076111515889,
+          "dist_52w_high": -0.09250837752075425
+        },
+        "fundamental": {
+          "sentiment_score": -0.667,
+          "n_headlines": 6,
+          "positive": 0,
+          "negative": 4,
+          "sample_titles": [
+            "2 Mega-Cap Stocks with Impressive Fundamentals and 1 We Turn Down",
+            "Grayscale Highlights Ripple’s Elite Deals, but Why Won’t XRP’s Price Rally?",
+            "Why pricey credit cards may soon cost more"
+          ]
+        },
+        "macro": {
+          "regime": "bull",
+          "regime_reason": "SPY +7.2% sobre SMA200 con pendiente positiva",
+          "vix": 17.75,
+          "oil_wti": 84.71,
+          "dxy_1m": 0.0021,
+          "gold_1m": -0.0403
+        },
+        "risk": {
+          "dollars_allocated": 182.55,
+          "weight_of_total_portfolio": 0.1121,
+          "max_loss_usd_if_stop_hit": 8.76,
+          "max_loss_pct_of_capital": 0.0054,
+          "stop_loss": 514.27
+        },
+        "thesis_text": "MA — horizonte CORTO PLAZO. Convicción BAJA. Setup técnico: RSI 63, momentum 1m +11.8%, momentum 3m +5.8%. Stop loss ATR en $514.27 (riesgo ≈ 4.8% desde entrada). ⚠️ Sentiment negativo puede invalidar el rebote — reducir tamaño.",
+        "key_risks": [
+          "Flujo de noticias negativo (sentiment -0.67, n=6)."
+        ],
+        "swarm": {
+          "go": false,
+          "size_factor": 0.0,
+          "reasoning": "Meta-LP heuristico (LLM OFF): EV=- 4 NO-GO → SKIP",
+          "go_count": 0,
+          "ev": -11.25,
+          "ev_positive": false,
+          "opinions": [
+            {
+              "agent": "TechnicalCP",
+              "stance": "NO-GO",
+              "confidence": 0,
+              "reasoning": "llm_disabled",
+              "cot": "→ Anthropic deshabilitado por flag (ENABLE_ANTHROPIC OFF)."
+            },
+            {
+              "agent": "MacroLP",
+              "stance": "NO-GO",
+              "confidence": 0,
+              "reasoning": "llm_disabled",
+              "cot": "→ Anthropic deshabilitado por flag (ENABLE_ANTHROPIC OFF)."
+            },
+            {
+              "agent": "SentimentLP",
+              "stance": "NO-GO",
+              "confidence": 0,
+              "reasoning": "llm_disabled",
+              "cot": "→ Anthropic deshabilitado por flag (ENABLE_ANTHROPIC OFF)."
+            },
+            {
+              "agent": "RiskAuditorLP",
+              "stance": "NO-GO",
+              "confidence": 0,
+              "reasoning": "llm_disabled",
+              "cot": "→ Anthropic deshabilitado por flag (ENABLE_ANTHROPIC OFF)."
+            }
+          ],
+          "debate_id": "MA-CP-1784641589"
         }
       },
       "option": null
@@ -254,30 +355,30 @@
       "ticker": "MRK",
       "side": "BUY",
       "horizon": "CP",
-      "price": 127.76,
-      "stop_loss": 120.52,
-      "take_profit": 145.86,
+      "price": 125.18,
+      "stop_loss": 117.92,
+      "take_profit": 143.33,
       "weight_target": 0.12,
       "thesis": {
         "ticker": "MRK",
         "horizon": "CP",
         "conviction": "MEDIA",
         "quant": {
-          "mu_anual": 0.4166175201949336,
-          "sigma_anual": 0.28254083361573323,
-          "beta": 0.28900378865525306,
-          "alpha_jensen": 0.3272936557603604,
-          "sharpe": 1.3152701343705533,
-          "expected_return_capm": 0.08932386443457321
+          "mu_anual": 0.3579117812237332,
+          "sigma_anual": 0.2828418734136161,
+          "beta": 0.2902223222333056,
+          "alpha_jensen": 0.2729523927637638,
+          "sharpe": 1.1063134939929637,
+          "expected_return_capm": 0.08495938845996936
         },
         "technical": {
-          "price": 127.76,
-          "rsi": 47.24,
-          "atr": 3.6179,
-          "stop_loss_atr": 120.52,
-          "ret_1m": 0.12198119833684973,
-          "ret_3m": 0.09887915469213904,
-          "dist_52w_high": -0.013893141836076595
+          "price": 125.18,
+          "rsi": 44.83,
+          "atr": 3.6296,
+          "stop_loss_atr": 117.92,
+          "ret_1m": 0.08399720008892597,
+          "ret_3m": 0.1201155014641464,
+          "dist_52w_high": -0.033806709910110255
         },
         "fundamental": {
           "sentiment_score": 0.0,
@@ -285,27 +386,27 @@
           "positive": 2,
           "negative": 2,
           "sample_titles": [
-            "Merck (MRK) Wins FDA Approval For First Oral PCSK9 Cholesterol Drug",
-            "The Real Question Buried Inside Merck Stock's Premium Price",
-            "Merck Reportedly Goes To Bat In Takeover Battle. But Genomics Stock Reverses."
+            "Merck’s Keytruda Faces a Patent Cliff. These New Cancer Drugs Could Take Over.",
+            "Merck (MRK) Declines More Than Market: Some Information for Investors",
+            "Tempus AI Scoops Up Personalis For $1.5 Billion; But Shares Dive"
           ]
         },
         "macro": {
           "regime": "bull",
-          "regime_reason": "SPY +7.8% sobre SMA200 con pendiente positiva",
-          "vix": 18.06,
-          "oil_wti": 81.34,
-          "dxy_1m": 0.008,
-          "gold_1m": -0.0788
+          "regime_reason": "SPY +7.2% sobre SMA200 con pendiente positiva",
+          "vix": 17.75,
+          "oil_wti": 84.71,
+          "dxy_1m": 0.0021,
+          "gold_1m": -0.0403
         },
         "risk": {
-          "dollars_allocated": 169.79,
-          "weight_of_total_portfolio": 0.1033,
-          "max_loss_usd_if_stop_hit": 9.62,
-          "max_loss_pct_of_capital": 0.0059,
-          "stop_loss": 120.52
+          "dollars_allocated": 159.54,
+          "weight_of_total_portfolio": 0.098,
+          "max_loss_usd_if_stop_hit": 9.25,
+          "max_loss_pct_of_capital": 0.0057,
+          "stop_loss": 117.92
         },
-        "thesis_text": "MRK — horizonte CORTO PLAZO. Convicción MEDIA. Setup técnico: RSI 47, momentum 1m +12.2%, momentum 3m +9.9%. Stop loss ATR en $120.52 (riesgo ≈ 5.7% desde entrada).",
+        "thesis_text": "MRK — horizonte CORTO PLAZO. Convicción MEDIA. Setup técnico: RSI 45, momentum 1m +8.4%, momentum 3m +12.0%. Stop loss ATR en $117.92 (riesgo ≈ 5.8% desde entrada).",
         "key_risks": [
           "Sin riesgos macro mayores detectados; el riesgo principal es idiosincrático del activo."
         ],
@@ -314,7 +415,7 @@
           "size_factor": 0.0,
           "reasoning": "Meta-LP heuristico (LLM OFF): EV=+ 4 NO-GO → SKIP",
           "go_count": 0,
-          "ev": 136.67,
+          "ev": 109.01,
           "ev_positive": true,
           "opinions": [
             {
@@ -346,76 +447,76 @@
               "cot": "→ Anthropic deshabilitado por flag (ENABLE_ANTHROPIC OFF)."
             }
           ],
-          "debate_id": "MRK-CP-1784555100"
+          "debate_id": "MRK-CP-1784641589"
         }
       },
       "option": null
     },
     {
-      "ticker": "LLY",
+      "ticker": "XOM",
       "side": "BUY",
       "horizon": "CP",
-      "price": 1175.67,
-      "stop_loss": 1102.84,
-      "take_profit": 1362.32,
+      "price": 149.15,
+      "stop_loss": 142.92,
+      "take_profit": 164.73,
       "weight_target": 0.12,
       "thesis": {
-        "ticker": "LLY",
+        "ticker": "XOM",
         "horizon": "CP",
         "conviction": "MEDIA",
         "quant": {
-          "mu_anual": 0.44365163454001943,
-          "sigma_anual": 0.3863992809847579,
-          "beta": 0.6540933394269978,
-          "alpha_jensen": 0.29833480257314354,
-          "sharpe": 1.031709048536622,
-          "expected_return_capm": 0.1453168319668759
+          "mu_anual": 0.22275134270968572,
+          "sigma_anual": 0.24690600574871369,
+          "beta": 0.24712203428231502,
+          "alpha_jensen": 0.1437262364087078,
+          "sharpe": 0.7199150226041505,
+          "expected_return_capm": 0.07902510630097792
         },
         "technical": {
-          "price": 1175.67,
-          "rsi": 37.94,
-          "atr": 37.3293,
-          "stop_loss_atr": 1101.01,
-          "ret_1m": 0.07017768238960342,
-          "ret_3m": 0.28023569724909536,
-          "dist_52w_high": -0.04847600819940667
+          "price": 149.15,
+          "rsi": 75.65,
+          "atr": 3.1129,
+          "stop_loss_atr": 142.92,
+          "ret_1m": 0.07712856634383014,
+          "ret_3m": 0.012148439554777513,
+          "dist_52w_high": -0.12426460561824915
         },
         "fundamental": {
-          "sentiment_score": 0.167,
+          "sentiment_score": 0.0,
           "n_headlines": 6,
-          "positive": 3,
+          "positive": 2,
           "negative": 2,
           "sample_titles": [
-            "ATAI Stock Downgraded Across Wall Street – Why Analysts Believe Buyout By Eli Lilly Capped Near-Term Upside",
-            "‘Wild West’ of Untested Peptides Has Americans Paying in Crypto to Get Their Fix",
-            "ATAI Stock Slips After Blockbuster Week: Cathie Wood Calls $3.8B Lilly Deal ‘Well-Deserved’ Return For Shareholders"
+            "The Peer-Group Mispricing Sitting On VG Stock",
+            "This ‘Cash Cow’ ETF’s Energy Bet Just Paid Off as Brent Spiked 14% in Five Days",
+            "Chevron vs. ExxonMobil: Only One Deserves a Spot in Your Portfolio Today."
           ]
         },
         "macro": {
           "regime": "bull",
-          "regime_reason": "SPY +7.8% sobre SMA200 con pendiente positiva",
-          "vix": 18.06,
-          "oil_wti": 81.34,
-          "dxy_1m": 0.008,
-          "gold_1m": -0.0788
+          "regime_reason": "SPY +7.2% sobre SMA200 con pendiente positiva",
+          "vix": 17.75,
+          "oil_wti": 84.71,
+          "dxy_1m": 0.0021,
+          "gold_1m": -0.0403
         },
         "risk": {
-          "dollars_allocated": 125.0,
-          "weight_of_total_portfolio": 0.076,
-          "max_loss_usd_if_stop_hit": 7.94,
-          "max_loss_pct_of_capital": 0.0048,
-          "stop_loss": 1101.01
+          "dollars_allocated": 152.0,
+          "weight_of_total_portfolio": 0.0934,
+          "max_loss_usd_if_stop_hit": 6.35,
+          "max_loss_pct_of_capital": 0.0039,
+          "stop_loss": 142.92
         },
-        "thesis_text": "LLY — horizonte CORTO PLAZO. Convicción MEDIA. Setup técnico: RSI 38, momentum 1m +7.0%, momentum 3m +28.0%. Stop loss ATR en $1101.01 (riesgo ≈ 6.4% desde entrada).",
+        "thesis_text": "XOM — horizonte CORTO PLAZO. Convicción MEDIA. Setup técnico: RSI 76, momentum 1m +7.7%, momentum 3m +1.2%. ⚠️ RSI en sobrecompra → riesgo de reversión a la media. Stop loss ATR en $142.92 (riesgo ≈ 4.2% desde entrada).",
         "key_risks": [
-          "Sin riesgos macro mayores detectados; el riesgo principal es idiosincrático del activo."
+          "WTI +10.6% 1m: precio elevado favorece energía pero riesgo de demand destruction."
         ],
         "swarm": {
           "go": false,
           "size_factor": 0.0,
           "reasoning": "Meta-LP heuristico (LLM OFF): EV=+ 4 NO-GO → SKIP",
           "go_count": 0,
-          "ev": 137.36,
+          "ev": 21.7,
           "ev_positive": true,
           "opinions": [
             {
@@ -447,209 +548,7 @@
               "cot": "→ Anthropic deshabilitado por flag (ENABLE_ANTHROPIC OFF)."
             }
           ],
-          "debate_id": "LLY-CP-1784555100"
-        }
-      },
-      "option": null
-    },
-    {
-      "ticker": "BAC",
-      "side": "BUY",
-      "horizon": "CP",
-      "price": 61.17,
-      "stop_loss": 58.66,
-      "take_profit": 67.45,
-      "weight_target": 0.12,
-      "thesis": {
-        "ticker": "BAC",
-        "horizon": "CP",
-        "conviction": "ALTA",
-        "quant": {
-          "mu_anual": 0.43351969500071774,
-          "sigma_anual": 0.2543358169571397,
-          "beta": 0.9181012656577237,
-          "alpha_jensen": 0.24771255809232984,
-          "sharpe": 1.5275854563031936,
-          "expected_return_capm": 0.1858071369083879
-        },
-        "technical": {
-          "price": 61.17,
-          "rsi": 67.37,
-          "atr": 1.2532,
-          "stop_loss_atr": 58.66,
-          "ret_1m": 0.08843411634405673,
-          "ret_3m": 0.13971865658694393,
-          "dist_52w_high": -0.006819321035915427
-        },
-        "fundamental": {
-          "sentiment_score": 0.667,
-          "n_headlines": 6,
-          "positive": 4,
-          "negative": 0,
-          "sample_titles": [
-            "BofA expects Apple to top analyst expectations on July 30",
-            "A $10,000 Investment in Bank of America When Brian Moynihan Became CEO Is Worth This Much Today",
-            "Bank of America Expands AI Leadership Team"
-          ]
-        },
-        "macro": {
-          "regime": "bull",
-          "regime_reason": "SPY +7.8% sobre SMA200 con pendiente positiva",
-          "vix": 18.06,
-          "oil_wti": 81.34,
-          "dxy_1m": 0.008,
-          "gold_1m": -0.0788
-        },
-        "risk": {
-          "dollars_allocated": 121.18,
-          "weight_of_total_portfolio": 0.0737,
-          "max_loss_usd_if_stop_hit": 4.97,
-          "max_loss_pct_of_capital": 0.003,
-          "stop_loss": 58.66
-        },
-        "thesis_text": "BAC — horizonte CORTO PLAZO. Convicción ALTA. Setup técnico: RSI 67, momentum 1m +8.8%, momentum 3m +14.0%. Stop loss ATR en $58.66 (riesgo ≈ 4.1% desde entrada). Sentiment de noticias refuerza el setup.",
-        "key_risks": [
-          "Sin riesgos macro mayores detectados; el riesgo principal es idiosincrático del activo."
-        ],
-        "swarm": {
-          "go": false,
-          "size_factor": 0.0,
-          "reasoning": "Meta-LP heuristico (LLM OFF): EV=+ 4 NO-GO → SKIP",
-          "go_count": 0,
-          "ev": 147.44,
-          "ev_positive": true,
-          "opinions": [
-            {
-              "agent": "TechnicalCP",
-              "stance": "NO-GO",
-              "confidence": 0,
-              "reasoning": "llm_disabled",
-              "cot": "→ Anthropic deshabilitado por flag (ENABLE_ANTHROPIC OFF)."
-            },
-            {
-              "agent": "MacroLP",
-              "stance": "NO-GO",
-              "confidence": 0,
-              "reasoning": "llm_disabled",
-              "cot": "→ Anthropic deshabilitado por flag (ENABLE_ANTHROPIC OFF)."
-            },
-            {
-              "agent": "SentimentLP",
-              "stance": "NO-GO",
-              "confidence": 0,
-              "reasoning": "llm_disabled",
-              "cot": "→ Anthropic deshabilitado por flag (ENABLE_ANTHROPIC OFF)."
-            },
-            {
-              "agent": "RiskAuditorLP",
-              "stance": "NO-GO",
-              "confidence": 0,
-              "reasoning": "llm_disabled",
-              "cot": "→ Anthropic deshabilitado por flag (ENABLE_ANTHROPIC OFF)."
-            }
-          ],
-          "debate_id": "BAC-CP-1784555100"
-        }
-      },
-      "option": null
-    },
-    {
-      "ticker": "MU",
-      "side": "BUY",
-      "horizon": "CP",
-      "price": 890.59,
-      "stop_loss": 819.34,
-      "take_profit": 1068.72,
-      "weight_target": 0.12,
-      "thesis": {
-        "ticker": "MU",
-        "horizon": "CP",
-        "conviction": "ALTA",
-        "quant": {
-          "mu_anual": 1.7431333080252394,
-          "sigma_anual": 0.700569448879827,
-          "beta": 2.4310335917454875,
-          "alpha_jensen": 1.325291125374974,
-          "sharpe": 2.4239328602474224,
-          "expected_return_capm": 0.41784218265026546
-        },
-        "technical": {
-          "price": 890.59,
-          "rsi": 27.8,
-          "atr": 75.9912,
-          "stop_loss_atr": 738.61,
-          "ret_1m": -0.21451948204913818,
-          "ret_3m": 0.9863676897093414,
-          "dist_52w_high": -0.2660214759523559
-        },
-        "fundamental": {
-          "sentiment_score": 0.667,
-          "n_headlines": 6,
-          "positive": 4,
-          "negative": 0,
-          "sample_titles": [
-            "The One Deal That Could End Micron Stock's Old Boom-and-Bust Cycle",
-            "Stock Market Today: Dow Rises On Peace Hopes; Nvidia, Micron, Sandisk Rebound (Live Coverage)",
-            "AI sell-off is maturing and earnings will provide a floor, says leading US bank"
-          ]
-        },
-        "macro": {
-          "regime": "bull",
-          "regime_reason": "SPY +7.8% sobre SMA200 con pendiente positiva",
-          "vix": 18.06,
-          "oil_wti": 81.34,
-          "dxy_1m": 0.008,
-          "gold_1m": -0.0788
-        },
-        "risk": {
-          "dollars_allocated": 90.65,
-          "weight_of_total_portfolio": 0.0551,
-          "max_loss_usd_if_stop_hit": 15.47,
-          "max_loss_pct_of_capital": 0.0094,
-          "stop_loss": 738.61
-        },
-        "thesis_text": "MU — horizonte CORTO PLAZO. Convicción ALTA. Setup técnico: RSI 28, momentum 1m -21.5%, momentum 3m +98.6%. RSI en sobreventa → setup de rebote táctico. Stop loss ATR en $738.61 (riesgo ≈ 17.1% desde entrada). Sentiment de noticias refuerza el setup.",
-        "key_risks": [
-          "Sin riesgos macro mayores detectados; el riesgo principal es idiosincrático del activo."
-        ],
-        "swarm": {
-          "go": false,
-          "size_factor": 0.0,
-          "reasoning": "Meta-LP heuristico (LLM OFF): EV=+ 4 NO-GO → SKIP",
-          "go_count": 0,
-          "ev": 690.04,
-          "ev_positive": true,
-          "opinions": [
-            {
-              "agent": "TechnicalCP",
-              "stance": "NO-GO",
-              "confidence": 0,
-              "reasoning": "llm_disabled",
-              "cot": "→ Anthropic deshabilitado por flag (ENABLE_ANTHROPIC OFF)."
-            },
-            {
-              "agent": "MacroLP",
-              "stance": "NO-GO",
-              "confidence": 0,
-              "reasoning": "llm_disabled",
-              "cot": "→ Anthropic deshabilitado por flag (ENABLE_ANTHROPIC OFF)."
-            },
-            {
-              "agent": "SentimentLP",
-              "stance": "NO-GO",
-              "confidence": 0,
-              "reasoning": "llm_disabled",
-              "cot": "→ Anthropic deshabilitado por flag (ENABLE_ANTHROPIC OFF)."
-            },
-            {
-              "agent": "RiskAuditorLP",
-              "stance": "NO-GO",
-              "confidence": 0,
-              "reasoning": "llm_disabled",
-              "cot": "→ Anthropic deshabilitado por flag (ENABLE_ANTHROPIC OFF)."
-            }
-          ],
-          "debate_id": "MU-CP-1784555100"
+          "debate_id": "XOM-CP-1784641589"
         }
       },
       "option": null
@@ -661,130 +560,130 @@
   "radar": {
     "entries": [
       {
-        "ticker": "MU",
+        "ticker": "CRWD",
         "sector": "Tech",
-        "price": 891.17,
-        "pct_1d": 0.0497,
-        "pct_1w": -0.0489,
-        "pct_1m": -0.1456,
+        "price": 198.41,
+        "pct_1d": -0.0004,
+        "pct_1w": -0.0585,
+        "pct_1m": 0.1588,
         "action": "BUY_CP",
-        "headline": "How Much Track Is Left For INTC Stock?",
-        "sentiment": 0.667,
+        "headline": "Morgan Stanley says software selloff has gone too far, names 8 winners",
+        "sentiment": 0.833,
         "n_headlines": 6
       },
       {
-        "ticker": "BAC",
+        "ticker": "MA",
         "sector": "Other",
-        "price": 61.17,
-        "pct_1d": -0.0016,
-        "pct_1w": 0.0282,
-        "pct_1m": 0.0822,
+        "price": 540.18,
+        "pct_1d": -0.0133,
+        "pct_1w": 0.004,
+        "pct_1m": 0.1047,
         "action": "BUY_CP",
-        "headline": "BofA expects Apple to top analyst expectations on July 30",
-        "sentiment": 0.667,
-        "n_headlines": 6
-      },
-      {
-        "ticker": "DDOG",
-        "sector": "Tech",
-        "price": 266.58,
-        "pct_1d": 0.0305,
-        "pct_1w": 0.0244,
-        "pct_1m": 0.1763,
-        "action": "BUY_CP",
-        "headline": "The One Deal That Could End Micron Stock's Old Boom-and-Bust Cycle",
-        "sentiment": 0.333,
+        "headline": "How Mastercard, Visa, Apple Pay and PayPal performed at the World Cup",
+        "sentiment": -0.667,
         "n_headlines": 6
       },
       {
         "ticker": "ABBV",
         "sector": "Healthcare",
-        "price": 255.7,
-        "pct_1d": 0.0047,
-        "pct_1w": 0.0384,
-        "pct_1m": 0.164,
+        "price": 253.74,
+        "pct_1d": 0.0014,
+        "pct_1w": 0.044,
+        "pct_1m": 0.1804,
         "action": "BUY_CP",
-        "headline": "What Comes After Merck’s Keytruda? The Race for the Next Standard Cancer...",
+        "headline": "Biotech IPO Gains Crush AI Listings With Standout 55% Return",
         "sentiment": 0.333,
-        "n_headlines": 6
-      },
-      {
-        "ticker": "LLY",
-        "sector": "Healthcare",
-        "price": 1176.46,
-        "pct_1d": -0.0022,
-        "pct_1w": -0.0046,
-        "pct_1m": 0.058,
-        "action": "BUY_CP",
-        "headline": "ATAI Stock Downgraded Across Wall Street – Why Analysts Believe Buyout B...",
-        "sentiment": 0.167,
         "n_headlines": 6
       },
       {
         "ticker": "MRK",
         "sector": "Healthcare",
-        "price": 127.76,
-        "pct_1d": 0.002,
-        "pct_1w": 0.0301,
-        "pct_1m": 0.1067,
+        "price": 125.25,
+        "pct_1d": 0.0068,
+        "pct_1w": 0.037,
+        "pct_1m": 0.0999,
         "action": "BUY_CP",
-        "headline": "What Comes After Merck’s Keytruda? The Race for the Next Standard Cancer...",
+        "headline": "Merck’s Keytruda Faces a Patent Cliff. These New Cancer Drugs Could Take...",
         "sentiment": 0.0,
         "n_headlines": 6
       },
       {
-        "ticker": "AMD",
-        "sector": "Tech",
-        "price": 519.49,
-        "pct_1d": 0.0479,
-        "pct_1w": -0.0279,
-        "pct_1m": 0.0137,
+        "ticker": "XOM",
+        "sector": "Energy",
+        "price": 149.18,
+        "pct_1d": 0.0055,
+        "pct_1w": 0.0282,
+        "pct_1m": 0.0825,
+        "action": "BUY_CP",
+        "headline": "The Peer-Group Mispricing Sitting On VG Stock",
+        "sentiment": 0.0,
+        "n_headlines": 6
+      },
+      {
+        "ticker": "COIN",
+        "sector": "Crypto",
+        "price": 172.82,
+        "pct_1d": 0.0772,
+        "pct_1w": 0.0701,
+        "pct_1m": 0.0585,
         "action": "—",
-        "headline": "AMD Just Got a Potential AI Heavyweight Customer. Here’s The New Price T...",
+        "headline": "Morgan Stanley's E*TRADE embraces crypto trading",
         "sentiment": 0.667,
         "n_headlines": 6
       },
       {
-        "ticker": "NVDA",
+        "ticker": "MU",
         "sector": "Tech",
-        "price": 207.42,
-        "pct_1d": 0.0227,
-        "pct_1w": 0.0191,
-        "pct_1m": 0.0135,
+        "price": 935.15,
+        "pct_1d": 0.0805,
+        "pct_1w": -0.0488,
+        "pct_1m": -0.1752,
         "action": "—",
-        "headline": "Should You Buy Amazon Stock, Even Though It Has Badly Underperformed the...",
+        "headline": "Why GM's memory chip guidance could help stabilize stocks like Micron an...",
+        "sentiment": 0.5,
+        "n_headlines": 6
+      },
+      {
+        "ticker": "NOC",
+        "sector": "Defense",
+        "price": 491.11,
+        "pct_1d": -0.0627,
+        "pct_1w": -0.071,
+        "pct_1m": -0.0583,
+        "action": "—",
+        "headline": "3 earnings to watch on Tuesday, July 21",
+        "sentiment": 0.333,
+        "n_headlines": 6
+      },
+      {
+        "ticker": "CCJ",
+        "sector": "Materials",
+        "price": 86.04,
+        "pct_1d": 0.014,
+        "pct_1w": -0.0604,
+        "pct_1m": -0.1921,
+        "action": "—",
+        "headline": "Prediction: This Is What $5,000 Invested in These 2 Nuclear Energy Stock...",
         "sentiment": 0.833,
         "n_headlines": 6
       },
       {
-        "ticker": "TSM",
-        "sector": "Tech",
-        "price": 408.63,
-        "pct_1d": 0.0258,
-        "pct_1w": -0.0307,
-        "pct_1m": -0.0544,
+        "ticker": "BMA",
+        "sector": "Financials",
+        "price": 93.1,
+        "pct_1d": 0.028,
+        "pct_1w": 0.0102,
+        "pct_1m": -0.079,
         "action": "—",
-        "headline": "TSMC Expands Arizona AI Chip Bet",
-        "sentiment": 0.667,
-        "n_headlines": 6
-      },
-      {
-        "ticker": "ETHE",
-        "sector": "Crypto",
-        "price": 15.14,
-        "pct_1d": 0.0175,
-        "pct_1w": 0.058,
-        "pct_1m": 0.0823,
-        "action": "—",
-        "headline": "The Worst Performing ETFs of 2026 So Far",
-        "sentiment": 0.667,
+        "headline": "Best Growth Stocks to Buy for July  21st",
+        "sentiment": 0.833,
         "n_headlines": 6
       }
     ],
-    "n_up": 42,
-    "n_down": 31,
-    "biggest_winner": "MU +5.0%",
-    "biggest_loser": "VIST -3.1%"
+    "n_up": 40,
+    "n_down": 33,
+    "biggest_winner": "MU +8.1%",
+    "biggest_loser": "NOC -6.3%"
   },
   "edgar_alerts": []
 }
