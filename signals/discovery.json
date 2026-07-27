@@ -1,16 +1,6 @@
 {
-  "generated_at": "2026-07-24T13:41:24.409691",
+  "generated_at": "2026-07-27T13:41:55.528793",
   "n_scanned": 118,
-  "candidates": [
-    {
-      "ticker": "OKTA",
-      "score": 40.3,
-      "ret_1m": 15.2,
-      "ret_3m": 80.8,
-      "prioridad": "MEDIA",
-      "razon": "Score técnico 40/100",
-      "riesgo": ""
-    }
-  ],
+  "candidates": [],
   "repeated_alerts": []
 }
